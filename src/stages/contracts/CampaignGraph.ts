@@ -1,4 +1,4 @@
-import type { BiomeId } from '../../procedural';
+import type { BiomeId, PresetId } from '../../procedural';
 import type { StageDiagnostic } from './StageDiagnostic';
 import type { StageCondition, StageId } from './StageManifest';
 
@@ -14,6 +14,63 @@ export type NarrativeBeatId = string;
 export type CampaignBranchId = 'main' | 'route-a' | 'route-b';
 export type CampaignEdgeKind = 'forward' | 'branch' | 'rejoin' | 'return';
 export type CampaignNodeKind = 'intermediate' | 'milestone';
+
+export interface RegionTemplate {
+  readonly id: RegionTemplateId;
+  readonly revision: number;
+  readonly stageId: StageId;
+  readonly allowedActIds: readonly CampaignActId[];
+  readonly allowedBiomeIds: readonly BiomeId[];
+  readonly presetIds?: readonly PresetId[];
+  readonly difficulty: {
+    readonly minimum: number;
+    readonly maximum: number;
+  };
+  readonly weight: number;
+  readonly maximumPhysicalExits: 1 | 2 | 3;
+  readonly tags: readonly string[];
+  readonly requiredFlags?: readonly StageCondition[];
+  readonly requiredEventIds?: readonly string[];
+  readonly requiredBeatIds?: readonly NarrativeBeatId[];
+  readonly providesBeatIds?: readonly NarrativeBeatId[];
+  readonly revisit: 'forbidden' | 'checkpoint' | 'repeatable';
+}
+
+export interface CampaignGraphGenerationContext {
+  readonly flags: Readonly<Record<string, boolean | number | string>>;
+  readonly completedEventIds: readonly string[];
+  readonly revealedBeatIds: readonly NarrativeBeatId[];
+}
+
+export interface CampaignGraphRequest {
+  readonly campaignId: string;
+  readonly campaignRevision: number;
+  readonly catalogRevision: number;
+  readonly runId: string;
+  readonly runSeed: string | number;
+  readonly templates: readonly RegionTemplate[];
+  readonly context: CampaignGraphGenerationContext;
+}
+
+export type CampaignGraphFailureCode =
+  | 'invalid-request'
+  | 'invalid-template'
+  | 'duplicate-id'
+  | 'insufficient-eligible-regions'
+  | 'milestone-unavailable'
+  | 'invalid-topology'
+  | 'narrative-beat-unreachable'
+  | 'exit-capacity-insufficient';
+
+export type CampaignGraphResult =
+  | { readonly ok: true; readonly value: CampaignGraph }
+  | {
+      readonly ok: false;
+      readonly error: {
+        readonly code: CampaignGraphFailureCode;
+        readonly diagnostics: readonly StageDiagnostic[];
+      };
+    };
 
 export interface CampaignNode {
   readonly id: CampaignNodeId;

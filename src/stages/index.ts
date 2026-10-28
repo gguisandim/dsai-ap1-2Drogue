@@ -8,7 +8,11 @@ export type {
   CampaignGraph,
   CampaignGraphDiagnostic,
   CampaignGraphDiagnosticCode,
+  CampaignGraphFailureCode,
+  CampaignGraphGenerationContext,
   CampaignGraphId,
+  CampaignGraphRequest,
+  CampaignGraphResult,
   CampaignNode,
   CampaignNodeId,
   CampaignNodeKind,
@@ -21,6 +25,7 @@ export type {
   NpcId,
   PhysicalExit,
   PhysicalExitId,
+  RegionTemplate,
   RegionTemplateId,
   StageAnchor,
   StageCondition,
@@ -42,6 +47,7 @@ export { StageRegistry, StageRegistryError } from './runtime/StageRegistry';
 export type { StageRegistryErrorCode } from './runtime/StageRegistry';
 export { StageValidator } from './runtime/StageValidator';
 export { CampaignGraphValidator } from './runtime/CampaignGraphValidator';
+export { CampaignGraphGenerator } from './runtime/CampaignGraphGenerator';
 export { createLegacyStageModule, registerLegacyStages } from './compatibility/LegacyStageAdapter';
 export { LegacyLevelAdapter } from './compatibility/LegacyLevelAdapter';
 export { ProceduralStageAdapter } from './compatibility/ProceduralStageAdapter';

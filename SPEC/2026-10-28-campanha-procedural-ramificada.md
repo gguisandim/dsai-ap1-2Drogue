@@ -581,6 +581,63 @@ Fora desta etapa: `RegionTemplate`, elegibilidade, `CampaignGraphGenerator`,
 `PhysicalExitResolution`, saves de run, `StageDirector` de campanha e qualquer
 alteração em `GameScene`, combate, IA, procedural ou Phaser.
 
+### Etapa 8.2 — gerador headless (implementada em 2026-10-28)
+
+Implementa o item 2 da sequência. A classe `CampaignGraphGenerator`, exportada
+por `src/stages/index.ts`, recebe `CampaignGraphRequest` e devolve
+`CampaignGraphResult`. Ela não acessa Phaser, cenas, storage, relógio, gerador de
+mapas ou estado global.
+
+Contratos adicionados em `src/stages/contracts/CampaignGraph.ts`:
+`RegionTemplate`, `CampaignGraphGenerationContext`, `CampaignGraphRequest`,
+`CampaignGraphFailureCode` e `CampaignGraphResult`. `PhysicalExit` continua sendo
+somente o contrato de saída resolvida; o gerador não escolhe tiles.
+
+Estrutura gerada:
+
+- profundidades 0–8 com um nó por posição; bifurcações opcionais colocam duas
+  alternativas na mesma profundidade e convergem na profundidade seguinte;
+- atos I, II e III fecham nos marcos 2, 5 e 8, cujo template precisa fornecer o
+  beat do ato (`beat.act-1`, `beat.act-2`, `beat.act-3`);
+- são 9 nós sem bifurcação e até 12 com uma bifurcação por ato;
+- arestas usam `branch` na saída do nó bifurcado, `rejoin` na convergência e
+  `forward` nos demais avanços; o último marco é o único predecessor de
+  `campaign.complete`;
+- IDs de nó derivam de `campaignId`, `runId`, `slotId` e `branchId`; IDs de
+  aresta de origem e destino; `physicalExitId` da origem e da aresta; `stageSeed`
+  do `graphSeed`, nó, template e revisão.
+
+Elegibilidade: ato permitido, afinidade opcional por tag `slot.<slotId>`,
+dificuldade da posição (`depth + 1`) dentro do intervalo, capacidade física
+suficiente, `revisit` (`forbidden`/`checkpoint` proíbem reutilização na run;
+`repeatable` proíbe apenas adjacência), flags/eventos/beats do contexto congelado
+e beat obrigatório para marcos. Condições `flag.equals`, `all`, `any` e `not` são
+avaliadas; `mission.status` e `progression.unlocked` tornam o template inelegível
+de forma conservadora. `presetIds` é validado, mas ainda não filtra porque o
+request não declara um preset-alvo.
+
+Determinismo: o `generationContextDigest` canonicaliza flags, eventos e beats
+ordenados; `graphSeed = hash(runSeed, campaignRevision, catalogRevision,
+digest)`; cada seleção usa um salt `hash(graphSeed, actId, slotId, branchId)` e
+uma escolha ponderada inteira sobre candidatos ordenados por ID. A implementação
+usa FNV-1a estável e não mantém RNG mutável. Reordenar o catálogo não altera o
+grafo; trocar `runSeed` altera seeds e escolhas sem mudar a topologia por acaso.
+
+Falhas tipadas: `invalid-request`, `invalid-template`, `duplicate-id`,
+`insufficient-eligible-regions`, `milestone-unavailable`, `invalid-topology` e
+`narrative-beat-unreachable`. Todo grafo gerado passa por
+`CampaignGraphValidator` antes de ser devolvido.
+
+Testes: `src/tests/campaignGraphGenerator.test.ts` cobre 12 nós com três
+bifurcações e três convergências, 9 nós sem bifurcação, identidade de nodes e
+saídas físicas, igualdade para a mesma request, independência da ordem do
+catálogo, variação por seed, contexto canônico, tags, dificuldade, flags e
+catálogos inválidos/insuficientes.
+
+Fora desta etapa: posicionamento físico das saídas, persistência de run, UI,
+router de aplicação, conteúdo amazônico e qualquer alteração em `GameScene`,
+combate, simulação, progressão ou Phaser.
+
 ## Riscos e decisões adiadas
 
 - o catálogo procedural atual contém biomas de outra direção artística; o
