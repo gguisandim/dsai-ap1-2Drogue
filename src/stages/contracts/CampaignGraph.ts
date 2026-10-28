@@ -1,5 +1,6 @@
 import type { BiomeId, PresetId } from '../../procedural';
 import type { StageDiagnostic } from './StageDiagnostic';
+import type { LoadedStage } from './StageLoad';
 import type { StageCondition, StageId } from './StageManifest';
 
 export type CampaignGraphId = string;
@@ -134,6 +135,54 @@ export interface PhysicalExit {
   readonly tile: { readonly x: number; readonly y: number };
   readonly placementAttempt: 0 | 1 | 2 | 3;
 }
+
+export interface PhysicalExitResolution {
+  readonly nodeId: CampaignNodeId;
+  readonly stageId: StageId;
+  readonly levelDigest: string;
+  readonly exits: readonly PhysicalExit[];
+}
+
+export interface PhysicalExitRequest {
+  readonly node: CampaignNode;
+  readonly edges: readonly CampaignEdge[];
+  readonly stage: LoadedStage;
+}
+
+export type PhysicalExitFailureCode =
+  | 'invalid-request'
+  | 'entry-unreachable'
+  | 'insufficient-exit-space'
+  | 'exit-tile-blocked'
+  | 'exit-tile-unreachable'
+  | 'exit-tile-duplicated'
+  | 'saved-placement-incompatible';
+
+export type PhysicalExitDiagnosticCode =
+  | 'physical-exit.request-invalid'
+  | 'physical-exit.capacity-exceeded'
+  | 'physical-exit.entry-missing'
+  | 'physical-exit.entry-unreachable'
+  | 'physical-exit.explicit-anchor-invalid'
+  | 'physical-exit.explicit-anchor-unreachable'
+  | 'physical-exit.insufficient-space'
+  | 'physical-exit.path-invalid'
+  | 'physical-exit.tile-duplicated'
+  | 'physical-exit.placement-invalid';
+
+export interface PhysicalExitDiagnostic extends StageDiagnostic {
+  readonly code: PhysicalExitDiagnosticCode;
+}
+
+export type PhysicalExitResult =
+  | { readonly ok: true; readonly value: PhysicalExitResolution }
+  | {
+      readonly ok: false;
+      readonly error: {
+        readonly code: PhysicalExitFailureCode;
+        readonly diagnostics: readonly PhysicalExitDiagnostic[];
+      };
+    };
 
 export type CampaignGraphDiagnosticCode =
   | 'campaign.graph.header-invalid'

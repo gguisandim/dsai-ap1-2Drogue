@@ -24,7 +24,13 @@ export type {
   NarrativeBeatId,
   NpcId,
   PhysicalExit,
+  PhysicalExitDiagnostic,
+  PhysicalExitDiagnosticCode,
+  PhysicalExitFailureCode,
   PhysicalExitId,
+  PhysicalExitRequest,
+  PhysicalExitResolution,
+  PhysicalExitResult,
   RegionTemplate,
   RegionTemplateId,
   StageAnchor,
@@ -48,6 +54,7 @@ export type { StageRegistryErrorCode } from './runtime/StageRegistry';
 export { StageValidator } from './runtime/StageValidator';
 export { CampaignGraphValidator } from './runtime/CampaignGraphValidator';
 export { CampaignGraphGenerator } from './runtime/CampaignGraphGenerator';
+export { PhysicalExitResolver } from './runtime/PhysicalExitResolver';
 export { createLegacyStageModule, registerLegacyStages } from './compatibility/LegacyStageAdapter';
 export { LegacyLevelAdapter } from './compatibility/LegacyLevelAdapter';
 export { ProceduralStageAdapter } from './compatibility/ProceduralStageAdapter';

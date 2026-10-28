@@ -269,6 +269,7 @@ export interface PhysicalExitResolution {
 }
 
 export type PhysicalExitFailureCode =
+  | 'invalid-request'
   | 'entry-unreachable'
   | 'insufficient-exit-space'
   | 'exit-tile-blocked'
@@ -637,6 +638,65 @@ catálogos inválidos/insuficientes.
 Fora desta etapa: posicionamento físico das saídas, persistência de run, UI,
 router de aplicação, conteúdo amazônico e qualquer alteração em `GameScene`,
 combate, simulação, progressão ou Phaser.
+
+### Etapa 8.3 — resolver de saídas físicas (implementada em 2026-10-28)
+
+Implementa o item 3 da sequência. `PhysicalExitResolver`, exportado por
+`src/stages/index.ts`, recebe `PhysicalExitRequest` — nó atual, arestas de saída
+e `LoadedStage` — e devolve `PhysicalExitResult`. Não altera o mapa, o manifesto,
+o grafo, `GameScene`, Phaser ou qualquer sistema de jogo.
+
+Contratos adicionados ao bloco de saída física: `PhysicalExitRequest`,
+`PhysicalExitResolution`, `PhysicalExitResult`, `PhysicalExitDiagnostic` e
+`PhysicalExitDiagnosticCode`. `PhysicalExitFailureCode` ganhou
+`invalid-request` para entradas estruturalmente inválidas.
+
+Algoritmo implementado:
+
+1. valida nó, arestas, manifesto e mapa; exige `node.stageId === stage.id` e no
+   máximo `node.maximumPhysicalExits` arestas de saída;
+2. localiza o primeiro tile `Spawn` em ordem de varredura e calcula o componente
+   alcançável com `isWalkableTile`, a mesma semântica pública do mapa;
+3. reserva spawns, inimigos/patrulhas/emboscadas/ondas, itens, decorações,
+   `SectionExit`, NPCs e âncoras `map-exit` de NPC; tiles `Chest`, `LockedDoor`,
+   hazards e paredes nunca entram no pool livre;
+4. exige clearance (tile interno, com vizinho ortogonal transitável) e nunca
+   coloca duas arestas no mesmo tile ou sobre o spawn;
+5. ordena arestas por `id` e candidatos por distância máxima-mínima a escolhidos
+   e spawn (desc), borda adjacente a parede (primeiro), hash estável de
+   `stageSeed + edgeId + attempt + x + y` e coordenada como desempate final;
+6. reutiliza `manifest.exits` quando o anchor (`tile`, `map-exit`,
+   `player-spawn`) é transitável, alcançável, distinto e respeita separação,
+   preservando o `stageExitId` declarado; fora disso usa `edge.exitSlotId`, com
+   `physicalExitId` e `edge.id` como fallbacks de unicidade;
+7. tenta quatro placements determinísticos: separação 3, 2 e 1 em piso limpo e,
+   por último, separação 1 admitindo `Exit`/`Boss` pré-existentes; invariantes de
+   transitabilidade, alcançabilidade, distinção, spawn e um-para-um nunca são
+   relaxadas;
+8. revalida cada caminho spawn → saída com BFS independente e rejeita o
+   placement inteiro se qualquer saída falhar — nunca há resultado parcial.
+
+`levelDigest = level.<hash FNV-1a>` cobre `level.id`, `tileMap`, spawns, exits,
+bosses, inimigos/patrulhas, itens, decorações, `SectionExit`, âncoras de NPC e
+`manifest.exits` ordenados; reordenar entidades não muda o digest nem o
+resultado.
+
+Diagnósticos: `physical-exit.request-invalid`, `capacity-exceeded`,
+`entry-missing`, `entry-unreachable`, `explicit-anchor-invalid`,
+`explicit-anchor-unreachable`, `insufficient-space`, `path-invalid`,
+`tile-duplicated` e `placement-invalid`, ordenados e congelados. Falhas de
+entrada retornam `invalid-request` ou `entry-unreachable`; falta de espaço e
+capacidade retornam `insufficient-exit-space`.
+
+Fora desta etapa: persistência da resolução, validação de placements salvos
+(`saved-placement-incompatible`), regeneração procedural de mapas, poda de
+arestas, portais/transições visuais, UI e integração Phaser.
+
+Testes: `src/tests/physicalExitResolver.test.ts` cobre piso limpo, anchors
+explícitos `tile`/`map-exit`, anchor bloqueado, ordem de arestas, repetição,
+queda para outro attempt por separação, entidades/NPCs reservados, hazards,
+mapa pequeno, área desconectada, capacidade, spawn ausente, digest estável e
+request inválida.
 
 ## Riscos e decisões adiadas
 

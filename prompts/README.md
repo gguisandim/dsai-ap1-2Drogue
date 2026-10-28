@@ -32,6 +32,13 @@ especial, não se infere modelo, esforço, sessão ou commit a partir do conteú
 pedido. Os arquivos históricos permanecem aceitos como legado pelo gate e não
 devem ser editados retroativamente.
 
+`Commit: pendente` não exige um commit autorreferente. Enquanto o arquivo está no
+worktree, o gate o reporta como pendente; depois de versionado, deriva o primeiro
+commit que adicionou o próprio registro por meio do histórico Git, sem alterar os
+bytes do prompt. Somente os oito arquivos 01–08 explicitamente autorizados são
+legado. Qualquer novo Markdown de prompt precisa do schema v1 e de `Prompt-ID`
+único.
+
 Validação local:
 
 ```powershell
