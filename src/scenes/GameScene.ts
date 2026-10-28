@@ -26,11 +26,17 @@ import { NavigationService } from '../ai';
 import { EnemyDefeatProgress, ProgressionService } from '../progression';
 import { ENEMY_PRESENTATIONS } from '../data/EnemyPresentation';
 import {
+  BRANCHING_CAMPAIGN_DEFAULT_RUN_ID,
+  BRANCHING_CAMPAIGN_DEFAULT_SEED,
+  CampaignRouter,
   GameNarrativeSession,
   GameStageCompositionRoot,
   createBrowserCampaignSaveStorage,
 } from '../application/stages';
-import type { GameSceneStageResolution } from '../application/stages';
+import type {
+  CampaignNavigationView,
+  GameSceneStageResolution,
+} from '../application/stages';
 import type { LoadedStage } from '../stages';
 
 interface GameSceneInitData {
@@ -42,6 +48,16 @@ interface GameSceneInitData {
   modularStageLoading?: boolean;
   modularRunId?: string;
   modularRunSeed?: string | number;
+  branchingCampaign?: boolean;
+  branchingRunId?: string;
+  branchingRunSeed?: string | number;
+}
+
+interface PendingExitTile {
+  readonly x: number;
+  readonly y: number;
+  readonly physicalExitId?: string;
+  readonly available?: boolean;
 }
 
 const DEFAULT_PROCEDURAL_RUN: readonly PresetId[] = [
@@ -64,7 +80,7 @@ export class GameScene extends Phaser.Scene {
   private enemyBullets!: Phaser.Physics.Arcade.Group;
   private wallTiles!: Phaser.Physics.Arcade.StaticGroup;
   private stairTiles!: Phaser.Physics.Arcade.StaticGroup;
-  private pendingExitTiles: Array<{ x: number; y: number }> = [];
+  private pendingExitTiles: PendingExitTile[] = [];
   private exitsRevealed = false;
 
   // Floor tile images (so we can destroy them on level transition)
@@ -85,6 +101,7 @@ export class GameScene extends Phaser.Scene {
   private doorSealNotice = 0;
   private keyShop?: Phaser.Input.Keyboard.Key;
   private keyMenu?: Phaser.Input.Keyboard.Key;
+  private keyInteract?: Phaser.Input.Keyboard.Key;
 
   // HUD & UI Elements
   private hpHudText!: Phaser.GameObjects.Text;
@@ -125,6 +142,13 @@ export class GameScene extends Phaser.Scene {
   private modularComposition?: GameStageCompositionRoot;
   private modularLoadedStage?: LoadedStage;
   private modularNarrativeSession?: GameNarrativeSession;
+  private branchingCampaign = false;
+  private branchingRunId = BRANCHING_CAMPAIGN_DEFAULT_RUN_ID;
+  private branchingRunSeed: string | number = BRANCHING_CAMPAIGN_DEFAULT_SEED;
+  private branchingStageSource: 'legacy' | 'campaign' | 'rollback' = 'legacy';
+  private campaignRouter?: CampaignRouter;
+  private campaignNavigation?: CampaignNavigationView;
+  private campaignPersistenceUncertain = false;
 
   constructor() {
     super('GameScene');
@@ -140,7 +164,18 @@ export class GameScene extends Phaser.Scene {
     this.modularRunId = data?.modularRunId?.trim() || 'legacy.verse.default-run';
     this.modularRunSeed = data?.modularRunSeed ?? 'legacy.verse.default-seed';
     this.modularPersistenceEnabled = Boolean(data?.modularRunId?.trim());
-    this.configureModularStage();
+    const query = typeof window === 'undefined' ? undefined : new URLSearchParams(window.location.search);
+    this.branchingCampaign = data?.branchingCampaign === true || query?.get('branchingCampaign') === '1';
+    this.branchingRunId = data?.branchingRunId?.trim() ||
+      query?.get('branchingRun')?.trim() || BRANCHING_CAMPAIGN_DEFAULT_RUN_ID;
+    this.branchingRunSeed = data?.branchingRunSeed ??
+      query?.get('branchingSeed') ?? BRANCHING_CAMPAIGN_DEFAULT_SEED;
+    this.modularStageSource = 'legacy';
+    this.modularComposition = undefined;
+    this.modularLoadedStage = undefined;
+    this.modularNarrativeSession = undefined;
+    this.configureBranchingCampaign();
+    if (!this.branchingCampaign) this.configureModularStage();
     this.startingHalos = Math.max(0, Math.floor(data?.halos ?? 5000));
     this.isTransitioning = false;
     this.levelClearedBannerShowing = false;
@@ -153,6 +188,39 @@ export class GameScene extends Phaser.Scene {
     this.pendingExitTiles = [];
     this.exitsRevealed = false;
     this.skipControlsGuide = data?.skipControls ?? false;
+  }
+
+  private configureBranchingCampaign(): void {
+    this.branchingStageSource = 'legacy';
+    this.campaignRouter = undefined;
+    this.campaignNavigation = undefined;
+    this.campaignPersistenceUncertain = false;
+    if (!this.branchingCampaign || this.proceduralSeed !== undefined) return;
+
+    const composition = new GameStageCompositionRoot({
+      campaignStorage: createBrowserCampaignSaveStorage(),
+    });
+    const created = composition.createBranchingCampaign({
+      runId: this.branchingRunId,
+      runSeed: this.branchingRunSeed,
+    });
+    if (!created.ok) {
+      this.branchingStageSource = 'rollback';
+      return;
+    }
+    const stageId = created.value.initialNavigation.currentNode.stageId;
+    const levelIndex = this.allLevels.findIndex(level => level.id === stageId);
+    if (levelIndex < 0) {
+      this.branchingStageSource = 'rollback';
+      return;
+    }
+    this.allLevels = [...this.allLevels];
+    this.currentLevelIndex = levelIndex;
+    this.allLevels[levelIndex] = created.value.initialNavigation.loadedStage.level;
+    this.currentLevel = created.value.initialNavigation.loadedStage.level;
+    this.campaignRouter = created.value.router;
+    this.campaignNavigation = created.value.initialNavigation;
+    this.branchingStageSource = 'campaign';
   }
 
   private configureLevelRun(data?: GameSceneInitData): void {
@@ -215,6 +283,7 @@ export class GameScene extends Phaser.Scene {
     // 3. Build level map
     this.currentLevel = this.allLevels[this.currentLevelIndex];
     this.buildMapFromDefinition(this.currentLevel);
+    this.queueCampaignExitTiles();
     this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
     this.progression = new ProgressionService();
     this.initializeModularNarrative();
@@ -271,6 +340,7 @@ export class GameScene extends Phaser.Scene {
     if (this.input && this.input.keyboard) {
       this.keyShop = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.B);
       this.keyMenu = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+      this.keyInteract = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     }
 
     // 9. HUD & Chapter Title
@@ -393,7 +463,7 @@ export class GameScene extends Phaser.Scene {
       } else if (itm.itemType === 'item_magic') {
         this.player.addMagic(25);
       } else if (itm.itemType === 'item_key') {
-        const keyId = `${this.currentLevelIndex}:${Math.floor(itm.x / 32)},${Math.floor(itm.y / 32)}`;
+        const keyId = `${this.itemIdentityScope()}:${Math.floor(itm.x / 32)},${Math.floor(itm.y / 32)}`;
         this.foundKeys.add(keyId);
         this.levelBannerText.setText('EMBOSCADA! Defenda-se!');
         this.levelBannerText.setVisible(true);
@@ -425,6 +495,16 @@ export class GameScene extends Phaser.Scene {
           this.levelBannerText.setVisible(true);
           this.time.delayedCall(1200, () => this.levelBannerText.setVisible(false));
         }
+        return;
+      }
+      if (this.campaignRouter) {
+        const door = doorObj as Phaser.Physics.Arcade.Sprite;
+        const physicalExitId = door.getData('physicalExitId') as string | undefined;
+        this.handleCampaignExitProximity(
+          physicalExitId,
+          door.getData('available') !== false,
+          Boolean(this.keyInteract && Phaser.Input.Keyboard.JustDown(this.keyInteract)),
+        );
         return;
       }
       this.advanceToNextLevel();
@@ -518,6 +598,11 @@ export class GameScene extends Phaser.Scene {
           modularRunSeed: this.modularRunSeed,
           ...(this.modularPersistenceEnabled ? { modularRunId: this.modularRunId } : {}),
         } : {}),
+        ...(this.branchingCampaign ? {
+          branchingCampaign: true,
+          branchingRunId: this.branchingRunId,
+          branchingRunSeed: this.branchingRunSeed,
+        } : {}),
       }));
     }
   }
@@ -569,7 +654,7 @@ export class GameScene extends Phaser.Scene {
         } else if (tileVal === 4) {
           const lava = this.add.image(posX, posY, 'tile_lava');
           this.floorImages.push(lava);
-        } else if (tileVal === 5) {
+        } else if (tileVal === 5 && !this.campaignRouter) {
           // The tunnel is intentionally absent until the final enemy dies.
           // Store its position without creating a visible/interactive sprite.
           this.pendingExitTiles.push({ x: posX, y: posY });
@@ -639,7 +724,7 @@ export class GameScene extends Phaser.Scene {
     level.items.forEach(itm => {
       // Keys already collected stay collected across revisits
       if (itm.type === 'key') {
-        const keyId = `${this.currentLevelIndex}:${itm.x},${itm.y}`;
+        const keyId = `${this.itemIdentityScope()}:${itm.x},${itm.y}`;
         if (this.foundKeys.has(keyId)) return;
       }
       const px = itm.x * 32 + 16;
@@ -800,6 +885,132 @@ export class GameScene extends Phaser.Scene {
       this.showChapterTitle(this.currentLevel.name);
       this.isTransitioning = false;
     });
+  }
+
+  private queueCampaignExitTiles(): void {
+    if (!this.campaignRouter || !this.campaignNavigation) return;
+    this.pendingExitTiles = this.campaignNavigation.snapshot.destinations.map(destination => ({
+      x: destination.tile.x * 32 + 16,
+      y: destination.tile.y * 32 + 16,
+      physicalExitId: destination.physicalExitId,
+      available: destination.available,
+    }));
+  }
+
+  private handleCampaignExitProximity(
+    physicalExitId: string | undefined,
+    available: boolean,
+    commandPressed: boolean,
+  ): void {
+    if (!physicalExitId || !available) return;
+    if (!commandPressed) {
+      this.objectiveText.setText('PRESSIONE E PARA ATRAVESSAR');
+      return;
+    }
+    this.navigateCampaignExit(physicalExitId);
+  }
+
+  private navigateCampaignExit(physicalExitId: string): void {
+    if (!this.campaignRouter || this.isTransitioning || this.campaignPersistenceUncertain) return;
+    const prepared = this.campaignRouter.prepare(physicalExitId);
+    if (!prepared.ok) {
+      this.showCampaignTransitionFailure(`SAÍDA INDISPONÍVEL: ${prepared.error.code}`);
+      return;
+    }
+    const confirmed = this.campaignRouter.confirm(prepared.value.preparationId);
+    if (!confirmed.ok) {
+      this.campaignPersistenceUncertain = confirmed.error.recovery === 'storage-state-unknown';
+      this.showCampaignTransitionFailure(
+        this.campaignPersistenceUncertain
+          ? 'SAVE DA RUN INCERTO. REINICIE PARA RECONCILIAR.'
+          : `TRANSIÇÃO CANCELADA: ${confirmed.error.code}`,
+      );
+      return;
+    }
+
+    this.isTransitioning = true;
+    const stageReward = this.progression.recordStageCompleted({
+      stageId: this.currentLevel.id,
+      difficulty: this.currentLevel.difficulty,
+      parSeconds: this.currentLevel.parTime,
+    });
+    this.player.addHalos(stageReward.currencyAwarded);
+
+    if (prepared.value.targetNodeId === 'campaign.complete' || !prepared.value.destinationStage) {
+      this.levelBannerText.setText('CAMPANHA PILOTO CONCLUÍDA!');
+      this.levelBannerText.setVisible(true);
+      this.cameras.main.flash(700, 246, 215, 122);
+      this.time.delayedCall(1800, () => this.scene.start('MenuScene'));
+      return;
+    }
+
+    const nextLevel = prepared.value.destinationStage.level;
+    const inspected = this.campaignRouter.inspect();
+    this.campaignNavigation = inspected.ok ? inspected.value : undefined;
+    this.cameras.main.flash(600, 255, 215, 0);
+    this.time.delayedCall(400, () => {
+      const previousSection = this.currentLevel.name;
+      const levelIndex = this.allLevels.findIndex(level => level.id === nextLevel.id);
+      if (levelIndex >= 0) {
+        this.currentLevelIndex = levelIndex;
+        this.allLevels = [...this.allLevels];
+        this.allLevels[levelIndex] = nextLevel;
+      }
+      this.currentLevel = nextLevel;
+      this.simulationBridge.recordRoomEntered(this.currentLevel.name, previousSection);
+
+      this.floorImages.forEach(image => image.destroy());
+      this.floorImages = [];
+      this.enemies.clear(true, true);
+      this.items.clear(true, true);
+      this.bullets.clear(true, true);
+      this.enemyBullets.clear(true, true);
+      this.summons.forEach(summon => summon.destroy());
+      this.summons = [];
+      this.wallTiles.clear(true, true);
+      this.stairTiles.clear(true, true);
+      this.pendingExitTiles = [];
+      this.exitsRevealed = false;
+
+      this.buildMapFromDefinition(this.currentLevel);
+      this.queueCampaignExitTiles();
+      this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
+      this.spawnEnemiesAndItems(this.currentLevel);
+      this.spawnWave(0);
+
+      const spawn = this.findSpawnPoint(this.currentLevel);
+      this.player.setPosition(spawn.x, spawn.y);
+      this.player.setVelocity(0, 0);
+      this.player.setVisible(true);
+      this.player.setActive(true);
+      this.player.setAlpha(1);
+      this.player.resetResourcesForNextStage();
+
+      const worldWidth = this.currentLevel.tileMap[0].length * 32;
+      const worldHeight = this.currentLevel.tileMap.length * 32;
+      this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+      this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
+      this.levelClearedBannerShowing = false;
+      this.currentWaveIndex = 0;
+      this.waveTransition = false;
+      SoundManager.playWitchTimeActivate();
+      this.showChapterTitle(this.currentLevel.name);
+      if (!inspected.ok) this.showCampaignTransitionFailure('DESTINO SEM SAÍDAS VÁLIDAS.');
+      this.isTransitioning = false;
+    });
+  }
+
+  private showCampaignTransitionFailure(message: string): void {
+    if (!this.levelBannerText) return;
+    this.levelBannerText.setText(message);
+    this.levelBannerText.setVisible(true);
+    this.time.delayedCall(1800, () => {
+      if (!this.levelClearedBannerShowing) this.levelBannerText.setVisible(false);
+    });
+  }
+
+  private itemIdentityScope(): string {
+    return this.campaignRouter?.state().currentNodeId ?? String(this.currentLevelIndex);
   }
 
   public advanceToNextLevel(): void {
@@ -1024,7 +1235,9 @@ export class GameScene extends Phaser.Scene {
     } else if (this.currentWaveIndex < this.waves.length - 1) {
       objective = 'OBJETIVO: Prepare-se para a próxima onda...';
     } else {
-      objective = 'OBJETIVO: Seção limpa! Procure uma chave ou use uma porta.';
+      objective = this.campaignRouter
+        ? 'OBJETIVO: Seção limpa! Aproxime-se de uma saída e pressione E.'
+        : 'OBJETIVO: Seção limpa! Procure uma chave ou use uma porta.';
     }
     this.objectiveText.setText(objective);
   }
@@ -1032,13 +1245,18 @@ export class GameScene extends Phaser.Scene {
   private revealExits(): void {
     if (this.exitsRevealed) return;
     this.exitsRevealed = true;
-    this.pendingExitTiles.forEach(({ x, y }, index) => {
+    this.pendingExitTiles.forEach(({ x, y, physicalExitId, available = true }, index) => {
       const tunnel = this.stairTiles.create(x, y, 'tile_stairs') as Phaser.Physics.Arcade.Sprite;
+      if (physicalExitId) {
+        tunnel.setData('physicalExitId', physicalExitId);
+        tunnel.setData('available', available);
+        if (!available) tunnel.setTint(0x665c73);
+      }
       tunnel.setDepth(6).setAlpha(0).setScale(0.15);
       tunnel.refreshBody();
       this.tweens.add({
         targets: tunnel,
-        alpha: 1,
+        alpha: available ? 1 : 0.35,
         scaleX: 1,
         scaleY: 1,
         duration: 360,

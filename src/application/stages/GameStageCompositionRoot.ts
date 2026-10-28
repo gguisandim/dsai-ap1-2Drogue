@@ -24,6 +24,11 @@ import {
   type GameSceneStageResolution,
   type StageLoaderPort,
 } from './GameSceneStageAdapter';
+import {
+  BranchingCampaignPilotFactory,
+  type BranchingCampaignPilotRequest,
+  type BranchingCampaignPilotResult,
+} from './BranchingCampaignPilot';
 
 export interface GameNarrativeIdentityInput {
   readonly campaignId: string;
@@ -114,6 +119,12 @@ export class GameStageCompositionRoot {
 
   public resolveStage(request: GameSceneStageRequest): GameSceneStageResolution {
     return this.stageAdapter.resolve(request);
+  }
+
+  public createBranchingCampaign(
+    request: BranchingCampaignPilotRequest,
+  ): BranchingCampaignPilotResult {
+    return new BranchingCampaignPilotFactory(this.loader, this.campaignStorage).create(request);
   }
 
   public createNarrativeSession(

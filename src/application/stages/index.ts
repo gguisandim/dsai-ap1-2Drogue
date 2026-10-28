@@ -4,3 +4,4 @@ export * from './GameStageCompositionRoot';
 export * from './CampaignNavigation';
 export * from './CampaignRunSaveService';
 export * from './CampaignRouter';
+export * from './BranchingCampaignPilot';

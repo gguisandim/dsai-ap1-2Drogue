@@ -850,6 +850,88 @@ identidade, determinismo e conclusão. A suíte completa passou com 729 testes e
 3.668 dependências), traceability gate (nove registros v1 e oito legados) e
 `git diff --check` passaram.
 
+### Etapa 8.6 — protótipo navegável no Phaser (2026-10-28)
+
+O protótipo integra o router sem transferir regras de campanha para
+`GameScene`. A flag `branchingCampaign` é independente da flag incremental
+`modularStageLoading`, fica desligada por padrão e pode ser habilitada no
+navegador por `?branchingCampaign=1`. Com a flag desligada, nenhum grafo, router
+ou save de run é criado e os portais continuam chamando exclusivamente o fluxo
+linear legado.
+
+#### Piloto e composition root
+
+`GameStageCompositionRoot` monta, de forma preguiçosa, somente quando a flag
+está ativa:
+
+```text
+três templates VERSE legados
+  → CampaignGraphGenerator (nove ocorrências/nodes válidos)
+  → CampaignRunSaveService
+  → CampaignRouter
+  → CampaignRouter.inspect()
+  → adapter visual fino em GameScene
+```
+
+Os templates são `verse_01_atrium`, `verse_02_galeria` e
+`verse_03_santuario`. Eles podem aparecer em ocorrências distintas, sempre com
+`CampaignNodeId`, `stageSeed` e checkpoint próprios. O grafo continua respeitando
+as nove profundidades e os três atos exigidos pelo contrato validado; o piloto
+não cria biomas ou conteúdo novos. As bifurcações têm duas rotas e convergem
+no node principal da profundidade seguinte.
+
+Os manifests legados declaram um destino linear fixo em `legacy.next`. Um
+adapter exclusivo da porta de load do piloto remove essa associação do
+`LoadedStage` entregue ao router, sem alterar o módulo registrado ou o
+`LevelDefinition`. Assim, `PhysicalExitResolver` cria slots sintéticos e
+`CampaignExitBinder` continua sendo a autoridade da associação edge/exit;
+nenhuma regra de target é duplicada na cena.
+
+#### Interação e transição
+
+`CampaignRouter.inspect()` fornece as coordenadas e os `physicalExitId`s. Depois
+da última onda, a cena instancia `tile_stairs` nas coordenadas resolvidas e
+grava o ID estável no objeto Phaser. Sobreposição apenas estabelece proximidade;
+a navegação requer o comando explícito `E`. A cena nunca escolhe destino por
+índice, coordenada ou ordem visual.
+
+Ao interagir, a cena chama `prepare(physicalExitId)`. Somente uma preparação
+pode estar ativa e o estágio de destino já deve estar carregado. Em seguida,
+`confirm(preparationId)` confirma cursor, histórico e save da run. Falha de
+prepare ou confirm mantém o mapa atual; rollback conhecido é informado no HUD e
+`storage-state-unknown` bloqueia nova transição até restart/reconciliação. O
+mapa, ondas, inimigos, câmera, colisões, recursos do player e recompensa usam o
+mesmo rebuild do fluxo legado. Morte reinicia o node confirmado e restaura o
+router pelo save da run.
+
+A recompensa legada é aplicada apenas depois da confirmação do run save. A
+API atual de progressão não aceita `transitionId` para deduplicação; portanto
+não se declara exatamente-uma-vez numa queda entre a confirmação e a aplicação
+da recompensa. O save narrativo `umbra-trail-campaign-v1` não é escrito pelo
+piloto. Não há transação entre essa chave e `umbra-trail-run-v1`.
+
+#### Critérios observáveis
+
+- flag OFF não cria composition de campanha nem altera saídas, ordem ou saves;
+- flag ON restaura ou cria uma run concreta e exibe os IDs retornados por
+  `inspect()` nos objetos interativos;
+- escolher cada `physicalExitId` da primeira bifurcação chega ao node correto e
+  ambas as rotas convergem preservando o percurso;
+- load, binding ou persistência falhos não trocam o mapa exibido;
+- restart por morte mantém flag, `runId`, `runSeed` e cursor confirmado;
+- testes de integração mockada caracterizam interação, bifurcação, rejoin,
+  rollback e persistência; colisão e input reais continuam exigindo validação
+  manual no navegador.
+
+Evidência: `branchingCampaignPilot.test.ts` e
+`branchingCampaignPhaserIntegration.test.ts` adicionam 12 cenários para criação
+e restauração da run, duas rotas, rejoin, determinismo, save narrativo intacto,
+save corrompido, falha inicial sem save parcial, flag OFF/ON, IDs físicos,
+comando explícito, rollback e restart. A suíte completa passou com 741 testes
+em 45 suítes; typecheck, build (702 módulos), architecture gate (1.695 arquivos
+e 3.683 dependências), traceability gate (dez registros v1 e oito legados) e
+`git diff --check` passaram.
+
 ## Riscos e decisões adiadas
 
 - o catálogo procedural atual contém biomas de outra direção artística; o
