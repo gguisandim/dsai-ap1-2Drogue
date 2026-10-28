@@ -107,6 +107,11 @@ npm install
 npm run dev
 ```
 
+Durante o servidor de desenvolvimento, o visualizador headless da campanha fica
+disponível em `http://localhost:5173/world-lab.html`. O **Umbra World Lab** usa
+um catálogo marcado como Fixture e os geradores, loaders e validadores reais;
+ele não faz parte da entrada de produção.
+
 Validação completa:
 
 ```sh
