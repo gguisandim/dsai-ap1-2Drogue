@@ -758,6 +758,98 @@ suíte completa passou com 699 testes em 40 suítes. Typecheck, build (698 módu
 architecture gate (1.674 arquivos/3.617 dependências), traceability gate (sete
 registros v1 e oito legados explícitos) e `git diff --check` também passaram.
 
+### Etapa 8.5 — Campaign Router headless (2026-10-28)
+
+O router pertence a `src/application/stages/` e coordena contratos públicos sem
+introduzir navegação em `stages`, `narrative` ou Phaser:
+
+```text
+CampaignRunState
+  → StageLoader(current)
+  → PhysicalExitResolver
+  → CampaignExitBinder
+  → physicalExitId selecionado
+  → StageLoader(target)
+  → preparação imutável
+  → confirmação em memória
+  → CampaignRunSaveService
+```
+
+#### Pré-requisito de persistência ausente
+
+Apesar de o pedido desta etapa citar `CampaignRunState` e
+`CampaignRunSaveService` como existentes, o repositório possuía apenas
+`CampaignSaveService`, cuja autoridade é o snapshot narrativo stage-scoped. A
+Etapa 8.5 implementa, portanto, o contrato mínimo de run previsto na seção
+“Persistência”, sem modificar ou copiar o save narrativo:
+
+- `CampaignRunState` contém graph, cursor confirmado, histórico de nodes/edges,
+  revisitas, edges reveladas, placements físicos por node, checkpoints
+  `StageResumeState` e IDs de transição confirmados;
+- a chave aditiva é `umbra-trail-run-v1`, com envelope
+  `umbra-trail-run-save` versão 1;
+- `CampaignRunSaveService` valida dados externos, referências, identidade,
+  checkpoints e placements antes de expor ou gravar estado;
+- o serviço não lê nem escreve `umbra-trail-campaign-v1`, profile, settings ou
+  saves legados.
+
+#### Propriedade e protocolo
+
+Uma instância de `CampaignRouter` é a única proprietária do cursor em memória.
+`inspect()` carrega o node atual, resolve suas saídas e produz um
+`CampaignNavigationSnapshot` canônico. Disponibilidade exige edge revelada,
+limite de travessia não excedido e, quando aplicável, elegibilidade externa da
+condição e unlock narrativo do `stageExitId`. O router não reimplementa o
+avaliador narrativo.
+
+`prepare(physicalExitId)` usa exclusivamente o ID físico. A preparação valida o
+binding e carrega o target com `runId`, `node.stageSeed`, checkpoint do target e
+`stageInstanceId = targetNodeId`; nenhum estado ou save muda. Apenas uma
+preparação pode existir por router.
+
+`confirm(preparationId)` troca a referência imutável do estado uma vez e depois
+persiste. Falha de persistência restaura imediatamente a referência anterior.
+O save faz preflight otimista dos bytes anteriores. Se `write` lançar, relê a
+chave: bytes novos significam confirmação verificada; bytes anteriores
+significam rollback seguro; qualquer outro conteúdo produz
+`storage-state-unknown` e requer reconciliação pelo chamador. Não se declara
+transação entre o run save e o save narrativo, nem exatamente-uma-vez para
+efeitos externos.
+
+Transição para `campaign.complete` marca a run concluída e mantém o último node
+como cursor auditável. Transições repetidas, preparação concorrente, IDs
+inexistentes, edges bloqueadas e confirmação stale falham tipadamente.
+
+#### World Lab
+
+`CampaignNavigationSnapshot` é serializável e preserva node, stage, edge,
+`physicalExitId`, `stageExitId`, target e disponibilidade. O World Lab pode
+consumi-lo por adapter, mas o router não importa `devtools` e a interface
+SVG/DOM não é alterada nesta etapa.
+
+#### Critérios observáveis
+
+- branch selecionado por ID chega ao target correto e rejoin preserva histórico;
+- target é carregado antes de qualquer mutação;
+- falhas de current load, resolver, binder, target load e save preservam estado;
+- mesma run produz snapshot e preparation IDs iguais;
+- save/load restaura cursor, histórico, placements, checkpoints e identidades;
+- save corrompido/incompatível falha sem sobrescrita;
+- testes cobrem concorrência, repetição, bloqueio, rollback e recuperação após
+  erro de storage;
+- gates, typecheck, suíte completa, build e `git diff --check` passam.
+
+Evidência: `campaignRouter.test.ts` cobre 16 cenários de branch/rejoin,
+seleção exclusiva por `physicalExitId`, edge inexistente/bloqueada, condição
+delegada, target preparado com seed/checkpoint antes da mutação, concorrência,
+repetição, falhas de current/target loader, resolver e binder, rollback de
+write, write verificado após erro, storage desconhecido, round-trip da run,
+preservação do save narrativo, placement persistido incompatível, corrupção,
+identidade, determinismo e conclusão. A suíte completa passou com 729 testes em
+43 suítes; typecheck, build (701 módulos), architecture gate (1.692 arquivos e
+3.668 dependências), traceability gate (nove registros v1 e oito legados) e
+`git diff --check` passaram.
+
 ## Riscos e decisões adiadas
 
 - o catálogo procedural atual contém biomas de outra direção artística; o
