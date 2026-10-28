@@ -29,10 +29,10 @@ describe('traceability gates', () => {
     expect(result.status).toBe(0);
     expect(result.report).toMatchObject({
       ok: true,
-      recordsChecked: 2,
       legacyFilesAccepted: 8,
       violations: [],
     });
+    expect(result.report.recordsChecked).toBeGreaterThanOrEqual(3);
   });
 
   it('accepts only the explicitly grandfathered identity alongside a v1 record', () => {

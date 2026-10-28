@@ -1,4 +1,5 @@
 import type {
+  CampaignNodeId,
   ChapterId,
   DialogueDefinition,
   DialogueId,
@@ -55,6 +56,12 @@ export interface NarrativeIdentityScope {
   readonly chapterId: ChapterId;
   readonly stageId: StageId;
   readonly manifestRevision: number;
+  /**
+   * Identity of a campaign node occurrence. Legacy stage-scoped saves omit it;
+   * campaign saves require it so two occurrences of the same template do not
+   * share events, rules, operations or checkpoints.
+   */
+  readonly stageInstanceId?: CampaignNodeId;
 }
 
 export interface PendingRewardOperation {

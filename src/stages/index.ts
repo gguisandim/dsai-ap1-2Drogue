@@ -1,9 +1,27 @@
 export type {
+  CampaignAct,
+  CampaignActId,
+  CampaignBranchId,
+  CampaignEdge,
+  CampaignEdgeId,
+  CampaignEdgeKind,
+  CampaignGraph,
+  CampaignGraphDiagnostic,
+  CampaignGraphDiagnosticCode,
+  CampaignGraphId,
+  CampaignNode,
+  CampaignNodeId,
+  CampaignNodeKind,
+  CampaignSlotId,
   ChapterId,
   ChapterManifest,
   DialogueId,
   MissionId,
+  NarrativeBeatId,
   NpcId,
+  PhysicalExit,
+  PhysicalExitId,
+  RegionTemplateId,
   StageAnchor,
   StageCondition,
   StageDiagnostic,
@@ -23,6 +41,7 @@ export type {
 export { StageRegistry, StageRegistryError } from './runtime/StageRegistry';
 export type { StageRegistryErrorCode } from './runtime/StageRegistry';
 export { StageValidator } from './runtime/StageValidator';
+export { CampaignGraphValidator } from './runtime/CampaignGraphValidator';
 export { createLegacyStageModule, registerLegacyStages } from './compatibility/LegacyStageAdapter';
 export { LegacyLevelAdapter } from './compatibility/LegacyLevelAdapter';
 export { ProceduralStageAdapter } from './compatibility/ProceduralStageAdapter';

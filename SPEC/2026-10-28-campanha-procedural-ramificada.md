@@ -532,14 +532,64 @@ retomar o mesmo grafo após reload.
 Cada item exige SPEC atualizada antes de código e termina com gates, typecheck,
 testes completos, build e `git diff --check`.
 
+### Etapa 8.1 — contratos e identidade (implementada em 2026-10-28)
+
+Implementa somente o item 1 da sequência. Não há gerador, resolver de saídas,
+persistência de run, router, integração com Phaser ou conteúdo de campanha.
+
+Entregas observáveis:
+
+- `src/stages/contracts/CampaignGraph.ts` declara `CampaignGraph`,
+  `CampaignNode`, `CampaignEdge`, `CampaignAct`, `PhysicalExit`, os aliases de ID
+  e os diagnósticos tipados do validador. O arquivo é exportado por
+  `src/stages/index.ts`.
+- `CampaignGraphValidator` em `src/stages/runtime/` é headless, puro e não lê
+  relógio, storage, Phaser ou gerador de mapas. `validate(graph)` devolve
+  diagnósticos ordenados e congelados; lista vazia aceita o grafo.
+- `NarrativeIdentityScope.stageInstanceId` é opcional. Quando ausente,
+  `narrativeScopePrefix` produz exatamente o prefixo legado. Quando presente,
+  acrescenta `.instance.<CampaignNodeId>` ao prefixo, de modo que duas
+  ocorrências do mesmo `stageId` não compartilham eventos, regras ou operações.
+- `CampaignSaveValidator` aceita o campo opcional, valida seu formato e compara
+  identidades por `stageInstanceId` quando ambos os lados o declaram. Save v1
+  sem o campo continua usando `stageId` como fallback.
+
+Invariantes verificadas pelo validador:
+
+1. schema e versão de gerador iguais a 1, revisões positivas, IDs estáveis e
+   únicos, referências de nó/aresta/ato existentes;
+2. exatamente três atos com ordinais 1–3 e faixas de profundidade `[0,2]`,
+   `[3,5]` e `[6,8]`, alinhadas à profundidade de cada nó;
+3. profundidades 0–8, uma posição por caminho, marcos exclusivos em 2, 5 e 8,
+   com `requiredBeatIds` produzidos pelo próprio marco;
+4. arestas forward/branch/rejoin avançam exatamente uma profundidade, sem
+   ciclos; arestas return só regressam dentro do mesmo ato, com limite 2;
+5. bifurcação com largura máxima dois, rótulos de ramo únicos e rejoin comum na
+   profundidade seguinte; nenhum nó ultrapassa duas saídas;
+6. entrada única, todo nó alcançável a partir dela, todo nó não terminal com
+   caminho forward até `campaign.complete` e único predecessor de conclusão;
+7. entre nove e doze nós; duas ocorrências do mesmo template exigem IDs e
+   `stageSeed` distintos.
+
+Testes: `src/tests/campaignGraph.test.ts` cobre um grafo canônico positivo, IDs
+duplicados, referências ausentes, marcos inválidos, bifurcação sem rejoin,
+ciclo/aresta regressiva, nó inalcançável, softlock, conclusão fora do último
+marco, repetição de template e escopo de identidade narrativa com e sem
+`stageInstanceId`.
+
+Fora desta etapa: `RegionTemplate`, elegibilidade, `CampaignGraphGenerator`,
+`PhysicalExitResolution`, saves de run, `StageDirector` de campanha e qualquer
+alteração em `GameScene`, combate, IA, procedural ou Phaser.
+
 ## Riscos e decisões adiadas
 
 - o catálogo procedural atual contém biomas de outra direção artística; o
   mapeamento amazônico exige pesquisa e SPEC cultural própria;
 - layouts pequenos podem não comportar bifurcação; capacidade e fallback devem
   ser provados antes da integração Phaser;
-- `CampaignSaveService` atual é stage-scoped e a identidade ainda não possui
-  node; `stageInstanceId` é bloqueio explícito, não detalhe a contornar;
+- `CampaignSaveService` continua stage-scoped; a Etapa 8.1 adicionou
+  `stageInstanceId` opcional, mas checkpoint e cursor por nó só entram com o
+  save de run;
 - persistência coordenada em duas chaves não é transação atômica; o journal
   recuperável reduz inconsistência, mas não substitui deduplicação externa;
 - revisitas aumentam combinações de estado e duração; limites permanecem baixos
@@ -559,7 +609,8 @@ testes completos, build e `git diff --check`.
 - StageLoader, StageDirector e persistência têm responsabilidades não duplicadas;
 - retorno, revisita, missões secundárias e revelações obrigatórias são tratados;
 - protótipo e sequência incremental têm rollback e testes observáveis;
-- nenhuma mudança executável é realizada nesta etapa.
+- nenhuma mudança executável além da Etapa 8.1 registrada acima foi realizada
+  na etapa documental;
 
 ## Evidência da etapa documental
 

@@ -96,13 +96,21 @@ export function validateCampaignIdentity(
     add(diagnostics, 'save.identity.revision-invalid', 'manifestRevision must be a positive safe integer.',
       [...path, 'manifestRevision']);
   }
+  if (value.stageInstanceId !== undefined && !isStableId(value.stageInstanceId)) {
+    add(diagnostics, 'save.identity.stage-instance-invalid',
+      'stageInstanceId must be a stable lowercase identifier when present.',
+      [...path, 'stageInstanceId']);
+  }
   return true;
 }
 
 export function identitiesEqual(left: CampaignSaveIdentity, right: CampaignSaveIdentity): boolean {
+  const sameInstance = left.stageInstanceId === undefined || right.stageInstanceId === undefined ||
+    left.stageInstanceId === right.stageInstanceId;
   return left.campaignId === right.campaignId && left.runId === right.runId &&
     left.runSeed === right.runSeed && left.chapterId === right.chapterId &&
-    left.stageId === right.stageId && left.manifestRevision === right.manifestRevision;
+    left.stageId === right.stageId && left.manifestRevision === right.manifestRevision &&
+    sameInstance;
 }
 
 export function validateNarrativeSnapshot(
