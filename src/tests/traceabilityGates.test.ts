@@ -77,4 +77,10 @@ describe('traceability gates', () => {
       status: 'pending',
     }));
   });
+
+  it('preserves Markdown headings inside the effective prompt block', () => {
+    const result = runTraceabilityGate('test-fixtures/traceability-gates/markdown-headings');
+    expect(result.status).toBe(0);
+    expect(result.report).toMatchObject({ ok: true, recordsChecked: 1, violations: [] });
+  });
 });

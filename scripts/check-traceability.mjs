@@ -72,9 +72,11 @@ function modifiedFilesFrom(content) {
 }
 
 function effectivePromptFrom(content) {
-  const section = /## Prompt efetivamente recebido\s*\r?\n([\s\S]*?)(?=\r?\n## |$)/.exec(content)?.[1];
-  if (!section) return undefined;
-  return /```(?:text)?\s*\r?\n([\s\S]*?)\r?\n```/.exec(section)?.[1];
+  const heading = /## Prompt efetivamente recebido\s*\r?\n/.exec(content);
+  if (!heading) return undefined;
+  const sectionStart = heading.index + heading[0].length;
+  const section = content.slice(sectionStart);
+  return /^\s*```(?:text)?[ \t]*\r?\n([\s\S]*?)\r?\n```/.exec(section)?.[1];
 }
 
 function violation(file, rule, message) {
