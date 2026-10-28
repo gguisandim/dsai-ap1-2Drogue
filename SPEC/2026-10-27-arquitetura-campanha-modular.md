@@ -587,6 +587,44 @@ Sem alterar produção, adicionar testes que congelem:
 
 Critério de saída: testes falham se uma extração futura alterar o comportamento observado.
 
+#### Baseline de caracterização — 2026-10-28
+
+Esta etapa é executada exclusivamente por testes e documentação. Ela não introduz
+contratos de campanha, não altera `GameScene` e não modifica combate, simulação,
+progressão ou geração procedural.
+
+Prova automatizada: `src/tests/stageCharacterization.test.ts`, com 16 testes de
+caracterização.
+
+Cobertura headless implementada:
+
+- seleção e sequência do fluxo autoral atual, incluindo limites de índice;
+- sequência padrão de presets procedurais e determinismo para seed fixa;
+- composição das ondas autorais e do fallback legado, início/conclusão de onda e
+  liberação de saídas após a última onda;
+- transição normal, conclusão da última fase, proteção contra transição duplicada
+  e restart após morte;
+- argumentos e efeitos persistidos da recompensa de fase, inclusive o
+  comportamento atual de conclusões repetidas;
+- round-trip do documento de editor v1;
+- chaves e formatos atuais de progressão, aparência e configurações.
+
+Comportamentos que um teste Node não valida integralmente sem inicializar Phaser:
+
+- ordem real de callbacks de `overlap`/`collider` e o contato físico com tiles de
+  saída;
+- criação, animação, visibilidade e destruição de sprites, tweens e partículas;
+- temporização do relógio da cena, pausa, shutdown e limpeza de recursos;
+- limites efetivos de câmera e física e reposicionamento visual do jogador;
+- integração de áudio durante a transição.
+
+Os testes caracterizam as decisões imediatamente antes dessas fronteiras e usam
+dublês apenas para os efeitos Phaser. Pontos de isolamento recomendados para uma
+etapa posterior, sem implementá-los agora: seleção pura do run, composição pura da
+agenda de ondas, porta de relógio/agendamento, porta de efeitos de cena e um
+coordenador de transição que receba progressão e navegação. Esses pontos permitem
+testar o fluxo sem converter Phaser em parte dos contratos de estágio.
+
 ### Etapa 1 — contratos, validação e registry headless
 
 Implementar `src/stages/contracts/`, `StageValidator` e `StageRegistry`, sem importá-los no `GameScene`. Registrar adaptadores das fases atuais em testes.
