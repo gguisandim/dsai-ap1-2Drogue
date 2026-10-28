@@ -5,6 +5,15 @@ export type {
   CampaignEdge,
   CampaignEdgeId,
   CampaignEdgeKind,
+  CampaignExitAssociation,
+  CampaignExitBinding,
+  CampaignExitBindingDiagnostic,
+  CampaignExitBindingDiagnosticCode,
+  CampaignExitBindingFailure,
+  CampaignExitBindingFailureCode,
+  CampaignExitBindingRequest,
+  CampaignExitBindingResolution,
+  CampaignExitBindingResult,
   CampaignGraph,
   CampaignGraphDiagnostic,
   CampaignGraphDiagnosticCode,
@@ -55,6 +64,7 @@ export { StageValidator } from './runtime/StageValidator';
 export { CampaignGraphValidator } from './runtime/CampaignGraphValidator';
 export { CampaignGraphGenerator } from './runtime/CampaignGraphGenerator';
 export { PhysicalExitResolver } from './runtime/PhysicalExitResolver';
+export { CampaignExitBinder } from './runtime/CampaignExitBinder';
 export { createLegacyStageModule, registerLegacyStages } from './compatibility/LegacyStageAdapter';
 export { LegacyLevelAdapter } from './compatibility/LegacyLevelAdapter';
 export { ProceduralStageAdapter } from './compatibility/ProceduralStageAdapter';

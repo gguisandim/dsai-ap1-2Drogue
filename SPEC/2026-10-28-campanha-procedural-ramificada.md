@@ -698,6 +698,66 @@ queda para outro attempt por separação, entidades/NPCs reservados, hazards,
 mapa pequeno, área desconectada, capacidade, spawn ausente, digest estável e
 request inválida.
 
+### Etapa 8.4 — vinculação canônica de saídas (2026-10-28)
+
+Implementa a costura headless, posterior ao placement, entre grafo, manifesto e
+saída física:
+
+```text
+CampaignEdge → StageExitDefinition? → PhysicalExit → CampaignNode | campaign.complete
+```
+
+`CampaignExitBinder` recebe o `CampaignGraph`, `sourceNodeId`, o `LoadedStage` e
+o `PhysicalExitResult` já produzido pela Etapa 8.3. Ele não chama o resolver,
+não escolhe tiles, não modifica o grafo e não corrige inconsistências.
+
+Política canônica:
+
+1. o conjunto autoritativo de arestas é exatamente o conjunto de arestas do
+   grafo cujo `sourceNodeId` corresponde ao request;
+2. a saída física é localizada exclusivamente por `edgeId`; `id`, source,
+   target e `physicalExitId` precisam coincidir com a aresta;
+3. quando `physical.stageExitId` identifica uma entrada em `manifest.exits`, o
+   vínculo é `manifest-exit`. O `targetStageId` declarado precisa ser o
+   `stageId` do node de destino ou `campaign.complete`;
+4. quando não existe entrada com esse ID, só é permitido um vínculo
+   `synthetic-slot` se `physical.stageExitId === edge.exitSlotId`. Assim, fases
+   sem saída explícita continuam compatíveis sem atribuição por posição;
+5. saída de manifesto não usada é permitida para compatibilidade legada, mas
+   nunca é escolhida como fallback pelo binder; saída física adicional é erro;
+6. IDs repetidos em edge, saída física ou manifesto, tile físico reutilizado,
+   referência ausente e destino incompatível invalidam o resultado inteiro;
+7. bindings e diagnósticos são ordenados canonicamente. Reordenar nodes, edges,
+   `manifest.exits` ou physical exits não altera o resultado.
+
+Um binding bem-sucedido preserva `edgeId`, `exitSlotId`, `stageExitId`,
+`physicalExitId`, source/target node, target stage, edge, definição de manifesto
+quando houver e coordenada física. Coordenada e ordem de array nunca são usadas
+como identidade.
+
+Falhas esperadas são discriminadas: request inválido, resolução física anterior
+falha, referência de node/edge inválida, saída física ausente/adicional,
+identidade física incompatível, manifesto duplicado/reutilizado, associação de
+slot ausente e destino inconsistente. Não existe sucesso parcial.
+
+Compatibilidade: não altera `CampaignGraphGenerator`, `PhysicalExitResolver`,
+`StageManifest`, `LoadedStage` ou Phaser. O futuro router de aplicação consumirá
+o binding para iniciar a transição; render, colisão e animação permanecem fora
+desta etapa.
+
+Rastreabilidade: o parser do gate passou a ler o bloco cercado imediatamente
+após `Prompt efetivamente recebido`, em vez de confundir títulos Markdown `##`
+do próprio prompt com o fim da seção. A fixture dedicada comprova que o texto
+efetivo pode ser preservado integralmente sem abrir arquivos sem schema v1.
+
+Evidência: `campaignExitBinder.test.ts` cobre 14 casos de saída única,
+bifurcações com duas e três saídas, manifesto/anchor explícito, slot sintético,
+IDs duplicados, saída ausente/adicional, destinos incompatíveis, reordenação,
+convergência, falha física anterior, atomicidade e repetição determinística. A
+suíte completa passou com 699 testes em 40 suítes. Typecheck, build (698 módulos),
+architecture gate (1.674 arquivos/3.617 dependências), traceability gate (sete
+registros v1 e oito legados explícitos) e `git diff --check` também passaram.
+
 ## Riscos e decisões adiadas
 
 - o catálogo procedural atual contém biomas de outra direção artística; o
