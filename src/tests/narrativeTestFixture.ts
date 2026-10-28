@@ -1,4 +1,16 @@
-import type { NarrativeContent } from '../narrative';
+import type { CampaignSaveIdentity, NarrativeContent } from '../narrative';
+
+export function saveIdentity(overrides: Partial<CampaignSaveIdentity> = {}): CampaignSaveIdentity {
+  return {
+    campaignId: 'test.campaign',
+    runId: 'test.run-1',
+    runSeed: 'seed-731',
+    chapterId: 'test.chapter',
+    stageId: 'test.stage',
+    manifestRevision: 3,
+    ...overrides,
+  };
+}
 
 export function narrativeContent(): NarrativeContent {
   return {

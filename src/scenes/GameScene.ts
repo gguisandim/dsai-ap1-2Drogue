@@ -25,6 +25,13 @@ import { DamageType, GameCombatBridge } from '../combat';
 import { NavigationService } from '../ai';
 import { EnemyDefeatProgress, ProgressionService } from '../progression';
 import { ENEMY_PRESENTATIONS } from '../data/EnemyPresentation';
+import {
+  GameNarrativeSession,
+  GameStageCompositionRoot,
+  createBrowserCampaignSaveStorage,
+} from '../application/stages';
+import type { GameSceneStageResolution } from '../application/stages';
+import type { LoadedStage } from '../stages';
 
 interface GameSceneInitData {
   skipControls?: boolean;
@@ -32,6 +39,9 @@ interface GameSceneInitData {
   proceduralPresets?: PresetId[];
   levelIndex?: number;
   halos?: number;
+  modularStageLoading?: boolean;
+  modularRunId?: string;
+  modularRunSeed?: string | number;
 }
 
 const DEFAULT_PROCEDURAL_RUN: readonly PresetId[] = [
@@ -107,6 +117,14 @@ export class GameScene extends Phaser.Scene {
   private proceduralSeed?: string | number;
   private proceduralPresets?: PresetId[];
   private startingHalos = 5000;
+  private modularStageLoading = false;
+  private modularRunId = 'legacy.verse.default-run';
+  private modularRunSeed: string | number = 'legacy.verse.default-seed';
+  private modularPersistenceEnabled = false;
+  private modularStageSource: GameSceneStageResolution['source'] = 'legacy';
+  private modularComposition?: GameStageCompositionRoot;
+  private modularLoadedStage?: LoadedStage;
+  private modularNarrativeSession?: GameNarrativeSession;
 
   constructor() {
     super('GameScene');
@@ -118,6 +136,11 @@ export class GameScene extends Phaser.Scene {
     this.configureLevelRun(data);
     this.currentLevelIndex = Phaser.Math.Clamp(data?.levelIndex ?? 0, 0, this.allLevels.length - 1);
     this.currentLevel = this.allLevels[this.currentLevelIndex];
+    this.modularStageLoading = data?.modularStageLoading === true;
+    this.modularRunId = data?.modularRunId?.trim() || 'legacy.verse.default-run';
+    this.modularRunSeed = data?.modularRunSeed ?? 'legacy.verse.default-seed';
+    this.modularPersistenceEnabled = Boolean(data?.modularRunId?.trim());
+    this.configureModularStage();
     this.startingHalos = Math.max(0, Math.floor(data?.halos ?? 5000));
     this.isTransitioning = false;
     this.levelClearedBannerShowing = false;
@@ -148,6 +171,34 @@ export class GameScene extends Phaser.Scene {
     this.allLevels = new ProceduralLevelFactory().createRun(requestedSeed, presets);
   }
 
+  private configureModularStage(): void {
+    this.modularStageSource = 'legacy';
+    this.modularComposition = undefined;
+    this.modularLoadedStage = undefined;
+    this.modularNarrativeSession = undefined;
+    if (!this.modularStageLoading || this.proceduralSeed !== undefined ||
+      this.currentLevel.id !== 'verse_01_atrium') return;
+
+    const campaignStorage = this.modularPersistenceEnabled
+      ? createBrowserCampaignSaveStorage()
+      : undefined;
+    const composition = new GameStageCompositionRoot({ campaignStorage });
+    const resolution = composition.resolveStage({
+      enabled: true,
+      legacyLevel: this.currentLevel,
+      runId: this.modularRunId,
+      runSeed: this.modularRunSeed,
+    });
+    this.modularStageSource = resolution.source;
+    if (resolution.source !== 'modular') return;
+
+    this.allLevels = [...this.allLevels];
+    this.allLevels[this.currentLevelIndex] = resolution.level;
+    this.currentLevel = resolution.level;
+    this.modularComposition = composition;
+    this.modularLoadedStage = resolution.loadedStage;
+  }
+
   public create(): void {
     this.physics.world.resume();
     // 1. Generate all vector textures
@@ -166,6 +217,7 @@ export class GameScene extends Phaser.Scene {
     this.buildMapFromDefinition(this.currentLevel);
     this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
     this.progression = new ProgressionService();
+    this.initializeModularNarrative();
 
     // 4. Create Player
     const spawn = this.findSpawnPoint(this.currentLevel);
@@ -279,9 +331,28 @@ export class GameScene extends Phaser.Scene {
       }
     });
     this.showChapterTitle(this.currentLevel.name);
+    this.modularNarrativeSession?.enterStage();
     this.createAimReticle();
     this.arrowChargeBar = this.add.graphics().setDepth(30).setVisible(false);
     if (loadSettings().showControls && !this.skipControlsGuide) this.showControlsGuide();
+  }
+
+  private initializeModularNarrative(): void {
+    if (!this.modularComposition || !this.modularLoadedStage) return;
+    const progression = this.progression.snapshot();
+    const created = this.modularComposition.createNarrativeSession(
+      this.modularLoadedStage,
+      {
+        campaignId: 'legacy.verse',
+        runId: this.modularRunId,
+        runSeed: this.modularRunSeed,
+      },
+      {
+        level: progression.level,
+        unlockedContent: progression.unlockedContent,
+      },
+    );
+    if (created.ok) this.modularNarrativeSession = created.session;
   }
 
   private setupColliders(): void {
@@ -435,12 +506,18 @@ export class GameScene extends Phaser.Scene {
       this.player.setActive(false);
       this.levelBannerText.setText('GAME OVER');
       this.levelBannerText.setVisible(true);
+      this.modularNarrativeSession?.save();
       this.time.delayedCall(1500, () => this.scene.restart({
         skipControls: true,
         levelIndex: this.currentLevelIndex,
         halos: this.player.halos,
         proceduralSeed: this.proceduralSeed,
         proceduralPresets: this.proceduralPresets,
+        ...(this.modularStageLoading ? {
+          modularStageLoading: true,
+          modularRunSeed: this.modularRunSeed,
+          ...(this.modularPersistenceEnabled ? { modularRunId: this.modularRunId } : {}),
+        } : {}),
       }));
     }
   }
@@ -728,6 +805,7 @@ export class GameScene extends Phaser.Scene {
   public advanceToNextLevel(): void {
     if (this.isTransitioning) return;
     this.isTransitioning = true;
+    this.modularNarrativeSession?.requestExit('legacy.next');
     const stageReward = this.progression.recordStageCompleted({
       stageId: this.currentLevel.id,
       difficulty: this.currentLevel.difficulty,
@@ -749,6 +827,10 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(400, () => {
       this.currentLevelIndex = (this.currentLevelIndex + 1) % this.allLevels.length;
       this.currentLevel = this.allLevels[this.currentLevelIndex];
+      this.modularNarrativeSession = undefined;
+      this.modularLoadedStage = undefined;
+      this.modularComposition = undefined;
+      this.modularStageSource = 'legacy';
 
       // Destroy all floor/lava images
       this.floorImages.forEach(img => img.destroy());

@@ -884,9 +884,79 @@ progressão ou `localStorage`.
 
 ### Etapa 5 — integração fina com a cena
 
-Objeto de SPEC futura. Substituir somente a seleção direta de arrays por um `LoadedStage`/adaptador, mantendo render, combate, colisões, ondas e transição existentes. Não é uma reescrita de `GameScene`.
+Integração piloto. Substituir somente a seleção da primeira fase legada por um
+`LoadedStage`/adaptador, mantendo render, combate, colisões, ondas e transição
+existentes. Não é uma reescrita de `GameScene`.
 
 Critério de saída: fluxo menu -> jogo -> próxima fase -> morte -> restart -> menu e modo procedural permanecem observacionalmente iguais.
+
+#### Recorte de implementação — 2026-10-28
+
+- a flag `modularStageLoading`, recebida em `GameScene.init`, é `false` por
+  padrão. Com a flag desligada, nenhum registry, loader, director ou serviço de
+  campanha é criado e `VERSE_SECTIONS` continua sendo a única fonte do fluxo
+  autoral atual;
+- o piloto cobre exclusivamente `verse_01_atrium`, primeira entrada de
+  `legacy.verse`. `GameSceneStageAdapter` chama `StageLoader` para essa identidade
+  e entrega `LoadedStage.level` à cena. Fases procedurais e qualquer outro ID
+  continuam no caminho legado;
+- falha tipada, exceção ou resultado incompatível do loader produz rollback
+  imediato para a mesma referência `LevelDefinition` selecionada pelo fluxo
+  antigo. Nenhum diagnóstico bloqueia a inicialização da cena;
+- `GameStageCompositionRoot` é a única montagem de `StageRegistry`, registros
+  legados e `StageLoader`. `StageDirector` nasce somente depois de um load modular
+  bem-sucedido; `CampaignSaveService` nasce somente quando existe um
+  `SaveStoragePort` e `modularRunId` explícito;
+- `BrowserCampaignSaveStorage` é um adapter application-only sobre a superfície
+  mínima `getItem`/`setItem`. Ele não remove chaves, não importa Phaser e não é
+  conhecido pelos módulos headless. A lógica de conflito e preservação continua
+  em `CampaignSaveService`;
+- a cena permanece autoridade para mapa ativo, índice, inimigos, ondas, itens,
+  halos transitórios, morte, transição e `ProgressionService`. O director é a
+  única autoridade do snapshot narrativo; não existe sincronização reversa de
+  progressão, grupos Phaser ou `StageResumeState` para o estado narrativo;
+- `runId` e `runSeed` opcionais são propagados no restart. Na ausência deles, o
+  loader usa IDs determinísticos somente para a resolução headless, mas a
+  persistência de campanha fica desativada. Retomadas antigas, que não carregam
+  os novos campos nem a flag, permanecem integralmente no caminho legado;
+- ao entrar na fase piloto, o runtime publica `stage.entered`; ao solicitar a
+  saída, publica `stage.exit.requested`. O estado é salvo depois de cada operação
+  somente quando o adapter de campanha existe. Falha de save não altera nem
+  interrompe jogabilidade, recompensa ou transição legadas;
+- operações externas pendentes são apenas expostas por `pendingRewardCommands`.
+  Um consumidor futuro aplica pelo `operationId` e chama a confirmação somente
+  após sucesso; a confirmação persiste o novo snapshot. Esta etapa não conecta
+  recompensas narrativas a `ProgressionService` e não declara exatamente-uma-vez;
+- morte salva o snapshot narrativo disponível e reinicia com a mesma flag,
+  identidade e posição legada. A transição para `verse_02_galeria` encerra a
+  sessão modular piloto e volta ao objeto legado já existente no array;
+- `umbra-trail-run-v1` continua ausente: não há estado concreto novo de mapa,
+  coletas ou entidades além do que a cena já transporta no restart.
+
+Critérios observáveis: flag OFF não chama o loader e preserva igualdade por
+referência; flag ON carrega `verse_01_atrium` semanticamente igual pelo loader;
+outro ID ou procedural não chama o loader; falha retorna o objeto legado; a
+requisição preserva run/seed; transição concede a mesma recompensa e reconstrói
+`verse_02_galeria`; morte propaga os mesmos dados antigos mais os campos modulares
+somente quando a flag está ativa; save de campanha não toca as três chaves
+existentes; confirmação inexistente ou duplicada falha sem mutação.
+
+Provas automatizadas: `gameStageAdapter.test.ts` cobre flag, seleção, seed,
+falhas tipadas, exceções e rollback; `gameStageComposition.test.ts` cobre a
+montagem real, criação tardia da sessão narrativa, storage aditivo e operações
+pendentes; `stageGameModularIntegration.test.ts` cobre flag OFF/ON, procedural,
+retomada em outra fase, transição, recompensa legada, morte, restart e save
+dentro do shell headless da cena. As três suítes adicionam 16 testes. Em
+2026-10-28, typecheck, build e as 33 suítes passaram, totalizando 636 testes — os
+620 anteriores mais os 16 desta etapa. `git diff --check` não encontrou erros.
+
+Limitações remanescentes: o piloto não tenta manter uma sessão narrativa ao
+entrar na segunda fase; falhas do loader e do save fazem rollback/fail-open sem
+UI de diagnóstico; nenhuma operação pendente é aplicada a progressão nesta
+etapa; e exatamente-uma-vez continua dependendo de deduplicação por
+`operationId` no consumidor futuro. Persistência só é ativada quando o chamador
+fornece `modularRunId` concreto e existe `localStorage`; retomadas antigas e a
+flag ausente não criam nem consultam save de campanha.
 
 ### Etapa 6 — primeiro capítulo modular
 
@@ -918,7 +988,9 @@ Todas as etapas terminam com `npm run build` e `npm test -- --runInBand`. Testes
 - `AGENTS.md` preserva SPEC, prompts, auditoria, testes e trailers de commit;
 - compatibilidade cobre perfil, ajustes, progressão v1, restart atual, fases legadas, procedural e editor v1;
 - a ordem incremental possui critério de saída e testes em cada etapa;
-- nenhuma mudança desta etapa toca jogabilidade, `GameScene`, combate, procedural, código gerado ou assets;
+- a integração fina toca `GameScene` somente na costura de seleção, sinais,
+  save e propagação da flag; não muda regras de jogabilidade, combate,
+  procedural, código gerado ou assets;
 - abstrações sem consumidor previsto ficam fora do contrato.
 
 ## Fora do escopo
