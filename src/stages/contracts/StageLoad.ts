@@ -14,6 +14,10 @@ import type {
 export interface StageResumeState {
   readonly stageId: StageId;
   readonly manifestRevision: number;
+  /** Optional only for resume snapshots created before the Stage 2 run binding. */
+  readonly runId?: string;
+  /** Optional only for resume snapshots created before the Stage 2 run binding. */
+  readonly runSeed?: string | number;
   readonly flags: Readonly<Record<string, boolean | number | string>>;
   readonly missionStates: Readonly<Record<MissionId, MissionState>>;
   readonly collectedEntityIds: readonly string[];
@@ -39,12 +43,14 @@ export interface LoadedStage {
 }
 
 export type StageLoadFailureCode =
+  | 'invalid-request'
   | 'stage-not-found'
   | 'invalid-manifest'
   | 'invalid-reference'
   | 'generation-failed'
   | 'invalid-level'
-  | 'incompatible-save';
+  | 'incompatible-save'
+  | 'load-failed';
 
 export interface StageLoadFailure {
   readonly code: StageLoadFailureCode;

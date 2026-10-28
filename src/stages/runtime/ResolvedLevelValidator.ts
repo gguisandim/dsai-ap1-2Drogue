@@ -7,6 +7,10 @@ interface Point {
   readonly y: number;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 function compareDiagnostics(left: StageDiagnostic, right: StageDiagnostic): number {
   const leftKey = `${left.path.map(String).join('.')}|${left.code}|${left.referenceId ?? ''}`;
   const rightKey = `${right.path.map(String).join('.')}|${right.code}|${right.referenceId ?? ''}`;
@@ -34,6 +38,34 @@ export class ResolvedLevelValidator {
     ): void => {
       diagnostics.push({ code, severity, message, path, stageId, ...(referenceId ? { referenceId } : {}) });
     };
+
+    if (!isRecord(level as unknown)) {
+      add('level.structure.invalid', 'error', 'Resolved level must be an object.', ['level']);
+      return this.finish(diagnostics);
+    }
+
+    let collectionsValid = true;
+    const requireArray = (value: unknown, path: readonly (string | number)[], label: string): boolean => {
+      if (Array.isArray(value)) return true;
+      collectionsValid = false;
+      add('level.collection.invalid', 'error', `${label} must be an array.`, path);
+      return false;
+    };
+    requireArray(level.enemies, ['level', 'enemies'], 'Level enemies');
+    requireArray(level.items, ['level', 'items'], 'Level items');
+    requireArray(level.decorations, ['level', 'decorations'], 'Level decorations');
+    if (level.exits !== undefined) requireArray(level.exits, ['level', 'exits'], 'Level exits');
+    if (level.ambush !== undefined) requireArray(level.ambush, ['level', 'ambush'], 'Level ambush');
+    if (level.waves !== undefined && requireArray(level.waves, ['level', 'waves'], 'Level waves')) {
+      level.waves.forEach((wave, index) => {
+        if (!isRecord(wave as unknown) || !Array.isArray(wave.enemies)) {
+          collectionsValid = false;
+          add('level.wave.invalid', 'error', 'Level wave must contain an enemies array.', ['level', 'waves', index]);
+        }
+      });
+    }
+
+    if (!collectionsValid) return this.finish(diagnostics);
 
     if (typeof level.id !== 'string' || level.id.trim().length === 0) {
       add('level.id.required', 'error', 'Resolved level id is required.', ['level', 'id']);
@@ -84,6 +116,7 @@ export class ResolvedLevelValidator {
           ['level', 'tileMap', y],
         );
       }
+      if (!Array.isArray(row)) return;
       row.forEach((tile, x) => {
         if (!Number.isInteger(tile) || tile < TileKind.Floor || tile > TileKind.Boss) {
           matrixValid = false;
@@ -130,10 +163,12 @@ export class ResolvedLevelValidator {
       add('level.exit.missing', 'error', 'Level requires an exit tile or boss tile.', ['level', 'tileMap']);
     }
 
-    if (spawns.length > 0 && destinations.length > 0) {
-      const reachable = this.reachable(level.tileMap, spawns[0]);
+    const reachableFromSpawn = spawns.length > 0
+      ? this.reachable(level.tileMap, spawns[0])
+      : undefined;
+    if (reachableFromSpawn && destinations.length > 0) {
       destinations.forEach(point => {
-        if (!reachable.has(`${point.x},${point.y}`)) {
+        if (!reachableFromSpawn.has(`${point.x},${point.y}`)) {
           add(
             'level.connectivity.unreachable-destination',
             'error',
@@ -145,21 +180,26 @@ export class ResolvedLevelValidator {
     }
 
     const validatePosition = (
-      point: Point,
+      point: unknown,
       path: readonly (string | number)[],
       label: string,
       gameplay: boolean,
     ): void => {
+      if (!isRecord(point)) {
+        add('level.position.invalid', 'error', `${label} position must be an object.`, path);
+        return;
+      }
       if (!Number.isInteger(point.x) || !Number.isInteger(point.y)) {
         add('level.position.invalid', 'error', `${label} position must use integer tile coordinates.`, path);
         return;
       }
-      if (!inBounds(point)) {
+      const positioned = point as unknown as Point;
+      if (!inBounds(positioned)) {
         add('level.position.out-of-bounds', 'error', `${label} position is outside the map.`, path);
         return;
       }
       if (!gameplay) return;
-      const tile = tileAt(point);
+      const tile = tileAt(positioned);
       if (isSolid(tile)) {
         add(
           'level.position.on-solid',
@@ -174,6 +214,14 @@ export class ResolvedLevelValidator {
 
     const validateEnemy = (enemy: EnemyPlacement, path: readonly (string | number)[], label: string): void => {
       validatePosition(enemy, path, label, true);
+      if (!isRecord(enemy as unknown)) return;
+      if (enemy.patrol !== undefined && !Array.isArray(enemy.patrol)) {
+        add('level.collection.invalid', 'error', `${label} patrol must be an array.`, [...path, 'patrol']);
+        return;
+      }
+      if (enemy.dropTable !== undefined && !Array.isArray(enemy.dropTable)) {
+        add('level.collection.invalid', 'error', `${label} dropTable must be an array.`, [...path, 'dropTable']);
+      }
       enemy.patrol?.forEach((point, index) => validatePosition(
         point,
         [...path, 'patrol', index],
@@ -198,6 +246,7 @@ export class ResolvedLevelValidator {
     )));
     level.exits?.forEach((exit, index) => {
       validatePosition(exit, ['level', 'exits', index], 'Legacy exit', false);
+      if (!isRecord(exit as unknown)) return;
       validatePosition(
         { x: exit.spawnX, y: exit.spawnY },
         ['level', 'exits', index, 'spawn'],
@@ -225,6 +274,14 @@ export class ResolvedLevelValidator {
             'stage.exit.anchor-not-walkable',
             'error',
             `Stage exit anchor is not walkable: ${exit.id}.`,
+            ['manifest', 'exits', index, 'anchor'],
+            exit.id,
+          );
+        } else if (reachableFromSpawn && !reachableFromSpawn.has(`${point.x},${point.y}`)) {
+          add(
+            'stage.exit.anchor-unreachable',
+            'error',
+            `Stage exit anchor is unreachable from spawn: ${exit.id}.`,
             ['manifest', 'exits', index, 'anchor'],
             exit.id,
           );

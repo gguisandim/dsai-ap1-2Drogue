@@ -243,6 +243,10 @@ Responsabilidades:
 export interface StageResumeState {
   stageId: StageId;
   manifestRevision: number;
+  /** Ausente apenas em snapshots anteriores ao reforço da Etapa 2. */
+  runId?: string;
+  /** Ausente apenas em snapshots anteriores ao reforço da Etapa 2. */
+  runSeed?: string | number;
   flags: Readonly<Record<string, boolean | number | string>>;
   missionStates: Readonly<Record<MissionId, MissionState>>;
   collectedEntityIds: readonly string[];
@@ -272,8 +276,9 @@ export interface StageLoader {
 }
 
 export interface StageLoadFailure {
-  code: 'stage-not-found' | 'invalid-manifest' | 'invalid-reference' |
-        'generation-failed' | 'invalid-level' | 'incompatible-save';
+  code: 'invalid-request' | 'stage-not-found' | 'invalid-manifest' |
+        'invalid-reference' | 'generation-failed' | 'invalid-level' |
+        'incompatible-save' | 'load-failed';
   stageId: StageId;
   diagnostics: readonly StageDiagnostic[];
 }
@@ -281,13 +286,14 @@ export interface StageLoadFailure {
 
 Ordem obrigatória do loader:
 
-1. resolver módulo pelo registry;
-2. validar schema, IDs e referências locais;
-3. resolver `LevelDefinition` autoral, legado ou procedural;
-4. executar os validadores existentes de mapa/conectividade aplicáveis e completar as lacunas de validação do formato legado;
-5. validar compatibilidade do resume sem mutar o save;
-6. devolver cópias defensivas e diagnósticos;
-7. em qualquer erro, não devolver fase parcial como sucesso.
+1. validar a estrutura da requisição na fronteira pública;
+2. resolver módulo pelo registry;
+3. validar schema, IDs e referências locais;
+4. validar estrutura, fase, revisão e vínculo de run do resume sem mutar o save;
+5. resolver `LevelDefinition` autoral, legado ou procedural;
+6. executar os validadores existentes de mapa/conectividade aplicáveis e completar as lacunas de validação do formato legado;
+7. devolver cópias defensivas e diagnósticos;
+8. em qualquer erro, não devolver fase parcial como sucesso nem propagar exceção não tipada.
 
 O loader não cria entidades Phaser, não concede recompensa, não persiste e não altera o mapa produzido pelo pipeline fora dos reparos que o pipeline atual já executa.
 
@@ -695,6 +701,44 @@ Provas automatizadas desta etapa: `stageLoaderLegacy.test.ts`,
 para os 14 mapas legados, igualdade com o factory procedural, determinismo,
 seeds, referências, cópias defensivas, resume, anchors, tiles, posições e
 conectividade.
+
+#### Reforço da Etapa 2 — resume, fronteira e alcançabilidade (2026-10-28)
+
+- `StageResumeState` passa a poder transportar `runId` e `runSeed`. Quando ambos
+  existem, o loader exige o mesmo `runId` da requisição e compara a seed pela
+  representação efetivamente usada pelo adapter procedural (`String(runSeed)`),
+  de modo que `731` e `"731"` permaneçam equivalentes porque produzem a mesma seed
+  efetiva. Um vínculo parcial, malformado ou divergente é `incompatible-save` e
+  impede a geração;
+- snapshots de resume criados antes deste reforço, sem os dois campos, continuam
+  aceitos para não quebrar consumidores headless existentes e produzem o warning
+  `stage.load.resume-binding-missing`. A Etapa 4 deverá persistir sempre os dois
+  campos nos novos saves e migrar snapshots antigos quando a origem da run for
+  conhecida; esta etapa não cria storage nem inventa um vínculo ausente;
+- toda a estrutura de `StageLoadRequest` e `StageResumeState` é validada antes da
+  resolução do mapa. Requisição malformada é `invalid-request`; resume malformado
+  é `incompatible-save`. Uma proteção final converte falhas inesperadas de uma
+  dependência injetada em `load-failed`, sempre sem `LoadedStage` parcial;
+- além de estar dentro do mapa e sobre tile transitável, todo anchor explícito
+  `{ kind: 'tile' }` de saída precisa pertencer ao conjunto alcançável a partir
+  do primeiro spawn. `map-exit` continua validando todos os tiles de saída (ou
+  boss terminal) e `player-spawn` não pode ter alcançabilidade estática provada,
+  pois seus offsets só ganham coordenada concreta no runtime futuro;
+- mapas e coleções estruturalmente inválidos retornados por conteúdo autoral ou
+  adapters são diagnósticos `invalid-level`, sem depender de exceções durante a
+  cópia. Cópias defensivas passam a ser comprovadas também em estruturas
+  narrativas aninhadas, patrulhas, drops, waves e diagnósticos congelados;
+- a compatibilidade dos 14 mapas legados e a seed efetiva existente não muda.
+  Nenhuma dessas garantias integra o loader ao Phaser ou altera a execução atual.
+
+Critérios observáveis deste reforço: resume inválido não chama o adapter
+procedural; bindings iguais carregam e divergentes falham; anchor transitável
+isolado falha; entradas malformadas e exceções inesperadas retornam falhas
+tipadas; duas resoluções equivalentes não compartilham estado mutável.
+
+Prova automatizada adicional: `stageLoaderHardening.test.ts`, com 10 testes. As
+quatro suítes `stageLoader*.test.ts` passam a somar 28 testes sem modificar os 18
+casos anteriores da Etapa 2.
 
 ### Etapa 3 — runtime narrativo headless
 
