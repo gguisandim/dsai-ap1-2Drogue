@@ -1,0 +1,55 @@
+import type { LevelDefinition } from '../../data/LevelData';
+import type { Result } from '../../simulation';
+import type { StageDiagnostic } from './StageDiagnostic';
+import type { MissionId, StageId, StageManifest } from './StageManifest';
+import type {
+  DialogueDefinition,
+  MissionDefinition,
+  MissionState,
+  NarrativeDefinition,
+  NpcDefinition,
+  StageEventRule,
+} from './StageModule';
+
+export interface StageResumeState {
+  readonly stageId: StageId;
+  readonly manifestRevision: number;
+  readonly flags: Readonly<Record<string, boolean | number | string>>;
+  readonly missionStates: Readonly<Record<MissionId, MissionState>>;
+  readonly collectedEntityIds: readonly string[];
+  readonly appliedOperationIds: readonly string[];
+}
+
+export interface StageLoadRequest {
+  readonly stageId: StageId;
+  readonly runId: string;
+  readonly runSeed: string | number;
+  readonly resume?: StageResumeState;
+}
+
+export interface LoadedStage {
+  readonly manifest: StageManifest;
+  readonly level: LevelDefinition;
+  readonly narrative: NarrativeDefinition;
+  readonly npcs: readonly NpcDefinition[];
+  readonly dialogues: readonly DialogueDefinition[];
+  readonly missions: readonly MissionDefinition[];
+  readonly events: readonly StageEventRule[];
+  readonly diagnostics: readonly StageDiagnostic[];
+}
+
+export type StageLoadFailureCode =
+  | 'stage-not-found'
+  | 'invalid-manifest'
+  | 'invalid-reference'
+  | 'generation-failed'
+  | 'invalid-level'
+  | 'incompatible-save';
+
+export interface StageLoadFailure {
+  readonly code: StageLoadFailureCode;
+  readonly stageId: StageId;
+  readonly diagnostics: readonly StageDiagnostic[];
+}
+
+export type StageLoadResult = Result<LoadedStage, StageLoadFailure>;

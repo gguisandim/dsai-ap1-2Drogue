@@ -659,6 +659,43 @@ Implementar `StageLoader`, `LegacyLevelAdapter` e adapter procedural usando as A
 
 Critério de saída: para toda fase legada, `LoadedStage.level` é semanticamente igual ao objeto atual; para mesma semente/preset, a fase procedural é igual à saída atual.
 
+#### Recorte de implementação — 2026-10-28
+
+- o loader recebe um `StageRegistry`, resolve apenas o módulo solicitado e retorna
+  `Result<LoadedStage, StageLoadFailure>` sem acessar cena, storage ou Phaser;
+- fases legadas são resolvidas por ID a partir dos três catálogos atuais e fases
+  procedurais delegam ao `ProceduralLevelFactory`; a seed efetiva é
+  `<runSeed>:stage:<stageId>` para impedir colisão entre módulos da mesma run;
+- toda resolução devolve cópias defensivas; chamadas repetidas com a mesma seed
+  são semanticamente iguais e não compartilham matrizes ou coleções mutáveis;
+- a validação pós-resolução cobre matriz retangular, tiles `0..9`, spawn, saída ou
+  boss, conectividade spawn-destinos, anchors, limites e posições de inimigos,
+  itens, ondas, emboscadas, patrulhas, decorações e saídas legadas;
+- paredes e pilares (`1` e `2`) são sólidos para posições jogáveis. Em módulos
+  novos, uma posição sobre esses tiles é erro; em layout `legacy`, é warning para
+  preservar a patrulha existente de `level_02_nave` e a terceira wave de
+  `level_05_clocktower`. Perigos `3` e `4` também produzem warning sem mutação,
+  preservando `level_09_limbo`; decorações podem ancorar em tile sólido e são
+  validadas apenas por limites, como exige o catálogo atual;
+- `map-exit` exige tile `5`; em fase de boss sem esse tile, o tile `9` é aceito
+  como destino terminal compatível. Anchors de tile precisam estar dentro do mapa
+  e em tile transitável;
+- qualquer erro de manifesto, referência, geração, mapa ou resume devolve falha
+  tipada sem `LoadedStage` parcial. A integração com `GameScene` permanece adiada
+  para a etapa 5.
+- o contrato público atual de `ProceduralLevelFactory` devolve apenas
+  `LevelDefinition`, sem warnings/reparos do `GenerationResult`. O loader valida
+  novamente o resultado final, mas não inventa essa telemetria; expô-la exigiria
+  mudança própria no contrato procedural. `SectionExit.to` também permanece como
+  índice legado validado apenas quanto ao formato, enquanto as referências novas
+  usam `StageManifest.exits`.
+
+Provas automatizadas desta etapa: `stageLoaderLegacy.test.ts`,
+`stageLoaderProcedural.test.ts` e `stageLoaderValidation.test.ts`, com 18 testes
+para os 14 mapas legados, igualdade com o factory procedural, determinismo,
+seeds, referências, cópias defensivas, resume, anchors, tiles, posições e
+conectividade.
+
 ### Etapa 3 — runtime narrativo headless
 
 Implementar `StageDirector` com contexto, sinais, condições, missões, eventos, comandos e idempotência. Ainda sem UI, NPC visual ou campanha real.
