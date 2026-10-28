@@ -24,3 +24,5 @@
 
 - Sessão bruta: `desconhecido`
 - Metadados adicionais: `desconhecido`
+- Política de commit: use `pendente` antes da consolidação; o gate deriva o
+  commit que adicionou este arquivo sem exigir que o registro seja reescrito.

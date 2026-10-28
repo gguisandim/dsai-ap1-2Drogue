@@ -3,6 +3,7 @@ import path from 'node:path';
 
 interface ArchitectureReport {
   readonly ok: boolean;
+  readonly exceptions: readonly { readonly id: string; readonly to: string }[];
   readonly violations: readonly { readonly rule: string; readonly message: string }[];
 }
 
@@ -21,6 +22,12 @@ describe('architecture gates', () => {
     const result = runArchitectureGate('.');
     expect(result.status).toBe(0);
     expect(result.report).toMatchObject({ ok: true, violations: [] });
+    expect(result.report.exceptions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'procedural-deterministic-random',
+        to: 'src/simulation/core/DeterministicRandom.ts',
+      }),
+    ]));
   });
 
   it('allows chapter content composed only from public contracts and local files', () => {
@@ -46,6 +53,21 @@ describe('architecture gates', () => {
       expect.objectContaining({
         rule: 'forbidden-transitive-runtime',
         message: expect.stringContaining('stage.ts -> src/stages/chapters/demo/helper.ts -> src/scenes/GameScene.ts'),
+      }),
+    ]));
+  });
+
+  it('does not let the RNG exception release another simulation module', () => {
+    const result = runArchitectureGate(
+      'test-fixtures/architecture-gates/invalid-procedural-simulation',
+    );
+    expect(result.status).toBe(1);
+    expect(result.report.violations).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        rule: 'forbidden-transitive-runtime',
+        message: expect.stringContaining(
+          'src/procedural/Bridge.ts -> src/simulation/core/SimulationKernel.ts',
+        ),
       }),
     ]));
   });

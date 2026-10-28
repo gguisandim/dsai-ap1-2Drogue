@@ -13,6 +13,13 @@ const FORBIDDEN_RUNTIME_PREFIXES = [
   'src/progression/',
   'src/ai/',
 ];
+const TRANSITIVE_RUNTIME_ALLOWLIST = Object.freeze([Object.freeze({
+  id: 'procedural-deterministic-random',
+  rootPrefixes: Object.freeze(['src/stages/', 'src/application/stages/']),
+  viaPrefix: 'src/procedural/',
+  target: 'src/simulation/core/DeterministicRandom.ts',
+  reason: 'StageLoader delega ao boundary procedural existente, que reutiliza somente o RNG determinístico.',
+})]);
 
 function normalize(value) {
   return value.split(path.sep).join('/');
@@ -118,6 +125,13 @@ function isForbiddenRuntime(file) {
 function isLegacyResultException(edge) {
   return edge.from === 'src/stages/contracts/StageLoad.ts' &&
     edge.to === 'src/simulation/index.ts' && edge.typeOnly;
+}
+
+function transitiveRuntimeException(start, currentPath, target) {
+  return TRANSITIVE_RUNTIME_ALLOWLIST.find(exception =>
+    exception.rootPrefixes.some(prefix => isInside(start, prefix)) &&
+    currentPath.some(item => isInside(item, exception.viaPrefix)) &&
+    target === exception.target);
 }
 
 function contentChapter(file) {
@@ -262,9 +276,7 @@ export function checkArchitecture(rootDirectory = process.cwd()) {
         if (!edge.to) continue;
         const nextPath = [...current.path, edge.to];
         if (isForbiddenRuntime(edge.to)) {
-          const throughProceduralAdapter = isInside(edge.to, 'src/simulation/') &&
-            current.path.some(item => isInside(item, 'src/procedural/'));
-          if (throughProceduralAdapter) continue;
+          if (transitiveRuntimeException(start, current.path, edge.to)) continue;
           if (current.path.length > 1) pushViolation(violations, {
             rule: 'forbidden-transitive-runtime', file: start, line: edge.line,
             message: `caminho transitivo alcança implementação proibida: ${nextPath.join(' -> ')}`,
@@ -288,12 +300,12 @@ export function checkArchitecture(rootDirectory = process.cwd()) {
       from: 'src/stages/contracts/StageLoad.ts',
       to: 'src/simulation/index.ts',
       reason: 'Import somente de tipo do Result público legado; sem dependência executável.',
-    }, {
-      id: 'procedural-deterministic-random',
-      from: 'src/stages/**',
-      to: 'src/procedural/** -> src/simulation/core/DeterministicRandom.ts',
-      reason: 'StageLoader delega ao boundary procedural existente, que reutiliza RNG determinístico.',
-    }],
+    }, ...TRANSITIVE_RUNTIME_ALLOWLIST.map(exception => ({
+      id: exception.id,
+      from: `${exception.rootPrefixes.join(' | ')} via ${exception.viaPrefix}`,
+      to: exception.target,
+      reason: exception.reason,
+    }))],
     violations: violations.map(({ key, ...item }) => item),
   };
 }

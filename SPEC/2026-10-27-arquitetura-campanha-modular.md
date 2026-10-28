@@ -1043,6 +1043,51 @@ canvas reais; uma validação end-to-end futura deve abrir o build em navegador 
 percorrer menu, piloto, transição e morte. A CI valida o snapshot atual, não
 reescreve nem audita semanticamente commits históricos.
 
+#### Hardening dos gates — 2026-10-28
+
+- a exceção transitiva procedural deixa de aceitar genericamente qualquer alvo
+  em `src/simulation/`. A allowlist passa a exigir simultaneamente: raiz em
+  `stages` ou `application/stages`, passagem por `src/procedural/` e destino
+  exato `src/simulation/core/DeterministicRandom.ts`. Qualquer outro módulo de
+  simulação continua proibido, mesmo quando alcançado através do procedural;
+- as oito identidades históricas autorizadas são os nomes exatos dos arquivos
+  01–08 já preservados. Prefixo numérico não concede status legado. Novo arquivo
+  Markdown em `prompts/` sem schema v1, fora dos documentos institucionais
+  explicitamente conhecidos, é uma violação;
+- `Prompt-ID` deve ser estável, estruturalmente válido e único entre todos os
+  registros v1. Campos duplicados, schema desconhecido, seções duplicadas ou
+  vazias, paths externos ao repositório e campos obrigatórios ausentes falham;
+- `Commit: pendente` representa somente um registro ainda não consolidado. O
+  gate tenta derivar o primeiro commit que adicionou o próprio arquivo com
+  `git log --diff-filter=A`, sem escrever hash no registro. Em worktree ainda
+  não commitado ou fixture sem Git, permanece pendente e é reportado, não
+  inventado. Hash explícito e `desconhecido` continuam aceitos conforme a
+  evidência disponível;
+- `AGENTS.md`, `prompts/MODELO-REGISTRO.md`, `prompts/README.md` e o verificador
+  usam a mesma política: nunca reescrever o prompt para consolidar metadados e
+  nunca criar um commit autorreferente somente para inserir seu próprio hash.
+
+Critérios observáveis adicionais: fixture procedural que alcança o RNG permitido
+passa; fixture que alcança outro módulo de simulação falha; cada histórico exato
+é aceito e um novo arquivo sem schema falha; IDs duplicados e registros
+estruturalmente inválidos falham; registro pendente sem Git passa com status
+pendente, enquanto um registro já presente no histórico pode obter o hash
+derivado sem modificar seus bytes.
+
+Provas do hardening: `architectureGates.test.ts` ganhou o caso negativo
+`procedural -> SimulationKernel`, que permanece bloqueado; o repositório real
+confirma a exceção positiva limitada a `DeterministicRandom.ts`.
+`traceabilityGates.test.ts` ganhou casos para identidade histórica explícita,
+arquivo numerado sem schema, `Prompt-ID` duplicado e commit ainda pendente. O
+registro 09 teve seu commit de adição derivado como `156bf8293c762cd002c56216421e96dbf74fde9a`
+sem alteração do arquivo; o registro 10 permaneceu pendente no worktree.
+
+Em 2026-10-28, os gates analisaram novamente 1.664 arquivos e 3.584
+dependências, validaram dois registros v1 e oito históricos explícitos, sem
+violações. Typecheck, build e 36 suítes passaram, totalizando 650 testes — os
+646 anteriores mais quatro testes de hardening. `git diff --check` não encontrou
+erros.
+
 ### Etapa 7 — primeiro capítulo modular
 
 Somente após as etapas anteriores e com SPEC narrativa/cultural própria. Criar conteúdo e assets está fora desta SPEC.

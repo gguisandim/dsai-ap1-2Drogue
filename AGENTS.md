@@ -36,10 +36,14 @@ A arquitetura modular de campanha está especificada em `SPEC/2026-10-27-arquite
   correspondente. Quando um dado não estiver disponível, escreva literalmente
   `desconhecido` ou `pendente`; nunca deduza modelo, sessão, execução ou hash.
 - Atualize a lista de arquivos e validações ao terminar o trabalho. Como o hash
-  ainda não existe antes do commit, `Commit: pendente` é válido no worktree; um
-  registro posterior pode associar o hash real sem alterar o prompt preservado.
+  ainda não existe antes do commit, `Commit: pendente` é válido. O gate deriva o
+  primeiro commit que adicionou o registro quando ele já está no histórico; não
+  reescreva o arquivo apenas para inserir o hash do próprio commit.
 - Registros v1 são aditivos. Não reescreva prompts 01–08, sessões brutas,
   `registro-completo.md` ou metadados legados para fazê-los caber no schema novo.
+- Somente os oito nomes históricos autorizados pelo gate são legado. Todo novo
+  arquivo de prompt deve usar schema v1 e um `Prompt-ID` único, mesmo que seu
+  nome comece com número.
 - Antes de um commit, execute `scripts/auditar-segredos-prompts.ps1` conforme o processo documentado no `README.md`.
 
 ## Limites arquiteturais
