@@ -38,3 +38,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-06 | [Combate, coletas e bestiário](./2026-10-06-combate-coletas-bestiario.md) |
 | 2026-10-06 | [Armas do catálogo](./2026-10-06-armas-catalogo.md) |
 | 2026-10-06 | [Entrega, documentação e publicação](./2026-10-06-entrega-documentacao-deploy.md) |
+| 2026-10-27 | [Arquitetura de campanha narrativa modular](./2026-10-27-arquitetura-campanha-modular.md) |

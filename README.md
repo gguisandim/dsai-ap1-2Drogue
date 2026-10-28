@@ -72,7 +72,7 @@ Separação exigida para a apresentação:
 
 | Métrica | Valor |
 |---|---:|
-| Specs datadas | 22 |
+| Specs datadas | 23 |
 | Prompts humanos indexados | 36 |
 | Sessões do Codex preservadas | 14 |
 | Suítes de teste | 15 |
@@ -82,6 +82,7 @@ Separação exigida para a apresentação:
 ## Especificações e rastreabilidade
 
 - [Índice de especificações](./SPEC/README.md)
+- [Arquitetura de campanha narrativa modular](./SPEC/2026-10-27-arquitetura-campanha-modular.md)
 - [Spec desta entrega](./SPEC/2026-10-06-entrega-documentacao-deploy.md)
 - [Registro completo de prompts](./prompts/registro-completo.md)
 - [Manifesto das sessões brutas](./prompts/sessoes/MANIFESTO.md)
