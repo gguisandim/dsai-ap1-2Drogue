@@ -1088,9 +1088,12 @@ violações. Typecheck, build e 36 suítes passaram, totalizando 650 testes — 
 646 anteriores mais quatro testes de hardening. `git diff --check` não encontrou
 erros.
 
-### Etapa 7 — primeiro capítulo modular
+### Etapa 7 — campanha procedural ramificada com saídas físicas
 
-Somente após as etapas anteriores e com SPEC narrativa/cultural própria. Criar conteúdo e assets está fora desta SPEC.
+A especificação de campanha procedural ramificada e saídas físicas está em
+`SPEC/2026-10-28-campanha-procedural-ramificada.md`. A Etapa 7 permanece apenas
+documental: contratos propostos, invariantes e plano incremental. Conteúdo e
+assets continuam fora do escopo até SPEC narrativa/cultural própria.
 
 ## Plano de testes
 
