@@ -27,6 +27,19 @@ A arquitetura modular de campanha está especificada em `SPEC/2026-10-27-arquite
   ```
 
 - Preserve `prompts/registro-completo.md` e `prompts/sessoes/`. Nunca invente uma sessão, um prompt ou metadados de rastreabilidade. Use o processo existente para registrar apenas evidência real.
+- Para todo novo trabalho assistido, crie um registro a partir de
+  `prompts/MODELO-REGISTRO.md`, com schema `umbra-prompt-record/v1`. Copie na
+  íntegra o prompt efetivamente recebido pelo agente; não substitua o texto por
+  um resumo, prompt proposto ou reconstrução posterior.
+- O registro v1 deve identificar: ID estável, data, agente/ferramenta, modelo,
+  esforço, SPEC associada, arquivos modificados, validações executadas e commit
+  correspondente. Quando um dado não estiver disponível, escreva literalmente
+  `desconhecido` ou `pendente`; nunca deduza modelo, sessão, execução ou hash.
+- Atualize a lista de arquivos e validações ao terminar o trabalho. Como o hash
+  ainda não existe antes do commit, `Commit: pendente` é válido no worktree; um
+  registro posterior pode associar o hash real sem alterar o prompt preservado.
+- Registros v1 são aditivos. Não reescreva prompts 01–08, sessões brutas,
+  `registro-completo.md` ou metadados legados para fazê-los caber no schema novo.
 - Antes de um commit, execute `scripts/auditar-segredos-prompts.ps1` conforme o processo documentado no `README.md`.
 
 ## Limites arquiteturais
@@ -80,6 +93,7 @@ Cada módulo deve ter IDs únicos, somente referências válidas, nenhuma depend
 Execute a menor suíte relevante durante o trabalho e, antes da entrega de implementação, execute:
 
 ```sh
+npm run check:gates
 npm run build
 npm test -- --runInBand
 ```

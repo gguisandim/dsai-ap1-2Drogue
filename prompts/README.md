@@ -18,6 +18,26 @@ A sessão bruta mais antiga encontrada localmente para este repositório começa
 
 Arquivos já arquivados não devem ser reescritos. Ao terminar uma nova sessão, adicione outra exportação com o padrão `AAAA-MM-DD-HHMM-ferramenta.ext`. Ajustes futuros no índice devem entrar em novo commit, mantendo o histórico do Git.
 
+## Registros v1 de novos trabalhos
+
+Novos trabalhos assistidos também recebem um registro Markdown aditivo baseado
+em [`MODELO-REGISTRO.md`](./MODELO-REGISTRO.md), com schema
+`umbra-prompt-record/v1`. Esse registro preserva o prompt efetivamente recebido e
+o associa à SPEC, aos arquivos modificados, às validações e ao commit. Ele não
+substitui uma exportação bruta disponível nem transforma os prompts propostos
+01–08 em evidência de execução.
+
+Dados não confirmados são registrados como `desconhecido` ou `pendente`. Em
+especial, não se infere modelo, esforço, sessão ou commit a partir do conteúdo do
+pedido. Os arquivos históricos permanecem aceitos como legado pelo gate e não
+devem ser editados retroativamente.
+
+Validação local:
+
+```powershell
+npm run check:traceability
+```
+
 ## Segurança antes de cada commit
 
 Execute:

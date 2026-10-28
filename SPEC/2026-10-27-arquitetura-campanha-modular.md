@@ -958,7 +958,92 @@ etapa; e exatamente-uma-vez continua dependendo de deduplicação por
 fornece `modularRunId` concreto e existe `localStorage`; retomadas antigas e a
 flag ausente não criam nem consultam save de campanha.
 
-### Etapa 6 — primeiro capítulo modular
+### Etapa 6 — architecture gates e rastreabilidade
+
+Esta etapa transforma as fronteiras já definidas em verificações executáveis,
+sem alterar o runtime ou as regras de jogo.
+
+#### Recorte de implementação — 2026-10-28
+
+- `scripts/check-architecture.mjs` constrói o grafo de imports TypeScript a
+  partir da AST do compilador já instalado. O gate verifica imports diretos e
+  caminhos transitivos de runtime; imports exclusivamente de tipo permanecem
+  identificados e não são tratados como dependência executável;
+- `src/stages/` e `src/narrative/` não podem alcançar Phaser, cenas,
+  `GameScene`, combate, IA, simulação ou progressão por dependência de runtime,
+  salvo a delegação procedural descrita abaixo.
+  `src/application/stages/` é a costura autorizada, mas consome `stages` e
+  `narrative` somente pelos respectivos `index.ts` públicos e também não pode
+  importar Phaser, cenas ou implementações internas do motor;
+- módulos em `src/stages/chapters/` podem importar apenas arquivos do próprio
+  capítulo, `src/stages/contracts/` e `src/narrative/contracts/`. Importações
+  entre capítulos e atalhos pelos índices que também exportam implementações
+  são rejeitados;
+- contratos públicos não podem depender de runtime, persistence,
+  compatibility, application ou cenas. A exceção legada explícita é o import
+  somente de tipo de `Result` por `StageLoad.ts` através do índice público de
+  `simulation`; removê-la exige um contrato compartilhado próprio em etapa
+  futura, não uma duplicação local nesta etapa;
+- a segunda exceção é transitiva e limitada ao caminho
+  `stages -> procedural -> simulation/core/DeterministicRandom`: geração já é
+  responsabilidade pública do `StageLoader`, e o pipeline procedural existente
+  reutiliza o RNG determinístico. Isso não autoriza capítulos, narrativa ou o
+  application adapter a importar simulação diretamente;
+- o gate não usa uma lista congelada de arquivos permitidos. Novos arquivos nas
+  zonas protegidas são descobertos automaticamente, e imports relativos ou pelo
+  alias `@/` são resolvidos antes da validação;
+- `scripts/check-traceability.mjs` valida apenas registros com schema
+  `umbra-prompt-record/v1`. Arquivos históricos, sessões brutas e os prompts
+  propostos 01–08 são preservados e reportados como legado, sem serem
+  reinterpretados nem reprovarem a CI retroativamente;
+- cada registro v1 contém ID estável, data, agente/ferramenta, modelo, esforço,
+  SPEC, arquivos modificados, execução e commit. Valores não comprováveis usam
+  literalmente `desconhecido` ou `pendente`; o prompt efetivamente recebido é
+  preservado integralmente em bloco próprio;
+- `prompts/MODELO-REGISTRO.md` é o modelo reutilizável. O registro desta etapa é
+  a primeira instância v1 e não altera `registro-completo.md`, o manifesto das
+  sessões ou qualquer exportação histórica;
+- os dois gates entram em scripts npm e na CI antes de testes e build. A CI
+  valida o estado atual do repositório, sem percorrer ou reprovar commits
+  históricos que antecedem o schema;
+- regressões do piloto modular continuam headless: flag OFF/ON, rollback,
+  carregamento, transição, restart e preservação de saves são verificadas sem
+  alegar execução de render, física ou canvas reais do Phaser.
+
+Critérios observáveis: o repositório atual passa nos dois gates; fixtures com
+import direto proibido e dependência transitiva proibida falham com caminho de
+dependência; conteúdo que usa apenas contratos públicos passa; registro v1 sem
+campo obrigatório ou sem prompt falha; legado permanece aceito; a CI executa
+gates, testes completos e build; e os 636 testes anteriores continuam passando.
+
+Provas implementadas: `architectureGates.test.ts` cobre o repositório, conteúdo
+válido, violação direta, import dinâmico não literal e caminho transitivo;
+`traceabilityGates.test.ts` cobre o registro atual, legado e registro v1
+inválido; `stageArchitectureRegression.test.ts` cobre restart legado, restart
+após fallback e round-trip aditivo de save. Os testes existentes da Etapa 5
+continuam cobrindo flag ON, carregamento e transição sem serem modificados.
+
+O primeiro passe transitivo detectou o uso de
+`simulation/core/DeterministicRandom` pelo pipeline procedural. A dependência já
+existia, entra exclusivamente pelo boundary procedural público e foi registrada
+como a segunda exceção acima; nenhuma violação não justificada permaneceu. O
+gate final analisou 1.664 arquivos TypeScript e 3.584 dependências. O gate de
+rastreabilidade validou um registro v1 e aceitou oito arquivos legados.
+
+Em 2026-10-28, `check:gates`, typecheck, build e as 36 suítes passaram,
+totalizando 646 testes — os 636 anteriores mais os 10 desta etapa.
+`git diff --check` não encontrou erros. Não houve alteração de `GameScene`,
+combate, simulação, IA, procedural, progressão ou saves legados.
+
+Limitações: a análise é estática sobre imports TypeScript; imports dinâmicos não
+literais são rejeitados em vez de inferidos. Imports apenas de tipo não são
+percorridos como dependência executável. Os testes de cena usam o shell Phaser
+mockado já adotado pela caracterização e não comprovam render, física, áudio ou
+canvas reais; uma validação end-to-end futura deve abrir o build em navegador e
+percorrer menu, piloto, transição e morte. A CI valida o snapshot atual, não
+reescreve nem audita semanticamente commits históricos.
+
+### Etapa 7 — primeiro capítulo modular
 
 Somente após as etapas anteriores e com SPEC narrativa/cultural própria. Criar conteúdo e assets está fora desta SPEC.
 
