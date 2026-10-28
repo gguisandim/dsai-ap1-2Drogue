@@ -374,8 +374,8 @@ export interface MissionDefinition {
 }
 
 export interface StageSignalFilter {
-  field: 'enemyId' | 'archetype' | 'itemId' | 'itemType' |
-         'encounterId' | 'npcId' | 'dialogueId';
+  field: 'stageId' | 'enemyId' | 'archetype' | 'itemId' | 'itemType' |
+         'encounterId' | 'npcId' | 'dialogueId' | 'missionId' | 'exitId';
   equals: string;
 }
 
@@ -389,7 +389,7 @@ export interface MissionObjective {
 }
 
 export interface MissionState {
-  status: 'locked' | 'active' | 'completed' | 'failed';
+  status: 'locked' | 'available' | 'active' | 'completed' | 'failed';
   objectives: Readonly<Record<string, number>>;
 }
 
@@ -745,6 +745,66 @@ casos anteriores da Etapa 2.
 Implementar `StageDirector` com contexto, sinais, condições, missões, eventos, comandos e idempotência. Ainda sem UI, NPC visual ou campanha real.
 
 Critério de saída: sequências de sinais idênticas produzem os mesmos comandos e snapshot; callbacks ou comandos desconhecidos são rejeitados.
+
+#### Recorte de implementação — 2026-10-28
+
+- `src/narrative/` passa a ser o runtime público e headless da etapa. Ele recebe as
+  definições declarativas já presentes nos contratos de stage, mantém o estado
+  mutável separado e não importa Phaser, cenas, combate, simulação interna,
+  storage ou `ProgressionService`;
+- `NarrativeRegistry` registra atomicamente o conteúdo de uma fase, rejeita IDs
+  duplicados e instáveis, valida referências de NPCs, diálogos, missões, regras,
+  filtros, condições, comandos e saídas, e devolve somente cópias profundamente
+  congeladas. O grafo de diálogo exige início e terminação alcançáveis e rejeita
+  ciclos automáticos; ciclos conduzidos por escolhas precisam conservar uma rota
+  terminal;
+- `DialogueEngine` opera por sessões serializáveis, expõe início, continuação e
+  escolha como resultados discriminados, filtra escolhas por condições e limita
+  transições por sessão. Entradas em nós e escolhas apenas produzem os comandos
+  declarativos validados; não executam callbacks;
+- `QuestEngine` inicializa, inicia, avança, conclui e falha missões. Objetivos
+  ativos progridem por `StageSignal` tipado, conclusão considera todos os
+  objetivos não opcionais e recompensas geram `operationId` determinístico por
+  missão e índice;
+- o estado público de missão é ampliado com `available`, entre `locked` e
+  `active`; `MissionState`, `StageCondition` e a validação de resume passam a
+  aceitar o novo estado. `StageSignalFilter.field` também passa a admitir
+  `stageId`, `missionId` e `exitId`, os campos discriminantes que faltavam para
+  filtrar os sinais que já os carregavam. Essas são as únicas mudanças necessárias
+  nos contratos existentes de `src/stages/`; não há mudança no formato de mapa,
+  loader ou runtime legado;
+- `NarrativeState` mantém flags, escolhas, diálogos concluídos, estados de
+  missão, eventos processados, regras `once`, operações aplicadas e saídas
+  liberadas. Seu snapshot versão 1 é composto apenas por dados serializáveis; a
+  persistência continua adiada para a etapa 4;
+- `NarrativeEventProcessor` consome envelopes com ID estável e `StageSignal`,
+  processa missões antes das regras para que condições observem o estado novo,
+  evita eventos, regras, conclusões e recompensas duplicadas e usa fila limitada
+  para sinais derivados de conclusão. Uma falha de limite não publica estado
+  parcial;
+- `StageDirector` é a fachada mínima que reúne registry, estado, projeção de
+  progressão, quest engine e processador. Integração visual, aplicação efetiva de
+  recompensa e adaptação dos eventos concretos da cena permanecem para etapas
+  posteriores;
+- condições de progressão recebem somente `unlockedContent` como projeção
+  imutável. Recompensas continuam sendo comandos para a autoridade de progressão,
+  nunca mutações diretas do estado persistente existente.
+
+Critérios observáveis adicionais: conteúdo inválido não altera o registry;
+consultas não compartilham referências mutáveis com o chamador; repetir o mesmo
+envelope não altera progresso nem reemite comandos; concluir uma missão novamente
+não reemite recompensas; snapshots e comandos são iguais para a mesma sequência;
+e os testes do runtime rodam em ambiente Node sem DOM, relógio ou aleatoriedade.
+
+Provas automatizadas desta etapa: `narrativeRegistry.test.ts`,
+`dialogueEngine.test.ts`, `questEngine.test.ts` e
+`narrativeIntegration.test.ts`, com 25 testes novos. Elas cobrem referências
+inválidas, duplicatas, condições, escolhas, terminação, limites, falha, objetivos
+opcionais, filtros, determinismo, consultas imutáveis, eventos recursivos e
+idempotência. Em 2026-10-28, typecheck, build e as 27 suítes passaram, totalizando
+600 testes (os 575 anteriores mais os 25 desta etapa). `git diff --check` não
+encontrou erros, e `src/narrative/` não contém referências a Phaser, `GameScene`
+ou combate.
 
 ### Etapa 4 — saves aditivos
 

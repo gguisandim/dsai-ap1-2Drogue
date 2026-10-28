@@ -1,0 +1,134 @@
+import type { MissionState, NarrativeStateSnapshot } from '../contracts';
+import { cloneFrozen, compareStrings } from './data';
+
+type Scalar = boolean | number | string;
+
+export class NarrativeState {
+  private flags: Record<string, Scalar> = {};
+  private choices: Record<string, Record<string, string>> = {};
+  private completedDialogueIds = new Set<string>();
+  private missionStates: Record<string, MissionState> = {};
+  private processedEventIds = new Set<string>();
+  private firedRuleIds = new Set<string>();
+  private appliedOperationIds = new Set<string>();
+  private unlockedExitIds = new Set<string>();
+
+  public constructor(initial?: Partial<NarrativeStateSnapshot>) {
+    if (initial) this.restore(initial);
+  }
+
+  public static fromSnapshot(snapshot: NarrativeStateSnapshot): NarrativeState {
+    return new NarrativeState(snapshot);
+  }
+
+  public clone(): NarrativeState {
+    return NarrativeState.fromSnapshot(this.snapshot());
+  }
+
+  public restore(snapshot: Partial<NarrativeStateSnapshot>): void {
+    this.flags = { ...(snapshot.flags ?? {}) };
+    this.choices = Object.fromEntries(Object.entries(snapshot.choices ?? {})
+      .map(([dialogueId, choices]) => [dialogueId, { ...choices }]));
+    this.completedDialogueIds = new Set(snapshot.completedDialogueIds ?? []);
+    this.missionStates = Object.fromEntries(Object.entries(snapshot.missionStates ?? {})
+      .map(([missionId, state]) => [missionId, {
+        status: state.status,
+        objectives: { ...state.objectives },
+      }]));
+    this.processedEventIds = new Set(snapshot.processedEventIds ?? []);
+    this.firedRuleIds = new Set(snapshot.firedRuleIds ?? []);
+    this.appliedOperationIds = new Set(snapshot.appliedOperationIds ?? []);
+    this.unlockedExitIds = new Set(snapshot.unlockedExitIds ?? []);
+  }
+
+  public getFlag(flag: string): Scalar | undefined {
+    return this.flags[flag];
+  }
+
+  public setFlag(flag: string, value: Scalar): void {
+    this.flags[flag] = value;
+  }
+
+  public recordChoice(dialogueId: string, nodeId: string, choiceId: string): void {
+    (this.choices[dialogueId] ??= {})[nodeId] = choiceId;
+  }
+
+  public completeDialogue(dialogueId: string): boolean {
+    const wasCompleted = this.completedDialogueIds.has(dialogueId);
+    this.completedDialogueIds.add(dialogueId);
+    return !wasCompleted;
+  }
+
+  public getMissionState(missionId: string): MissionState | undefined {
+    const state = this.missionStates[missionId];
+    return state ? cloneFrozen(state) : undefined;
+  }
+
+  public setMissionState(missionId: string, state: MissionState): void {
+    this.missionStates[missionId] = {
+      status: state.status,
+      objectives: { ...state.objectives },
+    };
+  }
+
+  public hasProcessedEvent(eventId: string): boolean {
+    return this.processedEventIds.has(eventId);
+  }
+
+  public markEventProcessed(eventId: string): boolean {
+    const fresh = !this.processedEventIds.has(eventId);
+    this.processedEventIds.add(eventId);
+    return fresh;
+  }
+
+  public hasFiredRule(ruleId: string): boolean {
+    return this.firedRuleIds.has(ruleId);
+  }
+
+  public markRuleFired(ruleId: string): boolean {
+    const fresh = !this.firedRuleIds.has(ruleId);
+    this.firedRuleIds.add(ruleId);
+    return fresh;
+  }
+
+  public hasAppliedOperation(operationId: string): boolean {
+    return this.appliedOperationIds.has(operationId);
+  }
+
+  public markOperationApplied(operationId: string): boolean {
+    const fresh = !this.appliedOperationIds.has(operationId);
+    this.appliedOperationIds.add(operationId);
+    return fresh;
+  }
+
+  public unlockExit(exitId: string): boolean {
+    const fresh = !this.unlockedExitIds.has(exitId);
+    this.unlockedExitIds.add(exitId);
+    return fresh;
+  }
+
+  public snapshot(): NarrativeStateSnapshot {
+    const sortedRecord = <T>(record: Record<string, T>): Record<string, T> => Object.fromEntries(
+      Object.entries(record).sort(([left], [right]) => compareStrings(left, right)),
+    );
+    const choices = sortedRecord(Object.fromEntries(Object.entries(this.choices)
+      .map(([dialogueId, entries]) => [dialogueId, sortedRecord({ ...entries })])));
+    const missionStates = sortedRecord(Object.fromEntries(Object.entries(this.missionStates)
+      .map(([missionId, state]) => [missionId, {
+        status: state.status,
+        objectives: sortedRecord({ ...state.objectives }),
+      }])));
+    const sorted = (values: Set<string>): string[] => [...values].sort(compareStrings);
+    return cloneFrozen({
+      version: 1 as const,
+      flags: sortedRecord({ ...this.flags }),
+      choices,
+      completedDialogueIds: sorted(this.completedDialogueIds),
+      missionStates,
+      processedEventIds: sorted(this.processedEventIds),
+      firedRuleIds: sorted(this.firedRuleIds),
+      appliedOperationIds: sorted(this.appliedOperationIds),
+      unlockedExitIds: sorted(this.unlockedExitIds),
+    });
+  }
+}

@@ -59,8 +59,8 @@ export interface MissionDefinition {
 }
 
 export interface StageSignalFilter {
-  readonly field: 'enemyId' | 'archetype' | 'itemId' | 'itemType' |
-    'encounterId' | 'npcId' | 'dialogueId';
+  readonly field: 'stageId' | 'enemyId' | 'archetype' | 'itemId' | 'itemType' |
+    'encounterId' | 'npcId' | 'dialogueId' | 'missionId' | 'exitId';
   readonly equals: string;
 }
 
@@ -74,7 +74,7 @@ export interface MissionObjective {
 }
 
 export interface MissionState {
-  readonly status: 'locked' | 'active' | 'completed' | 'failed';
+  readonly status: 'locked' | 'available' | 'active' | 'completed' | 'failed';
   readonly objectives: Readonly<Record<string, number>>;
 }
 

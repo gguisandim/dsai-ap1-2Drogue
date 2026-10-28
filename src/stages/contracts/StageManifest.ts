@@ -17,7 +17,7 @@ export type StageCondition =
   | {
       readonly type: 'mission.status';
       readonly missionId: MissionId;
-      readonly status: 'locked' | 'active' | 'completed' | 'failed';
+      readonly status: 'locked' | 'available' | 'active' | 'completed' | 'failed';
     }
   | { readonly type: 'progression.unlocked'; readonly contentId: string }
   | { readonly type: 'all'; readonly conditions: readonly StageCondition[] }

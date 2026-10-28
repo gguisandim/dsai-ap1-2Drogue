@@ -421,7 +421,7 @@ export class StageLoader {
       });
       return;
     }
-    const statuses = new Set(['locked', 'active', 'completed', 'failed']);
+    const statuses = new Set(['locked', 'available', 'active', 'completed', 'failed']);
     Object.entries(value).forEach(([missionId, state]) => {
       if (!validNonEmptyString(missionId) || !isRecord(state) || !statuses.has(String(state.status)) ||
         !isRecord(state.objectives)) {
