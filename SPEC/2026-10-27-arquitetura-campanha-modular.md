@@ -631,6 +631,28 @@ Implementar `src/stages/contracts/`, `StageValidator` e `StageRegistry`, sem imp
 
 Critério de saída: typecheck passa; duplicatas, referências quebradas, grafos inválidos e rotas ausentes geram diagnósticos determinísticos.
 
+#### Recorte de implementação — 2026-10-28
+
+- `StageManifest`, `ChapterManifest` e `StageModule` tornam-se contratos públicos
+  por `src/stages/index.ts`; os tipos narrativos referenciados por `StageModule`
+  permanecem somente estruturais nesta etapa, sem director, execução ou conteúdo;
+- o registry armazena cópias imutáveis dos manifestos, rejeita duplicatas e
+  registros de capítulo incompatíveis de forma atômica e lista fases por `order`;
+- a validação headless cobre versões, IDs, revisões, layout, anchors, saídas,
+  referências de capítulo, referências de destino, ordens duplicadas,
+  alcançabilidade desde a entrada e ciclos sem rota terminal;
+- adaptadores em memória registram `VERSE_SECTIONS`, `ALL_LEVELS` e
+  `CORRIDOR_LEVEL` como três capítulos legados separados, preservando os IDs e a
+  ordem de cada catálogo; cada saída é linear e a última aponta para
+  `campaign.complete`;
+- os adaptadores desta etapa apenas produzem módulos e registros. Resolução de
+  `LevelDefinition`, geração procedural e `StageLoader` permanecem na etapa 2.
+
+Provas automatizadas desta etapa: `stageContracts.test.ts`,
+`stageRegistry.test.ts` e `stageLegacyCompatibility.test.ts`, totalizando 13
+testes novos. A validação de anchors contra o mapa resolvido permanece na etapa 2,
+pois exige o resultado do loader.
+
 ### Etapa 2 — loader e adapters de compatibilidade
 
 Implementar `StageLoader`, `LegacyLevelAdapter` e adapter procedural usando as APIs existentes. Não alterar `LevelDefinitionAdapter` nem o pipeline.
