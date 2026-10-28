@@ -51,6 +51,7 @@ interface GameSceneInitData {
   branchingCampaign?: boolean;
   branchingRunId?: string;
   branchingRunSeed?: string | number;
+  branchingRecoveryAttempt?: number;
 }
 
 interface PendingExitTile {
@@ -149,6 +150,7 @@ export class GameScene extends Phaser.Scene {
   private campaignRouter?: CampaignRouter;
   private campaignNavigation?: CampaignNavigationView;
   private campaignPersistenceUncertain = false;
+  private campaignRecoveryAttempt = 0;
 
   constructor() {
     super('GameScene');
@@ -170,6 +172,7 @@ export class GameScene extends Phaser.Scene {
       query?.get('branchingRun')?.trim() || BRANCHING_CAMPAIGN_DEFAULT_RUN_ID;
     this.branchingRunSeed = data?.branchingRunSeed ??
       query?.get('branchingSeed') ?? BRANCHING_CAMPAIGN_DEFAULT_SEED;
+    this.campaignRecoveryAttempt = Math.max(0, Math.floor(data?.branchingRecoveryAttempt ?? 0));
     this.modularStageSource = 'legacy';
     this.modularComposition = undefined;
     this.modularLoadedStage = undefined;
@@ -345,6 +348,7 @@ export class GameScene extends Phaser.Scene {
 
     // 9. HUD & Chapter Title
     this.createHUD();
+    this.recoverPendingCampaignRewards();
     this.comboManager = new ComboManager(this, this.comboHudText, () => this.player.extendComboWindow());
     this.spawnWave(0);
     this.events.off('enemyDropHalo');
@@ -929,12 +933,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.isTransitioning = true;
-    const stageReward = this.progression.recordStageCompleted({
-      stageId: this.currentLevel.id,
-      difficulty: this.currentLevel.difficulty,
-      parSeconds: this.currentLevel.parTime,
-    });
-    this.player.addHalos(stageReward.currencyAwarded);
+    this.settleCampaignReward(prepared.value.transitionId);
 
     if (prepared.value.targetNodeId === 'campaign.complete' || !prepared.value.destinationStage) {
       this.levelBannerText.setText('CAMPANHA PILOTO CONCLUÍDA!');
@@ -944,60 +943,137 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const nextLevel = prepared.value.destinationStage.level;
     const inspected = this.campaignRouter.inspect();
-    this.campaignNavigation = inspected.ok ? inspected.value : undefined;
+    if (!inspected.ok) {
+      this.recoverConfirmedCampaignTransition(
+        `TRANSIÇÃO CONFIRMADA; DESTINO INDISPONÍVEL: ${inspected.error.code}`,
+      );
+      return;
+    }
+    this.campaignNavigation = inspected.value;
+    const nextLevel = prepared.value.destinationStage.level;
     this.cameras.main.flash(600, 255, 215, 0);
     this.time.delayedCall(400, () => {
-      const previousSection = this.currentLevel.name;
-      const levelIndex = this.allLevels.findIndex(level => level.id === nextLevel.id);
-      if (levelIndex >= 0) {
-        this.currentLevelIndex = levelIndex;
-        this.allLevels = [...this.allLevels];
-        this.allLevels[levelIndex] = nextLevel;
+      try {
+        const previousSection = this.currentLevel.name;
+        const levelIndex = this.allLevels.findIndex(level => level.id === nextLevel.id);
+        if (levelIndex >= 0) {
+          this.currentLevelIndex = levelIndex;
+          this.allLevels = [...this.allLevels];
+          this.allLevels[levelIndex] = nextLevel;
+        }
+        this.currentLevel = nextLevel;
+        this.simulationBridge.recordRoomEntered(this.currentLevel.name, previousSection);
+        this.rebuildCurrentStage();
+        this.isTransitioning = false;
+      } catch {
+        this.recoverConfirmedCampaignTransition(
+          'TRANSIÇÃO CONFIRMADA; FALHA AO RECONSTRUIR O DESTINO.',
+        );
       }
-      this.currentLevel = nextLevel;
-      this.simulationBridge.recordRoomEntered(this.currentLevel.name, previousSection);
-
-      this.floorImages.forEach(image => image.destroy());
-      this.floorImages = [];
-      this.enemies.clear(true, true);
-      this.items.clear(true, true);
-      this.bullets.clear(true, true);
-      this.enemyBullets.clear(true, true);
-      this.summons.forEach(summon => summon.destroy());
-      this.summons = [];
-      this.wallTiles.clear(true, true);
-      this.stairTiles.clear(true, true);
-      this.pendingExitTiles = [];
-      this.exitsRevealed = false;
-
-      this.buildMapFromDefinition(this.currentLevel);
-      this.queueCampaignExitTiles();
-      this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
-      this.spawnEnemiesAndItems(this.currentLevel);
-      this.spawnWave(0);
-
-      const spawn = this.findSpawnPoint(this.currentLevel);
-      this.player.setPosition(spawn.x, spawn.y);
-      this.player.setVelocity(0, 0);
-      this.player.setVisible(true);
-      this.player.setActive(true);
-      this.player.setAlpha(1);
-      this.player.resetResourcesForNextStage();
-
-      const worldWidth = this.currentLevel.tileMap[0].length * 32;
-      const worldHeight = this.currentLevel.tileMap.length * 32;
-      this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
-      this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
-      this.levelClearedBannerShowing = false;
-      this.currentWaveIndex = 0;
-      this.waveTransition = false;
-      SoundManager.playWitchTimeActivate();
-      this.showChapterTitle(this.currentLevel.name);
-      if (!inspected.ok) this.showCampaignTransitionFailure('DESTINO SEM SAÍDAS VÁLIDAS.');
-      this.isTransitioning = false;
     });
+  }
+
+  private settleCampaignReward(transitionId: string): void {
+    if (!this.campaignRouter) return;
+    const claimed = this.campaignRouter.claimReward(transitionId);
+    if (!claimed.ok) {
+      if (claimed.error.code === 'reward-already-claimed' ||
+        claimed.error.code === 'reward-already-applied') return;
+      this.campaignPersistenceUncertain ||= claimed.error.recovery === 'storage-state-unknown';
+      this.showCampaignTransitionFailure(
+        this.campaignPersistenceUncertain
+          ? 'RECOMPENSA PENDENTE: SAVE DA RUN INCERTO.'
+          : `RECOMPENSA ADIADA: ${claimed.error.code}`,
+      );
+      return;
+    }
+    try {
+      const update = this.progression.recordStageCompleted({
+        stageId: claimed.value.reward.stageId,
+        difficulty: claimed.value.reward.difficulty,
+        parSeconds: claimed.value.reward.parSeconds,
+      });
+      this.player.addHalos(update.currencyAwarded);
+    } catch {
+      this.showCampaignTransitionFailure('RECOMPENSA NÃO CONFIRMADA; NÃO SERÁ REAPLICADA.');
+      return;
+    }
+    const acknowledged = this.campaignRouter.acknowledgeReward(transitionId);
+    if (!acknowledged.ok) {
+      this.campaignPersistenceUncertain ||= acknowledged.error.recovery === 'storage-state-unknown';
+      this.showCampaignTransitionFailure('RECOMPENSA APLICADA; REGISTRO PENDENTE.');
+    }
+  }
+
+  private recoverPendingCampaignRewards(): void {
+    const pending = this.campaignRouter?.pendingRewards() ?? [];
+    for (const reward of pending) {
+      this.settleCampaignReward(reward.transitionId);
+      if (this.campaignPersistenceUncertain) break;
+    }
+  }
+
+  private recoverConfirmedCampaignTransition(message: string): void {
+    this.showCampaignTransitionFailure(message);
+    if (this.campaignRecoveryAttempt >= 1) {
+      this.time.delayedCall(1800, () => this.scene.start('MenuScene'));
+      return;
+    }
+    const data = {
+      branchingCampaign: true,
+      branchingRunId: this.branchingRunId,
+      branchingRunSeed: this.branchingRunSeed,
+      branchingRecoveryAttempt: this.campaignRecoveryAttempt + 1,
+      halos: this.player?.halos,
+      skipControls: true,
+    };
+    if (this.scene && typeof this.scene.restart === 'function') {
+      this.time.delayedCall(600, () => this.scene.restart(data));
+      return;
+    }
+    this.isTransitioning = false;
+  }
+
+  private rebuildCurrentStage(): void {
+    this.floorImages.forEach(image => image.destroy());
+    this.floorImages = [];
+    this.enemies.clear(true, true);
+    this.items.clear(true, true);
+    this.bullets.clear(true, true);
+    this.enemyBullets.clear(true, true);
+    this.summons.forEach(summon => summon.destroy());
+    this.summons = [];
+    this.wallTiles.clear(true, true);
+    this.stairTiles.clear(true, true);
+    this.pendingExitTiles = [];
+    this.exitsRevealed = false;
+
+    this.buildMapFromDefinition(this.currentLevel);
+    this.queueCampaignExitTiles();
+    this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
+    this.spawnEnemiesAndItems(this.currentLevel);
+    this.spawnWave(0);
+
+    const spawn = this.findSpawnPoint(this.currentLevel);
+    this.player.setPosition(spawn.x, spawn.y);
+    this.player.setVelocity(0, 0);
+    this.player.setVisible(true);
+    this.player.setActive(true);
+    this.player.setAlpha(1);
+    this.player.resetResourcesForNextStage();
+
+    const worldWidth = this.currentLevel.tileMap[0].length * 32;
+    const worldHeight = this.currentLevel.tileMap.length * 32;
+    this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
+    this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
+
+    this.levelClearedBannerShowing = false;
+    this.currentWaveIndex = 0;
+    this.waveTransition = false;
+    this.levelBannerText.setVisible(false);
+    SoundManager.playWitchTimeActivate();
+    this.showChapterTitle(this.currentLevel.name);
   }
 
   private showCampaignTransitionFailure(message: string): void {
@@ -1043,50 +1119,7 @@ export class GameScene extends Phaser.Scene {
       this.modularComposition = undefined;
       this.modularStageSource = 'legacy';
 
-      // Destroy all floor/lava images
-      this.floorImages.forEach(img => img.destroy());
-      this.floorImages = [];
-
-      // Clear physics groups (but NOT the player)
-      this.enemies.clear(true, true);
-      this.items.clear(true, true);
-      this.bullets.clear(true, true);
-      this.enemyBullets.clear(true, true);
-      this.summons.forEach(s => s.destroy());
-      this.summons = [];
-      this.wallTiles.clear(true, true);
-      this.stairTiles.clear(true, true);
-      this.pendingExitTiles = [];
-      this.exitsRevealed = false;
-
-      // Rebuild map
-      this.buildMapFromDefinition(this.currentLevel);
-      this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
-      this.spawnEnemiesAndItems(this.currentLevel);
-      this.spawnWave(0);
-
-      // Reposition player at spawn
-      const spawn = this.findSpawnPoint(this.currentLevel);
-      this.player.setPosition(spawn.x, spawn.y);
-      this.player.setVelocity(0, 0);
-      this.player.setVisible(true);
-      this.player.setActive(true);
-      this.player.setAlpha(1);
-      this.player.resetResourcesForNextStage();
-
-      const worldWidth = this.currentLevel.tileMap[0].length * 32;
-      const worldHeight = this.currentLevel.tileMap.length * 32;
-      this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
-      this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
-
-      // Reset banner states
-      this.levelClearedBannerShowing = false;
-      this.levelBannerText.setVisible(false);
-
-      // Show chapter title
-      SoundManager.playWitchTimeActivate();
-      this.showChapterTitle(this.currentLevel.name);
-
+      this.rebuildCurrentStage();
       this.isTransitioning = false;
     });
   }

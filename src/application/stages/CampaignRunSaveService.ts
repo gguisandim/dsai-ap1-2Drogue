@@ -89,6 +89,7 @@ export function canonicalCampaignRunState(state: CampaignRunState): CampaignRunS
     physicalExits: sortedRecord(state.physicalExits, canonicalPhysical),
     nodeResumes: sortedRecord(state.nodeResumes),
     confirmedTransitionIds: [...state.confirmedTransitionIds],
+    rewards: sortedRecord(state.rewards ?? {}),
   });
 }
 
@@ -187,8 +188,34 @@ export function validateCampaignRunState(value: unknown): readonly CampaignRunDi
     if (!edges.has(edgeId)) push(diagnostics, 'run.edge-reference.invalid',
       'Revealed edge is not present in the graph.', ['state', 'revealedEdgeIds'], edgeId);
   });
-  validateStringArray(value.confirmedTransitionIds, diagnostics,
+  const confirmedValid = validateStringArray(value.confirmedTransitionIds, diagnostics,
     ['state', 'confirmedTransitionIds'], true);
+  const confirmedTransitionIds = new Set(
+    confirmedValid ? value.confirmedTransitionIds as readonly string[] : [],
+  );
+  if (value.rewards !== undefined) {
+    if (!isRecord(value.rewards)) {
+      push(diagnostics, 'run.rewards.invalid', 'Reward journal must be an object.',
+        ['state', 'rewards']);
+    } else Object.entries(value.rewards).forEach(([transitionId, reward]) => {
+      if (!isRecord(reward) || reward.transitionId !== transitionId ||
+        !confirmedTransitionIds.has(transitionId) || !nonEmpty(reward.stageInstanceId) ||
+        !nonEmpty(reward.stageId) || !integer(reward.difficulty) || reward.difficulty < 1 ||
+        typeof reward.parSeconds !== 'number' || !Number.isFinite(reward.parSeconds) ||
+        reward.parSeconds <= 0 ||
+        (reward.status !== 'pending' && reward.status !== 'claimed' && reward.status !== 'applied')) {
+        push(diagnostics, 'run.reward.invalid', 'Reward record is invalid or unconfirmed.',
+          ['state', 'rewards', transitionId], transitionId);
+        return;
+      }
+      const source = nodes.get(reward.stageInstanceId);
+      if (!source || source.stageId !== reward.stageId) {
+        push(diagnostics, 'run.reward.instance-mismatch',
+          'Reward stage instance does not match the graph.', ['state', 'rewards', transitionId],
+          transitionId);
+      }
+    });
+  }
 
   if (!isRecord(value.revisitCounts)) {
     push(diagnostics, 'run.revisit-counts.invalid', 'Revisit counts must be an object.',

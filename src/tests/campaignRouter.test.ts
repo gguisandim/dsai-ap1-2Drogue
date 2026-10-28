@@ -105,6 +105,7 @@ function loadedStage(stageId: string): LoadedStage {
 
 class RecordingLoader {
   public readonly requests: StageLoadRequest[] = [];
+  public readonly levelOverrides = new Map<string, LevelDefinition>();
   public failStageId?: string;
 
   public load(request: StageLoadRequest): StageLoadResult {
@@ -120,7 +121,9 @@ class RecordingLoader {
         }],
       },
     };
-    return { ok: true, value: loadedStage(request.stageId) };
+    const stage = loadedStage(request.stageId);
+    const override = this.levelOverrides.get(request.stageId);
+    return { ok: true, value: override ? { ...stage, level: override } : stage };
   }
 }
 
@@ -548,6 +551,198 @@ describe('CampaignRouter', () => {
     const after = router.prepare('physical.any');
     expect(after.ok).toBe(false);
     if (!after.ok) expect(after.error.code).toBe('run-completed');
+  });
+
+  it('journals a reward with the confirmed transition and settles it once', () => {
+    const run = createCampaignRunState(graph());
+    const { router, storage, saves } = persistedRouter(run);
+    const prepared = prepareAvailable(router);
+    const sourceNodeId = router.state().currentNodeId;
+    const sourceStageId = run.graph.nodes.find(node => node.id === sourceNodeId)?.stageId;
+
+    const confirmed = router.confirm(prepared.preparationId);
+    if (!confirmed.ok) throw confirmed.error;
+
+    const record = router.rewards()[0];
+    expect(record).toMatchObject({
+      transitionId: prepared.transitionId,
+      stageInstanceId: sourceNodeId,
+      stageId: sourceStageId,
+      difficulty: 1,
+      parSeconds: 30,
+      status: 'pending',
+    });
+    expect(router.pendingRewards()).toEqual([record]);
+
+    const claimed = router.claimReward(prepared.transitionId);
+    expect(claimed).toMatchObject({
+      ok: true,
+      value: { persistence: expect.stringMatching(/saved|verified-after-error/), reward: { status: 'claimed' } },
+    });
+    expect(router.pendingRewards()).toEqual([]);
+    expect(router.claimReward(prepared.transitionId)).toMatchObject({
+      ok: false, error: { code: 'reward-already-claimed' },
+    });
+
+    expect(router.acknowledgeReward(prepared.transitionId)).toMatchObject({
+      ok: true, value: { reward: { status: 'applied' } },
+    });
+    expect(router.acknowledgeReward(prepared.transitionId)).toMatchObject({ ok: true });
+
+    const loaded = saves.load({
+      campaignId: run.graph.campaignId,
+      campaignRevision: run.graph.campaignRevision,
+      runId: run.graph.runId,
+      runSeed: run.graph.runSeed,
+      graphId: run.graph.id,
+    });
+    if (!loaded.ok || loaded.value.status !== 'loaded') throw new Error('Expected a loaded run.');
+    expect(loaded.value.envelope.state.rewards[prepared.transitionId].status).toBe('applied');
+    expect(storage.read('umbra-trail-run-v1')).toEqual(expect.any(String));
+  });
+
+  it('exposes a pending reward after a crash between confirmation and claim', () => {
+    const run = createCampaignRunState(graph());
+    const { router, storage, saves } = persistedRouter(run);
+    const prepared = prepareAvailable(router);
+    const confirmed = router.confirm(prepared.preparationId);
+    if (!confirmed.ok) throw confirmed.error;
+
+    const loaded = new CampaignRunSaveService({ storage }).load({
+      campaignId: run.graph.campaignId,
+      campaignRevision: run.graph.campaignRevision,
+      runId: run.graph.runId,
+      runSeed: run.graph.runSeed,
+      graphId: run.graph.id,
+    });
+    if (!loaded.ok || loaded.value.status !== 'loaded') throw new Error('Expected a loaded run.');
+    const restored = new CampaignRouter(
+      loaded.value.envelope.state,
+      dependencies(new RecordingLoader(), saves),
+    );
+
+    expect(restored.pendingRewards().map(reward => reward.transitionId))
+      .toEqual([prepared.transitionId]);
+    expect(restored.claimReward(prepared.transitionId).ok).toBe(true);
+    expect(restored.acknowledgeReward(prepared.transitionId).ok).toBe(true);
+  });
+
+  it('does not expose a claimed reward as pending after restart', () => {
+    const run = createCampaignRunState(graph());
+    const { router, storage, saves } = persistedRouter(run);
+    const prepared = prepareAvailable(router);
+    const confirmed = router.confirm(prepared.preparationId);
+    if (!confirmed.ok) throw confirmed.error;
+    expect(router.claimReward(prepared.transitionId).ok).toBe(true);
+
+    const loaded = new CampaignRunSaveService({ storage }).load({
+      campaignId: run.graph.campaignId,
+      campaignRevision: run.graph.campaignRevision,
+      runId: run.graph.runId,
+      runSeed: run.graph.runSeed,
+      graphId: run.graph.id,
+    });
+    if (!loaded.ok || loaded.value.status !== 'loaded') throw new Error('Expected a loaded run.');
+    const restored = new CampaignRouter(
+      loaded.value.envelope.state,
+      dependencies(new RecordingLoader(), saves),
+    );
+
+    expect(restored.pendingRewards()).toEqual([]);
+    expect(restored.claimReward(prepared.transitionId)).toMatchObject({
+      ok: false, error: { code: 'reward-already-claimed' },
+    });
+  });
+
+  it('keeps a reward pending when the claim write is rolled back', () => {
+    const run = createCampaignRunState(graph());
+    const save = jest.fn();
+    const router = new CampaignRouter(run, {
+      loader: new RecordingLoader(),
+      resolver: new PhysicalExitResolver(),
+      binder: new CampaignExitBinder(),
+      saves: { save } as never,
+    });
+    const prepared = prepareAvailable(router);
+    save.mockReturnValue({ ok: true, value: { envelope: {}, persistence: 'written' } });
+    const confirmed = router.confirm(prepared.preparationId);
+    if (!confirmed.ok) throw confirmed.error;
+    const before = router.state();
+    save.mockReturnValueOnce({
+      ok: false,
+      error: {
+        code: 'storage-write-failed',
+        message: 'fixture failure',
+        diagnostics: [],
+        recovery: 'previous-preserved',
+      },
+    });
+
+    const claimed = router.claimReward(prepared.transitionId);
+
+    expect(claimed).toMatchObject({
+      ok: false, error: { code: 'persistence-failed', recovery: 'rolled-back' },
+    });
+    expect(router.state()).toBe(before);
+    expect(router.pendingRewards().map(reward => reward.transitionId))
+      .toEqual([prepared.transitionId]);
+  });
+
+  it('refuses to prepare a target stage without usable exits before persisting', () => {
+    const run = createCampaignRunState(graph());
+    const loader = new RecordingLoader();
+    const { router, storage } = persistedRouter(run, loader);
+    const inspected = router.inspect();
+    if (!inspected.ok) throw inspected.error;
+    const currentStageId = inspected.value.currentNode.stageId;
+    const destination = inspected.value.snapshot.destinations.find(item => {
+      const target = run.graph.nodes.find(node => node.id === item.targetNodeId);
+      return target && target.stageId !== currentStageId;
+    });
+    if (!destination) throw new Error('Expected a destination in another stage.');
+    const target = run.graph.nodes.find(node => node.id === destination.targetNodeId);
+    if (!target) throw new Error('Target missing.');
+    const sealed = level(target.stageId);
+    sealed.tileMap = [
+      [1, 1, 1],
+      [1, 8, 1],
+      [1, 1, 1],
+    ];
+    loader.levelOverrides.set(target.stageId, sealed);
+    const beforeState = router.state();
+    const beforeStorage = storage.snapshot();
+
+    const prepared = router.prepare(destination.physicalExitId);
+
+    expect(prepared.ok).toBe(false);
+    if (!prepared.ok) {
+      expect(prepared.error.code).toBe('target-navigation-failed');
+      expect(prepared.error.targetFailureCode).toBe('physical-resolution-failed');
+    }
+    expect(router.state()).toBe(beforeState);
+    expect(storage.snapshot()).toEqual(beforeStorage);
+  });
+
+  it('loads a legacy run save without a reward journal', () => {
+    const run = createCampaignRunState(graph());
+    const storage = new MemorySaveStorage();
+    const saves = new CampaignRunSaveService({ storage });
+    expect(saves.save(run).ok).toBe(true);
+    const raw = JSON.parse(storage.read('umbra-trail-run-v1') as string);
+    delete raw.state.rewards;
+    storage.write('umbra-trail-run-v1', JSON.stringify(raw));
+
+    const loaded = saves.load({
+      campaignId: run.graph.campaignId,
+      campaignRevision: run.graph.campaignRevision,
+      runId: run.graph.runId,
+      runSeed: run.graph.runSeed,
+      graphId: run.graph.id,
+    });
+
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok || loaded.value.status !== 'loaded') throw new Error('Expected a loaded run.');
+    expect(loaded.value.envelope.state.rewards).toEqual({});
   });
 });
 

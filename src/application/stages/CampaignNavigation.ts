@@ -35,6 +35,28 @@ export interface CampaignRunState {
   readonly physicalExits: Readonly<Record<CampaignNodeId, PhysicalExitResolution>>;
   readonly nodeResumes: Readonly<Record<CampaignNodeId, StageResumeState>>;
   readonly confirmedTransitionIds: readonly string[];
+  /**
+   * Durable reward journal keyed by transitionId. Older saves omit it and are
+   * canonicalized to an empty record.
+   */
+  readonly rewards: Readonly<Record<string, CampaignRewardRecord>>;
+}
+
+export type CampaignRewardStatus = 'pending' | 'claimed' | 'applied';
+
+export interface CampaignRewardRecord {
+  readonly transitionId: string;
+  /** Campaign node occurrence that produced the stage-completion reward. */
+  readonly stageInstanceId: CampaignNodeId;
+  readonly stageId: string;
+  readonly difficulty: number;
+  readonly parSeconds: number;
+  readonly status: CampaignRewardStatus;
+}
+
+export interface CampaignRewardClaim {
+  readonly reward: CampaignRewardRecord;
+  readonly persistence: 'saved' | 'verified-after-error' | 'skipped';
 }
 
 export interface CampaignRunSaveEnvelope {
@@ -174,10 +196,16 @@ export type CampaignRouterFailureCode =
   | 'exit-blocked'
   | 'target-node-invalid'
   | 'target-stage-load-failed'
+  | 'target-navigation-failed'
+  | 'target-has-no-exits'
   | 'transition-in-progress'
   | 'transition-not-prepared'
   | 'transition-already-confirmed'
-  | 'persistence-failed';
+  | 'persistence-failed'
+  | 'reward-not-found'
+  | 'reward-not-claimable'
+  | 'reward-already-claimed'
+  | 'reward-already-applied';
 
 export interface CampaignRouterFailure {
   readonly code: CampaignRouterFailureCode;
@@ -190,6 +218,7 @@ export interface CampaignRouterFailure {
   };
   readonly bindingFailure?: CampaignExitBindingFailure;
   readonly persistenceFailure?: CampaignRunSaveFailure;
+  readonly targetFailureCode?: CampaignRouterFailureCode;
   readonly recovery: 'unchanged' | 'rolled-back' | 'storage-state-unknown';
 }
 

@@ -130,4 +130,18 @@ describe('BranchingCampaignPilotFactory', () => {
     });
     expect(loaded).toMatchObject({ ok: true, value: { status: 'loaded' } });
   });
+
+  it('restores and exposes a pending reward after a crash between confirm and claim', () => {
+    const storage = new MemorySaveStorage();
+    const first = createRoot(storage).session;
+    const branch = prepareBranch(first, 'route-a');
+    expect(first.router.confirm(branch.preparationId).ok).toBe(true);
+
+    const restored = createRoot(storage).session;
+
+    expect(restored.router.pendingRewards().map(reward => reward.transitionId))
+      .toEqual([branch.transitionId]);
+    expect(restored.router.claimReward(branch.transitionId).ok).toBe(true);
+    expect(restored.router.pendingRewards()).toEqual([]);
+  });
 });

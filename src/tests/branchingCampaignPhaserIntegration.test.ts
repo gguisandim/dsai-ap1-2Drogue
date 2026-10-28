@@ -109,9 +109,199 @@ describe('GameScene branching campaign pilot', () => {
     expect(state.campaignRouter.state().currentNodeId).not.toBe(beforeNode);
     expect(state.currentLevel.id).toBe(selected.targetStageId);
     expect(state.progression.recordStageCompleted).toHaveBeenCalledTimes(1);
+    expect(state.progression.recordStageCompleted).toHaveBeenCalledWith({
+      stageId: VERSE_SECTIONS[0].id,
+      difficulty: VERSE_SECTIONS[0].difficulty,
+      parSeconds: VERSE_SECTIONS[0].parTime,
+    });
     expect(state.player.addHalos).toHaveBeenCalledWith(19);
+    expect(state.campaignRouter.rewards().filter((reward: any) => reward.status === 'applied'))
+      .toHaveLength(1);
     expect(state.buildMapFromDefinition).toHaveBeenCalledWith(state.currentLevel);
     expect(state.isTransitioning).toBe(false);
+  });
+
+  it('keeps navigation confirmed but defers the reward when the claim cannot persist', () => {
+    const { scene, state } = sceneShell();
+    scene.init();
+    prepareTransitionScene(state);
+    const target = VERSE_SECTIONS[1];
+    state.campaignRouter = {
+      prepare: jest.fn(() => ({
+        ok: true,
+        value: {
+          preparationId: 'prepare.test',
+          transitionId: 'transition.test',
+          targetNodeId: 'node.next',
+          destinationStage: { level: target },
+        },
+      })),
+      confirm: jest.fn(() => ({ ok: true, value: { transition: { transitionId: 'transition.test' } } })),
+      claimReward: jest.fn(() => ({
+        ok: false,
+        error: { code: 'persistence-failed', recovery: 'rolled-back' },
+      })),
+      acknowledgeReward: jest.fn(),
+      inspect: jest.fn(() => ({ ok: true, value: { snapshot: { destinations: [] } } })),
+    };
+
+    state.navigateCampaignExit('physical.test');
+
+    expect(state.progression.recordStageCompleted).not.toHaveBeenCalled();
+    expect(state.currentLevel).toBe(target);
+    expect(state.buildMapFromDefinition).toHaveBeenCalledWith(target);
+    expect(state.levelBannerText.setText).toHaveBeenCalledWith('RECOMPENSA ADIADA: persistence-failed');
+    expect(state.isTransitioning).toBe(false);
+  });
+
+  it('recovers instead of rebuilding a target with no inspected exits', () => {
+    const { scene, state } = sceneShell();
+    scene.init();
+    prepareTransitionScene(state);
+    const target = VERSE_SECTIONS[1];
+    state.campaignRouter = {
+      prepare: jest.fn(() => ({
+        ok: true,
+        value: {
+          preparationId: 'prepare.test',
+          transitionId: 'transition.test',
+          targetNodeId: 'node.next',
+          destinationStage: { level: target },
+        },
+      })),
+      confirm: jest.fn(() => ({ ok: true, value: { transition: { transitionId: 'transition.test' } } })),
+      claimReward: jest.fn(() => ({
+        ok: true,
+        value: {
+          reward: {
+            transitionId: 'transition.test',
+            stageId: VERSE_SECTIONS[0].id,
+            difficulty: VERSE_SECTIONS[0].difficulty,
+            parSeconds: VERSE_SECTIONS[0].parTime,
+            status: 'claimed',
+          },
+          persistence: 'skipped',
+        },
+      })),
+      acknowledgeReward: jest.fn(() => ({ ok: true, value: { persistence: 'skipped' } })),
+      inspect: jest.fn(() => ({
+        ok: false,
+        error: { code: 'binding-failed', recovery: 'unchanged' },
+      })),
+    };
+    state.buildMapFromDefinition = jest.fn();
+
+    state.navigateCampaignExit('physical.test');
+
+    expect(state.progression.recordStageCompleted).toHaveBeenCalledTimes(1);
+    expect(state.buildMapFromDefinition).not.toHaveBeenCalled();
+    expect(state.scene.restart).toHaveBeenCalledWith(expect.objectContaining({
+      branchingCampaign: true,
+      branchingRecoveryAttempt: 1,
+    }));
+    expect(state.levelBannerText.setText).toHaveBeenCalledWith(
+      'TRANSIÇÃO CONFIRMADA; DESTINO INDISPONÍVEL: binding-failed',
+    );
+  });
+
+  it('recovers when rebuilding a confirmed target throws', () => {
+    const { scene, state } = sceneShell();
+    scene.init({
+      branchingCampaign: true,
+      branchingRunId: 'pilot.rebuild-failure',
+      branchingRunSeed: 'scene-seed',
+    } as any);
+    prepareTransitionScene(state);
+    const selected = state.campaignNavigation.snapshot.destinations[0];
+    state.buildMapFromDefinition = jest.fn(() => { throw new Error('rebuild fixture'); });
+
+    state.handleCampaignExitProximity(selected.physicalExitId, true, true);
+
+    expect(state.progression.recordStageCompleted).toHaveBeenCalledTimes(1);
+    expect(state.scene.restart).toHaveBeenCalledWith(expect.objectContaining({
+      branchingCampaign: true,
+      branchingRunId: 'pilot.rebuild-failure',
+      branchingRecoveryAttempt: 1,
+    }));
+    expect(state.levelBannerText.setText).toHaveBeenCalledWith(
+      'TRANSIÇÃO CONFIRMADA; FALHA AO RECONSTRUIR O DESTINO.',
+    );
+  });
+
+  it('settles a pending reward once during scene recovery', () => {
+    const { scene, state } = sceneShell();
+    prepareTransitionScene(state);
+    const pending = [{
+      transitionId: 'transition.pending',
+      stageInstanceId: 'node.source',
+      stageId: VERSE_SECTIONS[0].id,
+      difficulty: VERSE_SECTIONS[0].difficulty,
+      parSeconds: VERSE_SECTIONS[0].parTime,
+      status: 'pending',
+    }];
+    const pendingRewards = jest.fn()
+      .mockReturnValueOnce(pending)
+      .mockReturnValue([]);
+    state.campaignRouter = {
+      pendingRewards,
+      claimReward: jest.fn(() => ({
+        ok: true,
+        value: { reward: { ...pending[0], status: 'claimed' }, persistence: 'saved' },
+      })),
+      acknowledgeReward: jest.fn(() => ({ ok: true, value: { persistence: 'saved' } })),
+    };
+
+    state.recoverPendingCampaignRewards();
+    state.recoverPendingCampaignRewards();
+
+    expect(state.progression.recordStageCompleted).toHaveBeenCalledTimes(1);
+    expect(state.progression.recordStageCompleted).toHaveBeenCalledWith({
+      stageId: VERSE_SECTIONS[0].id,
+      difficulty: VERSE_SECTIONS[0].difficulty,
+      parSeconds: VERSE_SECTIONS[0].parTime,
+    });
+    expect(state.player.addHalos).toHaveBeenCalledWith(19);
+    expect(state.campaignRouter.claimReward).toHaveBeenCalledTimes(1);
+    expect(state.campaignRouter.acknowledgeReward).toHaveBeenCalledWith('transition.pending');
+  });
+
+  it('does not acknowledge a reward when progression application throws', () => {
+    const { scene, state } = sceneShell();
+    prepareTransitionScene(state);
+    state.progression.recordStageCompleted = jest.fn(() => { throw new Error('progression fixture'); });
+    state.campaignRouter = {
+      pendingRewards: jest.fn(() => [{
+        transitionId: 'transition.failure',
+        stageInstanceId: 'node.source',
+        stageId: VERSE_SECTIONS[0].id,
+        difficulty: VERSE_SECTIONS[0].difficulty,
+        parSeconds: VERSE_SECTIONS[0].parTime,
+        status: 'pending',
+      }]),
+      claimReward: jest.fn(() => ({
+        ok: true,
+        value: {
+          reward: {
+            transitionId: 'transition.failure',
+            stageInstanceId: 'node.source',
+            stageId: VERSE_SECTIONS[0].id,
+            difficulty: VERSE_SECTIONS[0].difficulty,
+            parSeconds: VERSE_SECTIONS[0].parTime,
+            status: 'claimed',
+          },
+          persistence: 'saved',
+        },
+      })),
+      acknowledgeReward: jest.fn(),
+    };
+
+    state.recoverPendingCampaignRewards();
+
+    expect(state.campaignRouter.claimReward).toHaveBeenCalledTimes(1);
+    expect(state.campaignRouter.acknowledgeReward).not.toHaveBeenCalled();
+    expect(state.levelBannerText.setText).toHaveBeenCalledWith(
+      'RECOMPENSA NÃO CONFIRMADA; NÃO SERÁ REAPLICADA.',
+    );
   });
 
   it('keeps the current map and reward untouched when confirmation rolls back', () => {

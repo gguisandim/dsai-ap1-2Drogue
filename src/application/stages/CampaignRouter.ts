@@ -14,6 +14,8 @@ import type {
   CampaignNavigationSnapshot,
   CampaignNavigationView,
   CampaignPreparedTransition,
+  CampaignRewardClaim,
+  CampaignRewardRecord,
   CampaignRouteAccess,
   CampaignRouteBlockedReason,
   CampaignRouteDestination,
@@ -94,6 +96,7 @@ export function createCampaignRunState(graph: CampaignRunState['graph']): Campai
     physicalExits: {},
     nodeResumes: {},
     confirmedTransitionIds: [],
+    rewards: {},
   });
 }
 
@@ -182,8 +185,34 @@ export class CampaignRouter {
         edge,
         transitionId,
         navigation.value.physicalExits,
+        {
+          stageId: navigation.value.currentNode.stageId,
+          difficulty: navigation.value.loadedStage.level.difficulty,
+          parSeconds: navigation.value.loadedStage.level.parTime,
+        },
         targetNode,
       );
+      if (targetNode) {
+        // Preflight the target before persistence so a confirmed transition
+        // can never strand the player in a stage without campaign exits.
+        const targetInspection = this.inspectState(candidate);
+        if (!targetInspection.ok) return this.failure(
+          'target-navigation-failed',
+          `Target stage navigation is invalid: ${targetInspection.error.code}.`,
+          targetNode.id,
+          'unchanged',
+          {
+            targetFailureCode: targetInspection.error.code,
+            ...this.targetFailureDetail(targetInspection.error),
+          },
+        );
+        if (targetInspection.value.snapshot.destinations.length === 0) return this.failure(
+          'target-has-no-exits',
+          'Target stage has no campaign exits to continue the run.',
+          targetNode.id,
+          'unchanged',
+        );
+      }
       const publicValue: CampaignPreparedTransition = Object.freeze({
         preparationId,
         transitionId,
@@ -272,22 +301,148 @@ export class CampaignRouter {
     return true;
   }
 
+  public rewards(): readonly CampaignRewardRecord[] {
+    return Object.freeze(Object.values(this.stateValue.rewards)
+      .sort((left, right) => compare(left.transitionId, right.transitionId)));
+  }
+
+  public pendingRewards(): readonly CampaignRewardRecord[] {
+    return Object.freeze(this.rewards().filter(reward => reward.status === 'pending'));
+  }
+
+  public claimReward(transitionId: string): CampaignNavigationResult<CampaignRewardClaim> {
+    if (this.busy || this.preparation) return this.failure(
+      'transition-in-progress', 'A transition is currently prepared or being confirmed.',
+      transitionId, 'unchanged',
+    );
+    const record = this.stateValue.rewards[transitionId];
+    if (!record) return this.failure(
+      'reward-not-found', 'Reward record does not exist for this transition.',
+      transitionId, 'unchanged',
+    );
+    if (record.status === 'claimed') return this.failure(
+      'reward-already-claimed', 'Reward was already claimed and must not be applied again.',
+      transitionId, 'unchanged',
+    );
+    if (record.status === 'applied') return this.failure(
+      'reward-already-applied', 'Reward was already applied.', transitionId, 'unchanged',
+    );
+    const candidate = canonicalCampaignRunState({
+      ...this.stateValue,
+      rewards: {
+        ...this.stateValue.rewards,
+        [transitionId]: { ...record, status: 'claimed' },
+      },
+    });
+    const persisted = this.persist(
+      candidate,
+      this.stateValue,
+      'Reward claim was rolled back after run persistence failed.',
+      transitionId,
+    );
+    if (!persisted.ok) return Object.freeze({ ok: false as const, error: persisted.error });
+    this.stateValue = candidate;
+    return this.success(Object.freeze({
+      reward: candidate.rewards[transitionId],
+      persistence: persisted.persistence,
+    }));
+  }
+
+  public acknowledgeReward(transitionId: string): CampaignNavigationResult<CampaignRewardClaim> {
+    if (this.busy || this.preparation) return this.failure(
+      'transition-in-progress', 'A transition is currently prepared or being confirmed.',
+      transitionId, 'unchanged',
+    );
+    const record = this.stateValue.rewards[transitionId];
+    if (!record) return this.failure(
+      'reward-not-found', 'Reward record does not exist for this transition.',
+      transitionId, 'unchanged',
+    );
+    if (record.status === 'applied') return this.success(Object.freeze({
+      reward: record,
+      persistence: 'skipped' as const,
+    }));
+    if (record.status === 'pending') return this.failure(
+      'reward-not-claimable', 'Reward must be claimed before it is acknowledged.',
+      transitionId, 'unchanged',
+    );
+    const candidate = canonicalCampaignRunState({
+      ...this.stateValue,
+      rewards: {
+        ...this.stateValue.rewards,
+        [transitionId]: { ...record, status: 'applied' },
+      },
+    });
+    const persisted = this.persist(
+      candidate,
+      this.stateValue,
+      'Reward acknowledgement was rolled back after run persistence failed.',
+      transitionId,
+    );
+    if (!persisted.ok) return Object.freeze({ ok: false as const, error: persisted.error });
+    this.stateValue = candidate;
+    return this.success(Object.freeze({
+      reward: candidate.rewards[transitionId],
+      persistence: persisted.persistence,
+    }));
+  }
+
+  private persist(
+    candidate: CampaignRunState,
+    previous: CampaignRunState,
+    failureMessage: string,
+    referenceId: string,
+  ): { readonly ok: true; readonly persistence: CampaignRewardClaim['persistence'] } |
+    { readonly ok: false; readonly error: CampaignRouterFailure } {
+    if (!this.dependencies.saves) return { ok: true, persistence: 'skipped' };
+    const saved = this.dependencies.saves.save(candidate, previous);
+    if (!saved.ok) return {
+      ok: false,
+      error: Object.freeze({
+        code: 'persistence-failed' as const,
+        message: failureMessage,
+        referenceId,
+        recovery: saved.error.recovery === 'storage-state-unknown'
+          ? 'storage-state-unknown' as const : 'rolled-back' as const,
+        persistenceFailure: saved.error,
+      }),
+    };
+    return {
+      ok: true,
+      persistence: saved.value.persistence === 'verified-after-error'
+        ? 'verified-after-error' : 'saved',
+    };
+  }
+
+  private targetFailureDetail(error: CampaignRouterFailure): Partial<CampaignRouterFailure> {
+    return {
+      ...(error.stageLoadFailure ? { stageLoadFailure: error.stageLoadFailure } : {}),
+      ...(error.physicalExitFailure ? { physicalExitFailure: error.physicalExitFailure } : {}),
+      ...(error.bindingFailure ? { bindingFailure: error.bindingFailure } : {}),
+      ...(error.persistenceFailure ? { persistenceFailure: error.persistenceFailure } : {}),
+    };
+  }
+
   private inspectInternal(): CampaignNavigationResult<CampaignNavigationView> {
-    const runDiagnostics = validateCampaignRunState(this.stateValue);
+    return this.inspectState(this.stateValue);
+  }
+
+  private inspectState(state: CampaignRunState): CampaignNavigationResult<CampaignNavigationView> {
+    const runDiagnostics = validateCampaignRunState(state);
     if (runDiagnostics.length > 0) return this.failure(
-      'invalid-run', 'Campaign run state is invalid.', this.stateValue.currentNodeId,
+      'invalid-run', 'Campaign run state is invalid.', state.currentNodeId,
       'unchanged',
     );
-    const currentNode = this.stateValue.graph.nodes.find(node => node.id === this.stateValue.currentNodeId);
+    const currentNode = state.graph.nodes.find(node => node.id === state.currentNodeId);
     if (!currentNode) return this.failure(
-      'invalid-run', 'Current campaign node is missing.', this.stateValue.currentNodeId, 'unchanged',
+      'invalid-run', 'Current campaign node is missing.', state.currentNodeId, 'unchanged',
     );
-    const loaded = this.loadStage(currentNode);
+    const loaded = this.loadStage(currentNode, state);
     if (!loaded.ok) return this.failure(
       'current-stage-load-failed', 'Current stage could not be loaded.', currentNode.stageId,
       'unchanged', { stageLoadFailure: loaded.error },
     );
-    const outgoing = this.stateValue.graph.edges.filter(edge => edge.sourceNodeId === currentNode.id);
+    const outgoing = state.graph.edges.filter(edge => edge.sourceNodeId === currentNode.id);
     let physical;
     try {
       physical = this.dependencies.resolver.resolve({ node: currentNode, edges: outgoing, stage: loaded.value });
@@ -304,7 +459,7 @@ export class CampaignRouter {
         },
       },
     );
-    const persisted = this.stateValue.physicalExits[currentNode.id];
+    const persisted = state.physicalExits[currentNode.id];
     if (persisted && !samePhysicalResolution(persisted, physical.value)) return this.failure(
       'physical-resolution-failed', 'Persisted physical exits are incompatible with the loaded stage.',
       currentNode.id, 'unchanged', {
@@ -322,7 +477,7 @@ export class CampaignRouter {
     let binding;
     try {
       binding = this.dependencies.binder.bind({
-        graph: this.stateValue.graph,
+        graph: state.graph,
         sourceNodeId: currentNode.id,
         stage: loaded.value,
         physicalExitResult: physical,
@@ -336,12 +491,12 @@ export class CampaignRouter {
       'unchanged', { bindingFailure: binding.error },
     );
     const destinations = binding.value.bindings.map(item =>
-      this.destination(item, currentNode)).sort((left, right) => compare(left.edgeId, right.edgeId));
+      this.destination(item, currentNode, state)).sort((left, right) => compare(left.edgeId, right.edgeId));
     const snapshot: CampaignNavigationSnapshot = Object.freeze({
-      runId: this.stateValue.graph.runId,
-      runSeed: this.stateValue.graph.runSeed,
-      graphId: this.stateValue.graph.id,
-      status: this.stateValue.status,
+      runId: state.graph.runId,
+      runSeed: state.graph.runSeed,
+      graphId: state.graph.id,
+      status: state.status,
       currentNodeId: currentNode.id,
       stageInstanceId: currentNode.id,
       currentStageId: currentNode.stageId,
@@ -356,11 +511,15 @@ export class CampaignRouter {
     }));
   }
 
-  private destination(binding: CampaignExitBinding, node: CampaignNode): CampaignRouteDestination {
+  private destination(
+    binding: CampaignExitBinding,
+    node: CampaignNode,
+    state: CampaignRunState,
+  ): CampaignRouteDestination {
     const edge = binding.edge;
     let blockedReason: CampaignRouteBlockedReason | undefined;
-    if (!this.stateValue.revealedEdgeIds.includes(edge.id)) blockedReason = 'edge-not-revealed';
-    else if (transitionCount(this.stateValue, edge.id) >= edge.traversalLimit) {
+    if (!state.revealedEdgeIds.includes(edge.id)) blockedReason = 'edge-not-revealed';
+    else if (transitionCount(state, edge.id) >= edge.traversalLimit) {
       blockedReason = 'traversal-limit-reached';
     } else if (edge.condition && !this.access.eligibleEdgeIds.includes(edge.id)) {
       blockedReason = 'edge-condition-unmet';
@@ -368,7 +527,7 @@ export class CampaignRouter {
       !this.access.unlockedStageExitIds.includes(binding.stageExitId)) {
       blockedReason = 'stage-exit-locked';
     }
-    if (this.stateValue.status === 'completed') blockedReason = 'traversal-limit-reached';
+    if (state.status === 'completed') blockedReason = 'traversal-limit-reached';
     return Object.freeze({
       edgeId: edge.id,
       physicalExitId: binding.physicalExitId,
@@ -387,6 +546,7 @@ export class CampaignRouter {
     edge: CampaignEdge,
     transitionId: string,
     physical: PhysicalExitResolution,
+    source: { readonly stageId: string; readonly difficulty: number; readonly parSeconds: number },
     targetNode?: CampaignNode,
   ): CampaignRunState {
     const targetId = targetNode?.id;
@@ -406,16 +566,27 @@ export class CampaignRouter {
       revisitCounts: nextCounts,
       physicalExits: { ...this.stateValue.physicalExits, [edge.sourceNodeId]: physical },
       confirmedTransitionIds: [...this.stateValue.confirmedTransitionIds, transitionId],
+      rewards: {
+        ...this.stateValue.rewards,
+        [transitionId]: {
+          transitionId,
+          stageInstanceId: edge.sourceNodeId,
+          stageId: source.stageId,
+          difficulty: source.difficulty,
+          parSeconds: source.parSeconds,
+          status: 'pending',
+        },
+      },
     });
   }
 
-  private loadStage(node: CampaignNode): StageLoadResult {
+  private loadStage(node: CampaignNode, state: CampaignRunState = this.stateValue): StageLoadResult {
     const request: StageLoadRequest = {
       stageId: node.stageId,
-      runId: this.stateValue.graph.runId,
+      runId: state.graph.runId,
       runSeed: node.stageSeed,
-      ...(this.stateValue.nodeResumes[node.id]
-        ? { resume: this.stateValue.nodeResumes[node.id] }
+      ...(state.nodeResumes[node.id]
+        ? { resume: state.nodeResumes[node.id] }
         : {}),
     };
     try {

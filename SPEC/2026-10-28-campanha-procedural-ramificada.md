@@ -908,7 +908,9 @@ A recompensa legada é aplicada apenas depois da confirmação do run save. A
 API atual de progressão não aceita `transitionId` para deduplicação; portanto
 não se declara exatamente-uma-vez numa queda entre a confirmação e a aplicação
 da recompensa. O save narrativo `umbra-trail-campaign-v1` não é escrito pelo
-piloto. Não há transação entre essa chave e `umbra-trail-run-v1`.
+piloto. Não há transação entre essa chave e `umbra-trail-run-v1`. A Etapa 8.6.1
+substitui a aplicação direta por um journal durável e limita a falha residual
+documentada abaixo.
 
 #### Critérios observáveis
 
@@ -931,6 +933,107 @@ comando explícito, rollback e restart. A suíte completa passou com 741 testes
 em 45 suítes; typecheck, build (702 módulos), architecture gate (1.695 arquivos
 e 3.683 dependências), traceability gate (dez registros v1 e oito legados) e
 `git diff --check` passaram.
+
+### Etapa 8.6.1 — hardening da integração Phaser (2026-10-28)
+
+Auditoria corretiva da Etapa 8.6. A cena continua sendo um adapter fino; a
+correção fica no router, no run save e em um helper de rebuild compartilhado.
+Não há conteúdo amazônico, NPC, bioma, mapa, combate, IA ou dependência nova.
+
+#### Janelas identificadas
+
+1. `confirm` persistia o cursor de destino antes de aplicar a recompensa. Uma
+   queda entre a confirmação e `recordStageCompleted` perdia a recompensa; não
+   havia registro durável de que ela estava devida.
+2. `prepare` não inspecionava o destino. Um destino carregável mas sem saídas
+   podia ser confirmado, deixando a cena no node novo sem `physicalExitId`.
+3. Uma falha de `inspect()` depois da confirmação ainda reconstruía o mapa com
+   `campaignNavigation` indefinido, produzindo exatamente a fase sem saídas.
+4. O rebuild do destino era duplicado entre `navigateCampaignExit` e
+   `advanceToNextLevel`, com pequenas divergências de banner e reset.
+
+#### Journal de recompensas
+
+`CampaignRunState.rewards` é um registro durável indexado por `transitionId`:
+
+```text
+pending → claimed → applied
+```
+
+Cada entrada guarda `transitionId`, `stageInstanceId` (o node de origem),
+`stageId`, `difficulty`, `parSeconds` e `status`. O `confirm` grava a entrada
+`pending` na mesma escrita do cursor; logo, confirmação e dívida de recompensa
+são atômicas dentro de `umbra-trail-run-v1`.
+
+`claimReward(transitionId)` grava `claimed` antes de chamar a progressão.
+`acknowledgeReward(transitionId)` grava `applied` depois. Na inicialização,
+`recoverPendingCampaignRewards()` aplica somente registros `pending`; registros
+`claimed` nunca são reaplicados. Assim:
+
+- uma queda entre confirmação e claim reaplica a recompensa no restart;
+- uma queda depois do claim não duplica a recompensa;
+- a janela residual entre `claimed` e `recordStageCompleted` pode perder a
+  recompensa. Isso é explícito e não é mascarado como exatamente-uma-vez.
+
+A garantia efetiva é **at-most-once por `transitionId`**. Para obter
+exatamente-uma-vez seria necessário um consumidor idempotente em progressão
+(por exemplo, `operationId` obrigatório em `recordStageCompleted` e um ledger
+`appliedOperationIds` no `ProgressionState`). Essa é uma intervenção separada,
+fora do escopo desta correção; sem ela, nenhum teste nem documentação declara
+exatamente-uma-vez.
+
+Falhas de claim ou acknowledge preservam o estado anterior na memória e usam a
+recuperação já existente do run save (`previous-preserved`,
+`storage-state-unknown`). A cena bloqueia novas transições quando o storage fica
+incerto e exibe o motivo no HUD.
+
+#### Preflight do destino
+
+`prepare` monta o `candidate` — cursor, placement de origem e recompensa
+`pending` — e o inspeciona antes de expor a preparação. A inspeção resolve as
+saídas físicas e os bindings do destino. Se falhar, retorna
+`target-navigation-failed` com `targetFailureCode`; se não houver nenhuma saída
+vinculável, retorna `target-has-no-exits`. Nenhum estado ou save muda. O jogador
+permanece no mapa de origem, cujas saídas continuam válidas.
+
+#### Recuperação depois da confirmação
+
+Depois de `confirm`, a cena inspeciona o destino. Se a inspeção falhar ou o
+rebuild lançar, a cena não reconstrói um mapa sem saídas: exibe o diagnóstico e
+reinicia a cena com `branchingRecoveryAttempt`, `runId`, `runSeed` e `halos`. O
+restart restaura o cursor persistido. Uma segunda falha de recuperação encerra
+no menu em vez de repetir indefinidamente. `isTransitioning` nunca permanece
+preso quando não há restart disponível.
+
+#### Duplicação removida
+
+O bloco de limpeza, rebuild, reposicionamento do player, bounds, banner e título
+foi extraído para `rebuildCurrentStage()`, usado tanto por
+`navigateCampaignExit` quanto por `advanceToNextLevel`. `queueCampaignExitTiles`
+é chamado apenas como no-op na rota legada. Não houve refatoração integral de
+`GameScene`.
+
+#### Compatibilidade
+
+- flag `branchingCampaign` OFF continua sem criar router, run save ou grafo;
+- o save narrativo e as três chaves legadas não são lidos nem escritos pelo
+  journal;
+- run saves v1 sem `rewards` continuam aceitos e são canonicalizados com
+  `rewards: {}`; os novos bytes continuam no schema `umbra-trail-run-save` v1;
+- a API de progressão e `ProgressionState` permanecem intocados.
+
+Testes adicionados: journal pending/claimed/applied e reload, claim repetido,
+claim com escrita revertida, recompensa pending após queda entre confirmação e
+claim, ausência de pending para recompensa claimed, preflight de destino sem
+saídas, save v1 legado sem journal, recompensa aplicada uma vez na recuperação
+da cena, progressão que lança sem acknowledge e recuperação explícita em falha
+de inspeção/rebuild.
+
+Evidência: `campaignRouter.test.ts`, `branchingCampaignPilot.test.ts` e
+`branchingCampaignPhaserIntegration.test.ts` foram ampliados. A suíte completa
+passou com 753 testes em 45 suítes; typecheck, build, architecture gate (1.695
+arquivos e 3.683 dependências), traceability gate (onze registros v1 após o
+registro desta etapa e oito legados explícitos) e `git diff --check` passaram.
 
 ## Riscos e decisões adiadas
 
