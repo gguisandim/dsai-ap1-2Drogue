@@ -50,6 +50,18 @@ export interface NarrativeProgressionView {
   readonly unlockedContent: readonly string[];
 }
 
+export interface NarrativeIdentityScope {
+  readonly runId: string;
+  readonly chapterId: ChapterId;
+  readonly stageId: StageId;
+  readonly manifestRevision: number;
+}
+
+export interface PendingRewardOperation {
+  readonly operationId: string;
+  readonly reward: Exclude<StageReward, { readonly type: 'stage.flag' }>;
+}
+
 export interface NarrativeStateSnapshot {
   readonly version: 1;
   readonly flags: Readonly<Record<string, boolean | number | string>>;
@@ -59,6 +71,7 @@ export interface NarrativeStateSnapshot {
   readonly processedEventIds: readonly string[];
   readonly firedRuleIds: readonly string[];
   readonly appliedOperationIds: readonly string[];
+  readonly pendingOperations: readonly PendingRewardOperation[];
   readonly unlockedExitIds: readonly string[];
 }
 
@@ -101,6 +114,7 @@ export type NarrativeOperationFailureCode =
   | 'invalid-event'
   | 'invalid-transition'
   | 'invalid-amount'
+  | 'operation-not-pending'
   | 'processing-limit';
 
 export interface NarrativeOperationFailure {
@@ -140,6 +154,7 @@ export interface NarrativeEventProcessingResult {
 export interface NarrativeProcessorOptions {
   readonly maximumEvents?: number;
   readonly maximumCommands?: number;
+  readonly identity?: NarrativeIdentityScope;
 }
 
 export interface DialogueEngineOptions {

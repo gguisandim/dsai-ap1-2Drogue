@@ -1,4 +1,8 @@
-import type { MissionState, NarrativeStateSnapshot } from '../contracts';
+import type {
+  MissionState,
+  NarrativeStateSnapshot,
+  PendingRewardOperation,
+} from '../contracts';
 import { cloneFrozen, compareStrings } from './data';
 
 type Scalar = boolean | number | string;
@@ -11,6 +15,7 @@ export class NarrativeState {
   private processedEventIds = new Set<string>();
   private firedRuleIds = new Set<string>();
   private appliedOperationIds = new Set<string>();
+  private pendingOperations = new Map<string, PendingRewardOperation>();
   private unlockedExitIds = new Set<string>();
 
   public constructor(initial?: Partial<NarrativeStateSnapshot>) {
@@ -38,6 +43,8 @@ export class NarrativeState {
     this.processedEventIds = new Set(snapshot.processedEventIds ?? []);
     this.firedRuleIds = new Set(snapshot.firedRuleIds ?? []);
     this.appliedOperationIds = new Set(snapshot.appliedOperationIds ?? []);
+    this.pendingOperations = new Map((snapshot.pendingOperations ?? [])
+      .map(operation => [operation.operationId, cloneFrozen(operation)]));
     this.unlockedExitIds = new Set(snapshot.unlockedExitIds ?? []);
   }
 
@@ -101,6 +108,21 @@ export class NarrativeState {
     return fresh;
   }
 
+  public queuePendingOperation(operation: PendingRewardOperation): boolean {
+    if (this.pendingOperations.has(operation.operationId)) return false;
+    this.pendingOperations.set(operation.operationId, cloneFrozen(operation));
+    return true;
+  }
+
+  public acknowledgePendingOperation(operationId: string): boolean {
+    return this.pendingOperations.delete(operationId);
+  }
+
+  public getPendingOperations(): readonly PendingRewardOperation[] {
+    return cloneFrozen([...this.pendingOperations.values()]
+      .sort((left, right) => compareStrings(left.operationId, right.operationId)));
+  }
+
   public unlockExit(exitId: string): boolean {
     const fresh = !this.unlockedExitIds.has(exitId);
     this.unlockedExitIds.add(exitId);
@@ -128,6 +150,7 @@ export class NarrativeState {
       processedEventIds: sorted(this.processedEventIds),
       firedRuleIds: sorted(this.firedRuleIds),
       appliedOperationIds: sorted(this.appliedOperationIds),
+      pendingOperations: this.getPendingOperations(),
       unlockedExitIds: sorted(this.unlockedExitIds),
     });
   }

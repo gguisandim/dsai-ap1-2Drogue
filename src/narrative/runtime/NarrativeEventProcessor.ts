@@ -12,6 +12,7 @@ import { evaluateCondition, signalMatches } from './conditions';
 import { cloneFrozen, failure, success } from './data';
 import { NarrativeRegistry } from './NarrativeRegistry';
 import { NarrativeState } from './NarrativeState';
+import { scopeNarrativeId } from './NarrativeIdentity';
 import { QuestEngine } from './QuestEngine';
 
 const DEFAULT_MAXIMUM_EVENTS = 128;
@@ -25,6 +26,7 @@ interface QueuedEvent {
 export class NarrativeEventProcessor {
   private readonly maximumEvents: number;
   private readonly maximumCommands: number;
+  private readonly identity: NarrativeProcessorOptions['identity'];
 
   public constructor(
     private readonly registry: NarrativeRegistry,
@@ -34,6 +36,7 @@ export class NarrativeEventProcessor {
   ) {
     this.maximumEvents = options.maximumEvents ?? DEFAULT_MAXIMUM_EVENTS;
     this.maximumCommands = options.maximumCommands ?? DEFAULT_MAXIMUM_COMMANDS;
+    this.identity = options.identity;
   }
 
   public process(
@@ -41,13 +44,14 @@ export class NarrativeEventProcessor {
     state: NarrativeState,
     progression: NarrativeProgressionView,
   ): NarrativeResult<NarrativeEventProcessingResult, NarrativeOperationFailure> {
-    if (typeof event.id !== 'string' || event.id.trim() === '') {
+    if (typeof event.id !== 'string' || !/^[a-z0-9]+(?:[._-][a-z0-9]+)*$/.test(event.id)) {
       return failure(this.error('invalid-event', 'Narrative event requires a non-empty stable occurrence id.'));
     }
-    if (state.hasProcessedEvent(event.id)) {
+    const rootEventId = scopeNarrativeId(this.identity, 'event', event.id);
+    if (state.hasProcessedEvent(rootEventId)) {
       return success(cloneFrozen({
         status: 'duplicate' as const,
-        eventId: event.id,
+        eventId: rootEventId,
         commands: [] as StageCommand[],
         generatedSignals: [] as StageSignal[],
         snapshot: state.snapshot(),
@@ -55,7 +59,7 @@ export class NarrativeEventProcessor {
     }
 
     const working = state.clone();
-    const queue: QueuedEvent[] = [{ id: event.id, signal: event.signal }];
+    const queue: QueuedEvent[] = [{ id: rootEventId, signal: event.signal }];
     const commands: StageCommand[] = [];
     const generatedSignals: StageSignal[] = [];
     let eventCount = 0;
@@ -76,11 +80,15 @@ export class NarrativeEventProcessor {
         return failure(this.error('processing-limit', 'Narrative command limit reached.'));
       }
       if (command.type === 'reward.grant') {
-        if (!working.markOperationApplied(command.operationId)) return success(undefined);
+        const operationId = scopeNarrativeId(this.identity, 'operation', command.operationId);
+        if (!working.markOperationApplied(operationId)) return success(undefined);
+        const scopedCommand: StageCommand = cloneFrozen({ ...command, operationId });
         if (command.reward.type === 'stage.flag') {
           working.setFlag(command.reward.flag, command.reward.value);
+        } else {
+          working.queuePendingOperation({ operationId, reward: command.reward });
         }
-        commands.push(command);
+        commands.push(scopedCommand);
         return success(undefined);
       }
       commands.push(command);
@@ -124,9 +132,10 @@ export class NarrativeEventProcessor {
 
       for (const rule of this.registry.listEventRules(this.stageId)) {
         if (rule.when !== current.signal.type || !signalMatches(current.signal, rule.filter)) continue;
-        if (rule.once && working.hasFiredRule(rule.id)) continue;
+        const ruleId = scopeNarrativeId(this.identity, 'rule', rule.id);
+        if (rule.once && working.hasFiredRule(ruleId)) continue;
         if (rule.condition && !evaluateCondition(rule.condition, working.snapshot(), progression)) continue;
-        if (rule.once) working.markRuleFired(rule.id);
+        if (rule.once) working.markRuleFired(ruleId);
         for (const command of rule.commands) {
           const applied = applyCommand(command, current.id);
           if (!applied.ok) return applied;
@@ -137,7 +146,7 @@ export class NarrativeEventProcessor {
     state.restore(working.snapshot());
     return success(cloneFrozen({
       status: 'processed' as const,
-      eventId: event.id,
+      eventId: rootEventId,
       commands,
       generatedSignals,
       snapshot: state.snapshot(),

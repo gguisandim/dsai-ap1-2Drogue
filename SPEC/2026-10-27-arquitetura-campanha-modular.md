@@ -525,34 +525,41 @@ As chaves atuais permanecem inalteradas:
 - `umbra-trail-settings` para preferências;
 - `vigrid-progression-v1` para progressão persistente.
 
-Novos dados são aditivos:
+Novos dados são aditivos. O contrato efetivo da Etapa 4 substitui os dois
+rascunhos independentes `CampaignSaveV1`/`RunSaveV1` por um envelope narrativo
+vinculado à run ativa, sem copiar o payload de `StageResumeState`:
 
 ```ts
-export interface CampaignSaveV1 {
-  version: 1;
+export interface CampaignSaveIdentity {
   campaignId: string;
-  chapterId: ChapterId;
-  completedStageIds: StageId[];
-  flags: Record<string, boolean | number | string>;
-  missionStates: Record<MissionId, MissionState>;
-  appliedOperationIds: string[];
-}
-
-export interface RunSaveV1 {
-  version: 1;
   runId: string;
   runSeed: string;
+  chapterId: ChapterId;
   stageId: StageId;
   manifestRevision: number;
-  procedural?: { preset: PresetId; seed: string };
-  stageFlags: Record<string, boolean | number | string>;
-  missionStates: Record<MissionId, MissionState>;
-  collectedEntityIds: string[];
-  appliedOperationIds: string[];
 }
+
+export interface CampaignSaveEnvelope {
+  schema: 'umbra-trail-campaign-save';
+  version: 1;
+  identity: CampaignSaveIdentity;
+  narrative: NarrativeStateSnapshot;
+  migration?: {
+    source: 'stage-resume';
+    sourceVersion: 0;
+  };
+}
+
+export type CampaignSaveResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: CampaignSaveFailure };
 ```
 
-Chaves propostas: `umbra-trail-campaign-v1` e `umbra-trail-run-v1`.
+`umbra-trail-campaign-v1` é a única chave escrita por esta etapa. A chave
+`umbra-trail-run-v1` permanece reservada para a integração da Etapa 5, quando o
+adapter de cena tiver dados concretos de mapa/coleta para produzir um
+`StageResumeState`; inventar esses dados agora duplicaria responsabilidade e
+criaria uma segunda fonte de verdade.
 
 Regras de migração:
 
@@ -560,7 +567,8 @@ Regras de migração:
 - o índice transitório atual é convertido para ID pela tabela congelada do adapter, nunca pela ordem nova do registry;
 - halos transitórios do `Player` não são confundidos com `ProgressionState.currency`;
 - `ProgressionState.chapter` continua numérico e não recebe `chapterId`;
-- operações de recompensa usam `operationId` para impedir aplicação repetida;
+- operações de recompensa usam `operationId` qualificado por run/capítulo/fase e
+  entram primeiro numa fila persistente de pendências;
 - revisão igual retoma normalmente; revisão diferente passa por migrator explícito ou volta ao início da fase preservando progressão/campanha reconhecida;
 - IDs desconhecidos produzem diagnóstico e fallback seguro; o JSON original não é sobrescrito antes de uma migração bem-sucedida.
 
@@ -811,6 +819,68 @@ ou combate.
 Implementar storages de campanha/run e migrators, mantendo as chaves atuais intocadas. O modo legado continua default.
 
 Critério de saída: saves atuais carregam; ausência/corrupção dos saves novos não impede o jogo; recompensa repetida não duplica efeito.
+
+#### Recorte de implementação — 2026-10-28
+
+- `CampaignSaveEnvelope` versão 1 contém somente identidade e
+  `NarrativeStateSnapshot`. A identidade obrigatória é
+  `campaignId + runId + runSeed + chapterId + stageId + manifestRevision`; não há
+  relógio, checksum dependente de plataforma nem aleatoriedade no formato;
+- `SaveStoragePort` expõe somente leitura e escrita por chave. O adapter em
+  memória copia strings e serve aos testes; nenhum adapter de `localStorage` é
+  conectado ao jogo nesta etapa. Um adapter futuro fica isolado nessa porta e
+  não pode tocar perfil, configurações ou progressão;
+- `CampaignSaveService` serializa de forma determinística, valida dados externos,
+  carrega, restaura transacionalmente e nunca remove chaves. Ausência retorna um
+  resultado vazio bem-sucedido; JSON inválido, versão desconhecida, identidade
+  divergente e snapshot inválido retornam falhas discriminadas e preservam tanto
+  o storage quanto o `NarrativeState` de destino;
+- antes de escrever, o serviço relê a chave. Somente ausência ou um envelope v1
+  válido da mesma identidade podem receber update; bytes corrompidos, formatos
+  legados, versões desconhecidas e outra run retornam `storage-conflict` e não são
+  sobrescritos;
+- a migração concreta aceita o contrato legado disponível, `StageResumeState`,
+  mais uma identidade completa fornecida pelo chamador. Flags, missões e IDs de
+  operação reconhecidos são copiados para o snapshot narrativo; escolhas,
+  diálogos, eventos, regras, saídas e pendências inexistentes começam vazios.
+  `collectedEntityIds` continua pertencendo ao resume de stage e não é copiado.
+  Migração nunca escreve automaticamente nem sobrescreve o JSON original;
+- payloads desconhecidos não são reinterpretados como saves conhecidos. Uma
+  revisão divergente exige migrator explícito; o serviço não tenta adivinhar IDs
+  por índice, nome ou ordem de registry;
+- eventos processados, regras `once` e operações recebem IDs qualificados pelo
+  prefixo determinístico da run, capítulo, fase e revisão. O seed vincula o
+  envelope, mas não entra no prefixo porque `runId` é a identidade estável da
+  execução; saves com seed divergente são incompatíveis;
+- `NarrativeStateSnapshot` passa a persistir `pendingOperations`. Ao produzir uma
+  recompensa externa, o runtime registra primeiro a operação pendente e conserva
+  o `operationId` no journal de deduplicação. A integração deve: salvar a
+  pendência, aplicar a recompensa fora do domínio usando o mesmo `operationId`,
+  confirmar a pendência e salvar novamente;
+- uma pendência não confirmada é reapresentada após restore. Se o sistema externo
+  não deduplicar por `operationId`, uma queda entre aplicação e confirmação ainda
+  pode repetir o efeito; portanto esta etapa oferece protocolo recuperável e não
+  declara exatamente-uma-vez transacional entre narrative e progressão;
+- `StageDirector` aceita identidade opcional para manter consumidores headless da
+  Etapa 3 compatíveis. Saves da Etapa 4 exigem identidade completa e nunca aceitam
+  IDs narrativos não qualificados.
+
+Critérios observáveis: round-trip produz o mesmo envelope e snapshot; serializar
+duas vezes o mesmo estado produz os mesmos bytes; restaurar save incompatível não
+muda o estado; load/migração não escrevem; chaves legadas permanecem byte a byte;
+IDs de duas runs ou fases não colidem; pendências sobrevivem a restart e só saem
+após confirmação explícita; confirmar novamente é idempotente; corrupção em
+qualquer coleção aninhada é diagnosticada com caminho estável.
+
+Provas automatizadas: `campaignSaveService.test.ts` para contratos, round-trip,
+storage, corrupção, versões e identidade; `campaignSaveMigration.test.ts` para
+`StageResumeState`, preservação e falhas atômicas;
+`narrativePendingOperations.test.ts` para escopo, retomada, confirmação e limites
+da garantia externa. As três suítes adicionam 20 testes. Em 2026-10-28,
+typecheck, build e as 30 suítes passaram, totalizando 620 testes — os 600
+anteriores mais os 20 desta etapa. `git diff --check` não encontrou erros e
+`src/narrative/` permaneceu sem dependências de Phaser, `GameScene`, combate,
+progressão ou `localStorage`.
 
 ### Etapa 5 — integração fina com a cena
 
