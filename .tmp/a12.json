@@ -1,0 +1,8 @@
+[
+ {"a":"move","x":1100,"y":600},
+ {"a":"key","key":"s","code":"KeyS","vk":83,"duration":90},
+ {"a":"sleep","ms":80},
+ {"a":"key","key":"d","code":"KeyD","vk":68,"duration":3000},
+ {"a":"sleep","ms":150},
+ {"a":"shot","path":".tmp/evidence/run2-east3.png"}
+]

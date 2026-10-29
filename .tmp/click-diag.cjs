@@ -1,0 +1,20 @@
+const WebSocket=require('ws');const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+(async()=>{
+ const t=(await(await fetch('http://127.0.0.1:9333/json/list')).json()).find(x=>x.type==='page'&&x.url.startsWith('http://127.0.0.1:5173/'));
+ const ws=new WebSocket(t.webSocketDebuggerUrl);await new Promise((r,j)=>{ws.once('open',r);ws.once('error',j);});
+ let id=0;const p=new Map();const ev=[];
+ ws.on('message',raw=>{const m=JSON.parse(raw);if(!m.id){if(m.method==='Runtime.exceptionThrown')ev.push({e:'exception',d:m.params.exceptionDetails.text,desc:m.params.exceptionDetails.exception&&m.params.exceptionDetails.exception.description});if(m.method==='Log.entryAdded'&&m.params.entry.level==='error')ev.push({e:'log',t:m.params.entry.text});return;}const e=p.get(m.id);if(!e)return;p.delete(m.id);m.error?e.j(new Error(JSON.stringify(m.error))):e.r(m.result);});
+ const send=(method,params={})=>new Promise((r,j)=>{const i=++id;p.set(i,{r,j});ws.send(JSON.stringify({id:i,method,params}));});
+ await send('Runtime.enable');await send('Log.enable');await send('Page.enable');
+ await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+ const x=877,y=404;
+ await send('Input.dispatchMouseEvent',{type:'mouseMoved',x,y,button:'none',buttons:0});
+ await send('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',buttons:1,clickCount:1});
+ await sleep(80);
+ await send('Input.dispatchMouseEvent',{type:'mouseReleased',x,y,button:'left',buttons:0,clickCount:1});
+ await sleep(1500);
+ const st=await send('Runtime.evaluate',{expression:`(()=>{const g=window.Phaser&&Phaser.Game?null:null;const r=[];const proto=Phaser.Game.prototype;return 'ok';})()`,returnByValue:true}).catch(()=>null);
+ const info=await send('Runtime.evaluate',{expression:`(()=>{const arr=[];return {scenes: (function(){try{return Phaser? 'hasPhaser':'no'}catch(e){return 'err'}})()};})()`,returnByValue:true});
+ console.log(JSON.stringify({ev, info:info&&info.result&&info.result.value},null,1));
+ ws.terminate();
+})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,4 +1,7 @@
 import type {
+  DialogueResult,
+  DialogueSession,
+  DialogueTurn,
   NarrativeContent,
   NarrativeDomainEvent,
   NarrativeEventProcessingResult,
@@ -72,6 +75,19 @@ export class StageDirector {
 
   public process(event: NarrativeDomainEvent): NarrativeResult<NarrativeEventProcessingResult, NarrativeOperationFailure> {
     return this.events.process(event, this.state, this.progression);
+  }
+
+  public get progressionView(): NarrativeProgressionView {
+    return this.progression;
+  }
+
+  /** Thin reuse of the existing DialogueEngine; no parallel dialogue rules. */
+  public startDialogue(dialogueId: string): NarrativeResult<DialogueTurn, NarrativeOperationFailure> {
+    return this.dialogues.start(dialogueId, this.state, this.progression);
+  }
+
+  public advanceDialogue(session: DialogueSession): NarrativeResult<DialogueResult, NarrativeOperationFailure> {
+    return this.dialogues.continue(session, this.state, this.progression);
   }
 
   public snapshot(): NarrativeStateSnapshot {

@@ -1,0 +1,8 @@
+[
+ {"a":"move","x":1200,"y":650},
+ {"a":"key","key":"s","code":"KeyS","vk":83,"duration":70},
+ {"a":"sleep","ms":70},
+ {"a":"key","key":"d","code":"KeyD","vk":68,"duration":480},
+ {"a":"sleep","ms":150},
+ {"a":"shot","path":".tmp/evidence/run4-at-exit2.png"}
+]

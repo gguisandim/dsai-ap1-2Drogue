@@ -64,6 +64,10 @@ export class GameMacroCampaignAdapter implements GameCampaignNavigationPort {
     return this.binder.state();
   }
 
+  public campaignId(): string {
+    return this.definition.id;
+  }
+
   public inspect(): GameCampaignNavigationResult<CampaignNavigationView> {
     const inspected = this.binder.inspect();
     if (!inspected.ok) return this.binderFailure(inspected.error);

@@ -1,0 +1,1 @@
+[{"a":"move","x":1000,"y":400},{"a":"key","key":"w","code":"KeyW","vk":87,"duration":350},{"a":"sleep","ms":120}]

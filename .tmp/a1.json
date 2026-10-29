@@ -1,0 +1,6 @@
+[
+ {"a":"move","x":1100,"y":500},
+ {"a":"key","key":"d","code":"KeyD","vk":68,"duration":2600},
+ {"a":"sleep","ms":250},
+ {"a":"shot","path":".tmp/evidence/run2-step1.png"}
+]

@@ -1,0 +1,10 @@
+[
+ {"a":"move","x":1000,"y":560},
+ {"a":"key","key":"w","code":"KeyW","vk":87,"duration":100},
+ {"a":"sleep","ms":80},
+ {"a":"key","key":"d","code":"KeyD","vk":68,"duration":2700},
+ {"a":"sleep","ms":100},
+ {"a":"key","key":"w","code":"KeyW","vk":87,"duration":270},
+ {"a":"sleep","ms":150},
+ {"a":"shot","path":".tmp/evidence/93b-near-poi.png"}
+]

@@ -1,0 +1,11 @@
+[
+ {"a":"move","x":1000,"y":300},
+ {"a":"key","key":"w","code":"KeyW","vk":87,"duration":350},
+ {"a":"key","key":"d","code":"KeyD","vk":68,"duration":650},
+ {"a":"key","key":"s","code":"KeyS","vk":83,"duration":140},
+ {"a":"key","key":"d","code":"KeyD","vk":68,"duration":330},
+ {"a":"key","key":"w","code":"KeyW","vk":87,"duration":1150},
+ {"a":"key","key":"s","code":"KeyS","vk":83,"duration":80},
+ {"a":"sleep","ms":120},
+ {"a":"shot","path":".tmp/evidence/run2-repos1.png"}
+]

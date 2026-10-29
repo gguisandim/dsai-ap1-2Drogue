@@ -1,0 +1,1 @@
+[{"a":"move","x":1050,"y":430},{"a":"key","key":"d","code":"KeyD","vk":68,"duration":3100},{"a":"sleep","ms":150},{"a":"shot","path":".tmp/evidence/run4-hub-portal.png"}]

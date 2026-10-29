@@ -1,0 +1,1 @@
+const s=game.scene.keys.GameScene;return {guide:s.controlsGuideOpen, hasPrompt:!!s.interactionPromptText, points:(s.interactionPoints||[]).length, markers:(s.poiMarkers||[]).length, session:!!s.modularNarrativeSession, overlay:!!s.dialogueOverlay};

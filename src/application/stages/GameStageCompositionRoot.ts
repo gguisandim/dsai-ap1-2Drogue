@@ -1,4 +1,5 @@
 import {
+  CAMPAIGN_SAVE_STORAGE_KEY,
   CampaignSaveService,
   NarrativeState,
   StageDirector,
@@ -6,9 +7,13 @@ import {
 import type {
   CampaignSaveFailure,
   CampaignSaveIdentity,
+  DialogueResult,
+  DialogueSession,
+  DialogueTurn,
   NarrativeOperationFailure,
   NarrativeProgressionView,
   NarrativeRegistryFailure,
+  NarrativeResult,
   SaveStoragePort,
   StageCommand,
 } from '../../narrative';
@@ -46,6 +51,20 @@ export interface GameNarrativeIdentityInput {
   readonly campaignId: string;
   readonly runId: string;
   readonly runSeed: string | number;
+  /** Campaign node occurrence; scopes narrative state per visit. */
+  readonly stageInstanceId?: string;
+}
+
+/**
+ * Additive per-stage narrative save key for campaign stages. The legacy
+ * `umbra-trail-campaign-v1` key used by the modular pilot is untouched.
+ */
+export function campaignStageNarrativeSaveKey(
+  runId: string,
+  chapterId: string,
+  stageId: string,
+): string {
+  return `${CAMPAIGN_SAVE_STORAGE_KEY}:${runId}:${chapterId}:${stageId}`;
 }
 
 export type GameNarrativeSessionFailure =
@@ -81,6 +100,38 @@ export class GameNarrativeSession {
     });
     if (!processed.ok) return processed;
     return this.save();
+  }
+
+  /**
+   * Emits `npc.interacted` through the existing runtime. The stable event id
+   * keeps repeated interactions idempotent (a `once` rule never refires).
+   */
+  public interactNpc(npcId: string): GameNarrativeSessionResult {
+    const processed = this.director.process({
+      id: `scene.npc-interacted.${npcId}`,
+      signal: { type: 'npc.interacted', npcId },
+    });
+    if (!processed.ok) return processed;
+    return this.save();
+  }
+
+  /** Emits `dialogue.completed` once per dialogue so event rules stay idempotent. */
+  public completeDialogue(dialogueId: string): GameNarrativeSessionResult {
+    const processed = this.director.process({
+      id: `scene.dialogue-completed.${dialogueId}`,
+      signal: { type: 'dialogue.completed', dialogueId },
+    });
+    if (!processed.ok) return processed;
+    return this.save();
+  }
+
+  /** Thin pass-through to the existing DialogueEngine via StageDirector. */
+  public startDialogue(dialogueId: string): NarrativeResult<DialogueTurn, NarrativeOperationFailure> {
+    return this.director.startDialogue(dialogueId);
+  }
+
+  public advanceDialogue(session: DialogueSession): NarrativeResult<DialogueResult, NarrativeOperationFailure> {
+    return this.director.advanceDialogue(session);
   }
 
   public pendingRewardCommands(): readonly StageCommand[] {
@@ -184,6 +235,7 @@ export class GameStageCompositionRoot {
     loadedStage: LoadedStage,
     identityInput: GameNarrativeIdentityInput,
     progression: NarrativeProgressionView,
+    narrativeStorageKey?: string,
   ): GameNarrativeSessionCreation {
     const identity: CampaignSaveIdentity = Object.freeze({
       campaignId: identityInput.campaignId,
@@ -192,12 +244,15 @@ export class GameStageCompositionRoot {
       chapterId: loadedStage.manifest.chapterId,
       stageId: loadedStage.manifest.id,
       manifestRevision: loadedStage.manifest.revision,
+      ...(identityInput.stageInstanceId ? { stageInstanceId: identityInput.stageInstanceId } : {}),
     });
     const state = new NarrativeState();
     let saves: CampaignSaveService | undefined;
     let persistenceFailure: CampaignSaveFailure | undefined;
     if (this.campaignStorage) {
-      saves = new CampaignSaveService(this.campaignStorage);
+      saves = narrativeStorageKey
+        ? new CampaignSaveService(this.campaignStorage, narrativeStorageKey)
+        : new CampaignSaveService(this.campaignStorage);
       const restored = saves.loadAndRestore(identity, state);
       if (!restored.ok) persistenceFailure = restored.error;
     }

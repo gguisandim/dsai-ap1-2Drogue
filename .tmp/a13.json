@@ -1,0 +1,1 @@
+[{"a":"move","x":1100,"y":350},{"a":"key","key":"w","code":"KeyW","vk":87,"duration":1150},{"a":"sleep","ms":150},{"a":"shot","path":".tmp/evidence/run2-climb.png"}]

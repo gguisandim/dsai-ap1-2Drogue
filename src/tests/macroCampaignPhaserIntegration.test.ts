@@ -91,6 +91,8 @@ describe('GameScene macro campaign vertical slice', () => {
       macroRunSeed: 'seed.scene-precedence',
     } as any);
     expect(macro.state.macroStageSource).toBe('campaign');
+    expect(macro.state.macroLoadedStage).toBeDefined();
+    expect(macro.state.macroLoadedStage.manifest.id).toBe('verse_01_atrium');
     expect(macro.state.branchingCampaign).toBe(false);
     expect(macro.state.branchingStageSource).toBe('legacy');
     expect(macro.state.currentLevel.id).toBe('verse_01_atrium');

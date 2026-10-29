@@ -1,0 +1,778 @@
+{
+  "lsKeys": [
+    "umbra-trail-profile",
+    "vigrid-progression-v1",
+    "umbra-trail-run-v1"
+  ],
+  "hasRun": true,
+  "runBytes": 31249,
+  "parsed": {
+    "schema": "umbra-trail-run-save",
+    "state": {
+      "activeGraphContextId": "context.route.aguas",
+      "confirmedTransitionIds": [
+        "transition.b8a29d4e",
+        "transition.11ff7342",
+        "transition.b7a29bbb"
+      ],
+      "currentNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+      "graph": {
+        "acts": [
+          {
+            "depthRange": [
+              0,
+              2
+            ],
+            "id": "act-1",
+            "milestoneNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+            "ordinal": 1,
+            "requiredBeatIds": [
+              "beat.act-1"
+            ]
+          },
+          {
+            "depthRange": [
+              3,
+              5
+            ],
+            "id": "act-2",
+            "milestoneNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+            "ordinal": 2,
+            "requiredBeatIds": [
+              "beat.act-2"
+            ]
+          },
+          {
+            "depthRange": [
+              6,
+              8
+            ],
+            "id": "act-3",
+            "milestoneNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+            "ordinal": 3,
+            "requiredBeatIds": [
+              "beat.act-3"
+            ]
+          }
+        ],
+        "campaignId": "campaign.umbra-trail.independent-routes",
+        "campaignRevision": 3,
+        "catalogRevision": 1,
+        "edges": [
+          {
+            "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+            "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+            "kind": "forward",
+            "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+            "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+            "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+            "traversalLimit": 2
+          },
+          {
+            "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.return",
+            "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.return",
+            "kind": "return",
+            "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.return",
+            "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+            "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+            "traversalLimit": 2
+          },
+          {
+            "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+            "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+            "kind": "forward",
+            "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+            "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+            "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+            "traversalLimit": 1
+          },
+          {
+            "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+            "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+            "kind": "forward",
+            "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+            "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+            "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+            "traversalLimit": 1
+          },
+          {
+            "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+            "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+            "kind": "forward",
+            "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+            "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+            "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+            "traversalLimit": 1
+          },
+          {
+            "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+            "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+            "kind": "forward",
+            "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+            "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+            "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+            "traversalLimit": 1
+          },
+          {
+            "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+            "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+            "kind": "forward",
+            "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+            "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+            "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+            "traversalLimit": 1
+          },
+          {
+            "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+            "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+            "kind": "forward",
+            "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+            "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+            "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+            "traversalLimit": 1
+          },
+          {
+            "exitSlotId": "exit.campaign.complete",
+            "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main.campaign.complete",
+            "kind": "forward",
+            "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main.campaign.complete",
+            "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+            "targetNodeId": "campaign.complete",
+            "traversalLimit": 1
+          },
+          {
+            "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+            "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+            "kind": "forward",
+            "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+            "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+            "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+            "traversalLimit": 1
+          }
+        ],
+        "entryNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+        "generationContextDigest": "context.12570173",
+        "generatorVersion": 1,
+        "id": "graph.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029",
+        "mandatoryBeatIds": [
+          "beat.act-1",
+          "beat.act-2",
+          "beat.act-3"
+        ],
+        "nodes": [
+          {
+            "actId": "act-1",
+            "biomeId": "crypt",
+            "branchId": "main",
+            "depth": 0,
+            "difficulty": 1,
+            "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+            "kind": "intermediate",
+            "maximumPhysicalExits": 2,
+            "providesBeatIds": [
+              "beat.act-1"
+            ],
+            "slotId": "act-1.entry",
+            "stageId": "verse_01_atrium",
+            "stageSeed": "stage.feba8e05",
+            "templateId": "route-slice.depth-0",
+            "templateRevision": 1
+          },
+          {
+            "actId": "act-1",
+            "biomeId": "crypt",
+            "branchId": "main",
+            "depth": 1,
+            "difficulty": 2,
+            "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+            "kind": "intermediate",
+            "maximumPhysicalExits": 2,
+            "providesBeatIds": [
+              "beat.act-1"
+            ],
+            "slotId": "act-1.intermediate",
+            "stageId": "stage.aguas.igapo-das-memorias",
+            "stageSeed": "stage.87af3141",
+            "templateId": "route-slice.depth-1",
+            "templateRevision": 1
+          },
+          {
+            "actId": "act-1",
+            "biomeId": "crypt",
+            "branchId": "main",
+            "depth": 2,
+            "difficulty": 3,
+            "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+            "kind": "milestone",
+            "maximumPhysicalExits": 2,
+            "providesBeatIds": [
+              "beat.act-1"
+            ],
+            "slotId": "act-1.milestone",
+            "stageId": "verse_03_santuario",
+            "stageSeed": "stage.dfdbfa75",
+            "templateId": "route-slice.depth-2",
+            "templateRevision": 1
+          },
+          {
+            "actId": "act-2",
+            "biomeId": "crypt",
+            "branchId": "main",
+            "depth": 3,
+            "difficulty": 4,
+            "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+            "kind": "intermediate",
+            "maximumPhysicalExits": 2,
+            "providesBeatIds": [
+              "beat.act-2"
+            ],
+            "slotId": "act-2.intermediate",
+            "stageId": "verse_01_atrium",
+            "stageSeed": "stage.1979d2f4",
+            "templateId": "route-slice.depth-3",
+            "templateRevision": 1
+          },
+          {
+            "actId": "act-2",
+            "biomeId": "crypt",
+            "branchId": "main",
+            "depth": 5,
+            "difficulty": 6,
+            "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+            "kind": "milestone",
+            "maximumPhysicalExits": 2,
+            "providesBeatIds": [
+              "beat.act-2"
+            ],
+            "slotId": "act-2.milestone",
+            "stageId": "verse_03_santuario",
+            "stageSeed": "stage.eba0d3f9",
+            "templateId": "route-slice.depth-5",
+            "templateRevision": 1
+          },
+          {
+            "actId": "act-2",
+            "biomeId": "crypt",
+            "branchId": "main",
+            "depth": 4,
+            "difficulty": 5,
+            "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+            "kind": "intermediate",
+            "maximumPhysicalExits": 2,
+            "providesBeatIds": [
+              "beat.act-2"
+            ],
+            "slotId": "act-2.rejoin",
+            "stageId": "verse_02_galeria",
+            "stageSeed": "stage.ce73943e",
+            "templateId": "route-slice.depth-4",
+            "templateRevision": 1
+          },
+          {
+            "actId": "act-3",
+            "biomeId": "crypt",
+            "branchId": "main",
+            "depth": 6,
+            "difficulty": 7,
+            "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+            "kind": "intermediate",
+            "maximumPhysicalExits": 2,
+            "providesBeatIds": [
+              "beat.act-3"
+            ],
+            "slotId": "act-3.intermediate",
+            "stageId": "verse_01_atrium",
+            "stageSeed": "stage.0e639262",
+            "templateId": "route-slice.depth-6",
+            "templateRevision": 1
+          },
+          {
+            "actId": "act-3",
+            "biomeId": "crypt",
+            "branchId": "main",
+            "depth": 8,
+            "difficulty": 9,
+            "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+            "kind": "milestone",
+            "maximumPhysicalExits": 2,
+            "providesBeatIds": [
+              "beat.act-3"
+            ],
+            "slotId": "act-3.milestone",
+            "stageId": "verse_03_santuario",
+            "stageSeed": "stage.c8217fa1",
+            "templateId": "route-slice.depth-8",
+            "templateRevision": 1
+          },
+          {
+            "actId": "act-3",
+            "biomeId": "crypt",
+            "branchId": "main",
+            "depth": 7,
+            "difficulty": 8,
+            "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+            "kind": "intermediate",
+            "maximumPhysicalExits": 2,
+            "providesBeatIds": [
+              "beat.act-3"
+            ],
+            "slotId": "act-3.rejoin",
+            "stageId": "verse_02_galeria",
+            "stageSeed": "stage.6adfe5a2",
+            "templateId": "route-slice.depth-7",
+            "templateRevision": 1
+          }
+        ],
+        "runId": "run.e2e.igapo.20261029",
+        "runSeed": "seed.e2e.igapo.20261029",
+        "schemaVersion": 1
+      },
+      "macroProgress": {
+        "completedMilestoneIds": [],
+        "corrupted": {
+          "completedRegionIds": [],
+          "status": "locked"
+        },
+        "currentLocation": {
+          "kind": "route",
+          "regionId": "region.aguas.igapo",
+          "routeId": "route.aguas"
+        },
+        "definitionId": "campaign.umbra-trail.independent-routes",
+        "definitionRevision": 3,
+        "finalStatus": "locked",
+        "processedOperationIds": [
+          "macro.navigation.transition.11ff7342",
+          "macro.navigation.transition.b7a29bbb",
+          "macro.navigation.transition.b8a29d4e"
+        ],
+        "routes": {
+          "route.aguas": {
+            "completedRegionIds": [],
+            "currentRegionId": "region.aguas.igapo",
+            "routeId": "route.aguas",
+            "status": "in-progress"
+          },
+          "route.floresta": {
+            "completedRegionIds": [],
+            "routeId": "route.floresta",
+            "status": "not-started"
+          },
+          "route.terra": {
+            "completedRegionIds": [],
+            "routeId": "route.terra",
+            "status": "not-started"
+          }
+        },
+        "version": 1
+      },
+      "nodeResumes": {},
+      "parkedGraphContexts": {
+        "context.hub.floresta-das-raizes": {
+          "confirmedTransitionIds": [
+            "transition.b8a29d4e",
+            "transition.11ff7342"
+          ],
+          "currentNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+          "graph": {
+            "acts": [
+              {
+                "depthRange": [
+                  0,
+                  2
+                ],
+                "id": "act-1",
+                "milestoneNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+                "ordinal": 1,
+                "requiredBeatIds": [
+                  "beat.act-1"
+                ]
+              },
+              {
+                "depthRange": [
+                  3,
+                  5
+                ],
+                "id": "act-2",
+                "milestoneNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+                "ordinal": 2,
+                "requiredBeatIds": [
+                  "beat.act-2"
+                ]
+              },
+              {
+                "depthRange": [
+                  6,
+                  8
+                ],
+                "id": "act-3",
+                "milestoneNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+                "ordinal": 3,
+                "requiredBeatIds": [
+                  "beat.act-3"
+                ]
+              }
+            ],
+            "campaignId": "campaign.umbra-trail.independent-routes",
+            "campaignRevision": 3,
+            "catalogRevision": 1,
+            "edges": [
+              {
+                "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+                "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+                "kind": "forward",
+                "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+                "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+                "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+                "traversalLimit": 2
+              },
+              {
+                "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.return",
+                "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.return",
+                "kind": "return",
+                "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.return",
+                "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+                "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+                "traversalLimit": 2
+              },
+              {
+                "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+                "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+                "kind": "forward",
+                "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+                "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+                "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+                "traversalLimit": 1
+              },
+              {
+                "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+                "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+                "kind": "forward",
+                "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+                "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+                "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+                "traversalLimit": 1
+              },
+              {
+                "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+                "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+                "kind": "forward",
+                "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+                "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+                "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+                "traversalLimit": 1
+              },
+              {
+                "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+                "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+                "kind": "forward",
+                "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+                "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+                "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+                "traversalLimit": 1
+              },
+              {
+                "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+                "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+                "kind": "forward",
+                "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+                "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+                "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+                "traversalLimit": 1
+              },
+              {
+                "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+                "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+                "kind": "forward",
+                "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+                "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+                "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+                "traversalLimit": 1
+              },
+              {
+                "exitSlotId": "exit.campaign.complete",
+                "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main.campaign.complete",
+                "kind": "forward",
+                "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main.campaign.complete",
+                "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+                "targetNodeId": "campaign.complete",
+                "traversalLimit": 1
+              },
+              {
+                "exitSlotId": "exit.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+                "id": "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+                "kind": "forward",
+                "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+                "sourceNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+                "targetNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+                "traversalLimit": 1
+              }
+            ],
+            "entryNodeId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+            "generationContextDigest": "context.12570173",
+            "generatorVersion": 1,
+            "id": "graph.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029",
+            "mandatoryBeatIds": [
+              "beat.act-1",
+              "beat.act-2",
+              "beat.act-3"
+            ],
+            "nodes": [
+              {
+                "actId": "act-1",
+                "biomeId": "crypt",
+                "branchId": "main",
+                "depth": 0,
+                "difficulty": 1,
+                "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+                "kind": "intermediate",
+                "maximumPhysicalExits": 2,
+                "providesBeatIds": [
+                  "beat.act-1"
+                ],
+                "slotId": "act-1.entry",
+                "stageId": "verse_01_atrium",
+                "stageSeed": "stage.feba8e05",
+                "templateId": "route-slice.depth-0",
+                "templateRevision": 1
+              },
+              {
+                "actId": "act-1",
+                "biomeId": "crypt",
+                "branchId": "main",
+                "depth": 1,
+                "difficulty": 2,
+                "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+                "kind": "intermediate",
+                "maximumPhysicalExits": 2,
+                "providesBeatIds": [
+                  "beat.act-1"
+                ],
+                "slotId": "act-1.intermediate",
+                "stageId": "stage.aguas.igapo-das-memorias",
+                "stageSeed": "stage.87af3141",
+                "templateId": "route-slice.depth-1",
+                "templateRevision": 1
+              },
+              {
+                "actId": "act-1",
+                "biomeId": "crypt",
+                "branchId": "main",
+                "depth": 2,
+                "difficulty": 3,
+                "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main",
+                "kind": "milestone",
+                "maximumPhysicalExits": 2,
+                "providesBeatIds": [
+                  "beat.act-1"
+                ],
+                "slotId": "act-1.milestone",
+                "stageId": "verse_03_santuario",
+                "stageSeed": "stage.dfdbfa75",
+                "templateId": "route-slice.depth-2",
+                "templateRevision": 1
+              },
+              {
+                "actId": "act-2",
+                "biomeId": "crypt",
+                "branchId": "main",
+                "depth": 3,
+                "difficulty": 4,
+                "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.intermediate.main",
+                "kind": "intermediate",
+                "maximumPhysicalExits": 2,
+                "providesBeatIds": [
+                  "beat.act-2"
+                ],
+                "slotId": "act-2.intermediate",
+                "stageId": "verse_01_atrium",
+                "stageSeed": "stage.1979d2f4",
+                "templateId": "route-slice.depth-3",
+                "templateRevision": 1
+              },
+              {
+                "actId": "act-2",
+                "biomeId": "crypt",
+                "branchId": "main",
+                "depth": 5,
+                "difficulty": 6,
+                "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.milestone.main",
+                "kind": "milestone",
+                "maximumPhysicalExits": 2,
+                "providesBeatIds": [
+                  "beat.act-2"
+                ],
+                "slotId": "act-2.milestone",
+                "stageId": "verse_03_santuario",
+                "stageSeed": "stage.eba0d3f9",
+                "templateId": "route-slice.depth-5",
+                "templateRevision": 1
+              },
+              {
+                "actId": "act-2",
+                "biomeId": "crypt",
+                "branchId": "main",
+                "depth": 4,
+                "difficulty": 5,
+                "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-2.rejoin.main",
+                "kind": "intermediate",
+                "maximumPhysicalExits": 2,
+                "providesBeatIds": [
+                  "beat.act-2"
+                ],
+                "slotId": "act-2.rejoin",
+                "stageId": "verse_02_galeria",
+                "stageSeed": "stage.ce73943e",
+                "templateId": "route-slice.depth-4",
+                "templateRevision": 1
+              },
+              {
+                "actId": "act-3",
+                "biomeId": "crypt",
+                "branchId": "main",
+                "depth": 6,
+                "difficulty": 7,
+                "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.intermediate.main",
+                "kind": "intermediate",
+                "maximumPhysicalExits": 2,
+                "providesBeatIds": [
+                  "beat.act-3"
+                ],
+                "slotId": "act-3.intermediate",
+                "stageId": "verse_01_atrium",
+                "stageSeed": "stage.0e639262",
+                "templateId": "route-slice.depth-6",
+                "templateRevision": 1
+              },
+              {
+                "actId": "act-3",
+                "biomeId": "crypt",
+                "branchId": "main",
+                "depth": 8,
+                "difficulty": 9,
+                "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.milestone.main",
+                "kind": "milestone",
+                "maximumPhysicalExits": 2,
+                "providesBeatIds": [
+                  "beat.act-3"
+                ],
+                "slotId": "act-3.milestone",
+                "stageId": "verse_03_santuario",
+                "stageSeed": "stage.c8217fa1",
+                "templateId": "route-slice.depth-8",
+                "templateRevision": 1
+              },
+              {
+                "actId": "act-3",
+                "biomeId": "crypt",
+                "branchId": "main",
+                "depth": 7,
+                "difficulty": 8,
+                "id": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-3.rejoin.main",
+                "kind": "intermediate",
+                "maximumPhysicalExits": 2,
+                "providesBeatIds": [
+                  "beat.act-3"
+                ],
+                "slotId": "act-3.rejoin",
+                "stageId": "verse_02_galeria",
+                "stageSeed": "stage.6adfe5a2",
+                "templateId": "route-slice.depth-7",
+                "templateRevision": 1
+              }
+            ],
+            "runId": "run.e2e.igapo.20261029",
+            "runSeed": "seed.e2e.igapo.20261029",
+            "schemaVersion": 1
+          },
+          "nodeResumes": {},
+          "physicalExits": {},
+          "revealedEdgeIds": [
+            "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+            "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.return",
+            "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main"
+          ],
+          "revisitCounts": {
+            "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main": 2,
+            "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main": 1
+          },
+          "rewards": {
+            "transition.11ff7342": {
+              "difficulty": 3,
+              "parSeconds": 210,
+              "stageId": "stage.aguas.igapo-das-memorias",
+              "stageInstanceId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+              "status": "applied",
+              "transitionId": "transition.11ff7342"
+            },
+            "transition.b8a29d4e": {
+              "difficulty": 2,
+              "parSeconds": 120,
+              "stageId": "verse_01_atrium",
+              "stageInstanceId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+              "status": "applied",
+              "transitionId": "transition.b8a29d4e"
+            }
+          },
+          "status": "active",
+          "traversedEdgeIds": [
+            "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+            "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.return"
+          ],
+          "visitedNodeIds": [
+            "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+            "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main"
+          ]
+        }
+      },
+      "physicalExits": {},
+      "revealedEdgeIds": [
+        "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+        "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.return",
+        "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.milestone.main"
+      ],
+      "revisitCounts": {
+        "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main": 2,
+        "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main": 2
+      },
+      "rewards": {
+        "transition.11ff7342": {
+          "difficulty": 3,
+          "parSeconds": 210,
+          "stageId": "stage.aguas.igapo-das-memorias",
+          "stageInstanceId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+          "status": "applied",
+          "transitionId": "transition.11ff7342"
+        },
+        "transition.b7a29bbb": {
+          "difficulty": 2,
+          "parSeconds": 120,
+          "stageId": "verse_01_atrium",
+          "stageInstanceId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+          "status": "applied",
+          "transitionId": "transition.b7a29bbb"
+        },
+        "transition.b8a29d4e": {
+          "difficulty": 2,
+          "parSeconds": 120,
+          "stageId": "verse_01_atrium",
+          "stageInstanceId": "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+          "status": "applied",
+          "transitionId": "transition.b8a29d4e"
+        }
+      },
+      "status": "active",
+      "traversedEdgeIds": [
+        "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main",
+        "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.return",
+        "edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main"
+      ],
+      "version": 1,
+      "visitedNodeIds": [
+        "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main",
+        "node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main"
+      ]
+    },
+    "version": 1
+  }
+}

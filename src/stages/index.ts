@@ -96,6 +96,15 @@ export { StageLoader } from './runtime/StageLoader';
 export type { StageLoaderOptions } from './runtime/StageLoader';
 export { registerCampaignChapters } from './chapters/registerCampaignChapters';
 export {
+  CAMPAIGN_CHAPTER_CATALOG,
+  applyCampaignRegionBindings,
+  campaignRegionBindings,
+} from './chapters/CampaignChapterCatalog';
+export type {
+  CampaignChapterEntry,
+  CampaignRegionBinding,
+} from './chapters/CampaignChapterCatalog';
+export {
   AGUAS_CHAPTER_MANIFEST,
   AGUAS_CHAPTER_STAGES,
   ECO_DAS_AGUAS_DIALOGUE_ID,

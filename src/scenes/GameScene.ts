@@ -33,6 +33,7 @@ import {
   GameStageCompositionRoot,
   UMBRA_ROUTE_SLICE_RUN_ID,
   UMBRA_ROUTE_SLICE_SEED,
+  campaignStageNarrativeSaveKey,
   createBrowserCampaignSaveStorage,
 } from '../application/stages';
 import type {
@@ -41,6 +42,12 @@ import type {
   GameSceneStageResolution,
 } from '../application/stages';
 import type { LoadedStage } from '../stages';
+import { DialogueOverlay } from '../ui/DialogueOverlay';
+import {
+  WorldInteractionPoint,
+  poiInteractionPoints,
+  resolveWorldInteraction,
+} from '../application/interaction/WorldInteraction';
 
 interface GameSceneInitData {
   skipControls?: boolean;
@@ -163,6 +170,14 @@ export class GameScene extends Phaser.Scene {
   private campaignNavigation?: CampaignNavigationView;
   private campaignPersistenceUncertain = false;
   private campaignRecoveryAttempt = 0;
+  private macroLoadedStage?: LoadedStage;
+  private stageNarrativeStage?: LoadedStage;
+  private interactionPoints: WorldInteractionPoint[] = [];
+  private poiMarkers: Phaser.GameObjects.Image[] = [];
+  private dialogueOverlay?: DialogueOverlay;
+  private dialogueOpen = false;
+  private narrativeReady = false;
+  private interactionPromptText!: Phaser.GameObjects.Text;
 
   constructor() {
     super('GameScene');
@@ -197,6 +212,7 @@ export class GameScene extends Phaser.Scene {
     this.modularLoadedStage = undefined;
     this.modularNarrativeSession = undefined;
     this.macroCampaignAdapter = undefined;
+    this.macroLoadedStage = undefined;
     if (this.macroCampaign) this.configureMacroCampaign();
     else this.configureBranchingCampaign();
     if (!this.macroCampaign && !this.branchingCampaign) this.configureModularStage();
@@ -212,6 +228,12 @@ export class GameScene extends Phaser.Scene {
     this.pendingExitTiles = [];
     this.exitsRevealed = false;
     this.skipControlsGuide = data?.skipControls ?? false;
+    this.stageNarrativeStage = undefined;
+    this.interactionPoints = [];
+    this.poiMarkers = [];
+    this.dialogueOverlay = undefined;
+    this.dialogueOpen = false;
+    this.narrativeReady = false;
   }
 
   private configureMacroCampaign(): void {
@@ -251,6 +273,8 @@ export class GameScene extends Phaser.Scene {
     this.macroCampaignAdapter = created.value.adapter;
     this.campaignRouter = created.value.adapter;
     this.campaignNavigation = inspected.value;
+    this.macroLoadedStage = inspected.value.loadedStage;
+    this.modularComposition = composition;
     this.macroStageSource = 'campaign';
   }
 
@@ -351,6 +375,7 @@ export class GameScene extends Phaser.Scene {
     this.queueCampaignExitTiles();
     this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
     this.progression = new ProgressionService();
+    this.narrativeReady = true;
     this.initializeModularNarrative();
 
     // 4. Create Player
@@ -410,6 +435,7 @@ export class GameScene extends Phaser.Scene {
 
     // 9. HUD & Chapter Title
     this.createHUD();
+    this.setupStageInteractions();
     this.recoverPendingCampaignRewards();
     this.comboManager = new ComboManager(this, this.comboHudText, () => this.player.extendComboWindow());
     this.startCurrentStageEncounter();
@@ -474,21 +500,132 @@ export class GameScene extends Phaser.Scene {
   }
 
   private initializeModularNarrative(): void {
-    if (!this.modularComposition || !this.modularLoadedStage) return;
+    this.modularNarrativeSession = undefined;
+    this.dialogueOverlay?.destroy();
+    this.dialogueOverlay = undefined;
+    this.stageNarrativeStage = undefined;
+    const loaded = this.modularLoadedStage ?? this.macroLoadedStage;
+    if (!this.modularComposition || !loaded) return;
+    const isMacro = !this.modularLoadedStage && this.macroLoadedStage !== undefined;
     const progression = this.progression.snapshot();
+    const storageKey = isMacro
+      ? campaignStageNarrativeSaveKey(String(this.macroRunId), loaded.manifest.chapterId, loaded.manifest.id)
+      : undefined;
     const created = this.modularComposition.createNarrativeSession(
-      this.modularLoadedStage,
-      {
-        campaignId: 'legacy.verse',
-        runId: this.modularRunId,
-        runSeed: this.modularRunSeed,
-      },
+      loaded,
+      isMacro
+        ? {
+            campaignId: this.macroCampaignAdapter?.campaignId() ?? 'campaign.umbra-trail.independent-routes',
+            runId: this.macroRunId,
+            runSeed: this.macroRunSeed,
+            stageInstanceId: this.campaignNavigation?.currentNode.id,
+          }
+        : {
+            campaignId: 'legacy.verse',
+            runId: this.modularRunId,
+            runSeed: this.modularRunSeed,
+          },
       {
         level: progression.level,
         unlockedContent: progression.unlockedContent,
       },
+      storageKey,
     );
-    if (created.ok) this.modularNarrativeSession = created.session;
+    this.stageNarrativeStage = loaded;
+    if (!created.ok) return;
+    this.modularNarrativeSession = created.session;
+    const names = new Map(loaded.npcs.map(npc => [npc.id, npc.displayName]));
+    this.dialogueOverlay = new DialogueOverlay(
+      this,
+      created.session,
+      speakerId => speakerId === 'player'
+        ? 'Você'
+        : speakerId === 'narrator'
+          ? 'Narrador'
+          : names.get(speakerId) ?? speakerId,
+      {
+        onOpen: () => {
+          this.dialogueOpen = true;
+          this.player?.setVelocity?.(0, 0);
+          if (this.player) this.player.combatInputEnabled = false;
+          this.physics.world.pause();
+          this.simulationBridge?.setPaused?.(true);
+        },
+        onClose: () => {
+          this.dialogueOpen = false;
+          if (this.player) this.player.combatInputEnabled = true;
+          this.physics.world.resume();
+          this.simulationBridge?.setPaused?.(false);
+        },
+      },
+    );
+  }
+
+  /** Rebuilds POI markers and the interaction points for the current stage. */
+  private setupStageInteractions(): void {
+    this.poiMarkers.forEach(marker => marker.destroy());
+    this.poiMarkers = [];
+    this.interactionPoints = [];
+    const loaded = this.stageNarrativeStage;
+    if (!this.modularNarrativeSession || !loaded) return;
+    if (!this.textures.exists('poi_vestige')) {
+      const graphics = this.make.graphics({ x: 0, y: 0 }, false);
+      graphics.fillStyle(0x0b2a24, 1);
+      graphics.fillCircle(12, 12, 11);
+      graphics.lineStyle(2, 0x8fe0c8, 1);
+      graphics.strokeCircle(12, 12, 10);
+      graphics.fillStyle(0x8fe0c8, 1);
+      graphics.fillCircle(12, 12, 4);
+      graphics.generateTexture('poi_vestige', 24, 24);
+      graphics.destroy();
+    }
+    const points = poiInteractionPoints(loaded.npcs);
+    this.interactionPoints.push(...points);
+    for (const point of points) {
+      const marker = this.add.image(point.x, point.y - 10, 'poi_vestige').setDepth(6).setAlpha(0.95);
+      this.tweens.add({
+        targets: marker,
+        y: point.y - 16,
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+      this.poiMarkers.push(marker);
+    }
+    this.pendingExitTiles.forEach(tile => {
+      if (!tile.physicalExitId) return;
+      this.interactionPoints.push(Object.freeze({
+        kind: 'exit' as const,
+        id: tile.physicalExitId,
+        x: tile.x,
+        y: tile.y,
+        label: 'Saída',
+        physicalExitId: tile.physicalExitId,
+        available: tile.available !== false,
+      }));
+    });
+  }
+
+  /** Shows the prompt for the nearest interaction and handles POI `E` presses. */
+  private updateWorldInteraction(): void {
+    if (!this.interactionPromptText) return;
+    if (!this.modularNarrativeSession || this.interactionPoints.length === 0) {
+      this.interactionPromptText.setVisible(false);
+      return;
+    }
+    const resolution = resolveWorldInteraction(
+      this.interactionPoints,
+      { x: this.player.x, y: this.player.y },
+    );
+    const poi = resolution && resolution.action === 'dialogue' ? resolution : undefined;
+    this.interactionPromptText.setVisible(Boolean(poi));
+    if (poi) this.interactionPromptText.setText(`E — ${poi.point.label}`);
+    if (!poi || !poi.dialogueId) return;
+    if (this.keyInteract && Phaser.Input.Keyboard.JustDown(this.keyInteract)) {
+      this.modularNarrativeSession.interactNpc(poi.point.id);
+      this.dialogueOverlay?.openDialogue(poi.dialogueId);
+    }
   }
 
   private setupColliders(): void {
@@ -918,6 +1055,16 @@ export class GameScene extends Phaser.Scene {
       stroke: '#000000',
       strokeThickness: 3,
     }).setOrigin(0.5).setScrollFactor(0).setDepth(960);
+
+    // Interaction prompt for the nearest POI (generic; no per-stage text).
+    this.interactionPromptText = this.add.text(640, 700, '', {
+      fontFamily: 'Courier New, monospace',
+      fontSize: '15px',
+      color: '#9fe8d2',
+      fontStyle: 'bold',
+      backgroundColor: '#06120f',
+      padding: { x: 10, y: 5 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(960).setVisible(false);
   }
 
   private showChapterTitle(title: string): void {
@@ -1050,6 +1197,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     this.campaignNavigation = inspected.value;
+    this.macroLoadedStage = inspected.value.loadedStage;
     const nextLevel = prepared.value.destinationStage.level;
     this.cameras.main.flash(600, 255, 215, 0);
     this.time.delayedCall(400, () => {
@@ -1180,6 +1328,11 @@ export class GameScene extends Phaser.Scene {
 
     this.buildMapFromDefinition(this.currentLevel);
     this.queueCampaignExitTiles();
+    if (this.narrativeReady) {
+      this.initializeModularNarrative();
+      this.setupStageInteractions();
+      this.modularNarrativeSession?.enterStage();
+    }
     this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
     this.prepareCurrentStageEncounter();
     this.startCurrentStageEncounter();
@@ -1278,6 +1431,19 @@ export class GameScene extends Phaser.Scene {
       this.playerDamageCooldown -= delta;
     }
 
+    // Dialogue is modal: it owns E/ESC and pauses the world (set on open).
+    if (this.dialogueOverlay?.isOpen()) {
+      this.interactionPromptText?.setVisible(false);
+      if (this.keyMenu && Phaser.Input.Keyboard.JustDown(this.keyMenu)) {
+        this.dialogueOverlay.close();
+        return;
+      }
+      if (this.keyInteract && Phaser.Input.Keyboard.JustDown(this.keyInteract)) {
+        this.dialogueOverlay.advance();
+      }
+      return;
+    }
+
     if (this.keyMenu && Phaser.Input.Keyboard.JustDown(this.keyMenu)) {
       this.physics.world.resume();
       this.scene.start('MenuScene');
@@ -1295,6 +1461,10 @@ export class GameScene extends Phaser.Scene {
     this.simulationBridge.setPaused(this.shopUI.getIsVisible() || this.isTransitioning);
     if (this.shopUI.getIsVisible()) return;
     if (this.isTransitioning) return;
+
+    // POI interaction must resolve before the portal consumes E in the
+    // physics overlap pass. A resolved POI consumes the key for this frame.
+    this.updateWorldInteraction();
 
     this.simulationBridge.advance(delta);
     this.combatBridge.advance(delta);

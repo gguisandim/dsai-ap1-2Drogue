@@ -1,0 +1,7 @@
+[
+ {"a":"move","x":950,"y":320},
+ {"a":"key","key":"d","code":"KeyD","vk":68,"duration":260},
+ {"a":"key","key":"w","code":"KeyW","vk":87,"duration":880},
+ {"a":"sleep","ms":100},
+ {"a":"shot","path":".tmp/evidence/run4-repos-w2.png"}
+]

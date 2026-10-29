@@ -3,10 +3,9 @@ import {
   CampaignExitBinder,
   CampaignGraphGenerator,
   CampaignGraphValidator,
-  ECO_DAS_AGUAS_DIALOGUE_ID,
-  ECO_DAS_AGUAS_EVENT_ID,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   PhysicalExitResolver,
+  applyCampaignRegionBindings,
 } from '../../stages';
 import type {
   CampaignContentReference,
@@ -47,37 +46,19 @@ const legacyPlaceholder = (stageId: string, reason: string): CampaignContentRefe
   placeholder: Object.freeze({ kind: 'legacy-map' as const, reason }),
 });
 
-const authoredStage = (stageId: string): CampaignContentReference => Object.freeze({
-  kind: 'stage' as const,
-  stageId,
-  minimumManifestRevision: 1,
-});
-
-export const UMBRA_CAMPAIGN_ROUTE_SLICE: CampaignMacroDefinition = Object.freeze({
-  ...UMBRA_CAMPAIGN_SKELETON,
-  revision: 3,
-  hub: Object.freeze({
-    ...UMBRA_CAMPAIGN_SKELETON.hub,
-    content: legacyPlaceholder(
-      'verse_01_atrium',
-      'Placeholder temporário para Floresta das Raízes; não representa o mapa final.',
-    ),
+export const UMBRA_CAMPAIGN_ROUTE_SLICE: CampaignMacroDefinition = Object.freeze(
+  applyCampaignRegionBindings({
+    ...UMBRA_CAMPAIGN_SKELETON,
+    revision: 3,
+    hub: Object.freeze({
+      ...UMBRA_CAMPAIGN_SKELETON.hub,
+      content: legacyPlaceholder(
+        'verse_01_atrium',
+        'Placeholder temporário para Floresta das Raízes; não representa o mapa final.',
+      ),
+    }),
   }),
-  routes: Object.freeze(UMBRA_CAMPAIGN_SKELETON.routes.map(route => Object.freeze({
-    ...route,
-    regions: Object.freeze(route.regions.map(region => region.id === 'region.aguas.igapo'
-      ? Object.freeze({
-          ...region,
-          title: 'Igapó das Memórias',
-          content: authoredStage(IGAPO_DAS_MEMORIAS_STAGE_ID),
-          narrative: Object.freeze({
-            dialogueIds: Object.freeze([ECO_DAS_AGUAS_DIALOGUE_ID]),
-            eventIds: Object.freeze([ECO_DAS_AGUAS_EVENT_ID]),
-          }),
-        })
-      : region)),
-  }))),
-});
+);
 
 const STAGE_IDS = Object.freeze([
   'verse_01_atrium',
