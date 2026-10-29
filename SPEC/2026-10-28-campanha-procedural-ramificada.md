@@ -1121,6 +1121,81 @@ build, architecture gate (1.696 arquivos e 3.685 dependências), traceability
 gate (doze registros v1 após o registro desta etapa e oito legados explícitos) e
 `git diff --check` passaram.
 
+### Etapa 8.7 — homologação funcional no navegador (parcial)
+
+Status: **parcial**. A execução usou Microsoft Edge headless real via Chrome
+DevTools Protocol, com perfil temporário isolado, servido por `npm run dev` em
+`http://localhost:5173`. Não houve mock de navegador. Nenhum arquivo de código
+foi alterado nesta etapa.
+
+#### Cenários executados
+
+| Cenário | Resultado observado |
+|---|---|
+| Run ramificada `pilot.manual-run`, seed `manual-731` | run save v1 criada com 12 nodes, node de entrada `act-1.entry`, stage `verse_03_santuario`, duas arestas de saída; sem exceções no console |
+| Movimento, combate e ondas | input real por teclado/mouse; HUD de onda 1/2; kills 1→4→8→10; `vigrid-progression-v1` criado com `operationLedger { version: 1, applied: [] }`; sem erros de runtime |
+| Morte e restart | `GAME OVER`; cena reiniciou no mesmo node confirmado; run save permaneceu byte a byte igual, sem transição ou recompensa nova |
+| Reload | menu → JOGAR restaurou exatamente os mesmos bytes do run save, mesmo `currentNodeId` e mesma topologia |
+| Segunda seed `pilot.manual-run-2` / `manual-732` | run save nova, `graphId` próprio, 12 nodes, mesmo node de entrada; a fase inicial reaproveitada é a mesma e não se observou falha |
+| Flag OFF (`/`) | fluxo legado abriu e permaneceu jogável; o run save existente não foi criado nem sobrescrito (`flagOffPreservedRunBytes: true`) |
+| Save corrompido `{corrupt` no perfil temporário | bytes preservados; piloto falhou de forma segura e a cena caiu no fluxo legado, sem criar save novo |
+| Console | apenas um 404 de recurso estático (favicon ausente); nenhuma exceção do jogo |
+
+Evidências locais (perfil temporário, não versionadas):
+`C:\Users\guisa\AppData\Local\Temp\umbra-homolog\01-menu.png` a `18-focus-fight.png`,
+incluindo `08-death-restart.png`, `09-reloaded.png`, `10-seed2.png`,
+`11-flag-off.png` e `12-corrupt-fallback.png`.
+
+#### Não executado no navegador
+
+- limpar as duas ondas até `CAMINHO LIBERADO!` e revelar portais;
+- interagir com `E` e concluir uma transição real;
+- percorrer as duas alternativas de bifurcação e a convergência;
+- observar recompensa `pending → claimed → applied` e o ledger no navegador;
+- recarregar depois de uma transição confirmada;
+- repetição/simultaneidade de transições, portais bloqueados ou inacessíveis e
+  falha de persistência em tempo real.
+
+Esses fluxos continuam cobertos pelos testes de integração mockada, mas não
+foram homologados em navegador. A tentativa automatizada de combate avançou
+ondas e provocou morte real, porém não chegou a limpar a fase.
+
+#### Roteiro manual reproduzível
+
+1. `npm run dev`; abrir
+   `http://localhost:5173/?branchingCampaign=1&branchingRun=pilot.manual-run&branchingSeed=manual-731`.
+2. Clicar em JOGAR, dispensar o guia de controles e derrotar as duas ondas com
+   J/K, Espaço e movimentação.
+3. Confirmar o banner `CAMINHO LIBERADO!` e dois portais distintos.
+4. Caminhar até um portal e pressionar `E`; confirmar a troca de stage e o HUD
+   do node seguinte.
+5. No console do navegador, conferir
+   `JSON.parse(localStorage.getItem('umbra-trail-run-v1')).state`:
+   `currentNodeId`, `confirmedTransitionIds.length` e `rewards[transitionId]`
+   com status `applied`.
+6. Conferir
+   `JSON.parse(localStorage.getItem('vigrid-progression-v1')).operationLedger.applied`
+   contendo o `transitionId`, e que recarregar a página não incrementa
+   `stagesCompleted`, `currency` ou o ledger novamente.
+7. Repetir em uma run isolada escolhendo a outra alternativa e confirmar a
+   convergência no mesmo node de rejoin.
+8. Matar o jogador, reiniciar, recarregar e confirmar cursor/recompensa sem
+   duplicação.
+9. Abrir `/` sem a flag e confirmar o fluxo legado; opcionalmente, em perfil
+   descartável, corromper `umbra-trail-run-v1` e confirmar fallback sem
+   sobrescrita.
+
+O run save usa uma chave global; para testar duas runs no mesmo perfil é
+necessário remover apenas a cópia do perfil descartável entre elas. Nenhum save
+real foi apagado.
+
+#### Achados
+
+Nenhum bug funcional foi identificado nos cenários executados. O 404 é o
+favicon ausente em `src/index.html` e não afeta o jogo. A homologação permanece
+parcial por ausência de evidência de navegador nos portais, bifurcações e
+recompensas de transição.
+
 ## Riscos e decisões adiadas
 
 - o catálogo procedural atual contém biomas de outra direção artística; o
@@ -1136,6 +1211,9 @@ gate (doze registros v1 após o registro desta etapa e oito legados explícitos)
   até testes de balanceamento;
 - digest e generator version precisam de política de migração antes de qualquer
   save de produção;
+- a homologação da Etapa 8.7 é parcial: portais, bifurcações e recompensas de
+  transição ainda exigem execução manual em navegador, conforme o roteiro da
+  seção 8.7;
 - a allowlist dos architecture gates não muda nesta etapa; qualquer dependência
   nova de implementação exigirá justificativa e hardening próprios.
 
