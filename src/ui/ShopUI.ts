@@ -5,6 +5,7 @@
 import Phaser from 'phaser';
 import { ITEM_DATABASE } from '../data/ItemDatabase';
 import { Player } from '../entities/Hero';
+import { isShopItemSupported, purchaseShopItem } from './ShopPurchase';
 
 export class ShopUI {
   private scene: Phaser.Scene;
@@ -81,7 +82,9 @@ export class ShopUI {
     const itemKeys = ['green_lollipop', 'purple_lollipop', 'yellow_lollipop', 'moon_mahaa_kalaa', 'evil_harvest_rosary'];
 
     // Combine weapons and items
-    const shopList: { name: string; price: number; desc: string; buyFn: () => void }[] = [];
+    const shopList: {
+      name: string; price: number; desc: string; supported: boolean; buyFn: () => void;
+    }[] = [];
 
     itemKeys.forEach(iKey => {
       const item = ITEM_DATABASE[iKey];
@@ -90,14 +93,14 @@ export class ShopUI {
           name: item.name,
           price: item.price,
           desc: item.description,
+          supported: isShopItemSupported(item),
           buyFn: () => {
-            if (this.player.halos >= item.price) {
-              this.player.halos -= item.price;
-              if (item.healAmount) this.player.heal(item.healAmount);
+            const purchase = purchaseShopItem(this.player, item);
+            if (purchase.ok) {
               this.updateHaloCount();
               alert(`Purchased: ${item.name}!`);
             } else {
-              alert("Not enough Halos!");
+              alert(purchase.error.message);
             }
           }
         });
@@ -117,20 +120,33 @@ export class ShopUI {
       });
       this.container.add(nameTxt);
 
-      const descTxt = this.scene.add.text(width / 2 - 300, startY + 5, entry.desc.substring(0, 55) + '...', {
-        fontSize: '12px',
-        color: '#bb99dd'
-      });
+      const descTxt = this.scene.add.text(
+        width / 2 - 300,
+        startY + 5,
+        entry.supported ? entry.desc.substring(0, 55) + '...' : 'Efeito indisponível nesta versão.',
+        {
+          fontSize: '12px',
+          color: entry.supported ? '#bb99dd' : '#776688'
+        },
+      );
       this.container.add(descTxt);
 
-      const buyBtn = this.scene.add.text(width / 2 + 220, startY, `BUY (${entry.price} ⏣)`, {
-        fontSize: '14px',
-        color: '#ffd700',
-        backgroundColor: '#4a154b',
-        padding: { x: 10, y: 6 }
-      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      const buyBtn = this.scene.add.text(
+        width / 2 + 220,
+        startY,
+        entry.supported ? `BUY (${entry.price} ⏣)` : 'INDISPONÍVEL',
+        {
+          fontSize: '14px',
+          color: entry.supported ? '#ffd700' : '#776688',
+          backgroundColor: entry.supported ? '#4a154b' : '#2a1a33',
+          padding: { x: 10, y: 6 }
+        },
+      ).setOrigin(0.5);
 
-      buyBtn.on('pointerdown', entry.buyFn);
+      if (entry.supported) {
+        buyBtn.setInteractive({ useHandCursor: true });
+        buyBtn.on('pointerdown', entry.buyFn);
+      }
       this.container.add(buyBtn);
 
       startY += 70;

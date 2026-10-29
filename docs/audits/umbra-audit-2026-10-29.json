@@ -1,0 +1,1698 @@
+{
+  "method": "git ls-files + TypeScript scanner/AST; cloc fallback because local cloc requires unavailable Perl",
+  "trackedFiles": 932,
+  "missingTrackedFiles": 927,
+  "codeFiles": 808,
+  "totals": {
+    "physical": 172940,
+    "nonblank": 160035,
+    "tokenLines": 128443,
+    "classes": 1376
+  },
+  "byCategory": [
+    {
+      "category": "generated",
+      "files": 115,
+      "physical": 84103,
+      "nonblank": 79365,
+      "tokenLines": 66217,
+      "classes": 902
+    },
+    {
+      "category": "production",
+      "files": 606,
+      "physical": 62273,
+      "nonblank": 56886,
+      "tokenLines": 47517,
+      "classes": 442
+    },
+    {
+      "category": "scripts",
+      "files": 10,
+      "physical": 12699,
+      "nonblank": 11357,
+      "tokenLines": 6893,
+      "classes": 0
+    },
+    {
+      "category": "tests",
+      "files": 50,
+      "physical": 10095,
+      "nonblank": 9027,
+      "tokenLines": 5937,
+      "classes": 17
+    },
+    {
+      "category": "tools",
+      "files": 27,
+      "physical": 3770,
+      "nonblank": 3400,
+      "tokenLines": 1879,
+      "classes": 15
+    }
+  ],
+  "bySubsystem": [
+    {
+      "subsystem": "simulation",
+      "files": 154,
+      "physical": 49425,
+      "nonblank": 46171,
+      "tokenLines": 45852,
+      "classes": 318
+    },
+    {
+      "subsystem": "progression",
+      "files": 39,
+      "physical": 20130,
+      "nonblank": 18708,
+      "tokenLines": 18519,
+      "classes": 215
+    },
+    {
+      "subsystem": "ai",
+      "files": 44,
+      "physical": 15935,
+      "nonblank": 14959,
+      "tokenLines": 14893,
+      "classes": 200
+    },
+    {
+      "subsystem": "combat",
+      "files": 231,
+      "physical": 15395,
+      "nonblank": 14012,
+      "tokenLines": 14012,
+      "classes": 226
+    },
+    {
+      "subsystem": "procedural",
+      "files": 134,
+      "physical": 10792,
+      "nonblank": 10157,
+      "tokenLines": 10157,
+      "classes": 134
+    },
+    {
+      "subsystem": "scripts",
+      "files": 10,
+      "physical": 12699,
+      "nonblank": 11357,
+      "tokenLines": 6893,
+      "classes": 0
+    },
+    {
+      "subsystem": "tests",
+      "files": 50,
+      "physical": 10095,
+      "nonblank": 9027,
+      "tokenLines": 5937,
+      "classes": 17
+    },
+    {
+      "subsystem": "tools",
+      "files": 33,
+      "physical": 16823,
+      "nonblank": 15646,
+      "tokenLines": 2189,
+      "classes": 208
+    },
+    {
+      "subsystem": "data",
+      "files": 9,
+      "physical": 2224,
+      "nonblank": 2155,
+      "tokenLines": 2093,
+      "classes": 0
+    },
+    {
+      "subsystem": "application",
+      "files": 13,
+      "physical": 3849,
+      "nonblank": 3590,
+      "tokenLines": 1899,
+      "classes": 12
+    },
+    {
+      "subsystem": "stages",
+      "files": 21,
+      "physical": 5525,
+      "nonblank": 5087,
+      "tokenLines": 1540,
+      "classes": 11
+    },
+    {
+      "subsystem": "devtools",
+      "files": 16,
+      "physical": 2704,
+      "nonblank": 2483,
+      "tokenLines": 1327,
+      "classes": 7
+    },
+    {
+      "subsystem": "narrative",
+      "files": 16,
+      "physical": 2170,
+      "nonblank": 1975,
+      "tokenLines": 866,
+      "classes": 8
+    },
+    {
+      "subsystem": "entities",
+      "files": 7,
+      "physical": 1494,
+      "nonblank": 1380,
+      "tokenLines": 808,
+      "classes": 7
+    },
+    {
+      "subsystem": "scenes",
+      "files": 7,
+      "physical": 2200,
+      "nonblank": 2011,
+      "tokenLines": 646,
+      "classes": 7
+    },
+    {
+      "subsystem": "utils",
+      "files": 5,
+      "physical": 903,
+      "nonblank": 841,
+      "tokenLines": 438,
+      "classes": 1
+    },
+    {
+      "subsystem": "managers",
+      "files": 2,
+      "physical": 265,
+      "nonblank": 215,
+      "tokenLines": 191,
+      "classes": 2
+    },
+    {
+      "subsystem": "ui",
+      "files": 1,
+      "physical": 178,
+      "nonblank": 153,
+      "tokenLines": 78,
+      "classes": 1
+    },
+    {
+      "subsystem": "src",
+      "files": 3,
+      "physical": 62,
+      "nonblank": 57,
+      "tokenLines": 56,
+      "classes": 0
+    },
+    {
+      "subsystem": "test-fixtures",
+      "files": 11,
+      "physical": 39,
+      "nonblank": 22,
+      "tokenLines": 22,
+      "classes": 2
+    },
+    {
+      "subsystem": "vite.config.ts",
+      "files": 1,
+      "physical": 19,
+      "nonblank": 17,
+      "tokenLines": 16,
+      "classes": 0
+    },
+    {
+      "subsystem": "jest.config.ts",
+      "files": 1,
+      "physical": 14,
+      "nonblank": 12,
+      "tokenLines": 11,
+      "classes": 0
+    }
+  ],
+  "byCategorySubsystem": [
+    {
+      "category": "generated",
+      "subsystem": "simulation",
+      "files": 31,
+      "physical": 34362,
+      "nonblank": 32827,
+      "tokenLines": 32827,
+      "classes": 300
+    },
+    {
+      "category": "generated",
+      "subsystem": "progression",
+      "files": 34,
+      "physical": 19369,
+      "nonblank": 18026,
+      "tokenLines": 17996,
+      "classes": 211
+    },
+    {
+      "category": "production",
+      "subsystem": "combat",
+      "files": 231,
+      "physical": 15395,
+      "nonblank": 14012,
+      "tokenLines": 14012,
+      "classes": 226
+    },
+    {
+      "category": "generated",
+      "subsystem": "ai",
+      "files": 28,
+      "physical": 14615,
+      "nonblank": 13783,
+      "tokenLines": 13757,
+      "classes": 191
+    },
+    {
+      "category": "production",
+      "subsystem": "simulation",
+      "files": 123,
+      "physical": 15063,
+      "nonblank": 13344,
+      "tokenLines": 13025,
+      "classes": 18
+    },
+    {
+      "category": "production",
+      "subsystem": "procedural",
+      "files": 134,
+      "physical": 10792,
+      "nonblank": 10157,
+      "tokenLines": 10157,
+      "classes": 134
+    },
+    {
+      "category": "scripts",
+      "subsystem": "scripts",
+      "files": 10,
+      "physical": 12699,
+      "nonblank": 11357,
+      "tokenLines": 6893,
+      "classes": 0
+    },
+    {
+      "category": "tests",
+      "subsystem": "tests",
+      "files": 50,
+      "physical": 10095,
+      "nonblank": 9027,
+      "tokenLines": 5937,
+      "classes": 17
+    },
+    {
+      "category": "production",
+      "subsystem": "data",
+      "files": 9,
+      "physical": 2224,
+      "nonblank": 2155,
+      "tokenLines": 2093,
+      "classes": 0
+    },
+    {
+      "category": "production",
+      "subsystem": "application",
+      "files": 13,
+      "physical": 3849,
+      "nonblank": 3590,
+      "tokenLines": 1899,
+      "classes": 12
+    },
+    {
+      "category": "generated",
+      "subsystem": "tools",
+      "files": 22,
+      "physical": 15757,
+      "nonblank": 14729,
+      "tokenLines": 1637,
+      "classes": 200
+    },
+    {
+      "category": "production",
+      "subsystem": "stages",
+      "files": 21,
+      "physical": 5525,
+      "nonblank": 5087,
+      "tokenLines": 1540,
+      "classes": 11
+    },
+    {
+      "category": "tools",
+      "subsystem": "devtools",
+      "files": 16,
+      "physical": 2704,
+      "nonblank": 2483,
+      "tokenLines": 1327,
+      "classes": 7
+    },
+    {
+      "category": "production",
+      "subsystem": "ai",
+      "files": 16,
+      "physical": 1320,
+      "nonblank": 1176,
+      "tokenLines": 1136,
+      "classes": 9
+    },
+    {
+      "category": "production",
+      "subsystem": "narrative",
+      "files": 16,
+      "physical": 2170,
+      "nonblank": 1975,
+      "tokenLines": 866,
+      "classes": 8
+    },
+    {
+      "category": "production",
+      "subsystem": "entities",
+      "files": 7,
+      "physical": 1494,
+      "nonblank": 1380,
+      "tokenLines": 808,
+      "classes": 7
+    },
+    {
+      "category": "production",
+      "subsystem": "scenes",
+      "files": 7,
+      "physical": 2200,
+      "nonblank": 2011,
+      "tokenLines": 646,
+      "classes": 7
+    },
+    {
+      "category": "tools",
+      "subsystem": "tools",
+      "files": 11,
+      "physical": 1066,
+      "nonblank": 917,
+      "tokenLines": 552,
+      "classes": 8
+    },
+    {
+      "category": "production",
+      "subsystem": "progression",
+      "files": 5,
+      "physical": 761,
+      "nonblank": 682,
+      "tokenLines": 523,
+      "classes": 4
+    },
+    {
+      "category": "production",
+      "subsystem": "utils",
+      "files": 5,
+      "physical": 903,
+      "nonblank": 841,
+      "tokenLines": 438,
+      "classes": 1
+    },
+    {
+      "category": "production",
+      "subsystem": "managers",
+      "files": 2,
+      "physical": 265,
+      "nonblank": 215,
+      "tokenLines": 191,
+      "classes": 2
+    },
+    {
+      "category": "production",
+      "subsystem": "ui",
+      "files": 1,
+      "physical": 178,
+      "nonblank": 153,
+      "tokenLines": 78,
+      "classes": 1
+    },
+    {
+      "category": "production",
+      "subsystem": "src",
+      "files": 3,
+      "physical": 62,
+      "nonblank": 57,
+      "tokenLines": 56,
+      "classes": 0
+    },
+    {
+      "category": "production",
+      "subsystem": "test-fixtures",
+      "files": 11,
+      "physical": 39,
+      "nonblank": 22,
+      "tokenLines": 22,
+      "classes": 2
+    },
+    {
+      "category": "production",
+      "subsystem": "vite.config.ts",
+      "files": 1,
+      "physical": 19,
+      "nonblank": 17,
+      "tokenLines": 16,
+      "classes": 0
+    },
+    {
+      "category": "production",
+      "subsystem": "jest.config.ts",
+      "files": 1,
+      "physical": 14,
+      "nonblank": 12,
+      "tokenLines": 11,
+      "classes": 0
+    }
+  ],
+  "largestFiles": [
+    {
+      "file": "scripts/generate-simulation-core.mjs",
+      "category": "scripts",
+      "physical": 3976,
+      "tokenLines": 3393,
+      "branches": 11
+    },
+    {
+      "file": "scripts/generate-combat-system.mjs",
+      "category": "scripts",
+      "physical": 3361,
+      "tokenLines": 1768,
+      "branches": 50
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_01.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_02.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_03.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_04.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_05.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_06.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_07.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_08.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_09.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_10.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_11.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_12.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_13.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_14.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_15.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_16.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_17.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_18.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_19.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_20.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_21.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_22.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_23.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_24.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_25.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_26.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_27.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    },
+    {
+      "file": "src/simulation/scenarios/generated/scenario_pack_28.ts",
+      "category": "generated",
+      "physical": 1142,
+      "tokenLines": 1091,
+      "branches": 81
+    }
+  ],
+  "complexFiles": [
+    {
+      "file": "src/stages/runtime/CampaignGraphValidator.ts",
+      "branches": 233,
+      "physical": 871,
+      "classes": 1
+    },
+    {
+      "file": "src/stages/runtime/PhysicalExitResolver.ts",
+      "branches": 196,
+      "physical": 802,
+      "classes": 1
+    },
+    {
+      "file": "src/scenes/GameScene.ts",
+      "branches": 189,
+      "physical": 1376,
+      "classes": 1
+    },
+    {
+      "file": "src/application/stages/CampaignMacroState.ts",
+      "branches": 188,
+      "physical": 413,
+      "classes": 0
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack01.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack02.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack03.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack04.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack05.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack06.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack07.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack08.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack09.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack10.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack11.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack12.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack13.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack14.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack15.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack16.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack17.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack18.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack19.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack20.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack21.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack22.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/ai/generated/rules/TacticalRulePack23.ts",
+      "branches": 177,
+      "physical": 605,
+      "classes": 8
+    },
+    {
+      "file": "src/stages/runtime/CampaignGraphGenerator.ts",
+      "branches": 175,
+      "physical": 796,
+      "classes": 1
+    },
+    {
+      "file": "src/entities/Hero.ts",
+      "branches": 166,
+      "physical": 760,
+      "classes": 1
+    },
+    {
+      "file": "src/narrative/runtime/NarrativeRegistry.ts",
+      "branches": 159,
+      "physical": 520,
+      "classes": 1
+    }
+  ],
+  "complexClasses": [
+    {
+      "file": "src/stages/runtime/CampaignGraphValidator.ts",
+      "name": "CampaignGraphValidator",
+      "branches": 201,
+      "methods": 12
+    },
+    {
+      "file": "src/scenes/GameScene.ts",
+      "name": "GameScene",
+      "branches": 189,
+      "methods": 34
+    },
+    {
+      "file": "src/entities/Hero.ts",
+      "name": "Player",
+      "branches": 166,
+      "methods": 38
+    },
+    {
+      "file": "src/narrative/runtime/NarrativeRegistry.ts",
+      "name": "NarrativeRegistry",
+      "branches": 157,
+      "methods": 26
+    },
+    {
+      "file": "src/stages/runtime/CampaignGraphGenerator.ts",
+      "name": "CampaignGraphGenerator",
+      "branches": 140,
+      "methods": 6
+    },
+    {
+      "file": "src/stages/runtime/PhysicalExitResolver.ts",
+      "name": "PhysicalExitResolver",
+      "branches": 121,
+      "methods": 13
+    },
+    {
+      "file": "src/application/stages/CampaignMacroProgression.ts",
+      "name": "CampaignMacroProgression",
+      "branches": 88,
+      "methods": 25
+    },
+    {
+      "file": "src/stages/runtime/ResolvedLevelValidator.ts",
+      "name": "ResolvedLevelValidator",
+      "branches": 85,
+      "methods": 4
+    },
+    {
+      "file": "src/application/stages/CampaignRouter.ts",
+      "name": "CampaignRouter",
+      "branches": 79,
+      "methods": 22
+    },
+    {
+      "file": "src/stages/runtime/StageValidator.ts",
+      "name": "StageValidator",
+      "branches": 73,
+      "methods": 5
+    },
+    {
+      "file": "src/narrative/persistence/CampaignSaveService.ts",
+      "name": "CampaignSaveService",
+      "branches": 68,
+      "methods": 12
+    },
+    {
+      "file": "src/stages/runtime/StageLoader.ts",
+      "name": "StageLoader",
+      "branches": 68,
+      "methods": 10
+    },
+    {
+      "file": "src/ai/navigation/NavigationGrid.ts",
+      "name": "NavigationGrid",
+      "branches": 64,
+      "methods": 15
+    },
+    {
+      "file": "src/entities/Enemy.ts",
+      "name": "Enemy",
+      "branches": 64,
+      "methods": 18
+    },
+    {
+      "file": "src/simulation/events/EventBus.ts",
+      "name": "EventBus",
+      "branches": 63,
+      "methods": 31
+    },
+    {
+      "file": "src/stages/runtime/CampaignExitBinder.ts",
+      "name": "CampaignExitBinder",
+      "branches": 62,
+      "methods": 7
+    },
+    {
+      "file": "src/simulation/scenarios/ScenarioWorld.ts",
+      "name": "ScenarioWorld",
+      "branches": 61,
+      "methods": 25
+    },
+    {
+      "file": "src/procedural/core/Grid.ts",
+      "name": "Grid",
+      "branches": 60,
+      "methods": 32
+    },
+    {
+      "file": "src/ai/behavior/EnemyBrain.ts",
+      "name": "EnemyBrain",
+      "branches": 59,
+      "methods": 10
+    },
+    {
+      "file": "src/application/stages/CampaignMacroRouteBinder.ts",
+      "name": "CampaignMacroRouteBinder",
+      "branches": 53,
+      "methods": 11
+    },
+    {
+      "file": "src/simulation/ecs/EntityWorld.ts",
+      "name": "EntityWorld",
+      "branches": 53,
+      "methods": 40
+    },
+    {
+      "file": "src/procedural/rules/biomes/cathedral/CathedralChamberAccentsRule.ts",
+      "name": "CathedralChamberAccentsRule",
+      "branches": 52,
+      "methods": 1
+    },
+    {
+      "file": "src/procedural/rules/biomes/cathedral/CathedralCorridorButtressesRule.ts",
+      "name": "CathedralCorridorButtressesRule",
+      "branches": 52,
+      "methods": 1
+    },
+    {
+      "file": "src/procedural/rules/biomes/cathedral/CathedralDeadEndShrinesRule.ts",
+      "name": "CathedralDeadEndShrinesRule",
+      "branches": 52,
+      "methods": 1
+    },
+    {
+      "file": "src/procedural/rules/biomes/cathedral/CathedralFracturedEdgesRule.ts",
+      "name": "CathedralFracturedEdgesRule",
+      "branches": 52,
+      "methods": 1
+    },
+    {
+      "file": "src/procedural/rules/biomes/cathedral/CathedralHazardVeinsRule.ts",
+      "name": "CathedralHazardVeinsRule",
+      "branches": 52,
+      "methods": 1
+    },
+    {
+      "file": "src/procedural/rules/biomes/cathedral/CathedralJunctionLandmarksRule.ts",
+      "name": "CathedralJunctionLandmarksRule",
+      "branches": 52,
+      "methods": 1
+    },
+    {
+      "file": "src/procedural/rules/biomes/cathedral/CathedralNoiseIslandsRule.ts",
+      "name": "CathedralNoiseIslandsRule",
+      "branches": 52,
+      "methods": 1
+    },
+    {
+      "file": "src/procedural/rules/biomes/cathedral/CathedralPillarClustersRule.ts",
+      "name": "CathedralPillarClustersRule",
+      "branches": 52,
+      "methods": 1
+    },
+    {
+      "file": "src/procedural/rules/biomes/cathedral/CathedralQuietZonesRule.ts",
+      "name": "CathedralQuietZonesRule",
+      "branches": 52,
+      "methods": 1
+    }
+  ],
+  "imports": 2514,
+  "exports": 4081,
+  "cycles": [],
+  "duplicates": {
+    "exact": [],
+    "structural": [
+      [
+        "src/procedural/rules/biomes/cathedral/CathedralChamberAccentsRule.ts",
+        "src/procedural/rules/biomes/cathedral/CathedralCorridorButtressesRule.ts",
+        "src/procedural/rules/biomes/cathedral/CathedralDeadEndShrinesRule.ts",
+        "src/procedural/rules/biomes/cathedral/CathedralFracturedEdgesRule.ts",
+        "src/procedural/rules/biomes/cathedral/CathedralHazardVeinsRule.ts",
+        "src/procedural/rules/biomes/cathedral/CathedralJunctionLandmarksRule.ts",
+        "src/procedural/rules/biomes/cathedral/CathedralNoiseIslandsRule.ts",
+        "src/procedural/rules/biomes/cathedral/CathedralPillarClustersRule.ts",
+        "src/procedural/rules/biomes/cathedral/CathedralQuietZonesRule.ts",
+        "src/procedural/rules/biomes/cathedral/CathedralWallWeatheringRule.ts",
+        "src/procedural/rules/biomes/celestial/CelestialChamberAccentsRule.ts",
+        "src/procedural/rules/biomes/celestial/CelestialCorridorButtressesRule.ts",
+        "src/procedural/rules/biomes/celestial/CelestialDeadEndShrinesRule.ts",
+        "src/procedural/rules/biomes/celestial/CelestialFracturedEdgesRule.ts",
+        "src/procedural/rules/biomes/celestial/CelestialHazardVeinsRule.ts",
+        "src/procedural/rules/biomes/celestial/CelestialJunctionLandmarksRule.ts",
+        "src/procedural/rules/biomes/celestial/CelestialNoiseIslandsRule.ts",
+        "src/procedural/rules/biomes/celestial/CelestialPillarClustersRule.ts",
+        "src/procedural/rules/biomes/celestial/CelestialQuietZonesRule.ts",
+        "src/procedural/rules/biomes/celestial/CelestialWallWeatheringRule.ts",
+        "src/procedural/rules/biomes/clocktower/ClocktowerChamberAccentsRule.ts",
+        "src/procedural/rules/biomes/clocktower/ClocktowerCorridorButtressesRule.ts",
+        "src/procedural/rules/biomes/clocktower/ClocktowerDeadEndShrinesRule.ts",
+        "src/procedural/rules/biomes/clocktower/ClocktowerFracturedEdgesRule.ts",
+        "src/procedural/rules/biomes/clocktower/ClocktowerHazardVeinsRule.ts",
+        "src/procedural/rules/biomes/clocktower/ClocktowerJunctionLandmarksRule.ts",
+        "src/procedural/rules/biomes/clocktower/ClocktowerNoiseIslandsRule.ts",
+        "src/procedural/rules/biomes/clocktower/ClocktowerPillarClustersRule.ts",
+        "src/procedural/rules/biomes/clocktower/ClocktowerQuietZonesRule.ts",
+        "src/procedural/rules/biomes/clocktower/ClocktowerWallWeatheringRule.ts",
+        "src/procedural/rules/biomes/colosseum/ColosseumChamberAccentsRule.ts",
+        "src/procedural/rules/biomes/colosseum/ColosseumCorridorButtressesRule.ts",
+        "src/procedural/rules/biomes/colosseum/ColosseumDeadEndShrinesRule.ts",
+        "src/procedural/rules/biomes/colosseum/ColosseumFracturedEdgesRule.ts",
+        "src/procedural/rules/biomes/colosseum/ColosseumHazardVeinsRule.ts",
+        "src/procedural/rules/biomes/colosseum/ColosseumJunctionLandmarksRule.ts",
+        "src/procedural/rules/biomes/colosseum/ColosseumNoiseIslandsRule.ts",
+        "src/procedural/rules/biomes/colosseum/ColosseumPillarClustersRule.ts",
+        "src/procedural/rules/biomes/colosseum/ColosseumQuietZonesRule.ts",
+        "src/procedural/rules/biomes/colosseum/ColosseumWallWeatheringRule.ts",
+        "src/procedural/rules/biomes/crypt/CryptChamberAccentsRule.ts",
+        "src/procedural/rules/biomes/crypt/CryptCorridorButtressesRule.ts",
+        "src/procedural/rules/biomes/crypt/CryptDeadEndShrinesRule.ts",
+        "src/procedural/rules/biomes/crypt/CryptFracturedEdgesRule.ts",
+        "src/procedural/rules/biomes/crypt/CryptHazardVeinsRule.ts",
+        "src/procedural/rules/biomes/crypt/CryptJunctionLandmarksRule.ts",
+        "src/procedural/rules/biomes/crypt/CryptNoiseIslandsRule.ts",
+        "src/procedural/rules/biomes/crypt/CryptPillarClustersRule.ts",
+        "src/procedural/rules/biomes/crypt/CryptQuietZonesRule.ts",
+        "src/procedural/rules/biomes/crypt/CryptWallWeatheringRule.ts",
+        "src/procedural/rules/biomes/garden/GardenChamberAccentsRule.ts",
+        "src/procedural/rules/biomes/garden/GardenCorridorButtressesRule.ts",
+        "src/procedural/rules/biomes/garden/GardenDeadEndShrinesRule.ts",
+        "src/procedural/rules/biomes/garden/GardenFracturedEdgesRule.ts",
+        "src/procedural/rules/biomes/garden/GardenHazardVeinsRule.ts",
+        "src/procedural/rules/biomes/garden/GardenJunctionLandmarksRule.ts",
+        "src/procedural/rules/biomes/garden/GardenNoiseIslandsRule.ts",
+        "src/procedural/rules/biomes/garden/GardenPillarClustersRule.ts",
+        "src/procedural/rules/biomes/garden/GardenQuietZonesRule.ts",
+        "src/procedural/rules/biomes/garden/GardenWallWeatheringRule.ts",
+        "src/procedural/rules/biomes/inferno/InfernoChamberAccentsRule.ts",
+        "src/procedural/rules/biomes/inferno/InfernoCorridorButtressesRule.ts",
+        "src/procedural/rules/biomes/inferno/InfernoDeadEndShrinesRule.ts",
+        "src/procedural/rules/biomes/inferno/InfernoFracturedEdgesRule.ts",
+        "src/procedural/rules/biomes/inferno/InfernoHazardVeinsRule.ts",
+        "src/procedural/rules/biomes/inferno/InfernoJunctionLandmarksRule.ts",
+        "src/procedural/rules/biomes/inferno/InfernoNoiseIslandsRule.ts",
+        "src/procedural/rules/biomes/inferno/InfernoPillarClustersRule.ts",
+        "src/procedural/rules/biomes/inferno/InfernoQuietZonesRule.ts",
+        "src/procedural/rules/biomes/inferno/InfernoWallWeatheringRule.ts",
+        "src/procedural/rules/biomes/ruins/RuinsChamberAccentsRule.ts",
+        "src/procedural/rules/biomes/ruins/RuinsCorridorButtressesRule.ts",
+        "src/procedural/rules/biomes/ruins/RuinsDeadEndShrinesRule.ts",
+        "src/procedural/rules/biomes/ruins/RuinsFracturedEdgesRule.ts",
+        "src/procedural/rules/biomes/ruins/RuinsHazardVeinsRule.ts",
+        "src/procedural/rules/biomes/ruins/RuinsJunctionLandmarksRule.ts",
+        "src/procedural/rules/biomes/ruins/RuinsNoiseIslandsRule.ts",
+        "src/procedural/rules/biomes/ruins/RuinsPillarClustersRule.ts",
+        "src/procedural/rules/biomes/ruins/RuinsQuietZonesRule.ts",
+        "src/procedural/rules/biomes/ruins/RuinsWallWeatheringRule.ts",
+        "src/procedural/rules/biomes/streets/StreetsChamberAccentsRule.ts",
+        "src/procedural/rules/biomes/streets/StreetsCorridorButtressesRule.ts",
+        "src/procedural/rules/biomes/streets/StreetsDeadEndShrinesRule.ts",
+        "src/procedural/rules/biomes/streets/StreetsFracturedEdgesRule.ts",
+        "src/procedural/rules/biomes/streets/StreetsHazardVeinsRule.ts",
+        "src/procedural/rules/biomes/streets/StreetsJunctionLandmarksRule.ts",
+        "src/procedural/rules/biomes/streets/StreetsNoiseIslandsRule.ts",
+        "src/procedural/rules/biomes/streets/StreetsPillarClustersRule.ts",
+        "src/procedural/rules/biomes/streets/StreetsQuietZonesRule.ts",
+        "src/procedural/rules/biomes/streets/StreetsWallWeatheringRule.ts",
+        "src/procedural/rules/biomes/void/VoidChamberAccentsRule.ts",
+        "src/procedural/rules/biomes/void/VoidCorridorButtressesRule.ts",
+        "src/procedural/rules/biomes/void/VoidDeadEndShrinesRule.ts",
+        "src/procedural/rules/biomes/void/VoidFracturedEdgesRule.ts",
+        "src/procedural/rules/biomes/void/VoidHazardVeinsRule.ts",
+        "src/procedural/rules/biomes/void/VoidJunctionLandmarksRule.ts",
+        "src/procedural/rules/biomes/void/VoidNoiseIslandsRule.ts",
+        "src/procedural/rules/biomes/void/VoidPillarClustersRule.ts",
+        "src/procedural/rules/biomes/void/VoidQuietZonesRule.ts",
+        "src/procedural/rules/biomes/void/VoidWallWeatheringRule.ts"
+      ],
+      [
+        "src/combat/effects/catalog/arcane/ArcaneEchoEffect.ts",
+        "src/combat/effects/catalog/arcane/ArcaneExposureEffect.ts",
+        "src/combat/effects/catalog/arcane/ArcaneSurgeEffect.ts",
+        "src/combat/effects/catalog/arcane/ArcaneWoundEffect.ts",
+        "src/combat/effects/catalog/fire/FireEchoEffect.ts",
+        "src/combat/effects/catalog/fire/FireExposureEffect.ts",
+        "src/combat/effects/catalog/fire/FireSurgeEffect.ts",
+        "src/combat/effects/catalog/fire/FireWoundEffect.ts",
+        "src/combat/effects/catalog/frost/FrostEchoEffect.ts",
+        "src/combat/effects/catalog/frost/FrostExposureEffect.ts",
+        "src/combat/effects/catalog/frost/FrostSurgeEffect.ts",
+        "src/combat/effects/catalog/frost/FrostWoundEffect.ts",
+        "src/combat/effects/catalog/holy/HolyEchoEffect.ts",
+        "src/combat/effects/catalog/holy/HolyExposureEffect.ts",
+        "src/combat/effects/catalog/holy/HolySurgeEffect.ts",
+        "src/combat/effects/catalog/holy/HolyWoundEffect.ts",
+        "src/combat/effects/catalog/lightning/LightningEchoEffect.ts",
+        "src/combat/effects/catalog/lightning/LightningExposureEffect.ts",
+        "src/combat/effects/catalog/lightning/LightningSurgeEffect.ts",
+        "src/combat/effects/catalog/lightning/LightningWoundEffect.ts",
+        "src/combat/effects/catalog/physical/PhysicalEchoEffect.ts",
+        "src/combat/effects/catalog/physical/PhysicalExposureEffect.ts",
+        "src/combat/effects/catalog/physical/PhysicalSurgeEffect.ts",
+        "src/combat/effects/catalog/physical/PhysicalWoundEffect.ts",
+        "src/combat/effects/catalog/poison/PoisonEchoEffect.ts",
+        "src/combat/effects/catalog/poison/PoisonExposureEffect.ts",
+        "src/combat/effects/catalog/poison/PoisonSurgeEffect.ts",
+        "src/combat/effects/catalog/poison/PoisonWoundEffect.ts",
+        "src/combat/effects/catalog/shadow/ShadowEchoEffect.ts",
+        "src/combat/effects/catalog/shadow/ShadowExposureEffect.ts",
+        "src/combat/effects/catalog/shadow/ShadowSurgeEffect.ts",
+        "src/combat/effects/catalog/shadow/ShadowWoundEffect.ts"
+      ],
+      [
+        "src/progression/generated/nodes/ProgressionNodePack01.ts",
+        "src/progression/generated/nodes/ProgressionNodePack02.ts",
+        "src/progression/generated/nodes/ProgressionNodePack03.ts",
+        "src/progression/generated/nodes/ProgressionNodePack04.ts",
+        "src/progression/generated/nodes/ProgressionNodePack05.ts",
+        "src/progression/generated/nodes/ProgressionNodePack06.ts",
+        "src/progression/generated/nodes/ProgressionNodePack07.ts",
+        "src/progression/generated/nodes/ProgressionNodePack08.ts",
+        "src/progression/generated/nodes/ProgressionNodePack09.ts",
+        "src/progression/generated/nodes/ProgressionNodePack10.ts",
+        "src/progression/generated/nodes/ProgressionNodePack11.ts",
+        "src/progression/generated/nodes/ProgressionNodePack12.ts",
+        "src/progression/generated/nodes/ProgressionNodePack13.ts",
+        "src/progression/generated/nodes/ProgressionNodePack14.ts",
+        "src/progression/generated/nodes/ProgressionNodePack15.ts",
+        "src/progression/generated/nodes/ProgressionNodePack16.ts",
+        "src/progression/generated/nodes/ProgressionNodePack17.ts",
+        "src/progression/generated/nodes/ProgressionNodePack18.ts",
+        "src/progression/generated/nodes/ProgressionNodePack19.ts",
+        "src/progression/generated/nodes/ProgressionNodePack20.ts",
+        "src/progression/generated/nodes/ProgressionNodePack21.ts",
+        "src/progression/generated/nodes/ProgressionNodePack22.ts",
+        "src/progression/generated/nodes/ProgressionNodePack23.ts",
+        "src/progression/generated/nodes/ProgressionNodePack24.ts",
+        "src/progression/generated/nodes/ProgressionNodePack25.ts",
+        "src/progression/generated/nodes/ProgressionNodePack26.ts",
+        "src/progression/generated/nodes/ProgressionNodePack27.ts",
+        "src/progression/generated/nodes/ProgressionNodePack28.ts",
+        "src/progression/generated/nodes/ProgressionNodePack29.ts",
+        "src/progression/generated/nodes/ProgressionNodePack30.ts"
+      ],
+      [
+        "src/simulation/scenarios/generated/scenario_pack_01.ts",
+        "src/simulation/scenarios/generated/scenario_pack_02.ts",
+        "src/simulation/scenarios/generated/scenario_pack_03.ts",
+        "src/simulation/scenarios/generated/scenario_pack_04.ts",
+        "src/simulation/scenarios/generated/scenario_pack_05.ts",
+        "src/simulation/scenarios/generated/scenario_pack_06.ts",
+        "src/simulation/scenarios/generated/scenario_pack_07.ts",
+        "src/simulation/scenarios/generated/scenario_pack_08.ts",
+        "src/simulation/scenarios/generated/scenario_pack_09.ts",
+        "src/simulation/scenarios/generated/scenario_pack_10.ts",
+        "src/simulation/scenarios/generated/scenario_pack_11.ts",
+        "src/simulation/scenarios/generated/scenario_pack_12.ts",
+        "src/simulation/scenarios/generated/scenario_pack_13.ts",
+        "src/simulation/scenarios/generated/scenario_pack_14.ts",
+        "src/simulation/scenarios/generated/scenario_pack_15.ts",
+        "src/simulation/scenarios/generated/scenario_pack_16.ts",
+        "src/simulation/scenarios/generated/scenario_pack_17.ts",
+        "src/simulation/scenarios/generated/scenario_pack_18.ts",
+        "src/simulation/scenarios/generated/scenario_pack_19.ts",
+        "src/simulation/scenarios/generated/scenario_pack_20.ts",
+        "src/simulation/scenarios/generated/scenario_pack_21.ts",
+        "src/simulation/scenarios/generated/scenario_pack_22.ts",
+        "src/simulation/scenarios/generated/scenario_pack_23.ts",
+        "src/simulation/scenarios/generated/scenario_pack_24.ts",
+        "src/simulation/scenarios/generated/scenario_pack_25.ts",
+        "src/simulation/scenarios/generated/scenario_pack_26.ts",
+        "src/simulation/scenarios/generated/scenario_pack_27.ts",
+        "src/simulation/scenarios/generated/scenario_pack_28.ts",
+        "src/simulation/scenarios/generated/scenario_pack_29.ts",
+        "src/simulation/scenarios/generated/scenario_pack_30.ts"
+      ],
+      [
+        "src/combat/effects/catalog/arcane/ArcaneAuraEffect.ts",
+        "src/combat/effects/catalog/arcane/ArcaneBrandEffect.ts",
+        "src/combat/effects/catalog/arcane/ArcaneMasteryEffect.ts",
+        "src/combat/effects/catalog/fire/FireAuraEffect.ts",
+        "src/combat/effects/catalog/fire/FireBrandEffect.ts",
+        "src/combat/effects/catalog/fire/FireMasteryEffect.ts",
+        "src/combat/effects/catalog/frost/FrostAuraEffect.ts",
+        "src/combat/effects/catalog/frost/FrostBrandEffect.ts",
+        "src/combat/effects/catalog/frost/FrostMasteryEffect.ts",
+        "src/combat/effects/catalog/holy/HolyAuraEffect.ts",
+        "src/combat/effects/catalog/holy/HolyBrandEffect.ts",
+        "src/combat/effects/catalog/holy/HolyMasteryEffect.ts",
+        "src/combat/effects/catalog/lightning/LightningAuraEffect.ts",
+        "src/combat/effects/catalog/lightning/LightningBrandEffect.ts",
+        "src/combat/effects/catalog/lightning/LightningMasteryEffect.ts",
+        "src/combat/effects/catalog/physical/PhysicalAuraEffect.ts",
+        "src/combat/effects/catalog/physical/PhysicalBrandEffect.ts",
+        "src/combat/effects/catalog/physical/PhysicalMasteryEffect.ts",
+        "src/combat/effects/catalog/poison/PoisonAuraEffect.ts",
+        "src/combat/effects/catalog/poison/PoisonBrandEffect.ts",
+        "src/combat/effects/catalog/poison/PoisonMasteryEffect.ts",
+        "src/combat/effects/catalog/shadow/ShadowAuraEffect.ts",
+        "src/combat/effects/catalog/shadow/ShadowBrandEffect.ts",
+        "src/combat/effects/catalog/shadow/ShadowMasteryEffect.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/knight/KnightDelayedBurstAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightElementalInfusionAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightOrbitingBladesAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightProtectiveWardAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightReboundingBoltAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightResourceSiphonAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightRisingEdgeAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightUltimateArtAbility.ts",
+        "src/combat/abilities/catalog/mage/MageDelayedBurstAbility.ts",
+        "src/combat/abilities/catalog/mage/MageElementalInfusionAbility.ts",
+        "src/combat/abilities/catalog/mage/MageOrbitingBladesAbility.ts",
+        "src/combat/abilities/catalog/mage/MageProtectiveWardAbility.ts",
+        "src/combat/abilities/catalog/mage/MageReboundingBoltAbility.ts",
+        "src/combat/abilities/catalog/mage/MageResourceSiphonAbility.ts",
+        "src/combat/abilities/catalog/mage/MageRisingEdgeAbility.ts",
+        "src/combat/abilities/catalog/mage/MageUltimateArtAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/ranger/RangerDelayedBurstAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerElementalInfusionAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerOrbitingBladesAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerProtectiveWardAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerReboundingBoltAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerResourceSiphonAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerRisingEdgeAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerUltimateArtAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueDelayedBurstAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueElementalInfusionAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueOrbitingBladesAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueProtectiveWardAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueReboundingBoltAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueResourceSiphonAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueRisingEdgeAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueUltimateArtAbility.ts"
+      ],
+      [
+        "src/combat/effects/catalog/arcane/ArcanePrisonEffect.ts",
+        "src/combat/effects/catalog/arcane/ArcaneWeaknessEffect.ts",
+        "src/combat/effects/catalog/fire/FirePrisonEffect.ts",
+        "src/combat/effects/catalog/fire/FireWeaknessEffect.ts",
+        "src/combat/effects/catalog/frost/FrostPrisonEffect.ts",
+        "src/combat/effects/catalog/frost/FrostWeaknessEffect.ts",
+        "src/combat/effects/catalog/holy/HolyPrisonEffect.ts",
+        "src/combat/effects/catalog/holy/HolyWeaknessEffect.ts",
+        "src/combat/effects/catalog/lightning/LightningPrisonEffect.ts",
+        "src/combat/effects/catalog/lightning/LightningWeaknessEffect.ts",
+        "src/combat/effects/catalog/physical/PhysicalPrisonEffect.ts",
+        "src/combat/effects/catalog/physical/PhysicalWeaknessEffect.ts",
+        "src/combat/effects/catalog/poison/PoisonPrisonEffect.ts",
+        "src/combat/effects/catalog/poison/PoisonWeaknessEffect.ts",
+        "src/combat/effects/catalog/shadow/ShadowPrisonEffect.ts",
+        "src/combat/effects/catalog/shadow/ShadowWeaknessEffect.ts"
+      ],
+      [
+        "src/simulation/events/contracts/DodgeStarted.ts",
+        "src/simulation/events/contracts/FrameCompleted.ts",
+        "src/simulation/events/contracts/HealingApplied.ts",
+        "src/simulation/events/contracts/HealthChanged.ts",
+        "src/simulation/events/contracts/LevelGained.ts",
+        "src/simulation/events/contracts/ManaChanged.ts",
+        "src/simulation/events/contracts/MoveCompleted.ts",
+        "src/simulation/events/contracts/MoveStarted.ts",
+        "src/simulation/events/contracts/PointerMoved.ts",
+        "src/simulation/events/contracts/ProjectileHit.ts",
+        "src/simulation/events/contracts/ProjectileMoved.ts",
+        "src/simulation/events/contracts/TeleportCompleted.ts",
+        "src/simulation/events/contracts/TeleportStarted.ts",
+        "src/simulation/events/contracts/TickCompleted.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/knight/KnightAwakeningAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightChargedReleaseAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightCrescentSweepAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightFinishingBlowAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightRapidSequenceAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightStormConeAbility.ts",
+        "src/combat/abilities/catalog/mage/MageAwakeningAbility.ts",
+        "src/combat/abilities/catalog/mage/MageChargedReleaseAbility.ts",
+        "src/combat/abilities/catalog/mage/MageCrescentSweepAbility.ts",
+        "src/combat/abilities/catalog/mage/MageFinishingBlowAbility.ts",
+        "src/combat/abilities/catalog/mage/MageRapidSequenceAbility.ts",
+        "src/combat/abilities/catalog/mage/MageStormConeAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/ranger/RangerAwakeningAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerChargedReleaseAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerCrescentSweepAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerFinishingBlowAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerRapidSequenceAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerStormConeAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueAwakeningAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueChargedReleaseAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueCrescentSweepAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueFinishingBlowAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueRapidSequenceAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueStormConeAbility.ts"
+      ],
+      [
+        "src/simulation/events/contracts/AttackCompleted.ts",
+        "src/simulation/events/contracts/BuffApplied.ts",
+        "src/simulation/events/contracts/ComboCompleted.ts",
+        "src/simulation/events/contracts/CurrencyChanged.ts",
+        "src/simulation/events/contracts/DebuffApplied.ts",
+        "src/simulation/events/contracts/ItemSpawned.ts",
+        "src/simulation/events/contracts/ProjectileExpired.ts",
+        "src/simulation/events/contracts/PurchaseCompleted.ts",
+        "src/simulation/events/contracts/PurchaseRequested.ts",
+        "src/simulation/events/contracts/StatusApplied.ts",
+        "src/simulation/events/contracts/StatusRefreshed.ts",
+        "src/simulation/events/contracts/StatusTicked.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/knight/KnightChainReactionAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightExecutionMarkAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightPerfectReactionAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightPiercingLineAbility.ts",
+        "src/combat/abilities/catalog/mage/MageChainReactionAbility.ts",
+        "src/combat/abilities/catalog/mage/MageExecutionMarkAbility.ts",
+        "src/combat/abilities/catalog/mage/MagePerfectReactionAbility.ts",
+        "src/combat/abilities/catalog/mage/MagePiercingLineAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/ranger/RangerChainReactionAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerExecutionMarkAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerPerfectReactionAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerPiercingLineAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueChainReactionAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueExecutionMarkAbility.ts",
+        "src/combat/abilities/catalog/rogue/RoguePerfectReactionAbility.ts",
+        "src/combat/abilities/catalog/rogue/RoguePiercingLineAbility.ts"
+      ],
+      [
+        "src/combat/effects/catalog/arcane/ArcaneCataclysmEffect.ts",
+        "src/combat/effects/catalog/fire/FireCataclysmEffect.ts",
+        "src/combat/effects/catalog/frost/FrostCataclysmEffect.ts",
+        "src/combat/effects/catalog/holy/HolyCataclysmEffect.ts",
+        "src/combat/effects/catalog/lightning/LightningCataclysmEffect.ts",
+        "src/combat/effects/catalog/physical/PhysicalCataclysmEffect.ts",
+        "src/combat/effects/catalog/poison/PoisonCataclysmEffect.ts",
+        "src/combat/effects/catalog/shadow/ShadowCataclysmEffect.ts"
+      ],
+      [
+        "src/simulation/events/contracts/AttackCancelled.ts",
+        "src/simulation/events/contracts/ComboBroken.ts",
+        "src/simulation/events/contracts/ComboStarted.ts",
+        "src/simulation/events/contracts/DoorLocked.ts",
+        "src/simulation/events/contracts/RollbackRequested.ts",
+        "src/simulation/events/contracts/RoomEntered.ts",
+        "src/simulation/events/contracts/RoomExited.ts",
+        "src/simulation/events/contracts/StatusRemoved.ts"
+      ],
+      [
+        "src/simulation/events/contracts/ComponentAdded.ts",
+        "src/simulation/events/contracts/ComponentChanged.ts",
+        "src/simulation/events/contracts/ComponentRemoved.ts",
+        "src/simulation/events/contracts/DoorUnlocked.ts",
+        "src/simulation/events/contracts/EntityDestroyed.ts",
+        "src/simulation/events/contracts/ImmunityGranted.ts",
+        "src/simulation/events/contracts/SimulationResumed.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/knight/KnightAreaDenialAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightFocusedShotAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightSummonedAllyAbility.ts",
+        "src/combat/abilities/catalog/mage/MageAreaDenialAbility.ts",
+        "src/combat/abilities/catalog/mage/MageFocusedShotAbility.ts",
+        "src/combat/abilities/catalog/mage/MageSummonedAllyAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/knight/KnightDefensiveStanceAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightGuardBreakerAbility.ts",
+        "src/combat/abilities/catalog/knight/KnightHunterMarkAbility.ts",
+        "src/combat/abilities/catalog/mage/MageDefensiveStanceAbility.ts",
+        "src/combat/abilities/catalog/mage/MageGuardBreakerAbility.ts",
+        "src/combat/abilities/catalog/mage/MageHunterMarkAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/ranger/RangerAreaDenialAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerFocusedShotAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerSummonedAllyAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueAreaDenialAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueFocusedShotAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueSummonedAllyAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/ranger/RangerDefensiveStanceAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerGuardBreakerAbility.ts",
+        "src/combat/abilities/catalog/ranger/RangerHunterMarkAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueDefensiveStanceAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueGuardBreakerAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueHunterMarkAbility.ts"
+      ],
+      [
+        "src/simulation/events/contracts/CheckpointReached.ts",
+        "src/simulation/events/contracts/EncounterStarted.ts",
+        "src/simulation/events/contracts/MenuClosed.ts",
+        "src/simulation/events/contracts/ObjectiveCompleted.ts",
+        "src/simulation/events/contracts/ObjectiveStarted.ts",
+        "src/simulation/events/contracts/SimulationStopped.ts"
+      ],
+      [
+        "src/simulation/events/contracts/DamagePrevented.ts",
+        "src/simulation/events/contracts/ExperienceChanged.ts",
+        "src/simulation/events/contracts/InventoryChanged.ts",
+        "src/simulation/events/contracts/ItemConsumed.ts",
+        "src/simulation/events/contracts/ShieldChanged.ts",
+        "src/simulation/events/contracts/VelocityChanged.ts"
+      ],
+      [
+        "src/simulation/events/contracts/AttackRequested.ts",
+        "src/simulation/events/contracts/AttackStarted.ts",
+        "src/simulation/events/contracts/EntityDefeated.ts",
+        "src/simulation/events/contracts/ItemPickedUp.ts",
+        "src/simulation/events/contracts/ProjectileSpawned.ts"
+      ],
+      [
+        "src/simulation/events/contracts/EntityDisabled.ts",
+        "src/simulation/events/contracts/EntityEnabled.ts",
+        "src/simulation/events/contracts/EntityTagged.ts",
+        "src/simulation/events/contracts/EntityUntagged.ts",
+        "src/simulation/events/contracts/ImmunityExpired.ts"
+      ],
+      [
+        "src/simulation/events/contracts/FrameStarted.ts",
+        "src/simulation/events/contracts/PointerPressed.ts",
+        "src/simulation/events/contracts/PointerReleased.ts",
+        "src/simulation/events/contracts/RollbackCompleted.ts",
+        "src/simulation/events/contracts/TickStarted.ts"
+      ],
+      [
+        "src/tools/generated/toolset_01.ts",
+        "src/tools/generated/toolset_05.ts",
+        "src/tools/generated/toolset_09.ts",
+        "src/tools/generated/toolset_13.ts",
+        "src/tools/generated/toolset_17.ts"
+      ],
+      [
+        "src/tools/generated/toolset_02.ts",
+        "src/tools/generated/toolset_06.ts",
+        "src/tools/generated/toolset_10.ts",
+        "src/tools/generated/toolset_14.ts",
+        "src/tools/generated/toolset_18.ts"
+      ],
+      [
+        "src/tools/generated/toolset_03.ts",
+        "src/tools/generated/toolset_07.ts",
+        "src/tools/generated/toolset_11.ts",
+        "src/tools/generated/toolset_15.ts",
+        "src/tools/generated/toolset_19.ts"
+      ],
+      [
+        "src/tools/generated/toolset_04.ts",
+        "src/tools/generated/toolset_08.ts",
+        "src/tools/generated/toolset_12.ts",
+        "src/tools/generated/toolset_16.ts",
+        "src/tools/generated/toolset_20.ts"
+      ],
+      [
+        "src/simulation/events/contracts/AchievementUnlocked.ts",
+        "src/simulation/events/contracts/ResourceChanged.ts",
+        "src/simulation/events/contracts/SimulationPaused.ts",
+        "src/simulation/events/contracts/SimulationStarted.ts"
+      ],
+      [
+        "src/simulation/events/contracts/DamageCalculated.ts",
+        "src/simulation/events/contracts/ItemDropped.ts",
+        "src/simulation/events/contracts/MoveRequested.ts",
+        "src/simulation/events/contracts/PositionChanged.ts"
+      ],
+      [
+        "src/simulation/events/contracts/DoorClosed.ts",
+        "src/simulation/events/contracts/DoorOpened.ts",
+        "src/simulation/events/contracts/ItemEquipped.ts",
+        "src/simulation/events/contracts/ItemUnequipped.ts"
+      ],
+      [
+        "src/simulation/events/contracts/EncounterCompleted.ts",
+        "src/simulation/events/contracts/InputPressed.ts",
+        "src/simulation/events/contracts/InputReleased.ts"
+      ],
+      [
+        "src/simulation/events/contracts/ObjectiveProgressed.ts",
+        "src/simulation/events/contracts/PerformanceBudgetExceeded.ts",
+        "src/simulation/events/contracts/RunCompleted.ts"
+      ],
+      [
+        "src/ai/generated/rules/TacticalRulePack01.ts",
+        "src/ai/generated/rules/TacticalRulePack14.ts"
+      ],
+      [
+        "src/ai/generated/rules/TacticalRulePack02.ts",
+        "src/ai/generated/rules/TacticalRulePack15.ts"
+      ],
+      [
+        "src/ai/generated/rules/TacticalRulePack03.ts",
+        "src/ai/generated/rules/TacticalRulePack16.ts"
+      ],
+      [
+        "src/ai/generated/rules/TacticalRulePack04.ts",
+        "src/ai/generated/rules/TacticalRulePack17.ts"
+      ],
+      [
+        "src/ai/generated/rules/TacticalRulePack05.ts",
+        "src/ai/generated/rules/TacticalRulePack18.ts"
+      ],
+      [
+        "src/ai/generated/rules/TacticalRulePack06.ts",
+        "src/ai/generated/rules/TacticalRulePack19.ts"
+      ],
+      [
+        "src/ai/generated/rules/TacticalRulePack07.ts",
+        "src/ai/generated/rules/TacticalRulePack20.ts"
+      ],
+      [
+        "src/ai/generated/rules/TacticalRulePack08.ts",
+        "src/ai/generated/rules/TacticalRulePack21.ts"
+      ],
+      [
+        "src/ai/generated/rules/TacticalRulePack09.ts",
+        "src/ai/generated/rules/TacticalRulePack22.ts"
+      ],
+      [
+        "src/ai/generated/rules/TacticalRulePack10.ts",
+        "src/ai/generated/rules/TacticalRulePack23.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/knight/KnightEvasiveCounterAbility.ts",
+        "src/combat/abilities/catalog/mage/MageEvasiveCounterAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/knight/KnightGroundSigilAbility.ts",
+        "src/combat/abilities/catalog/mage/MageGroundSigilAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/knight/KnightMobilityCutAbility.ts",
+        "src/combat/abilities/catalog/mage/MageMobilityCutAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/knight/KnightOpeningStrikeAbility.ts",
+        "src/combat/abilities/catalog/mage/MageOpeningStrikeAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/knight/KnightSignatureSpecialAbility.ts",
+        "src/combat/abilities/catalog/mage/MageSignatureSpecialAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/knight/KnightWhirlingZoneAbility.ts",
+        "src/combat/abilities/catalog/mage/MageWhirlingZoneAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/ranger/RangerEvasiveCounterAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueEvasiveCounterAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/ranger/RangerGroundSigilAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueGroundSigilAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/ranger/RangerMobilityCutAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueMobilityCutAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/ranger/RangerOpeningStrikeAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueOpeningStrikeAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/ranger/RangerSignatureSpecialAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueSignatureSpecialAbility.ts"
+      ],
+      [
+        "src/combat/abilities/catalog/ranger/RangerWhirlingZoneAbility.ts",
+        "src/combat/abilities/catalog/rogue/RogueWhirlingZoneAbility.ts"
+      ],
+      [
+        "src/simulation/events/contracts/NotificationShown.ts",
+        "src/simulation/events/contracts/SystemFailed.ts"
+      ],
+      [
+        "src/simulation/events/contracts/WaveCompleted.ts",
+        "src/simulation/events/contracts/WaveStarted.ts"
+      ]
+    ]
+  },
+  "reachability": {
+    "gameFiles": 681,
+    "worldLabFiles": 319,
+    "unreachableProductionFiles": 5,
+    "unreachableProductionTokenLines": 274,
+    "largestCandidates": [
+      {
+        "file": "src/simulation/scenarios/types.ts",
+        "tokenLines": 179,
+        "imports": 1,
+        "exports": 20
+      },
+      {
+        "file": "src/simulation/scenarios/ScenarioWorld.ts",
+        "tokenLines": 45,
+        "imports": 2,
+        "exports": 3
+      },
+      {
+        "file": "src/simulation/scenarios/ScenarioRunner.ts",
+        "tokenLines": 26,
+        "imports": 4,
+        "exports": 1
+      },
+      {
+        "file": "src/simulation/scenarios/ScenarioSuite.ts",
+        "tokenLines": 19,
+        "imports": 3,
+        "exports": 2
+      },
+      {
+        "file": "src/simulation/scenarios/index.ts",
+        "tokenLines": 5,
+        "imports": 0,
+        "exports": 5
+      }
+    ]
+  }
+}

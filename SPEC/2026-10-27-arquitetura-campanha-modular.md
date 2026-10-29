@@ -39,7 +39,7 @@ O agente não deve precisar compreender nem modificar Phaser, `GameScene`, comba
 | Combate | Existente | `CombatRuntime`, `GameCombatBridge` | serviço opaco para fases; contratos narrativos não calculam dano |
 | Progressão | Existente | `ProgressionService`, estado v1, storage `vigrid-progression-v1` | continua autoritativa para XP, moeda, maestria e desbloqueios atuais |
 | Editor | Existente | `LevelEditorModel`, `DocumentSerializer` v1 | continua importando/exportando `LevelDefinition`; conversor futuro é aditivo |
-| Diálogos e quests gerados | Existente, não integrado | entradas genéricas em `src/content/` sem runtime de campanha | não reutilizar como contrato; integração futura exige SPEC própria |
+| Diálogos e quests gerados | Removido em 2026-10-29 | os packs genéricos de `src/content/` não possuíam consumidor | conteúdo futuro exige SPEC e integração com os contratos narrativos públicos |
 | Registro de fases | A implementar | inexistente | `StageRegistry` |
 | Carregamento e validação | A implementar | decisões dentro de `GameScene` | `StageLoader` e validadores headless |
 | Manifesto modular | A implementar | dados espalhados por `LevelDefinition`, arrays e cena | `StageManifest`, `ChapterManifest`, `StageModule` |
@@ -97,7 +97,7 @@ Consequência: `chapterId` narrativo deve ser um novo campo em save separado. N�
 | Eventos | cena -> bridges + eventos Phaser string | parte tipada no kernel e parte local sem contrato | narrativa observaria duas fontes | `StageSignalAdapter` unifica fatos sem recalculá-los |
 | Save de run | restart da cena -> init data | somente índice, halos e configuração procedural | não retoma missões/flags | save aditivo com IDs/revisão e fallback legado |
 | Editor | `EditorScene` -> `ALL_LEVELS` | editor abre catálogo global por índice | fase modular não é descobrível | converter manifesto <-> documento v1 em etapa posterior |
-| Conteúdo gerado | `src/content` -> nenhum consumidor de campanha | `DialogueEntry`/`QuestEntry` são genéricos e repetidos por pack | volume não cria narrativa executável | manter intacto; não acoplar o novo contrato a esses tipos |
+| Conteúdo gerado | removido na Etapa 9.2A.3 após prova de zero consumidores | `DialogueEntry`/`QuestEntry` eram genéricos e repetidos por pack | volume não criava narrativa executável | não recriar sem consumidor, SPEC e testes concretos |
 
 ## Direção de dependências
 
