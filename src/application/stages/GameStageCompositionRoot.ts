@@ -29,6 +29,17 @@ import {
   type BranchingCampaignPilotRequest,
   type BranchingCampaignPilotResult,
 } from './BranchingCampaignPilot';
+import {
+  GameMacroCampaignAdapter,
+  type GameCampaignNavigationFailure,
+} from './GameMacroCampaignAdapter';
+import {
+  UMBRA_CAMPAIGN_ROUTE_SLICE,
+  UmbraCampaignRouteSliceFactory,
+  type UmbraCampaignRouteSliceFailure,
+  type UmbraCampaignRouteSliceRequest,
+} from './UmbraCampaignRouteSlice';
+import type { CampaignGraph } from '../../stages';
 
 export interface GameNarrativeIdentityInput {
   readonly campaignId: string;
@@ -103,6 +114,20 @@ export interface GameStageCompositionOptions {
   readonly campaignStorage?: SaveStoragePort;
 }
 
+export type GameMacroCampaignCreation =
+  | {
+      readonly ok: true;
+      readonly value: {
+        readonly adapter: GameMacroCampaignAdapter;
+        readonly graph: CampaignGraph;
+        readonly persistence: 'created' | 'restored' | 'volatile';
+      };
+    }
+  | {
+      readonly ok: false;
+      readonly error: UmbraCampaignRouteSliceFailure | GameCampaignNavigationFailure;
+    };
+
 export class GameStageCompositionRoot {
   public readonly registry: StageRegistry;
   public readonly loader: StageLoaderPort;
@@ -125,6 +150,30 @@ export class GameStageCompositionRoot {
     request: BranchingCampaignPilotRequest,
   ): BranchingCampaignPilotResult {
     return new BranchingCampaignPilotFactory(this.loader, this.campaignStorage).create(request);
+  }
+
+  public createMacroCampaign(
+    request: UmbraCampaignRouteSliceRequest,
+  ): GameMacroCampaignCreation {
+    const created = new UmbraCampaignRouteSliceFactory(
+      this.loader,
+      this.campaignStorage,
+    ).create(request);
+    if (!created.ok) return created;
+    const adapter = new GameMacroCampaignAdapter(
+      UMBRA_CAMPAIGN_ROUTE_SLICE,
+      created.value.binder,
+    );
+    const inspected = adapter.inspect();
+    if (!inspected.ok) return inspected;
+    return Object.freeze({
+      ok: true as const,
+      value: Object.freeze({
+        adapter,
+        graph: created.value.graph,
+        persistence: created.value.persistence,
+      }),
+    });
   }
 
   public createNarrativeSession(

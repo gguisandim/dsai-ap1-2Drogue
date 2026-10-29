@@ -28,13 +28,16 @@ import { ENEMY_PRESENTATIONS } from '../data/EnemyPresentation';
 import {
   BRANCHING_CAMPAIGN_DEFAULT_RUN_ID,
   BRANCHING_CAMPAIGN_DEFAULT_SEED,
-  CampaignRouter,
+  GameMacroCampaignAdapter,
   GameNarrativeSession,
   GameStageCompositionRoot,
+  UMBRA_ROUTE_SLICE_RUN_ID,
+  UMBRA_ROUTE_SLICE_SEED,
   createBrowserCampaignSaveStorage,
 } from '../application/stages';
 import type {
   CampaignNavigationView,
+  GameCampaignNavigationPort,
   GameSceneStageResolution,
 } from '../application/stages';
 import type { LoadedStage } from '../stages';
@@ -52,6 +55,10 @@ interface GameSceneInitData {
   branchingRunId?: string;
   branchingRunSeed?: string | number;
   branchingRecoveryAttempt?: number;
+  macroCampaign?: boolean;
+  macroRunId?: string;
+  macroRunSeed?: string | number;
+  macroRecoveryAttempt?: number;
 }
 
 interface PendingExitTile {
@@ -147,7 +154,12 @@ export class GameScene extends Phaser.Scene {
   private branchingRunId = BRANCHING_CAMPAIGN_DEFAULT_RUN_ID;
   private branchingRunSeed: string | number = BRANCHING_CAMPAIGN_DEFAULT_SEED;
   private branchingStageSource: 'legacy' | 'campaign' | 'rollback' = 'legacy';
-  private campaignRouter?: CampaignRouter;
+  private macroCampaign = false;
+  private macroRunId = UMBRA_ROUTE_SLICE_RUN_ID;
+  private macroRunSeed: string | number = UMBRA_ROUTE_SLICE_SEED;
+  private macroStageSource: 'legacy' | 'campaign' | 'rollback' = 'legacy';
+  private macroCampaignAdapter?: GameMacroCampaignAdapter;
+  private campaignRouter?: GameCampaignNavigationPort;
   private campaignNavigation?: CampaignNavigationView;
   private campaignPersistenceUncertain = false;
   private campaignRecoveryAttempt = 0;
@@ -167,18 +179,27 @@ export class GameScene extends Phaser.Scene {
     this.modularRunSeed = data?.modularRunSeed ?? 'legacy.verse.default-seed';
     this.modularPersistenceEnabled = Boolean(data?.modularRunId?.trim());
     const query = typeof window === 'undefined' ? undefined : new URLSearchParams(window.location.search);
-    this.branchingCampaign = data?.branchingCampaign === true || query?.get('branchingCampaign') === '1';
+    this.macroCampaign = data?.macroCampaign === true || query?.get('macroCampaign') === '1';
+    this.macroRunId = data?.macroRunId?.trim() ||
+      query?.get('macroRun')?.trim() || UMBRA_ROUTE_SLICE_RUN_ID;
+    this.macroRunSeed = data?.macroRunSeed ?? query?.get('macroSeed') ?? UMBRA_ROUTE_SLICE_SEED;
+    this.branchingCampaign = !this.macroCampaign &&
+      (data?.branchingCampaign === true || query?.get('branchingCampaign') === '1');
     this.branchingRunId = data?.branchingRunId?.trim() ||
       query?.get('branchingRun')?.trim() || BRANCHING_CAMPAIGN_DEFAULT_RUN_ID;
     this.branchingRunSeed = data?.branchingRunSeed ??
       query?.get('branchingSeed') ?? BRANCHING_CAMPAIGN_DEFAULT_SEED;
-    this.campaignRecoveryAttempt = Math.max(0, Math.floor(data?.branchingRecoveryAttempt ?? 0));
+    this.campaignRecoveryAttempt = Math.max(0, Math.floor(
+      this.macroCampaign ? data?.macroRecoveryAttempt ?? 0 : data?.branchingRecoveryAttempt ?? 0,
+    ));
     this.modularStageSource = 'legacy';
     this.modularComposition = undefined;
     this.modularLoadedStage = undefined;
     this.modularNarrativeSession = undefined;
-    this.configureBranchingCampaign();
-    if (!this.branchingCampaign) this.configureModularStage();
+    this.macroCampaignAdapter = undefined;
+    if (this.macroCampaign) this.configureMacroCampaign();
+    else this.configureBranchingCampaign();
+    if (!this.macroCampaign && !this.branchingCampaign) this.configureModularStage();
     this.startingHalos = Math.max(0, Math.floor(data?.halos ?? 5000));
     this.isTransitioning = false;
     this.levelClearedBannerShowing = false;
@@ -193,10 +214,51 @@ export class GameScene extends Phaser.Scene {
     this.skipControlsGuide = data?.skipControls ?? false;
   }
 
+  private configureMacroCampaign(): void {
+    this.macroStageSource = 'legacy';
+    this.branchingStageSource = 'legacy';
+    this.campaignRouter = undefined;
+    this.campaignNavigation = undefined;
+    this.campaignPersistenceUncertain = false;
+    if (!this.macroCampaign || this.proceduralSeed !== undefined) return;
+
+    const composition = new GameStageCompositionRoot({
+      campaignStorage: createBrowserCampaignSaveStorage(),
+    });
+    const created = composition.createMacroCampaign({
+      runId: this.macroRunId,
+      runSeed: this.macroRunSeed,
+    });
+    if (!created.ok) {
+      this.macroStageSource = 'rollback';
+      return;
+    }
+    const inspected = created.value.adapter.inspect();
+    if (!inspected.ok) {
+      this.macroStageSource = 'rollback';
+      return;
+    }
+    const stageId = inspected.value.currentNode.stageId;
+    const levelIndex = this.allLevels.findIndex(level => level.id === stageId);
+    if (levelIndex < 0) {
+      this.macroStageSource = 'rollback';
+      return;
+    }
+    this.allLevels = [...this.allLevels];
+    this.currentLevelIndex = levelIndex;
+    this.allLevels[levelIndex] = inspected.value.loadedStage.level;
+    this.currentLevel = inspected.value.loadedStage.level;
+    this.macroCampaignAdapter = created.value.adapter;
+    this.campaignRouter = created.value.adapter;
+    this.campaignNavigation = inspected.value;
+    this.macroStageSource = 'campaign';
+  }
+
   private configureBranchingCampaign(): void {
     this.branchingStageSource = 'legacy';
     this.campaignRouter = undefined;
     this.campaignNavigation = undefined;
+    this.macroCampaignAdapter = undefined;
     this.campaignPersistenceUncertain = false;
     if (!this.branchingCampaign || this.proceduralSeed !== undefined) return;
 
@@ -324,8 +386,8 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
 
-    // 5. Spawn enemies and items
-    this.spawnEnemiesAndItems(this.currentLevel);
+    // 5. Spawn enemies and items. The macro hub is a safe navigation space.
+    this.prepareCurrentStageEncounter();
 
     // 6. Setup all colliders
     this.setupColliders();
@@ -350,7 +412,7 @@ export class GameScene extends Phaser.Scene {
     this.createHUD();
     this.recoverPendingCampaignRewards();
     this.comboManager = new ComboManager(this, this.comboHudText, () => this.player.extendComboWindow());
-    this.spawnWave(0);
+    this.startCurrentStageEncounter();
     this.events.off('enemyDropHalo');
     this.events.on('enemyDropHalo', (x: number, y: number) => {
       const halo = new Item(this, x, y, 'item_halo', 'item_halo');
@@ -404,7 +466,7 @@ export class GameScene extends Phaser.Scene {
         this.damagePlayer(dmg);
       }
     });
-    this.showChapterTitle(this.currentLevel.name);
+    this.showChapterTitle(this.currentRegionName());
     this.modularNarrativeSession?.enterStage();
     this.createAimReticle();
     this.arrowChargeBar = this.add.graphics().setDepth(30).setVisible(false);
@@ -607,6 +669,11 @@ export class GameScene extends Phaser.Scene {
           branchingRunId: this.branchingRunId,
           branchingRunSeed: this.branchingRunSeed,
         } : {}),
+        ...(this.macroCampaign && this.macroStageSource === 'campaign' ? {
+          macroCampaign: true,
+          macroRunId: this.macroRunId,
+          macroRunSeed: this.macroRunSeed,
+        } : {}),
       }));
     }
   }
@@ -741,6 +808,26 @@ export class GameScene extends Phaser.Scene {
       const itemEntity = new Item(this, px, py, itemType, textureKey);
       this.items.add(itemEntity);
     });
+  }
+
+  private prepareCurrentStageEncounter(): void {
+    if (this.isMacroHub()) {
+      this.waves = [];
+      this.currentWaveIndex = 0;
+      this.waveDelayTimer = 0;
+      this.waveTransition = false;
+      return;
+    }
+    this.spawnEnemiesAndItems(this.currentLevel);
+  }
+
+  private startCurrentStageEncounter(): void {
+    if (this.isMacroHub()) {
+      this.levelClearedBannerShowing = true;
+      this.revealExits();
+      return;
+    }
+    this.spawnWave(0);
   }
 
   private createHUD(): void {
@@ -906,7 +993,11 @@ export class GameScene extends Phaser.Scene {
     available: boolean,
     commandPressed: boolean,
   ): void {
-    if (!physicalExitId || !available) return;
+    if (!physicalExitId) return;
+    if (!available) {
+      this.objectiveText.setText('SAÍDA BLOQUEADA');
+      return;
+    }
     if (!commandPressed) {
       this.objectiveText.setText('PRESSIONE E PARA ATRAVESSAR');
       return;
@@ -921,8 +1012,12 @@ export class GameScene extends Phaser.Scene {
       this.showCampaignTransitionFailure(`SAÍDA INDISPONÍVEL: ${prepared.error.code}`);
       return;
     }
+    this.isTransitioning = true;
+    this.levelBannerText.setText('TRAVESSIA EM ANDAMENTO...');
+    this.levelBannerText.setVisible(true);
     const confirmed = this.campaignRouter.confirm(prepared.value.preparationId);
     if (!confirmed.ok) {
+      this.isTransitioning = false;
       this.campaignPersistenceUncertain = confirmed.error.recovery === 'storage-state-unknown';
       this.showCampaignTransitionFailure(
         this.campaignPersistenceUncertain
@@ -932,7 +1027,6 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.isTransitioning = true;
     this.settleCampaignReward(prepared.value.transitionId);
 
     if (prepared.value.targetNodeId === 'campaign.complete' || !prepared.value.destinationStage) {
@@ -1038,10 +1132,19 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     const data = {
-      branchingCampaign: true,
-      branchingRunId: this.branchingRunId,
-      branchingRunSeed: this.branchingRunSeed,
-      branchingRecoveryAttempt: this.campaignRecoveryAttempt + 1,
+      ...(this.macroCampaign && this.macroStageSource === 'campaign'
+        ? {
+            macroCampaign: true,
+            macroRunId: this.macroRunId,
+            macroRunSeed: this.macroRunSeed,
+            macroRecoveryAttempt: this.campaignRecoveryAttempt + 1,
+          }
+        : {
+            branchingCampaign: true,
+            branchingRunId: this.branchingRunId,
+            branchingRunSeed: this.branchingRunSeed,
+            branchingRecoveryAttempt: this.campaignRecoveryAttempt + 1,
+          }),
       halos: this.player?.halos,
       skipControls: true,
     };
@@ -1065,12 +1168,15 @@ export class GameScene extends Phaser.Scene {
     this.stairTiles.clear(true, true);
     this.pendingExitTiles = [];
     this.exitsRevealed = false;
+    this.levelClearedBannerShowing = false;
+    this.currentWaveIndex = 0;
+    this.waveTransition = false;
 
     this.buildMapFromDefinition(this.currentLevel);
     this.queueCampaignExitTiles();
     this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
-    this.spawnEnemiesAndItems(this.currentLevel);
-    this.spawnWave(0);
+    this.prepareCurrentStageEncounter();
+    this.startCurrentStageEncounter();
 
     const spawn = this.findSpawnPoint(this.currentLevel);
     this.player.setPosition(spawn.x, spawn.y);
@@ -1085,12 +1191,9 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
     this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
 
-    this.levelClearedBannerShowing = false;
-    this.currentWaveIndex = 0;
-    this.waveTransition = false;
     this.levelBannerText.setVisible(false);
     SoundManager.playWitchTimeActivate();
-    this.showChapterTitle(this.currentLevel.name);
+    this.showChapterTitle(this.currentRegionName());
   }
 
   private showCampaignTransitionFailure(message: string): void {
@@ -1104,6 +1207,25 @@ export class GameScene extends Phaser.Scene {
 
   private itemIdentityScope(): string {
     return this.campaignRouter?.state().currentNodeId ?? String(this.currentLevelIndex);
+  }
+
+  private isMacroHub(): boolean {
+    return this.macroStageSource === 'campaign' &&
+      this.macroCampaignAdapter?.location().isHub === true;
+  }
+
+  private currentRegionName(): string {
+    return this.macroStageSource === 'campaign'
+      ? this.macroCampaignAdapter?.location().regionName ?? this.currentLevel.name
+      : this.currentLevel.name;
+  }
+
+  private macroLocationLabel(): string | undefined {
+    if (this.macroStageSource !== 'campaign' || !this.macroCampaignAdapter) return undefined;
+    const location = this.macroCampaignAdapter.location();
+    return location.routeName
+      ? `ROTA: ${location.routeName}  •  REGIÃO: ${location.regionName}`
+      : `REGIÃO: ${location.regionName}`;
   }
 
   public advanceToNextLevel(): void {
@@ -1289,7 +1411,8 @@ export class GameScene extends Phaser.Scene {
         ? 'OBJETIVO: Seção limpa! Aproxime-se de uma saída e pressione E.'
         : 'OBJETIVO: Seção limpa! Procure uma chave ou use uma porta.';
     }
-    this.objectiveText.setText(objective);
+    const location = this.macroLocationLabel();
+    this.objectiveText.setText(location ? `${location}\n${objective}` : objective);
   }
 
   private revealExits(): void {

@@ -10,3 +10,4 @@ export * from './CampaignMacroProgression';
 export * from './UmbraCampaignSkeleton';
 export * from './CampaignMacroRouteBinder';
 export * from './UmbraCampaignRouteSlice';
+export * from './GameMacroCampaignAdapter';

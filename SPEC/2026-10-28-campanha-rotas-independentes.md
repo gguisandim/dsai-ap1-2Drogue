@@ -296,3 +296,111 @@ Opera foi interrompida pelo helper de Computer Use por não conseguir determinar
 a URL atual com confiança; portanto não há alegação de homologação visual em
 navegador real nesta entrega.
 
+## Etapa 9.2B — integração da vertical slice com Phaser
+
+### Escopo e ativação
+
+A integração jogável continua limitada a Floresta das Raízes e Igapó. A flag
+`macroCampaign`, desligada por padrão, ativa o modo pela inicialização da cena
+ou por `?macroCampaign=1`. `macroRun` e `macroSeed` permitem identidade explícita
+sem mudar os defaults estáveis da slice. A precedência é:
+
+1. `macroCampaign`;
+2. `branchingCampaign` existente;
+3. carregamento modular de fase;
+4. fluxo legado.
+
+Uma seed procedural desativa as duas campanhas no runtime desta cena. Com a
+flag macro ausente, nenhum binder macro é criado e nenhum save macro é escrito.
+Save incompatível ou de outra identidade é preservado e produz rollback para o
+mapa legado, sem migração automática.
+
+### Adapter e propriedade de estado
+
+`GameMacroCampaignAdapter` é o limite application/Phaser. Ele não implementa
+roteamento nem persistência: recebe o `CampaignMacroRouteBinder`, projeta apenas
+as escolhas que possuem binding físico real e traduz a seleção por
+`physicalExitId` para o `connectionId` correspondente. `prepare` e `confirm`
+continuam executados pelo binder, que reutiliza `CampaignRouter`, `StageLoader`,
+`PhysicalExitResolver`, `CampaignExitBinder` e `CampaignRunSaveService`.
+
+O adapter implementa o mesmo port mínimo consumido pela cena para que o fluxo
+de portal, reconstrução e journal seja compartilhado com o piloto ramificado.
+`CampaignRunState`, incluindo `macroProgress`, `activeGraphContextId`,
+`parkedGraphContexts`, cursor, histórico, resumes, seeds e recompensas, permanece
+a única autoridade durável. A cena guarda apenas a projeção necessária para
+renderizar o mapa atual e as saídas.
+
+`CampaignMacroRouteBinder` passa a expor o journal de recompensas pelo router
+existente. Claim e acknowledge persistem o estado completo antes de atualizar a
+referência do binder. A progressão externa continua deduplicando pelo
+`transitionId`; não existe nem é declarada transação entre
+`umbra-trail-run-v1` e `vigrid-progression-v1`.
+
+### Comportamento da slice
+
+- Floresta das Raízes usa `verse_01_atrium`, inicia sem ondas e revela
+  imediatamente apenas a saída vinculada para Igapó.
+- Igapó usa `verse_02_galeria` com combate, ondas, habilidades e regra de
+  liberação já existentes; depois da limpeza, sua saída vinculada retorna ao
+  hub.
+- A interação continua por proximidade e `E`; `isTransitioning` é adquirido
+  antes da confirmação para rejeitar inputs simultâneos.
+- Retornar ao hub estaciona o contexto das Águas. A segunda entrada restaura
+  esse contexto. Os limites existentes de duas travessias em cada conexão não
+  são ampliados.
+- Conteúdo `planned` não entra na projeção Phaser, não cria sprite e nunca é
+  enviado ao loader.
+- O HUD mínimo acrescenta região e rota ao objetivo existente. Falhas de
+  preparação, confirmação, persistência ou rebuild conservam/recuperam o estado
+  conforme o resultado tipado, sem avanço silencioso.
+
+### Critérios observáveis e testes
+
+- flag OFF mantém exatamente o fluxo legado e a flag ramificada existente;
+- flags macro e ramificada simultâneas ativam somente a macro;
+- o hub publica uma saída física e não inicia combate;
+- `E` confirma hub → Igapó, Igapó → hub e uma retomada de Igapó;
+- reload preserva identidade, contexto estacionado, histórico e journal;
+- saída bloqueada, input repetido, erro de prepare/confirm e falha de storage
+  não duplicam transição nem recompensa;
+- planejados continuam não carregáveis;
+- morte/restart preserva flag, run e seed macro;
+- World Lab permanece consumidor separado dos mesmos contratos públicos.
+
+A homologação em navegador deve usar somente inputs reais. Se o ambiente não
+permitir completar combate e travessias, os cenários não observados serão
+relatados como pendentes, sem converter testes headless em evidência E2E.
+
+### Evidência da Etapa 9.2B
+
+Foram adicionados 13 testes, em duas suítes, para a projeção Phaser e a cena:
+saída física única, planned ausente, prepare concorrente, confirmação repetida,
+hub → Igapó → hub → retomada, reload, contextos estacionados, limite de
+travessia, rollback de persistência, journal aplicado/deduplicado, hub sem
+combate, portal bloqueado, precedência de flags, fluxo legado e restart por
+morte. As 19 caracterizações preexistentes do binder e do piloto ramificado
+também passaram na execução direcionada.
+
+Validação final em 2026-10-29: **814 testes em 52 suítes**, typecheck, build com
+709 módulos, architecture gate com 787 arquivos/2.820 dependências,
+traceability gate com 20 registros v1, oito legados e um commit pendente. O
+`git diff --check` passou; os avisos de futura conversão LF/CRLF não representam
+erro nem normalização incluída nesta mudança.
+
+Homologação real no Opera, servido por Vite:
+
+- a URL `/?macroCampaign=1&macroRun=manual.macro-92b&macroSeed=manual-92b`
+  abriu o menu e iniciou o jogo pelo botão `JOGAR`;
+- o hub exibiu `REGIÃO: Floresta das Raízes`, objetivo de aproximação, nenhum
+  inimigo/onda e exatamente um portal físico visível;
+- o World Lab abriu separadamente e alternou visualmente entre `Procedural` e
+  `Campanha`, mostrando o hub, as três rotas e conteúdo planejado.
+
+A homologação é **parcial**. O helper disponível envia somente taps instantâneos
+de teclado; mesmo com o canvas focado, `D` e seta direita não sustentaram
+movimento. Por isso não foram comprovados em navegador nesta execução: alcance
+do portal, `E`, entrada no Igapó, combate, retorno, retomada, reload posterior à
+transição, bytes de save, recompensa e console. Nenhum desses estados foi
+forçado por `localStorage`, posição ou chamada interna.
+

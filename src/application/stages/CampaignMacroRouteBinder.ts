@@ -1,8 +1,11 @@
 import type { CampaignMacroDefinition } from '../../stages';
 import type {
   CampaignGraphContextState,
+  CampaignNavigationResult,
   CampaignNavigationView,
   CampaignPreparedTransition,
+  CampaignRewardClaim,
+  CampaignRewardRecord,
   CampaignRouterDependencies,
   CampaignRouterFailure,
   CampaignRunSaveFailure,
@@ -206,6 +209,32 @@ export class CampaignMacroRouteBinder {
     return this.stateValue;
   }
 
+  public rewards(): readonly CampaignRewardRecord[] {
+    return this.journalRouter().rewards();
+  }
+
+  public unsettledRewards(): readonly CampaignRewardRecord[] {
+    return this.journalRouter().unsettledRewards();
+  }
+
+  public reward(transitionId: string): CampaignRewardRecord | undefined {
+    return this.stateValue.rewards[transitionId];
+  }
+
+  public claimReward(transitionId: string): CampaignNavigationResult<CampaignRewardClaim> {
+    const router = this.journalRouter();
+    const claimed = router.claimReward(transitionId);
+    if (claimed.ok) this.stateValue = router.state();
+    return claimed;
+  }
+
+  public acknowledgeReward(transitionId: string): CampaignNavigationResult<CampaignRewardClaim> {
+    const router = this.journalRouter();
+    const acknowledged = router.acknowledgeReward(transitionId);
+    if (acknowledged.ok) this.stateValue = router.state();
+    return acknowledged;
+  }
+
   public inspect(): CampaignMacroRouteBindingResult<CampaignMacroRouteInspection> {
     if (this.pending) return this.failure(
       'transition-in-progress', 'A macro transition is already prepared.',
@@ -394,6 +423,15 @@ export class CampaignMacroRouteBinder {
       loader: this.dependencies.loader,
       resolver: this.dependencies.resolver,
       binder: this.dependencies.binder,
+    });
+  }
+
+  private journalRouter(): CampaignRouter {
+    return new CampaignRouter(this.stateValue, {
+      loader: this.dependencies.loader,
+      resolver: this.dependencies.resolver,
+      binder: this.dependencies.binder,
+      ...(this.dependencies.saves ? { saves: this.dependencies.saves } : {}),
     });
   }
 
