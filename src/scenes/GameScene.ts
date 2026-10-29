@@ -976,28 +976,45 @@ export class GameScene extends Phaser.Scene {
 
   private settleCampaignReward(transitionId: string): void {
     if (!this.campaignRouter) return;
+    const reward = this.campaignRouter.reward(transitionId);
+    if (!reward) return;
     const claimed = this.campaignRouter.claimReward(transitionId);
     if (!claimed.ok) {
-      if (claimed.error.code === 'reward-already-claimed' ||
-        claimed.error.code === 'reward-already-applied') return;
-      this.campaignPersistenceUncertain ||= claimed.error.recovery === 'storage-state-unknown';
+      if (claimed.error.code === 'reward-already-applied') return;
+      if (claimed.error.code !== 'reward-already-claimed') {
+        this.campaignPersistenceUncertain ||= claimed.error.recovery === 'storage-state-unknown';
+        this.showCampaignTransitionFailure(
+          this.campaignPersistenceUncertain
+            ? 'RECOMPENSA PENDENTE: SAVE DA RUN INCERTO.'
+            : `RECOMPENSA ADIADA: ${claimed.error.code}`,
+        );
+        return;
+      }
+      // Already claimed: retry the durable consumer; its ledger deduplicates
+      // an operation that was applied before a crash.
+    }
+    let applied: ReturnType<ProgressionService['recordStageCompletedIdempotent']>;
+    try {
+      applied = this.progression.recordStageCompletedIdempotent({
+        stageId: reward.stageId,
+        difficulty: reward.difficulty,
+        parSeconds: reward.parSeconds,
+        operationId: transitionId,
+      });
+    } catch {
+      this.showCampaignTransitionFailure('RECOMPENSA NÃO CONFIRMADA; TENTE NOVAMENTE NO RESTART.');
+      return;
+    }
+    if (!applied.ok) {
       this.showCampaignTransitionFailure(
-        this.campaignPersistenceUncertain
-          ? 'RECOMPENSA PENDENTE: SAVE DA RUN INCERTO.'
-          : `RECOMPENSA ADIADA: ${claimed.error.code}`,
+        applied.error.code === 'persistence-failed'
+          ? 'RECOMPENSA NÃO REGISTRADA; TENTE NOVAMENTE NO RESTART.'
+          : `RECOMPENSA INVÁLIDA: ${applied.error.code}`,
       );
       return;
     }
-    try {
-      const update = this.progression.recordStageCompleted({
-        stageId: claimed.value.reward.stageId,
-        difficulty: claimed.value.reward.difficulty,
-        parSeconds: claimed.value.reward.parSeconds,
-      });
-      this.player.addHalos(update.currencyAwarded);
-    } catch {
-      this.showCampaignTransitionFailure('RECOMPENSA NÃO CONFIRMADA; NÃO SERÁ REAPLICADA.');
-      return;
+    if (applied.value.status === 'applied') {
+      this.player.addHalos(applied.value.update.currencyAwarded);
     }
     const acknowledged = this.campaignRouter.acknowledgeReward(transitionId);
     if (!acknowledged.ok) {
@@ -1007,8 +1024,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private recoverPendingCampaignRewards(): void {
-    const pending = this.campaignRouter?.pendingRewards() ?? [];
-    for (const reward of pending) {
+    const unsettled = this.campaignRouter?.unsettledRewards() ?? [];
+    for (const reward of unsettled) {
       this.settleCampaignReward(reward.transitionId);
       if (this.campaignPersistenceUncertain) break;
     }

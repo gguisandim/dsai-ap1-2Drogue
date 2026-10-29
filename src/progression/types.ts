@@ -58,7 +58,13 @@ export interface ProgressionState {
   counters: ProgressionCounters;
   quests: Record<string, ProgressionQuestState>;
   modifiers: ProgressionModifiers;
+  operationLedger: ProgressionOperationLedger;
   updatedAt: number;
+}
+
+export interface ProgressionOperationLedger {
+  version: 1;
+  applied: string[];
 }
 
 export interface ProgressionSnapshot extends ProgressionState {}
@@ -129,7 +135,31 @@ export interface StageCompletionProgress {
   difficulty: number;
   elapsedSeconds?: number;
   parSeconds?: number;
+  /** Enables durable deduplication when supplied by a campaign transition. */
+  operationId?: string;
 }
+
+export type ProgressionOperationStatus = 'applied' | 'deduplicated';
+
+export type ProgressionOperationFailureCode = 'persistence-failed' | 'invalid-operation-id';
+
+export interface ProgressionOperationFailure {
+  code: ProgressionOperationFailureCode;
+  message: string;
+}
+
+export type ProgressionOperationResult =
+  | {
+      ok: true;
+      value: {
+        status: ProgressionOperationStatus;
+        update: ProgressionUpdate;
+      };
+    }
+  | {
+      ok: false;
+      error: ProgressionOperationFailure;
+    };
 
 export interface ProgressionStorage {
   load(): ProgressionState | undefined;
@@ -179,6 +209,7 @@ export function createProgressionState(now = Date.now()): ProgressionState {
     counters: { ...DEFAULT_PROGRESSION_COUNTERS },
     quests: {},
     modifiers: { ...DEFAULT_PROGRESSION_MODIFIERS },
+    operationLedger: { version: 1, applied: [] },
     updatedAt: now,
   };
 }
@@ -192,6 +223,10 @@ export function cloneProgressionState(state: ProgressionState): ProgressionState
     counters: { ...state.counters },
     quests: Object.fromEntries(Object.entries(state.quests).map(([key, quest]) => [key, { ...quest }])),
     modifiers: { ...state.modifiers },
+    operationLedger: {
+      version: 1,
+      applied: [...(state.operationLedger?.applied ?? [])],
+    },
   };
 }
 

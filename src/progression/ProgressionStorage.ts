@@ -1,4 +1,10 @@
-import { ProgressionState, ProgressionStorage, cloneProgressionState, createProgressionState } from './types';
+import {
+  ProgressionOperationLedger,
+  ProgressionState,
+  ProgressionStorage,
+  cloneProgressionState,
+  createProgressionState,
+} from './types';
 
 export class MemoryProgressionStorage implements ProgressionStorage {
   private state?: ProgressionState;
@@ -70,8 +76,20 @@ export class LocalProgressionStorage implements ProgressionStorage {
       counters: { ...base.counters, ...(input.counters ?? {}) },
       quests: { ...base.quests, ...(input.quests ?? {}) },
       modifiers: { ...base.modifiers, ...(input.modifiers ?? {}) },
+      operationLedger: this.operationLedger(input.operationLedger),
       updatedAt: this.number(input.updatedAt, base.updatedAt, 0),
     };
+  }
+
+  private operationLedger(value: unknown): ProgressionOperationLedger {
+    const fallback: ProgressionOperationLedger = { version: 1, applied: [] };
+    if (!value || typeof value !== 'object') return fallback;
+    const candidate = value as { version?: unknown; applied?: unknown };
+    if (candidate.version !== 1 || !Array.isArray(candidate.applied)) return fallback;
+    const applied = [...new Set(candidate.applied.filter(
+      (item): item is string => typeof item === 'string' && item.trim().length > 0,
+    ))];
+    return { version: 1, applied: applied.slice(-256) };
   }
 
   private number(value: unknown, fallback: number, minimum: number): number {

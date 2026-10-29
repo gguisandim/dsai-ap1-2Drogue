@@ -5,6 +5,7 @@ import {
   EnemyDefeatProgress,
   ProgressionDiscipline,
   ProgressionNodePreview,
+  ProgressionOperationResult,
   ProgressionSnapshot,
   ProgressionState,
   ProgressionStorage,
@@ -82,6 +83,68 @@ export class ProgressionService {
   }
 
   public recordStageCompleted(input: StageCompletionProgress): ProgressionUpdate {
+    const result = this.applyStageCompletion(input, false);
+    if (!result.ok) throw new Error(result.error.message);
+    return result.value.update;
+  }
+
+  /**
+   * Applies a stage-completion reward with an optional durable operation id.
+   * When the id is supplied, the reward and the id are written to the same
+   * progression state; a repeated call is deduplicated. A failed write rolls
+   * back the in-memory state and is reported, never silently confirmed.
+   */
+  public recordStageCompletedIdempotent(
+    input: StageCompletionProgress,
+  ): ProgressionOperationResult {
+    return this.applyStageCompletion(input, true);
+  }
+
+  private applyStageCompletion(
+    input: StageCompletionProgress,
+    durable: boolean,
+  ): ProgressionOperationResult {
+    const operationId = input.operationId;
+    if (durable && operationId !== undefined) {
+      if (typeof operationId !== 'string' || operationId.trim().length === 0) {
+        return {
+          ok: false,
+          error: {
+            code: 'invalid-operation-id',
+            message: 'operationId must be a non-empty string.',
+          },
+        };
+      }
+      if (this.state.operationLedger?.applied?.includes(operationId)) {
+        return {
+          ok: true,
+          value: { status: 'deduplicated', update: this.emptyUpdate() },
+        };
+      }
+    }
+
+    const before = durable ? cloneProgressionState(this.state) : undefined;
+    const update = this.mutateStageCompletion(input);
+    if (durable && operationId !== undefined) {
+      const applied = [...(this.state.operationLedger?.applied ?? []), operationId];
+      this.state.operationLedger = { version: 1, applied: applied.slice(-256) };
+      if (!this.persistOperation(operationId)) {
+        if (before) this.state = before;
+        return {
+          ok: false,
+          error: {
+            code: 'persistence-failed',
+            message: 'Progression reward was not durably recorded.',
+          },
+        };
+      }
+      return { ok: true, value: { status: 'applied', update } };
+    }
+    this.persist();
+    return { ok: true, value: { status: 'applied', update } };
+  }
+
+  private mutateStageCompletion(input: StageCompletionProgress): ProgressionUpdate {
     const previousLevel = this.state.level;
     this.state.counters.stagesCompleted++;
     this.state.chapter = Math.max(this.state.chapter, this.state.counters.stagesCompleted + 1);
@@ -98,7 +161,6 @@ export class ProgressionService {
     const unlocked = this.content.autoUnlock(this.state, Math.max(1, levelReward.levelsGained));
     const contentLevelReward = this.resolveLevelUps(previousLevel + levelReward.levelsGained);
     this.reconcile();
-    this.persist();
     return {
       experienceAwarded,
       currencyAwarded,
@@ -109,6 +171,33 @@ export class ProgressionService {
       previousLevel,
       currentLevel: this.state.level,
     };
+  }
+
+  private emptyUpdate(): ProgressionUpdate {
+    return {
+      experienceAwarded: 0,
+      currencyAwarded: 0,
+      levelsGained: 0,
+      skillPointsAwarded: 0,
+      unlocked: [],
+      completedQuests: [],
+      previousLevel: this.state.level,
+      currentLevel: this.state.level,
+    };
+  }
+
+  private persistOperation(operationId: string): boolean {
+    try {
+      this.storage.save(this.state);
+    } catch {
+      return false;
+    }
+    try {
+      const persisted = this.storage.load();
+      return persisted?.operationLedger?.applied?.includes(operationId) === true;
+    } catch {
+      return false;
+    }
   }
 
   public recordDamageDealt(amount: number): void {

@@ -310,6 +310,14 @@ export class CampaignRouter {
     return Object.freeze(this.rewards().filter(reward => reward.status === 'pending'));
   }
 
+  public unsettledRewards(): readonly CampaignRewardRecord[] {
+    return Object.freeze(this.rewards().filter(reward => reward.status !== 'applied'));
+  }
+
+  public reward(transitionId: string): CampaignRewardRecord | undefined {
+    return this.stateValue.rewards[transitionId];
+  }
+
   public claimReward(transitionId: string): CampaignNavigationResult<CampaignRewardClaim> {
     if (this.busy || this.preparation) return this.failure(
       'transition-in-progress', 'A transition is currently prepared or being confirmed.',

@@ -978,9 +978,9 @@ são atômicas dentro de `umbra-trail-run-v1`.
 A garantia efetiva é **at-most-once por `transitionId`**. Para obter
 exatamente-uma-vez seria necessário um consumidor idempotente em progressão
 (por exemplo, `operationId` obrigatório em `recordStageCompleted` e um ledger
-`appliedOperationIds` no `ProgressionState`). Essa é uma intervenção separada,
-fora do escopo desta correção; sem ela, nenhum teste nem documentação declara
-exatamente-uma-vez.
+`appliedOperationIds` no `ProgressionState`). Essa intervenção foi implementada
+na Etapa 8.6.2; a garantia de progressão passa a ser exatamente-uma-vez sob
+persistência atômica de uma chave.
 
 Falhas de claim ou acknowledge preservam o estado anterior na memória e usam a
 recuperação já existente do run save (`previous-preserved`,
@@ -1020,7 +1020,8 @@ foi extraído para `rebuildCurrentStage()`, usado tanto por
   journal;
 - run saves v1 sem `rewards` continuam aceitos e são canonicalizados com
   `rewards: {}`; os novos bytes continuam no schema `umbra-trail-run-save` v1;
-- a API de progressão e `ProgressionState` permanecem intocados.
+- a API de progressão e `ProgressionState` não foram alterados pela 8.6.1; a
+  Etapa 8.6.2 adiciona o ledger idempotente descrito abaixo.
 
 Testes adicionados: journal pending/claimed/applied e reload, claim repetido,
 claim com escrita revertida, recompensa pending após queda entre confirmação e
@@ -1034,6 +1035,91 @@ Evidência: `campaignRouter.test.ts`, `branchingCampaignPilot.test.ts` e
 passou com 753 testes em 45 suítes; typecheck, build, architecture gate (1.695
 arquivos e 3.683 dependências), traceability gate (onze registros v1 após o
 registro desta etapa e oito legados explícitos) e `git diff --check` passaram.
+
+### Etapa 8.6.2 — idempotência durável de recompensas (2026-10-28)
+
+Elimina a janela residual da 8.6.1. A recompensa de conclusão de fase passa a
+ser uma operação idempotente no consumidor de progressão, com
+`operationId = transitionId`.
+
+#### Ledger de progressão
+
+`ProgressionState.operationLedger` é um ledger versionado:
+
+```ts
+{ version: 1, applied: string[] }
+```
+
+`StageCompletionProgress.operationId` é opcional. `recordStageCompletedIdempotent`
+executa o seguinte protocolo:
+
+1. se o `operationId` já existe no ledger, retorna
+   `status = deduplicated` com update zerado, sem mutação;
+2. caso contrário, aplica a recompensa, anexa o `operationId` ao ledger e grava
+   o estado inteiro uma única vez;
+3. relê o storage e confirma que o ledger contém o `operationId`;
+4. se a gravação falhar ou a leitura não confirmar, restaura o snapshot
+   anterior e retorna `persistence-failed`, sem confirmar a operação.
+
+Recompensa e ledger ficam no mesmo `ProgressionState`, portanto a atomicidade
+depende apenas da escrita atômica de uma chave. `MemoryProgressionStorage` e
+`LocalProgressionStorage` gravam o estado inteiro; a verificação por leitura
+detecta falhas silenciosas do storage local. O ledger é limitado aos 256 IDs
+mais recentes.
+
+`recordStageCompleted` legado continua sem deduplicação e sem rollback, com os
+mesmos valores de XP, moeda, capítulo, maestria, quests e unlocks. Saves sem
+`operationLedger` são aceitos; o sanitizador do storage local cria
+`{ version: 1, applied: [] }` e preserva o ledger quando presente.
+
+#### Integração com o router e a cena
+
+`GameScene.settleCampaignReward`:
+
+- faz claim do registro `pending`; `reward-already-claimed` é sinal de retry, não
+  de desistência;
+- chama `recordStageCompletedIdempotent` com `operationId = transitionId`;
+- adiciona halos apenas quando o consumidor responde `applied`; em
+  `deduplicated`, não aplica efeitos visuais novamente;
+- só então chama `acknowledgeReward`, que grava `applied` no journal do router.
+
+`unsettledRewards()` devolve `pending` e `claimed`; `recoverPendingCampaignRewards`
+processa ambos no restart. Assim:
+
+- queda antes do claim: `pending` → aplica no restart;
+- queda entre claim e progressão: `claimed` → aplica no restart;
+- queda depois da progressão e antes do ack: `claimed` → o ledger deduplica e o
+  ack é concluído;
+- queda durante a escrita da progressão: rollback + `persistence-failed`; o
+  registro continua `claimed` e é retentado.
+
+O router só marca `applied` depois de `ok` do consumidor (aplicado ou
+deduplicado). Não existe transação entre `umbra-trail-run-v1` e a chave de
+progressão; a garantia é obtida por retry idempotente, não por coordenação
+atômica entre chaves.
+
+#### Garantia real
+
+Sob escrita atômica do estado de progressão, a aplicação da recompensa é
+**exatamente-uma-vez por `operationId`**, inclusive após restart. Não se declara
+transação entre as duas chaves nem exactly-once para efeitos externos fora da
+progressão.
+
+Riscos restantes: um storage que grave parcialmente ou devolva leituras
+inconsistentes pode escapar da verificação de ledger; IDs além do limite de 256
+só seriam deduplicados se ainda estivessem no ledger; a progressão continua
+sendo uma segunda chave independente do run save.
+
+Evidência: `progressionIdempotency.test.ts` cobre aplicação única, dedup após
+restart, escrita que lança com rollback, escrita silenciosa detectada por
+read-back, equivalência de valores legados, save antigo sem ledger, operationId
+inválido e persistência no storage local. Os testes de cena cobrem retry de
+`claimed`, dedup sem halos e falha de persistência sem acknowledge.
+
+Evidência de validação: suíte completa com 761 testes em 46 suítes; typecheck,
+build, architecture gate (1.696 arquivos e 3.685 dependências), traceability
+gate (doze registros v1 após o registro desta etapa e oito legados explícitos) e
+`git diff --check` passaram.
 
 ## Riscos e decisões adiadas
 

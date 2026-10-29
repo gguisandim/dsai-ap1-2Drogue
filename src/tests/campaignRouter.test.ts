@@ -649,6 +649,9 @@ describe('CampaignRouter', () => {
     );
 
     expect(restored.pendingRewards()).toEqual([]);
+    expect(restored.unsettledRewards().map(reward => reward.transitionId))
+      .toEqual([prepared.transitionId]);
+    expect(restored.reward(prepared.transitionId)).toMatchObject({ status: 'claimed' });
     expect(restored.claimReward(prepared.transitionId)).toMatchObject({
       ok: false, error: { code: 'reward-already-claimed' },
     });
