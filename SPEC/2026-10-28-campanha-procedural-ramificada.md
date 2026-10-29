@@ -1194,7 +1194,92 @@ real foi apagado.
 Nenhum bug funcional foi identificado nos cenários executados. O 404 é o
 favicon ausente em `src/index.html` e não afeta o jogo. A homologação permanece
 parcial por ausência de evidência de navegador nos portais, bifurcações e
-recompensas de transição.
+recompensas de transição. A Etapa 8.7.1 fecha P0 e P2 e amplia P1.
+
+### Etapa 8.7.1 — homologação E2E das transições físicas (parcial)
+
+Execução em Microsoft Edge headless real via CDP, com dois perfis temporários
+independentes, servidos por Vite em `http://localhost:5173`. Todo movimento,
+combate, clique e `E` usaram input real do navegador. Não houve chamada direta
+a `prepare()`, `confirm()`, métodos internos da cena ou edição de localStorage.
+
+Para viabilizar o combate sem alterar estado, o personagem foi trocado para
+Arqueiro pelo criador de personagem do próprio jogo, em perfis descartáveis.
+Isso altera somente o perfil temporário, não o run save nem o código.
+
+#### P0 — primeira transição real: aprovado
+
+Run `pilot.e2e-p0`, seed `e2e-731`. Node de origem
+`node.pilot.branching-verse.pilot.e2e-p0.act-1.entry.main`, stage
+`verse_02_galeria`. As ondas foram concluídas normalmente, o banner
+`CAMINHO LIBERADO!` apareceu e os dois portais foram localizados.
+
+| Portal | Tile | `physicalExitId` | Destino observado | Transição | Recompensa |
+|---|---|---|---|---|---|
+| esquerdo | (2,14) | `physical.…intermediate-b.route-b` | `node.…act-1.intermediate-b.route-b` | `transition.4d032f12` | `applied`, stage `verse_02_galeria` |
+| direito | (37,14) | `physical.…intermediate-a.route-a` | `node.…act-1.intermediate-a.route-a` | `transition.c9a7b4c2` | `applied`, stage `verse_02_galeria` |
+
+O portal esquerdo foi percorrido no perfil A; o direito no perfil B, com a mesma
+run e seed. Em ambos, a transição atualizou `currentNodeId`, `traversedEdgeIds`,
+`visitedNodeIds`, `confirmedTransitionIds`, `rewards` e o
+`operationLedger.applied`. Não houve erro de console.
+
+Evidências: `42-before-walk.png`, `43-at-portal.png`, `44-after-e.png`,
+`64-rb-right-portal-before.png`, `65-rb-right-portal.png`,
+`66-rb-right-after-e.png`.
+
+#### P1 — bifurcação e convergência: parcial
+
+As duas alternativas foram executadas em perfis independentes com a mesma
+run/seed e chegaram aos destinos esperados (`route-a` e `route-b`). A topologia
+persistida confirma que ambos os nodes de bifurcação possuem uma única aresta
+de saída para o mesmo marco:
+
+```text
+route-a (depth 1, verse_03_santuario)
+  └─ edge → act-1.milestone.main (depth 2, verse_02_galeria)
+route-b (depth 1, verse_01_atrium)
+  └─ edge → act-1.milestone.main (depth 2, verse_02_galeria)
+```
+
+A convergência **não foi percorrida em navegador**: exigiria limpar as ondas do
+stage de cada alternativa e concluir a segunda transição. A topologia acima é
+evidência de grafo, não E2E.
+
+#### P2 — persistência e recompensas: aprovado
+
+Após a transição real do perfil A:
+
+- reload restaurou os mesmos bytes do run save, o mesmo `currentNodeId`
+  (`intermediate-b.route-b`), a mesma transição confirmada e a recompensa
+  `applied`;
+- `stagesCompleted` permaneceu 1, `currency` permaneceu 1739 e o ledger
+  permaneceu com exatamente um `transitionId` antes e depois do reload;
+- flag OFF abriu o fluxo legado e não criou nem sobrescreveu o run save
+  (`flagOffPreservedRunBytes: true`);
+- não houve exceção de runtime; restaram apenas 404 do favicon.
+
+Evidências: `45-p2-before-reload.png`, `46-p2-after-reload.png`,
+`47-p2-flag-off.png`.
+
+#### Achados e limitações
+
+- Nenhum bug de transição, recompensa, idempotência ou persistência foi
+  reproduzido em navegador.
+- Estados transitórios `pending`/`claimed` são rápidos e não foram observados
+  visualmente; foram verificados os registros persistidos finais (`applied`) e
+  o ledger.
+- Convergência no marco 2 não foi percorrida em navegador.
+- Transições repetidas/simultâneas, portais bloqueados, falha de persistência
+  real e interface visual interativa continuam pendentes de homologação.
+- Observação não bloqueante, fora do fluxo de campanha: o `ShopUI` desconta
+  halos de lollipops de magia/invulnerabilidade, mas `buyFn` só aplica
+  `healAmount`; os efeitos de `invincibleSeconds`/`magicAmount` não são
+  aplicados. Não foi corrigido nesta etapa por estar fora dos portais e
+  transições.
+
+Classificação final: **parcial**. P0 e P2 aprovados; P1 com as duas rotas
+aprovadas e convergência pendente de execução E2E.
 
 ## Riscos e decisões adiadas
 
@@ -1211,9 +1296,9 @@ recompensas de transição.
   até testes de balanceamento;
 - digest e generator version precisam de política de migração antes de qualquer
   save de produção;
-- a homologação da Etapa 8.7 é parcial: portais, bifurcações e recompensas de
-  transição ainda exigem execução manual em navegador, conforme o roteiro da
-  seção 8.7;
+- a homologação permanece parcial após a 8.7.1: P0 e P2 foram aprovados, as duas
+  rotas foram percorridas, mas a convergência no marco 2, estados transitórios
+  de recompensa e falhas forçadas de persistência ainda não têm execução E2E;
 - a allowlist dos architecture gates não muda nesta etapa; qualquer dependência
   nova de implementação exigirá justificativa e hardening próprios.
 
