@@ -239,12 +239,12 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     const stageId = inspected.value.currentNode.stageId;
-    const levelIndex = this.allLevels.findIndex(level => level.id === stageId);
-    if (levelIndex < 0) {
-      this.macroStageSource = 'rollback';
-      return;
-    }
     this.allLevels = [...this.allLevels];
+    let levelIndex = this.allLevels.findIndex(level => level.id === stageId);
+    if (levelIndex < 0) {
+      levelIndex = this.allLevels.length;
+      this.allLevels.push(inspected.value.loadedStage.level);
+    }
     this.currentLevelIndex = levelIndex;
     this.allLevels[levelIndex] = inspected.value.loadedStage.level;
     this.currentLevel = inspected.value.loadedStage.level;
@@ -722,6 +722,11 @@ export class GameScene extends Phaser.Scene {
           this.wallTiles.create(posX, posY, 'tile_wall');
         } else if (tileVal === 2) {
           this.wallTiles.create(posX, posY, 'tile_pillar');
+        } else if (tileVal === 3) {
+          // Water/pits already use non-walkable navigation semantics. Reuse the
+          // existing water tile in the collision group so authored wetlands
+          // have the same physical boundary for players and enemies.
+          this.wallTiles.create(posX, posY, 'tile_water');
         } else if (tileVal === 4) {
           const lava = this.add.image(posX, posY, 'tile_lava');
           this.floorImages.push(lava);
@@ -1050,12 +1055,13 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(400, () => {
       try {
         const previousSection = this.currentLevel.name;
-        const levelIndex = this.allLevels.findIndex(level => level.id === nextLevel.id);
-        if (levelIndex >= 0) {
-          this.currentLevelIndex = levelIndex;
-          this.allLevels = [...this.allLevels];
-          this.allLevels[levelIndex] = nextLevel;
-        }
+        let levelIndex = this.allLevels.findIndex(level => level.id === nextLevel.id);
+        this.allLevels = [...this.allLevels];
+        if (levelIndex < 0) {
+          levelIndex = this.allLevels.length;
+          this.allLevels.push(nextLevel);
+        } else this.allLevels[levelIndex] = nextLevel;
+        this.currentLevelIndex = levelIndex;
         this.currentLevel = nextLevel;
         this.simulationBridge.recordRoomEntered(this.currentLevel.name, previousSection);
         this.rebuildCurrentStage();

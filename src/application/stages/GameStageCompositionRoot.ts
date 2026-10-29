@@ -15,6 +15,7 @@ import type {
 import {
   StageLoader,
   StageRegistry,
+  registerCampaignChapters,
   registerLegacyStages,
 } from '../../stages';
 import type { LoadedStage } from '../../stages';
@@ -136,7 +137,10 @@ export class GameStageCompositionRoot {
 
   public constructor(options: GameStageCompositionOptions = {}) {
     this.registry = options.registry ?? new StageRegistry();
-    if (!options.registry) registerLegacyStages(this.registry);
+    if (!options.registry) {
+      registerLegacyStages(this.registry);
+      registerCampaignChapters(this.registry);
+    }
     this.loader = options.loader ?? new StageLoader(this.registry);
     this.stageAdapter = new GameSceneStageAdapter(this.loader);
     this.campaignStorage = options.campaignStorage;

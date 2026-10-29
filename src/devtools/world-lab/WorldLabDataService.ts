@@ -4,6 +4,7 @@ import {
   PhysicalExitResolver,
   StageLoader,
   StageRegistry,
+  registerCampaignChapters,
   registerLegacyStages,
 } from '../../stages';
 import type {
@@ -63,6 +64,7 @@ function diagnosticsFromGraphFailure(result: Extract<CampaignGraphResult, { ok: 
 }
 
 function fixtureStage(stage: LoadedStage): LoadedStage {
+  if (stage.manifest.layout.kind === 'authored') return stage;
   return Object.freeze({
     ...stage,
     manifest: Object.freeze({
@@ -83,7 +85,10 @@ export class WorldLabDataService {
   public constructor(options: WorldLabDataServiceOptions = {}) {
     this.templates = options.templates ?? WORLD_LAB_FIXTURE_CATALOG;
     const registry = options.registry ?? new StageRegistry();
-    if (!options.registry) registerLegacyStages(registry);
+    if (!options.registry) {
+      registerLegacyStages(registry);
+      registerCampaignChapters(registry);
+    }
     this.loader = options.loader ?? new StageLoader(registry);
     this.generator = options.generator ?? new CampaignGraphGenerator();
     this.resolver = options.resolver ?? new PhysicalExitResolver();
@@ -132,7 +137,7 @@ export class WorldLabDataService {
       code: 'world-lab.fixture-manifest-overlay',
       severity: 'warning',
       origin: 'integration',
-      message: 'Fixture mode uses real legacy maps with a non-mutating empty-exit manifest overlay so campaign edges bind through synthetic slots.',
+      message: 'Fixture mode overlays empty manifests only on legacy maps; authored exits remain explicit and other campaign edges use synthetic slots.',
     }];
     const stageInputs: WorldLabStageProjectionInput[] = [];
     const nodes = [...graph.nodes].sort((left, right) =>

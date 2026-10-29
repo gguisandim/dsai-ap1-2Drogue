@@ -3,6 +3,9 @@ import {
   CampaignExitBinder,
   CampaignGraphGenerator,
   CampaignGraphValidator,
+  ECO_DAS_AGUAS_DIALOGUE_ID,
+  ECO_DAS_AGUAS_EVENT_ID,
+  IGAPO_DAS_MEMORIAS_STAGE_ID,
   PhysicalExitResolver,
 } from '../../stages';
 import type {
@@ -15,13 +18,17 @@ import type {
   StageLoadResult,
 } from '../../stages';
 import { createCampaignRunState } from './CampaignRouter';
-import { CampaignRunSaveService } from './CampaignRunSaveService';
+import { CampaignRunSaveService, canonicalCampaignRunState } from './CampaignRunSaveService';
 import {
   CampaignMacroRouteBinder,
   type CampaignMacroRouteBinding,
   type CampaignMacroRouteBindingFailure,
 } from './CampaignMacroRouteBinder';
-import type { CampaignRunSaveFailure, CampaignRunState } from './CampaignNavigation';
+import type {
+  CampaignGraphContextState,
+  CampaignRunSaveFailure,
+  CampaignRunState,
+} from './CampaignNavigation';
 import { UMBRA_CAMPAIGN_SKELETON } from './UmbraCampaignSkeleton';
 
 interface StageLoaderPort {
@@ -40,9 +47,15 @@ const legacyPlaceholder = (stageId: string, reason: string): CampaignContentRefe
   placeholder: Object.freeze({ kind: 'legacy-map' as const, reason }),
 });
 
+const authoredStage = (stageId: string): CampaignContentReference => Object.freeze({
+  kind: 'stage' as const,
+  stageId,
+  minimumManifestRevision: 1,
+});
+
 export const UMBRA_CAMPAIGN_ROUTE_SLICE: CampaignMacroDefinition = Object.freeze({
   ...UMBRA_CAMPAIGN_SKELETON,
-  revision: 2,
+  revision: 3,
   hub: Object.freeze({
     ...UMBRA_CAMPAIGN_SKELETON.hub,
     content: legacyPlaceholder(
@@ -55,10 +68,12 @@ export const UMBRA_CAMPAIGN_ROUTE_SLICE: CampaignMacroDefinition = Object.freeze
     regions: Object.freeze(route.regions.map(region => region.id === 'region.aguas.igapo'
       ? Object.freeze({
           ...region,
-          content: legacyPlaceholder(
-            'verse_02_galeria',
-            'Placeholder temporário para Igapó; não representa o bioma final.',
-          ),
+          title: 'Igapó das Memórias',
+          content: authoredStage(IGAPO_DAS_MEMORIAS_STAGE_ID),
+          narrative: Object.freeze({
+            dialogueIds: Object.freeze([ECO_DAS_AGUAS_DIALOGUE_ID]),
+            eventIds: Object.freeze([ECO_DAS_AGUAS_EVENT_ID]),
+          }),
         })
       : region)),
   }))),
@@ -66,7 +81,7 @@ export const UMBRA_CAMPAIGN_ROUTE_SLICE: CampaignMacroDefinition = Object.freeze
 
 const STAGE_IDS = Object.freeze([
   'verse_01_atrium',
-  'verse_02_galeria',
+  IGAPO_DAS_MEMORIAS_STAGE_ID,
   'verse_03_santuario',
   'verse_01_atrium',
   'verse_02_galeria',
@@ -87,7 +102,10 @@ const SLICE_TEMPLATES: readonly RegionTemplate[] = Object.freeze(STAGE_IDS.map((
     difficulty: Object.freeze({ minimum: depth + 1, maximum: depth + 1 }),
     weight: 1,
     maximumPhysicalExits: 2 as const,
-    tags: Object.freeze(['legacy-placeholder', 'route-slice']),
+    tags: Object.freeze([
+      depth === 1 ? 'authored-amazon-region' : 'legacy-placeholder',
+      'route-slice',
+    ]),
     providesBeatIds: Object.freeze([`beat.${actId}`]),
     revisit: 'checkpoint' as const,
   });
@@ -174,6 +192,7 @@ class RouteSliceStageLoader implements StageLoaderPort {
   public load(request: StageLoadRequest): StageLoadResult {
     const loaded = this.delegate.load(request);
     if (!loaded.ok) return loaded;
+    if (loaded.value.manifest.layout.kind === 'authored') return loaded;
     return Object.freeze({
       ok: true as const,
       value: Object.freeze({
@@ -205,16 +224,64 @@ export type UmbraCampaignRouteSliceResult =
     }
   | { readonly ok: false; readonly error: UmbraCampaignRouteSliceFailure };
 
+function migrateRewards(
+  rewards: CampaignGraphContextState['rewards'],
+  graph: CampaignGraph,
+): CampaignGraphContextState['rewards'] {
+  const stages = new Map(graph.nodes.map(node => [node.id, node.stageId]));
+  return Object.freeze(Object.fromEntries(Object.entries(rewards).map(([transitionId, reward]) => [
+    transitionId,
+    Object.freeze({
+      ...reward,
+      stageId: stages.get(reward.stageInstanceId) ?? reward.stageId,
+    }),
+  ])));
+}
+
+function migrateGraphContext(
+  context: CampaignGraphContextState,
+  graph: CampaignGraph,
+): CampaignGraphContextState {
+  return Object.freeze({
+    ...context,
+    graph,
+    physicalExits: Object.freeze({}),
+    nodeResumes: Object.freeze({}),
+    rewards: migrateRewards(context.rewards, graph),
+  });
+}
+
+function migrateRouteSliceRevision(
+  state: CampaignRunState,
+  graph: CampaignGraph,
+): CampaignRunState {
+  if (state.graph.campaignRevision !== 2) return state;
+  return canonicalCampaignRunState({
+    ...state,
+    graph,
+    physicalExits: {},
+    nodeResumes: {},
+    rewards: migrateRewards(state.rewards, graph),
+    parkedGraphContexts: Object.freeze(Object.fromEntries(
+      Object.entries(state.parkedGraphContexts ?? {}).map(([contextId, context]) => [
+        contextId,
+        migrateGraphContext(context, graph),
+      ]),
+    )),
+  });
+}
+
 function migrateMacroRevision(state: CampaignRunState): CampaignRunState {
   const macro = state.macroProgress;
-  if (!macro || macro.definitionId !== UMBRA_CAMPAIGN_ROUTE_SLICE.id || macro.definitionRevision !== 1) {
+  if (!macro || macro.definitionId !== UMBRA_CAMPAIGN_ROUTE_SLICE.id ||
+    (macro.definitionRevision !== 1 && macro.definitionRevision !== 2)) {
     return state;
   }
-  return Object.freeze({
+  return canonicalCampaignRunState({
     ...state,
     macroProgress: Object.freeze({
       ...macro,
-      definitionRevision: 2,
+      definitionRevision: 3,
     } as CampaignMacroProgressState),
   });
 }
@@ -235,19 +302,40 @@ export class UmbraCampaignRouteSliceFactory {
     let state = createCampaignRunState(generated.value);
     let persistence: 'created' | 'restored' | 'volatile' = 'volatile';
     if (saves) {
-      const loaded = saves.load({
-        campaignId: generated.value.campaignId,
-        campaignRevision: generated.value.campaignRevision,
-        runId: generated.value.runId,
-        runSeed: generated.value.runSeed,
-        graphId: generated.value.id,
-      });
+      const loaded = saves.load();
       if (!loaded.ok) return Object.freeze({
         ok: false as const,
         error: Object.freeze({ code: 'save-failed' as const, error: loaded.error }),
       });
       if (loaded.value.status === 'loaded') {
-        state = migrateMacroRevision(loaded.value.envelope.state);
+        const previous = loaded.value.envelope.state;
+        const compatible = previous.graph.campaignId === generated.value.campaignId &&
+          previous.graph.runId === generated.value.runId &&
+          previous.graph.runSeed === generated.value.runSeed &&
+          previous.graph.id === generated.value.id &&
+          (previous.graph.campaignRevision === generated.value.campaignRevision ||
+            previous.graph.campaignRevision === 2);
+        if (!compatible) {
+          const rejected = saves.load({
+            campaignId: generated.value.campaignId,
+            campaignRevision: generated.value.campaignRevision,
+            runId: generated.value.runId,
+            runSeed: generated.value.runSeed,
+            graphId: generated.value.id,
+          });
+          if (!rejected.ok) return Object.freeze({
+            ok: false as const,
+            error: Object.freeze({ code: 'save-failed' as const, error: rejected.error }),
+          });
+        }
+        state = migrateMacroRevision(migrateRouteSliceRevision(previous, generated.value));
+        if (JSON.stringify(state) !== JSON.stringify(previous)) {
+          const migrated = saves.save(state, previous);
+          if (!migrated.ok) return Object.freeze({
+            ok: false as const,
+            error: Object.freeze({ code: 'save-failed' as const, error: migrated.error }),
+          });
+        }
         persistence = 'restored';
       } else persistence = 'created';
     }

@@ -43,3 +43,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-28 | [Campanha por rotas independentes — Etapa 9.1](./2026-10-28-campanha-rotas-independentes.md) |
 | 2026-10-28 | [Umbra World Lab](./2026-10-28-umbra-world-lab.md) |
 | 2026-10-29 | [Auditoria arquitetural e racionalização de código — Etapa 9.2A.2](./2026-10-29-auditoria-racionalizacao-codigo.md) |
+| 2026-10-29 | [Primeira região amazônica jogável: Igapó — Etapa 9.3A](./2026-10-29-primeira-regiao-amazonica-igapo.md) |

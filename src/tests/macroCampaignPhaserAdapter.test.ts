@@ -4,6 +4,7 @@ import {
   UMBRA_ROUTE_SLICE_WATERS_CONTEXT,
 } from '../application/stages';
 import { MemorySaveStorage, type SaveStoragePort } from '../narrative';
+import { IGAPO_DAS_MEMORIAS_STAGE_ID, IGAPO_RETURN_ANCHOR } from '../stages';
 
 const RUN_ID = 'run.macro-phaser-adapter';
 const RUN_SEED = 'seed.macro-phaser-adapter';
@@ -52,7 +53,7 @@ describe('GameMacroCampaignAdapter', () => {
     expect(view.snapshot.destinations).toHaveLength(1);
     expect(view.snapshot.destinations[0]).toMatchObject({
       sourceStageId: 'verse_01_atrium',
-      targetStageId: 'verse_02_galeria',
+      targetStageId: IGAPO_DAS_MEMORIAS_STAGE_ID,
       physicalExitId: expect.any(String),
       available: true,
     });
@@ -79,7 +80,7 @@ describe('GameMacroCampaignAdapter', () => {
       error: { code: 'transition-not-prepared' },
     });
     expect(session.adapter.location()).toEqual(expect.objectContaining({
-      routeName: 'Rota das Águas', regionName: 'Igapó', isHub: false,
+      routeName: 'Rota das Águas', regionName: 'Igapó das Memórias', isHub: false,
     }));
   });
 
@@ -109,12 +110,26 @@ describe('GameMacroCampaignAdapter', () => {
     const session = create();
     const view = inspect(session);
     expect(view.snapshot.destinations.map(destination => destination.targetStageId))
-      .toEqual(['verse_02_galeria']);
+      .toEqual([IGAPO_DAS_MEMORIAS_STAGE_ID]);
     expect(view.bindings).toHaveLength(1);
     expect(view.physicalExits.exits).toHaveLength(1);
     expect(session.adapter.prepare('physical.planned.not-exposed')).toMatchObject({
       ok: false,
       error: { code: 'exit-not-found', recovery: 'unchanged' },
+    });
+  });
+
+  it('binds the authored return to the declared reachable anchor', () => {
+    const session = create();
+    navigate(session, inspect(session).snapshot.destinations[0].physicalExitId);
+    const igapo = inspect(session);
+
+    expect(igapo.currentNode.stageId).toBe(IGAPO_DAS_MEMORIAS_STAGE_ID);
+    expect(igapo.physicalExits.exits).toHaveLength(1);
+    expect(igapo.physicalExits.exits[0].tile).toEqual(IGAPO_RETURN_ANCHOR);
+    expect(igapo.bindings[0]).toMatchObject({
+      association: 'manifest-exit',
+      targetStageId: 'verse_01_atrium',
     });
   });
 

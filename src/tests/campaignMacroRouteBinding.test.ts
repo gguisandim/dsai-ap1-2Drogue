@@ -8,7 +8,13 @@ import {
 } from '../application/stages';
 import { WorldLabMacroDataService } from '../devtools/world-lab';
 import { MemorySaveStorage, type SaveStoragePort } from '../narrative';
-import { StageLoader, StageRegistry, registerLegacyStages } from '../stages';
+import {
+  IGAPO_DAS_MEMORIAS_STAGE_ID,
+  StageLoader,
+  StageRegistry,
+  registerCampaignChapters,
+  registerLegacyStages,
+} from '../stages';
 
 const HUB_TO_WATERS = 'connection.hub.floresta-das-raizes.route.aguas';
 const IGAPO_TO_HUB = 'connection.region.aguas.igapo.hub.floresta-das-raizes';
@@ -16,6 +22,7 @@ const IGAPO_TO_HUB = 'connection.region.aguas.igapo.hub.floresta-das-raizes';
 function loader(): StageLoader {
   const registry = new StageRegistry();
   registerLegacyStages(registry);
+  registerCampaignChapters(registry);
   return new StageLoader(registry);
 }
 
@@ -54,15 +61,17 @@ class ToggleStorage implements SaveStoragePort {
 }
 
 describe('CampaignMacroRouteBinder vertical slice', () => {
-  it('declares only the hub and Igapó as explicit loadable legacy placeholders', () => {
-    expect(UMBRA_CAMPAIGN_ROUTE_SLICE.revision).toBe(2);
+  it('keeps the legacy hub placeholder and declares Igapó as authored content', () => {
+    expect(UMBRA_CAMPAIGN_ROUTE_SLICE.revision).toBe(3);
     expect(UMBRA_CAMPAIGN_ROUTE_SLICE.hub.content).toMatchObject({
       kind: 'stage', stageId: 'verse_01_atrium', placeholder: { kind: 'legacy-map' },
     });
     const regions = UMBRA_CAMPAIGN_ROUTE_SLICE.routes.flatMap(route => route.regions);
     expect(regions.find(region => region.id === 'region.aguas.igapo')?.content).toMatchObject({
-      kind: 'stage', stageId: 'verse_02_galeria', placeholder: { kind: 'legacy-map' },
+      kind: 'stage', stageId: IGAPO_DAS_MEMORIAS_STAGE_ID,
     });
+    expect(regions.find(region => region.id === 'region.aguas.igapo')?.content)
+      .not.toHaveProperty('placeholder');
     expect(regions.filter(region => region.id !== 'region.aguas.igapo')
       .every(region => region.content.kind === 'planned')).toBe(true);
   });
@@ -74,7 +83,8 @@ describe('CampaignMacroRouteBinder vertical slice', () => {
     if (!first.ok) throw first.error;
     expect(first.value.nodes).toHaveLength(9);
     expect(first.value.nodes.find(node => node.depth === 0)?.stageId).toBe('verse_01_atrium');
-    expect(first.value.nodes.find(node => node.depth === 1)?.stageId).toBe('verse_02_galeria');
+    expect(first.value.nodes.find(node => node.depth === 1)?.stageId)
+      .toBe(IGAPO_DAS_MEMORIAS_STAGE_ID);
     expect(first.bindings.map(binding => binding.connectionId)).toEqual([
       HUB_TO_WATERS, IGAPO_TO_HUB,
     ]);
@@ -178,7 +188,7 @@ describe('CampaignMacroRouteBinder vertical slice', () => {
     expect(waters).toMatchObject({
       status: 'bound',
       contentKind: 'stage',
-      stageId: 'verse_02_galeria',
+      stageId: IGAPO_DAS_MEMORIAS_STAGE_ID,
       edgeId: expect.any(String),
       physicalExitId: expect.any(String),
     });

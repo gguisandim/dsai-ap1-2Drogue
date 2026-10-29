@@ -9,6 +9,7 @@ import {
   type WorldLabMacroRouteView,
 } from '../devtools/world-lab';
 import { WorldLabApp } from '../devtools/world-lab/ui/WorldLabApp';
+import { IGAPO_DAS_MEMORIAS_STAGE_ID } from '../stages';
 
 function macroView(result: WorldLabMacroRouteResult): WorldLabMacroRouteView {
   if (!result.ok) throw result.error;
@@ -79,14 +80,14 @@ describe('Umbra World Lab macro campaign UI', () => {
     expect(macro.nodes.filter(node => node.kind === 'milestone')).toHaveLength(4);
   });
 
-  it('selects Igapó, shows contract details and opens its real legacy map', () => {
+  it('selects Igapó and opens its authored map without a legacy placeholder', () => {
     mount();
     openMacro();
     const igapo = document.querySelector<SVGGElement>('[data-macro-node-id="region.aguas.igapo"]');
     igapo?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
-    expect(document.body.textContent).toContain('verse_02_galeria');
-    expect(document.body.textContent).toContain('placeholder legado');
+    expect(document.body.textContent).toContain(IGAPO_DAS_MEMORIAS_STAGE_ID);
+    expect(document.body.textContent).toContain('placeholder legadonão');
     expect(document.querySelectorAll('[data-tile]').length).toBeGreaterThan(0);
     expect(document.querySelector('[data-role="stage-title"]')?.textContent).toContain('Igapó');
   });

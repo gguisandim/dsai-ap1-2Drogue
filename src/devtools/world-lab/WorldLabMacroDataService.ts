@@ -6,6 +6,7 @@ import {
 import {
   StageLoader,
   StageRegistry,
+  registerCampaignChapters,
   registerLegacyStages,
 } from '../../stages';
 import type {
@@ -38,6 +39,7 @@ export class WorldLabMacroDataService {
     if (!seed) return failure('world-lab.macro.seed-required', 'A non-empty seed is required.');
     const registry = new StageRegistry();
     registerLegacyStages(registry);
+    registerCampaignChapters(registry);
     const loader = new StageLoader(registry);
     const created = new UmbraCampaignRouteSliceFactory(loader).create({
       runId: UMBRA_ROUTE_SLICE_RUN_ID,

@@ -14,11 +14,14 @@ jest.mock('phaser', () => ({
 }));
 
 import {
+  GameStageCompositionRoot,
   UMBRA_ROUTE_SLICE_HUB_CONTEXT,
   UMBRA_ROUTE_SLICE_WATERS_CONTEXT,
 } from '../application/stages';
 import { VERSE_SECTIONS } from '../data/VerseLevelData';
+import { MemorySaveStorage } from '../narrative';
 import { GameScene } from '../scenes/GameScene';
+import { IGAPO_DAS_MEMORIAS_STAGE_ID } from '../stages';
 
 type SceneState = Record<string, any>;
 
@@ -70,6 +73,8 @@ function prepareTransitionScene(state: SceneState): void {
 }
 
 describe('GameScene macro campaign vertical slice', () => {
+  afterEach(() => jest.restoreAllMocks());
+
   it('keeps the new mode off by default and gives macro precedence over branching', () => {
     const legacy = sceneShell();
     legacy.scene.init();
@@ -125,9 +130,9 @@ describe('GameScene macro campaign vertical slice', () => {
     expect(state.objectiveText.setText).toHaveBeenCalledWith('PRESSIONE E PARA ATRAVESSAR');
     state.handleCampaignExitProximity(firstExit.physicalExitId, true, true);
     const igapoNodeId = state.campaignRouter.state().currentNodeId;
-    expect(state.currentLevel.id).toBe('verse_02_galeria');
+    expect(state.currentLevel.id).toBe(IGAPO_DAS_MEMORIAS_STAGE_ID);
     expect(state.macroCampaignAdapter.location()).toMatchObject({
-      routeName: 'Rota das Águas', regionName: 'Igapó', isHub: false,
+      routeName: 'Rota das Águas', regionName: 'Igapó das Memórias', isHub: false,
     });
     expect(state.campaignRouter.state().activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_WATERS_CONTEXT);
     expect(state.spawnEnemiesAndItems).toHaveBeenCalledWith(state.currentLevel);
@@ -141,7 +146,7 @@ describe('GameScene macro campaign vertical slice', () => {
 
     const resumeExit = state.campaignNavigation.snapshot.destinations[0];
     state.handleCampaignExitProximity(resumeExit.physicalExitId, true, true);
-    expect(state.currentLevel.id).toBe('verse_02_galeria');
+    expect(state.currentLevel.id).toBe(IGAPO_DAS_MEMORIAS_STAGE_ID);
     expect(state.campaignRouter.state().currentNodeId).toBe(igapoNodeId);
     expect(state.campaignRouter.state().graph.id).toBe(initialGraphId);
     expect(state.campaignRouter.state().confirmedTransitionIds).toHaveLength(3);
@@ -220,5 +225,59 @@ describe('GameScene macro campaign vertical slice', () => {
       halos: 777,
     }));
     expect(restart.mock.calls[0][0]).not.toHaveProperty('branchingCampaign');
+  });
+
+  it('restores a run directly inside an authored stage outside the legacy array', () => {
+    const storage = new MemorySaveStorage();
+    const root = new GameStageCompositionRoot({ campaignStorage: storage });
+    const first = root.createMacroCampaign({
+      runId: 'run.scene-authored-restore',
+      runSeed: 'seed.scene-authored-restore',
+    });
+    if (!first.ok) throw first.error;
+    const hub = first.value.adapter.inspect();
+    if (!hub.ok) throw hub.error;
+    const prepared = first.value.adapter.prepare(hub.value.snapshot.destinations[0].physicalExitId);
+    if (!prepared.ok) throw prepared.error;
+    const confirmed = first.value.adapter.confirm(prepared.value.preparationId);
+    if (!confirmed.ok) throw confirmed.error;
+
+    const restored = new GameStageCompositionRoot({ campaignStorage: storage }).createMacroCampaign({
+      runId: 'run.scene-authored-restore',
+      runSeed: 'seed.scene-authored-restore',
+    });
+    if (!restored.ok) throw restored.error;
+    jest.spyOn(GameStageCompositionRoot.prototype, 'createMacroCampaign').mockReturnValue(restored);
+
+    const { scene, state } = sceneShell();
+    scene.init({
+      macroCampaign: true,
+      macroRunId: 'run.scene-authored-restore',
+      macroRunSeed: 'seed.scene-authored-restore',
+    } as any);
+
+    expect(state.macroStageSource).toBe('campaign');
+    expect(state.currentLevel.id).toBe(IGAPO_DAS_MEMORIAS_STAGE_ID);
+    expect(state.allLevels.map((level: { id: string }) => level.id))
+      .toContain(IGAPO_DAS_MEMORIAS_STAGE_ID);
+  });
+
+  it('renders authored dark water with the existing collidable water tile', () => {
+    const loaded = new GameStageCompositionRoot().loader.load({
+      stageId: IGAPO_DAS_MEMORIAS_STAGE_ID,
+      runId: 'run.scene-water',
+      runSeed: 'seed.scene-water',
+    });
+    if (!loaded.ok) throw loaded.error;
+    const { state } = sceneShell();
+    state.add = { image: jest.fn(() => ({})) };
+    state.wallTiles = { create: jest.fn(() => ({})) };
+    state.campaignRouter = {};
+
+    state.buildMapFromDefinition(loaded.value.level);
+
+    const waterCount = loaded.value.level.tileMap.flat().filter(tile => tile === 3).length;
+    expect(state.wallTiles.create.mock.calls.filter((call: unknown[]) => call[2] === 'tile_water'))
+      .toHaveLength(waterCount);
   });
 });

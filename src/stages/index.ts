@@ -94,3 +94,18 @@ export { LegacyLevelAdapter } from './compatibility/LegacyLevelAdapter';
 export { ProceduralStageAdapter } from './compatibility/ProceduralStageAdapter';
 export { StageLoader } from './runtime/StageLoader';
 export type { StageLoaderOptions } from './runtime/StageLoader';
+export { registerCampaignChapters } from './chapters/registerCampaignChapters';
+export {
+  AGUAS_CHAPTER_MANIFEST,
+  AGUAS_CHAPTER_STAGES,
+  ECO_DAS_AGUAS_DIALOGUE_ID,
+  ECO_DAS_AGUAS_EVENT_ID,
+  ECO_DAS_AGUAS_FLAG,
+  ECO_DAS_AGUAS_INTEREST,
+  ECO_DAS_AGUAS_NPC_ID,
+  IGAPO_DAS_MEMORIAS_CHAPTER_ID,
+  IGAPO_DAS_MEMORIAS_STAGE,
+  IGAPO_DAS_MEMORIAS_STAGE_ID,
+  IGAPO_RETURN_ANCHOR,
+  IGAPO_RETURN_EXIT_ID,
+} from './chapters/aguas';
