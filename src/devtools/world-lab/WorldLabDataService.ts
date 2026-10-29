@@ -8,6 +8,7 @@ import {
 } from '../../stages';
 import type {
   CampaignExitBindingResult,
+  CampaignGraph,
   CampaignGraphResult,
   LoadedStage,
   PhysicalExitResult,
@@ -112,6 +113,21 @@ export class WorldLabDataService {
     });
     if (!generated.ok) return this.failure(diagnosticsFromGraphFailure(generated));
 
+    return this.generateGraph(seed, generated.value);
+  }
+
+  /** Projects an already-generated public campaign graph through the same real headless pipeline. */
+  public generateGraph(seedInput: string, graph: CampaignGraph): WorldLabGenerationResult {
+    const seed = seedInput.trim();
+    if (!seed) {
+      return this.failure([{
+        code: 'world-lab.seed-required',
+        severity: 'error',
+        origin: 'integration',
+        message: 'A non-empty seed is required.',
+      }]);
+    }
+
     const diagnostics: WorldLabDiagnostic[] = [{
       code: 'world-lab.fixture-manifest-overlay',
       severity: 'warning',
@@ -119,13 +135,13 @@ export class WorldLabDataService {
       message: 'Fixture mode uses real legacy maps with a non-mutating empty-exit manifest overlay so campaign edges bind through synthetic slots.',
     }];
     const stageInputs: WorldLabStageProjectionInput[] = [];
-    const nodes = [...generated.value.nodes].sort((left, right) =>
+    const nodes = [...graph.nodes].sort((left, right) =>
       left.id < right.id ? -1 : left.id > right.id ? 1 : 0);
 
     for (const node of nodes) {
       const loaded = this.loader.load({
         stageId: node.stageId,
-        runId: generated.value.runId,
+        runId: graph.runId,
         runSeed: node.stageSeed,
       });
       if (!loaded.ok) {
@@ -143,7 +159,7 @@ export class WorldLabDataService {
       )));
 
       const campaignStage = fixtureStage(loaded.value);
-      const outgoing = generated.value.edges.filter(edge => edge.sourceNodeId === node.id);
+      const outgoing = graph.edges.filter(edge => edge.sourceNodeId === node.id);
       const physicalExitResult = this.resolver.resolve({
         node,
         edges: outgoing,
@@ -166,7 +182,7 @@ export class WorldLabDataService {
         });
       } else {
         bindingResult = this.binder.bind({
-          graph: generated.value,
+          graph,
           sourceNodeId: node.id,
           stage: campaignStage,
           physicalExitResult,
@@ -191,7 +207,7 @@ export class WorldLabDataService {
       ok: true as const,
       value: this.projector.project({
         seed,
-        graph: generated.value,
+        graph,
         stages: stageInputs,
         diagnostics,
       }),

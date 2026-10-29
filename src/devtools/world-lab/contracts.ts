@@ -149,3 +149,80 @@ export type WorldLabGenerationResult =
       readonly error: { readonly diagnostics: readonly WorldLabDiagnostic[] };
     };
 
+export interface WorldLabMacroConnectionView {
+  readonly connectionId: string;
+  readonly sourceKind: 'hub' | 'route' | 'corrupted' | 'final';
+  readonly targetKind: 'hub' | 'route' | 'corrupted' | 'final';
+  readonly contentKind: 'stage' | 'planned';
+  readonly stageId?: string;
+  readonly status: 'bound' | 'blocked' | 'unavailable';
+  readonly edgeId?: string;
+  readonly physicalExitId?: string;
+  readonly blockedReason?: string;
+}
+
+export type WorldLabMacroNodeKind = 'hub' | 'region' | 'milestone' | 'final';
+export type WorldLabMacroProgressState = 'current' | 'completed' | 'available' | 'blocked';
+export type WorldLabMacroContentState = 'loadable' | 'planned' | 'none';
+
+export interface WorldLabMacroNodeView {
+  readonly id: string;
+  readonly title: string;
+  readonly kind: WorldLabMacroNodeKind;
+  readonly layer: 0 | 1 | 2 | 3;
+  readonly routeId?: string;
+  readonly routeTitle?: string;
+  readonly order?: number;
+  readonly progressState: WorldLabMacroProgressState;
+  readonly contentState: WorldLabMacroContentState;
+  readonly navigationStatus?: WorldLabMacroConnectionView['status'];
+  readonly stageId?: string;
+  readonly stageNodeId?: string;
+  readonly templateId?: string;
+  readonly legacyPlaceholder: boolean;
+  readonly mapMessage?: string;
+  readonly accessRequirementIds: readonly string[];
+  readonly incomingConnectionIds: readonly string[];
+  readonly outgoingConnectionIds: readonly string[];
+}
+
+export interface WorldLabMacroEdgeView {
+  readonly id: string;
+  readonly sourceNodeId: string;
+  readonly targetNodeId: string;
+  readonly kind: 'progression' | 'return' | 'unlock';
+  readonly state: 'completed' | 'available' | 'blocked';
+  readonly connectionId?: string;
+  readonly navigationStatus?: WorldLabMacroConnectionView['status'];
+}
+
+export interface WorldLabMacroProgressView {
+  readonly fixture: true;
+  readonly currentLocationId: string;
+  readonly routes: readonly {
+    readonly id: string;
+    readonly title: string;
+    readonly status: 'not-started' | 'in-progress' | 'completed';
+    readonly completedRegionIds: readonly string[];
+  }[];
+  readonly completedMilestoneIds: readonly string[];
+  readonly corruptedStatus: 'locked' | 'available' | 'in-progress' | 'milestone-completed';
+  readonly finalStatus: 'locked' | 'available' | 'entered';
+}
+
+export interface WorldLabMacroRouteView {
+  readonly definitionId: string;
+  readonly definitionRevision: number;
+  readonly activeGraphContextId: string;
+  readonly currentLocationKind: 'hub' | 'route' | 'corrupted' | 'final';
+  readonly nodes: readonly WorldLabMacroNodeView[];
+  readonly edges: readonly WorldLabMacroEdgeView[];
+  readonly progress: WorldLabMacroProgressView;
+  readonly connections: readonly WorldLabMacroConnectionView[];
+  readonly graph: WorldLabDocument;
+}
+
+export type WorldLabMacroRouteResult =
+  | { readonly ok: true; readonly value: WorldLabMacroRouteView }
+  | { readonly ok: false; readonly error: { readonly diagnostics: readonly WorldLabDiagnostic[] } };
+

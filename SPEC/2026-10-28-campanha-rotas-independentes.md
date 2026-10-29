@@ -208,6 +208,62 @@ Como `CampaignEdge.traversalLimit` atualmente aceita no máximo `2`, o piloto
 valida a entrada inicial e uma retomada. Revisitas ilimitadas exigem uma decisão
 de contrato futura, sem apagar o histórico para contornar o limite.
 
+## Adendo — Etapa 9.2A.1: visualização macro no World Lab
+
+O World Lab recebe um modo `Campanha` dentro do aplicativo existente. O modo
+`Procedural` permanece padrão e conserva geração, snapshot, filtros, seleção de
+grafo e inspeção de tiles. A alternância é somente de apresentação e não inclui
+o World Lab no bundle principal do jogo.
+
+`WorldLabMacroDataService.generate(seed)` continua sendo a fonte do modo macro.
+Um projector de apresentação dentro de `src/devtools/world-lab/` combina, sem
+mutação:
+
+- a definição pública `UMBRA_CAMPAIGN_ROUTE_SLICE`;
+- `CampaignMacroInspection` e o progresso serializável exposto pela sessão;
+- os bindings físicos reais da Etapa 9.2A;
+- o `WorldLabDocument` dos stages carregáveis.
+
+O modelo visual declara nodes para hub, regiões, marcos, camada corrompida e
+final. Cada node separa três dimensões que não podem ser confundidas:
+
+- progresso: `current`, `completed`, `available` ou `blocked`;
+- conteúdo: `loadable`, `planned` ou `none` para marcos;
+- navegação atual: binding `bound`, `blocked` ou `unavailable`, quando existir.
+
+Estados disponíveis são derivados das escolhas e do progresso retornados pelos
+contratos públicos. Requisitos exibidos são projeções declarativas dos IDs de
+região, marco e unlock condition da definição; a UI não reavalia comandos nem
+implementa regras de desbloqueio. Conteúdo `planned` exibe literalmente
+`Mapa ainda não implementado` e jamais recebe tiles sintéticos.
+
+O SVG macro reutiliza `installSvgPanZoom`, seleção acessível por teclado e a
+identidade visual escura existente. Selecionar Floresta das Raízes ou Igapó
+associa o node macro ao stage realmente projetado e abre seu mapa no inspector.
+Selecionar conteúdo planejado mantém o mapa vazio e mostra o diagnóstico de
+conteúdo. O painel lateral apresenta identidade, rota, camada, progresso,
+requisitos, entradas, saídas, stage/template disponível e o resumo real das
+rotas, camada corrompida, final e escolhas atuais.
+
+O modo é explicitamente marcado como `Fixture de inspeção`; não lê nem simula
+um save do jogador e não chama `prepare`, `confirm` ou comandos da progressão.
+Gerar outra seed recria a projeção headless e não altera o estado da campanha.
+
+### Critérios observáveis da Etapa 9.2A.1
+
+- `world-lab.html` alterna entre `Procedural` e `Campanha` sem perder as
+  funcionalidades anteriores;
+- o SVG macro contém hub, três rotas ordenadas, quatro regiões corrompidas,
+  quatro marcos e final, incluindo retornos declarados ao hub;
+- nodes distinguem progresso, conteúdo planejado e conteúdo carregável;
+- seleção atualiza inspector, conexões e requisitos usando IDs estáveis;
+- hub e Igapó abrem somente seus mapas legados reais; demais regiões mostram
+  `Mapa ainda não implementado`;
+- mudança de seed regenera a projeção determinística;
+- testes verificam que gerar e selecionar não mutam o estado headless;
+- inspeção em navegador real registra evidência visual quando o ambiente
+  disponibiliza browser, sem substituir os testes automatizados.
+
 ## Evidência de implementação
 
 `campaignMacroProgression.test.ts` adiciona 18 cenários: definição e IDs,
@@ -228,4 +284,15 @@ compatibilidade de save sem catálogo e projeção do World Lab. Resultados em
 2026-10-28: 786 testes em 48 suítes, typecheck, build com 707 módulos,
 architecture gate com 1.705 arquivos/3.725 dependências, traceability gate com
 16 registros v1 e oito legados e `git diff --check` aprovados.
+
+Na Etapa 9.2A.1, `worldLabMacroUi.test.ts` adiciona seis cenários de interface:
+preservação do modo procedural, estrutura macro completa, estados derivados,
+abertura do mapa real de Igapó, ausência de mapa fictício, mudança de seed e
+imutabilidade da projeção. Resultados em 2026-10-29: 792 testes em 49 suítes,
+typecheck, build de produção ainda com 707 módulos, architecture gate com 1.708
+arquivos/3.735 dependências, traceability gate com 17 registros v1 e oito
+legados e `git diff --check` aprovados. A tentativa de homologação visual no
+Opera foi interrompida pelo helper de Computer Use por não conseguir determinar
+a URL atual com confiança; portanto não há alegação de homologação visual em
+navegador real nesta entrega.
 

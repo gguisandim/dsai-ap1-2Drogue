@@ -23,6 +23,7 @@ button, select, input[type="text"], input:not([type]) {
 
 button { padding: 7px 10px; cursor: pointer; transition: border-color 120ms, background 120ms; }
 button:hover { border-color: #4c718c; background: #162a3a; }
+button:disabled { cursor: not-allowed; opacity: .45; }
 button.is-primary { border-color: #27a475; background: #17664e; color: #f3fffa; }
 button:focus-visible, input:focus-visible, select:focus-visible, [tabindex="0"]:focus-visible {
   outline: 2px solid #5ee0ad;
@@ -52,6 +53,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex="0"]:
 }
 
 .wl-controls { display: flex; align-items: center; gap: 7px; min-width: 0; overflow-x: auto; padding: 2px; }
+.wl-mode-switch { display: flex; padding: 2px; border: 1px solid #294052; border-radius: 6px; background: #091521; }
+.wl-mode-switch button { border: 0; padding: 5px 9px; background: transparent; color: #8ea5b5; }
+.wl-mode-switch button.is-active { background: #1b5b49; color: #eafff6; }
 .wl-controls label { display: flex; align-items: center; gap: 5px; color: #8fa7b8; font-size: 12px; white-space: nowrap; }
 .wl-controls input:not([type="checkbox"]):not([type="file"]) { width: 150px; padding: 7px; }
 .wl-controls select { max-width: 190px; padding: 7px; }
@@ -100,6 +104,31 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex="0"]:
 .wl-completion { fill: #193b34; stroke: #4ade80; stroke-width: 2; }
 .wl-completion-label { fill: #9af5c6; font: 700 10px ui-monospace, monospace; }
 
+.wl-macro-svg { background: #08131e; }
+.wl-macro-layer-label { fill: #627f92; font: 700 11px ui-monospace, monospace; letter-spacing: .08em; }
+.wl-macro-edge { fill: none; stroke: #395166; stroke-width: 2; cursor: pointer; transition: stroke 120ms, stroke-width 120ms, opacity 120ms; }
+.wl-macro-edge:hover, .wl-macro-edge.is-selected { stroke: #f3c85d; stroke-width: 4; }
+.wl-macro-edge--return { stroke: #596376; stroke-dasharray: 5 6; opacity: .5; }
+.wl-macro-edge--unlock { stroke-width: 2.5; }
+.wl-macro-edge--completed { stroke: #3ba57b; }
+.wl-macro-edge--available { stroke: #45a4cf; }
+.wl-macro-edge--blocked { stroke: #3b4b59; stroke-dasharray: 5 6; opacity: .55; }
+.wl-macro-node { cursor: pointer; }
+.wl-macro-node rect { fill: #152532; stroke: #526b7d; stroke-width: 1.5; transition: filter 120ms, stroke-width 120ms; }
+.wl-macro-node:hover rect { filter: brightness(1.18); stroke-width: 3; }
+.wl-macro-node.is-selected rect { stroke: #f3c85d; stroke-width: 4; }
+.wl-macro-node--current rect { fill: #3b3019; stroke: #f3c85d; }
+.wl-macro-node--completed rect { fill: #153a30; stroke: #4bd19e; }
+.wl-macro-node--available rect { fill: #153246; stroke: #52b9e4; }
+.wl-macro-node--blocked rect { fill: #111c25; stroke: #3d5363; opacity: .8; }
+.wl-macro-node--content-planned rect { stroke-dasharray: 5 4; }
+.wl-macro-node--milestone rect { fill: #2d2737; stroke: #a78bca; }
+.wl-macro-node--final rect { fill: #3b202b; stroke: #df6d8d; }
+.wl-macro-node text { pointer-events: none; }
+.wl-macro-node-status { fill: #8da5b5; font: 700 8px ui-monospace, monospace; }
+.wl-macro-node-title { fill: #edf6fa; font: 650 10px sans-serif; }
+.wl-macro-node-subtitle { fill: #7892a5; font: 7px ui-monospace, monospace; }
+
 .wl-tile { stroke: transparent; stroke-width: .6; cursor: crosshair; }
 .wl-tile.has-grid { stroke: #476072; }
 .wl-tile:hover { filter: brightness(1.45); }
@@ -120,6 +149,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex="0"]:
 .wl-fields dt, .wl-fields dd { margin: 0; padding: 8px 4px; border-bottom: 1px solid #1a2c38; font-size: 11px; overflow-wrap: anywhere; }
 .wl-fields dt { color: #7892a5; font-family: ui-monospace, monospace; }
 .wl-fields dd { color: #d6e2e9; }
+.wl-fixture-notice { margin-bottom: 14px; padding: 8px 9px; border: 1px solid #795f2b; border-left-width: 3px; border-radius: 4px; background: #282114; color: #e5c46f; font: 10px/1.4 ui-monospace, monospace; }
+.wl-choice-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.wl-choice-list li { display: grid; gap: 3px; padding: 7px 8px; border: 1px solid #263b4b; border-left-width: 3px; border-radius: 4px; background: #0d1a25; }
+.wl-choice-list li[data-connection-status="bound"] { border-left-color: #48c99a; }
+.wl-choice-list li[data-connection-status="blocked"] { border-left-color: #c09145; }
+.wl-choice-list li[data-connection-status="unavailable"] { border-left-color: #d26970; }
+.wl-choice-list strong { color: #cad9e2; font: 9px/1.35 ui-monospace, monospace; overflow-wrap: anywhere; }
+.wl-choice-list span { color: #7790a2; font-size: 10px; }
+.wl-planned-map { align-content: center; gap: 7px; }
+.wl-planned-map strong { color: #e6bb62; font-size: 14px; }
+.wl-planned-map span { max-width: 420px; color: #829aaa; line-height: 1.5; }
 
 .wl-diagnostics { height: calc(100% - 35px); overflow: auto; padding: 6px; }
 .wl-diagnostic { display: grid; width: 100%; gap: 3px; margin-bottom: 5px; padding: 7px 9px; border-left-width: 3px; text-align: left; font-size: 10px; }
