@@ -53,6 +53,13 @@ function validateContent(
       diagnostic(diagnostics, 'macro.content.stage-invalid', 'Playable content needs a stable stage and revision.', path);
       return false;
     }
+    if (value.placeholder !== undefined && (!record(value.placeholder) ||
+      value.placeholder.kind !== 'legacy-map' || typeof value.placeholder.reason !== 'string' ||
+      !value.placeholder.reason.trim())) {
+      diagnostic(diagnostics, 'macro.content.placeholder-invalid',
+        'A legacy placeholder needs an explicit non-empty reason.', [...path, 'placeholder']);
+      return false;
+    }
   } else if (!stable(value.contentId) || typeof value.reason !== 'string' || !value.reason.trim()) {
     diagnostic(diagnostics, 'macro.content.planned-invalid', 'Planned content needs an ID and reason.', path);
     return false;

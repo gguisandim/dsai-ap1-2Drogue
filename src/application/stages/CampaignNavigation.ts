@@ -43,6 +43,24 @@ export interface CampaignRunState {
   readonly rewards: Readonly<Record<string, CampaignRewardRecord>>;
   /** Optional additive macro campaign progress. Legacy and pilot saves omit it. */
   readonly macroProgress?: CampaignMacroProgressState;
+  /** Stable identity of the graph context materialized in the legacy fields above. */
+  readonly activeGraphContextId?: string;
+  /** Inactive route contexts. Macro progress is intentionally not copied here. */
+  readonly parkedGraphContexts?: Readonly<Record<string, CampaignGraphContextState>>;
+}
+
+export interface CampaignGraphContextState {
+  readonly graph: CampaignGraph;
+  readonly status: 'active' | 'completed';
+  readonly currentNodeId: CampaignNodeId;
+  readonly visitedNodeIds: readonly CampaignNodeId[];
+  readonly traversedEdgeIds: readonly CampaignEdgeId[];
+  readonly revealedEdgeIds: readonly CampaignEdgeId[];
+  readonly revisitCounts: Readonly<Record<CampaignNodeId, number>>;
+  readonly physicalExits: Readonly<Record<CampaignNodeId, PhysicalExitResolution>>;
+  readonly nodeResumes: Readonly<Record<CampaignNodeId, StageResumeState>>;
+  readonly confirmedTransitionIds: readonly string[];
+  readonly rewards: Readonly<Record<string, CampaignRewardRecord>>;
 }
 
 export type CampaignRewardStatus = 'pending' | 'claimed' | 'applied';

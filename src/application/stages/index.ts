@@ -8,3 +8,5 @@ export * from './BranchingCampaignPilot';
 export * from './CampaignMacroState';
 export * from './CampaignMacroProgression';
 export * from './UmbraCampaignSkeleton';
+export * from './CampaignMacroRouteBinder';
+export * from './UmbraCampaignRouteSlice';

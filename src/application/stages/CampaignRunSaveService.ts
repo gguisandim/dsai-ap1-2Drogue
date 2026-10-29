@@ -8,6 +8,7 @@ import type {
 } from '../../stages';
 import type {
   CampaignRunDiagnostic,
+  CampaignGraphContextState,
   CampaignRunLoadOutcome,
   CampaignRunSaveEnvelope,
   CampaignRunSaveFailure,
@@ -80,6 +81,22 @@ function sortedRecord<T>(
     .map(([key, item]) => [key, transform(item)])));
 }
 
+function canonicalGraphContextState(state: CampaignGraphContextState): CampaignGraphContextState {
+  return cloneFrozen({
+    graph: canonicalGraph(state.graph),
+    status: state.status,
+    currentNodeId: state.currentNodeId,
+    visitedNodeIds: [...state.visitedNodeIds].sort(compare),
+    traversedEdgeIds: [...state.traversedEdgeIds],
+    revealedEdgeIds: [...state.revealedEdgeIds].sort(compare),
+    revisitCounts: sortedRecord(state.revisitCounts),
+    physicalExits: sortedRecord(state.physicalExits, canonicalPhysical),
+    nodeResumes: sortedRecord(state.nodeResumes),
+    confirmedTransitionIds: [...state.confirmedTransitionIds],
+    rewards: sortedRecord(state.rewards ?? {}),
+  });
+}
+
 export function canonicalCampaignRunState(state: CampaignRunState): CampaignRunState {
   return cloneFrozen({
     version: 1 as const,
@@ -96,6 +113,12 @@ export function canonicalCampaignRunState(state: CampaignRunState): CampaignRunS
     rewards: sortedRecord(state.rewards ?? {}),
     ...(state.macroProgress
       ? { macroProgress: canonicalCampaignMacroProgress(state.macroProgress) }
+      : {}),
+    ...(state.activeGraphContextId
+      ? { activeGraphContextId: state.activeGraphContextId }
+      : {}),
+    ...(state.parkedGraphContexts
+      ? { parkedGraphContexts: sortedRecord(state.parkedGraphContexts, canonicalGraphContextState) }
       : {}),
   });
 }
@@ -231,6 +254,58 @@ export function validateCampaignRunState(value: unknown): readonly CampaignRunDi
       ['state', 'macroProgress', ...item.path],
       item.referenceId,
     ));
+  }
+  const hasContextId = value.activeGraphContextId !== undefined;
+  const hasParked = value.parkedGraphContexts !== undefined;
+  if (hasContextId !== hasParked) {
+    push(diagnostics, 'run.graph-context.partial',
+      'Graph context identity and parked catalog must be declared together.',
+      ['state', 'activeGraphContextId']);
+  } else if (hasContextId) {
+    if (!nonEmpty(value.activeGraphContextId)) {
+      push(diagnostics, 'run.graph-context.invalid', 'Active graph context ID is invalid.',
+        ['state', 'activeGraphContextId']);
+    }
+    if (!isRecord(value.parkedGraphContexts)) {
+      push(diagnostics, 'run.graph-context.invalid', 'Parked graph contexts must be an object.',
+        ['state', 'parkedGraphContexts']);
+    } else Object.entries(value.parkedGraphContexts).forEach(([contextId, context]) => {
+      if (!nonEmpty(contextId) || contextId === value.activeGraphContextId || !isRecord(context)) {
+        push(diagnostics, 'run.graph-context.invalid',
+          'A parked graph context needs a distinct stable identity.',
+          ['state', 'parkedGraphContexts', contextId], contextId);
+        return;
+      }
+      const contextValue = context as unknown as CampaignGraphContextState;
+      const nested = validateCampaignRunState({
+        version: 1,
+        graph: contextValue.graph,
+        status: contextValue.status,
+        currentNodeId: contextValue.currentNodeId,
+        visitedNodeIds: contextValue.visitedNodeIds,
+        traversedEdgeIds: contextValue.traversedEdgeIds,
+        revealedEdgeIds: contextValue.revealedEdgeIds,
+        revisitCounts: contextValue.revisitCounts,
+        physicalExits: contextValue.physicalExits,
+        nodeResumes: contextValue.nodeResumes,
+        confirmedTransitionIds: contextValue.confirmedTransitionIds,
+        rewards: contextValue.rewards,
+      });
+      nested.forEach(item => push(
+        diagnostics,
+        item.code,
+        item.message,
+        ['state', 'parkedGraphContexts', contextId, ...item.path.slice(1)],
+        item.referenceId,
+      ));
+      if (isRecord(contextValue.graph) &&
+        (contextValue.graph.runId !== graph.runId || contextValue.graph.runSeed !== graph.runSeed ||
+          contextValue.graph.campaignId !== graph.campaignId)) {
+        push(diagnostics, 'run.graph-context.identity-mismatch',
+          'Parked graph context belongs to another campaign run.',
+          ['state', 'parkedGraphContexts', contextId, 'graph'], contextId);
+      }
+    });
   }
 
   if (!isRecord(value.revisitCounts)) {

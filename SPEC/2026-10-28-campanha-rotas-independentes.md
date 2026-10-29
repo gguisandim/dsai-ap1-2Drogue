@@ -133,6 +133,81 @@ Etapa 9.2 e não será simulada por cópias no estado macro.
 - trocar grafos ativos, posicionar portais ou tornar o esqueleto jogável;
 - garantir exatamente-uma-vez em sistemas externos sem deduplicação.
 
+## Adendo — Etapa 9.2A: binding macro e World Lab
+
+A primeira vertical slice torna carregáveis somente `hub.floresta-das-raizes`
+e `region.aguas.igapo`. Ambos apontam explicitamente para mapas legados como
+placeholders temporários; `StageRegistry` e `StageLoader` continuam sendo a
+autoridade sobre a existência e a revisão desses stages. Mangues, Porto, as
+outras rotas, a camada corrompida e o final permanecem `planned`, bloqueados e
+sem saída física exposta.
+
+`CampaignMacroRouteBinder` é um coordenador da application layer, não um novo
+router. Ele cruza uma `CampaignMacroChoice.connectionId` com uma aresta
+declarada, obtém o `physicalExitId` produzido pelo `CampaignRouter` e delega a
+este o ciclo `inspect`/`prepare`/`confirm`. A progressão macro é aplicada de
+forma volátil e o candidato combinado é gravado uma única vez pelo
+`CampaignRunSaveService`. Falha de stage, resolução, binding, macro ou save
+mantém a referência anterior em memória e os bytes anteriores quando o storage
+confirma `previous-preserved`; estado de storage desconhecido é reportado sem
+prometer atomicidade externa.
+
+O save v1 recebe dois campos aditivos e opcionais:
+
+- `activeGraphContextId`, identidade estável do contexto atualmente materializado
+  nos campos legados de `CampaignRunState`;
+- `parkedGraphContexts`, snapshots completos dos contextos inativos, sem copiar
+  `macroProgress`.
+
+Assim, o router continua vendo exatamente um grafo ativo e saves antigos sem o
+catálogo continuam válidos. Ao sair do hub, seu snapshot é estacionado; ao
+retornar, o contexto de rota é estacionado e o hub é restaurado. Journals de
+transição e recompensas são mesclados por ID ao trocar contexto para não perder
+operações já confirmadas. O estado macro permanece fonte única para rota atual,
+marcos e desbloqueios.
+
+A definição `UMBRA_CAMPAIGN_ROUTE_SLICE` usa:
+
+- Floresta das Raízes → `verse_01_atrium` (`legacy-placeholder`);
+- Igapó → `verse_02_galeria` (`legacy-placeholder`).
+
+Um grafo de slice determinístico, gerado pelo `CampaignGraphGenerator`, mantém
+o contrato existente de nove profundidades. A aresta hub → Igapó e uma aresta
+`return` Igapó → hub são associadas aos `connectionId` macro. As demais posições
+do grafo usam stages legados carregáveis somente para satisfazer o protótipo
+headless; não passam a representar regiões planejadas da campanha.
+
+O World Lab consome o mesmo snapshot público de binding e o mesmo grafo
+resolvido pelo runtime headless. A projeção adicional lista conexões macro com
+status `bound`, `blocked` ou `unavailable`, incluindo as escolhas planejadas.
+Ela não replica seleção de rota, posicionamento de saída nem algoritmo de
+navegação, e não exige alteração da interface SVG/DOM nesta etapa.
+
+### Critérios observáveis da Etapa 9.2A
+
+- hub → Igapó → hub → retomada de Igapó preserva run, seed, node, histórico,
+  checkpoints e journal de recompensas;
+- save/load restaura o contexto ativo e os contextos estacionados;
+- tentativa de escolher Floresta, Terra, camada corrompida ou final não prepara
+  stage nem altera o save;
+- uma falha de prepare, confirm ou persistência mantém o estado anterior;
+- identidade e resultado são determinísticos para a mesma run/seed;
+- saves sem campos de contexto continuam válidos e não são reescritos ao ler;
+- o World Lab mostra Floresta ↔ Igapó como conexões reais e todas as escolhas
+  `planned` como bloqueadas;
+- `GameScene`, combate, movimentação, IA e geração procedural permanecem
+  inalterados.
+
+### Limites da Etapa 9.2A
+
+A slice é headless e inspecionável; não cria objetos Phaser nem portais visuais.
+Os mapas legados conservam sua jogabilidade, mas ainda não são os biomas finais.
+Somente a Rota das Águas possui um contexto navegável e apenas Igapó é ligado;
+as outras rotas exigem stages válidos e integração visual em etapa posterior.
+Como `CampaignEdge.traversalLimit` atualmente aceita no máximo `2`, o piloto
+valida a entrada inicial e uma retomada. Revisitas ilimitadas exigem uma decisão
+de contrato futura, sem apagar o histórico para contornar o limite.
+
 ## Evidência de implementação
 
 `campaignMacroProgression.test.ts` adiciona 18 cenários: definição e IDs,
@@ -145,4 +220,12 @@ Resultados em 2026-10-28: 779 testes em 47 suítes, typecheck, build com 705
 módulos, architecture gate com 1.701 arquivos/3.700 dependências,
 traceability gate com 15 registros v1 e oito legados e `git diff --check`
 aprovados.
+
+Na Etapa 9.2A, `campaignMacroRouteBinding.test.ts` adiciona sete cenários para
+placeholders explícitos, grafo/bindings determinísticos, ciclo físico completo
+com retomada, isolamento de rotas planejadas, rollback de storage,
+compatibilidade de save sem catálogo e projeção do World Lab. Resultados em
+2026-10-28: 786 testes em 48 suítes, typecheck, build com 707 módulos,
+architecture gate com 1.705 arquivos/3.725 dependências, traceability gate com
+16 registros v1 e oito legados e `git diff --check` aprovados.
 

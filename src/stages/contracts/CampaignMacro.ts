@@ -27,6 +27,11 @@ export type CampaignContentReference =
       readonly kind: 'stage';
       readonly stageId: StageId;
       readonly minimumManifestRevision: number;
+      /** Explicitly marks a loadable legacy map used only as temporary campaign content. */
+      readonly placeholder?: {
+        readonly kind: 'legacy-map';
+        readonly reason: string;
+      };
     }
   | {
       readonly kind: 'planned';
