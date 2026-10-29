@@ -40,4 +40,5 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-06 | [Entrega, documentação e publicação](./2026-10-06-entrega-documentacao-deploy.md) |
 | 2026-10-27 | [Arquitetura de campanha narrativa modular](./2026-10-27-arquitetura-campanha-modular.md) |
 | 2026-10-28 | [Campanha procedural ramificada com saídas físicas](./2026-10-28-campanha-procedural-ramificada.md) |
+| 2026-10-28 | [Campanha por rotas independentes — Etapa 9.1](./2026-10-28-campanha-rotas-independentes.md) |
 | 2026-10-28 | [Umbra World Lab](./2026-10-28-umbra-world-lab.md) |

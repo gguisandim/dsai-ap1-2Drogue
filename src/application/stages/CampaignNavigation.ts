@@ -1,5 +1,6 @@
 import type {
   CampaignEdgeId,
+  CampaignMacroProgressState,
   CampaignExitBinding,
   CampaignExitBindingFailure,
   CampaignGraph,
@@ -40,6 +41,8 @@ export interface CampaignRunState {
    * canonicalized to an empty record.
    */
   readonly rewards: Readonly<Record<string, CampaignRewardRecord>>;
+  /** Optional additive macro campaign progress. Legacy and pilot saves omit it. */
+  readonly macroProgress?: CampaignMacroProgressState;
 }
 
 export type CampaignRewardStatus = 'pending' | 'claimed' | 'applied';

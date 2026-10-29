@@ -4,3 +4,4 @@ export * from './StageDiagnostic';
 export * from './StageLoad';
 export * from './CampaignGraph';
 export * from './CampaignExitBinding';
+export * from './CampaignMacro';

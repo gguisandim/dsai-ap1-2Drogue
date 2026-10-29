@@ -22,6 +22,10 @@ import {
   CAMPAIGN_RUN_SAVE_SCHEMA,
   CAMPAIGN_RUN_SAVE_STORAGE_KEY,
 } from './CampaignNavigation';
+import {
+  canonicalCampaignMacroProgress,
+  validateCampaignMacroProgress,
+} from './CampaignMacroState';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -90,6 +94,9 @@ export function canonicalCampaignRunState(state: CampaignRunState): CampaignRunS
     nodeResumes: sortedRecord(state.nodeResumes),
     confirmedTransitionIds: [...state.confirmedTransitionIds],
     rewards: sortedRecord(state.rewards ?? {}),
+    ...(state.macroProgress
+      ? { macroProgress: canonicalCampaignMacroProgress(state.macroProgress) }
+      : {}),
   });
 }
 
@@ -215,6 +222,15 @@ export function validateCampaignRunState(value: unknown): readonly CampaignRunDi
           transitionId);
       }
     });
+  }
+  if (value.macroProgress !== undefined) {
+    validateCampaignMacroProgress(value.macroProgress).forEach(item => push(
+      diagnostics,
+      item.code,
+      item.message,
+      ['state', 'macroProgress', ...item.path],
+      item.referenceId,
+    ));
   }
 
   if (!isRecord(value.revisitCounts)) {
