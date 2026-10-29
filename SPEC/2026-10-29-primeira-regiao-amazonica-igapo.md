@@ -161,3 +161,94 @@ Também executar smoke visual do jogo com `?macroCampaign=1` e do
 ser declarada para transições realizadas por movimento/interação reais; estados
 não serão forçados por storage ou chamadas internas.
 
+## Homologação E2E real (2026-10-29)
+
+Executada com Vite (`http://127.0.0.1:5173`) e Microsoft Edge
+`156.0.4314.50` via CDP, perfil temporário isolado. URL do jogo:
+`?macroCampaign=1&macroRun=run.e2e.igapo.20261029&macroSeed=seed.e2e.igapo.20261029`.
+Todos os inputs foram teclado/mouse reais; nenhuma posição, vida, onda, IA ou
+save foi forçada. Leitura de estado e `localStorage` foi usada apenas para
+inspeção e mira.
+
+### P0 — Travessia hub → Igapó: APROVADO
+
+Movimento real pelo hub, aproximação do portal, interação com `E` e entrada em
+`stage.aguas.igapo-das-memorias`; retorno e nova entrada recompostos no mesmo
+run. Portal do hub:
+`physical.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.edge.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.entry.main.node.campaign.umbra-trail.independent-routes.run.e2e.igapo.20261029.act-1.intermediate.main`.
+Porta de retorno: `exit.aguas.igapo.return-hub`
+(`physical.node…act-1.intermediate.main.node…act-1.entry.main.return`).
+
+### P1 — Exploração e renderização: PARCIAL
+
+Confirmados por travessia real: mapa autoral 40×25 renderizado, água
+intransponível (o corpo do jogador trava em água/pilares e os projéteis são
+destruídos pela água), ilhas, pilares, corredores estreitos (colunas 12–14),
+bifurcação que reconcilia, clareiras de combate, spawn de inimigos, saída física
+e câmera estável. A grade coincide com a do World Lab.
+
+Pendência conhecida: o ponto de interesse `Vestígio Submerso` (tile 27,17) é
+alcançável e declarado, porém não recebe sprite próprio no Phaser (o renderer
+desenha apenas piso) e não abre diálogo na navegação macro — coerente com a
+representação provisória e com a ponte narrativa explicitamente pendente.
+
+### P2 — Combate, retorno e retomada: APROVADO
+
+As duas ondas do Igapó foram concluídas em navegador real com a classe Ladino,
+por ataque à distância e corpo a corpo, sem manipular estado. A saída foi
+desbloqueada (`exitsRevealed = true`, portal disponível), o jogador caminhou até
+o portal, pressionou `E`, retornou ao hub (`verse_01_atrium`, região Floresta das
+Raízes) e retomou o Igapó pelo portal com `E`, preservando run/seed e progresso
+macro.
+
+Observações de combate: o inimigo à distância (`RangedEnemy`) não persegue
+atacando a curta distância — dentro de ~180 px ele recua e não dispara, o que
+permite fechá-lo em corpo a corpo; fora dessa faixa as flechas são lentas e
+telegrafadas. Em uma das tentativas, com 1 de vida restante, optou-se por abrir
+a loja (`B`), que pausa a física, e comprar `green_lollipop` (cura 50, 500 halos)
+antes de continuar — comportamento de jogo legítimo, sem edição de save. Três
+derrotas anteriores causaram `GAME OVER` e reinício do stage (onda reiniciada);
+são comportamento do jogo, não bugs. Nenhum softlock ou colisão defeituosa
+reproduzível foi encontrado.
+
+### P3 — Persistência e narrativa: APROVADO (com ressalva de apresentação)
+
+Recarregar a página dentro do Igapó retorna ao menu; ao acionar `JOGAR`, a run é
+retomada em `stage.aguas.igapo-das-memorias` com `run.e2e.igapo.20261029` e
+`seed.e2e.igapo.20261029` preservados. O save `umbra-trail-run-v1` ficou idêntico
+na comparação antes/depois do reload: 3 transições confirmadas únicas, 3
+operações processadas, 3 recompensas `applied`, mesmo `currentNodeId`, mesmas
+contagens de revisita, sem transições duplicadas; revisões de definição/campanha
+consistentes (3).
+
+`Eco das Águas` foi separado em três camadas: (1) declarativo — rule `once`
+`stage.entered`, diálogo e flag `flag.aguas.igapo.eco-das-aguas-seen` no
+manifesto; (2) processado/persistido — comprovado pelo runtime narrativo headless
+(`igapoDasMemorias.test.ts`, `narrativeIntegration.test.ts`,
+`dialogueEngine.test.ts`); (3) apresentação visual — inexistente, pois a
+navegação macro não cria sessão narrativa, conforme especificado. Nenhuma
+interface de diálogo apareceu no Phaser.
+
+### P4 — World Lab: APROVADO
+
+`http://localhost:5173/world-lab.html`: modo Procedural renderiza o grafo e o
+mapa do fixture; modo Campanha lista o nó corrente (hub) e Igapó como
+`available`. Selecionar Igapó abre o mapa autoral 40×25 com spawn, inimigos,
+itens, água e saída, `placeholder legado: não`, `conteúdo: loadable` e
+diagnósticos do loader/resolver/binder. Regiões planejadas (`Mangues`, `Porto`,
+etc.) exibem “Mapa ainda não implementado” — nenhum mapa fictício. Nenhuma
+exceção de runtime (apenas 404 de `favicon.ico`).
+
+### Bugs e limitações
+
+- Nenhum bug reproduzível de combate, IA, transição ou persistência.
+- O corpo do jogador (≈28×39 px) ultrapassa a linha de um tile, o que faz o
+  personagem prender em pilares/água nas bordas de corredores. É atrito de
+  navegação, não bloqueio, e não foi alterado (mexeria em colisão/física sem
+  bug comprovado).
+- O POI e a apresentação de diálogos dependem da etapa artística/ponte
+  narrativa futura, como já previsto nesta SPEC.
+
+As evidências visuais ficam em `.tmp/evidence/` (fora do versionamento), com
+capturas de hub, Igapó, ondas, portal, retorno, reentrada, reload e World Lab.
+
