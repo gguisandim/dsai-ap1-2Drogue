@@ -89,7 +89,7 @@ export class LocalProgressionStorage implements ProgressionStorage {
     const applied = [...new Set(candidate.applied.filter(
       (item): item is string => typeof item === 'string' && item.trim().length > 0,
     ))];
-    return { version: 1, applied: applied.slice(-256) };
+    return { version: 1, applied };
   }
 
   private number(value: unknown, fallback: number, minimum: number): number {

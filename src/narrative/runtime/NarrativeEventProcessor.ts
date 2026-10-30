@@ -21,10 +21,9 @@ const DEFAULT_MAXIMUM_EVENTS = 128;
 const DEFAULT_MAXIMUM_COMMANDS = 1024;
 const STABLE_LOCAL_ID = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 
-/** Commands accepted by the contracts but executed by later stages (9.4B/9.4C). */
+/** Commands accepted by the contracts but executed by another boundary. */
 const DEFERRED_COMMAND_TYPES: ReadonlySet<StageCommand['type']> = new Set([
   'dialogue.start',
-  'stage.complete',
 ]);
 
 const KNOWN_COMMAND_TYPES: ReadonlySet<string> = new Set<StageCommand['type']>([
@@ -277,6 +276,12 @@ export class NarrativeEventProcessor {
         if (!applied.ok) return applied;
       }
       if (advanced.value.completed) this.enqueueCompletion(context, command.missionId, causeId);
+    } else if (command.type === 'stage.complete') {
+      context.working.completeStage({
+        occurrenceId: `${causeId}.stage.complete.${command.exitId}`,
+        exitId: command.exitId,
+      });
+      context.working.unlockExit(command.exitId);
     } else if (DEFERRED_COMMAND_TYPES.has(command.type)) {
       context.deferredCommands.push(command);
     }

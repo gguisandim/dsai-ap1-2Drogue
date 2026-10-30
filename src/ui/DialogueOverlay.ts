@@ -5,6 +5,8 @@ import type { DialogueChoiceView, DialogueSession, DialogueTurn } from '../narra
 export interface DialogueOverlayHooks {
   readonly onOpen: () => void;
   readonly onClose: () => void;
+  /** Returns false when a committed external consequence still needs retry. */
+  readonly onNarrativeCommitted: () => boolean;
 }
 
 /**
@@ -101,6 +103,10 @@ export class DialogueOverlay {
         this.showError(`FALHA AO CONCLUIR: ${done.error.code}`);
         return;
       }
+      if (!this.hooks.onNarrativeCommitted()) {
+        this.showError('RECOMPENSA PENDENTE — E para tentar novamente');
+        return;
+      }
       this.close();
       return;
     }
@@ -156,6 +162,12 @@ export class DialogueOverlay {
       this.pendingTurn = turn;
       this.renderTurn(turn);
       this.showError(`FALHA AO APLICAR: ${outcome.error.code} — E para tentar novamente`);
+      return;
+    }
+    if (!this.hooks.onNarrativeCommitted()) {
+      this.pendingTurn = turn;
+      this.renderTurn(turn);
+      this.showError('RECOMPENSA PENDENTE — E para tentar novamente');
       return;
     }
     this.pendingTurn = undefined;

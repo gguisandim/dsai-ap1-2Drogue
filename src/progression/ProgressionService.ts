@@ -6,6 +6,8 @@ import {
   ProgressionDiscipline,
   ProgressionNodePreview,
   ProgressionOperationResult,
+  ProgressionReward,
+  ProgressionRewardOperation,
   ProgressionSnapshot,
   ProgressionState,
   ProgressionStorage,
@@ -28,6 +30,7 @@ export class ProgressionService {
   private readonly content: GeneratedContentDirector;
   private readonly now: () => number;
   private state: ProgressionState;
+  private readonly uncertainOperationIds = new Set<string>();
 
   public constructor(options: ProgressionServiceOptions = {}) {
     this.storage = options.storage ?? new LocalProgressionStorage();
@@ -100,44 +103,55 @@ export class ProgressionService {
     return this.applyStageCompletion(input, true);
   }
 
+  /**
+   * Durably applies an external progression reward under the shared operation
+   * ledger. The API is intentionally limited to currency and content unlocks;
+   * narrative content cannot mint arbitrary progression mutations.
+   */
+  public grantRewardIdempotent(
+    input: ProgressionRewardOperation,
+  ): ProgressionOperationResult {
+    const operationFailure = this.validateOperationId(input.operationId);
+    if (operationFailure) return operationFailure;
+    const rewardFailure = this.validateExternalReward(input.reward);
+    if (rewardFailure) return rewardFailure;
+    const known = this.resolveKnownOperation(input.operationId);
+    if (known) return known;
+
+    const before = cloneProgressionState(this.state);
+    const update = this.mutateExternalReward(input.reward);
+    this.recordOperation(input.operationId);
+    if (!this.persistOperation(input.operationId)) {
+      this.state = before;
+      this.uncertainOperationIds.add(input.operationId);
+      return this.persistenceFailure();
+    }
+    this.uncertainOperationIds.delete(input.operationId);
+    return { ok: true, value: { status: 'applied', update } };
+  }
+
   private applyStageCompletion(
     input: StageCompletionProgress,
     durable: boolean,
   ): ProgressionOperationResult {
     const operationId = input.operationId;
     if (durable && operationId !== undefined) {
-      if (typeof operationId !== 'string' || operationId.trim().length === 0) {
-        return {
-          ok: false,
-          error: {
-            code: 'invalid-operation-id',
-            message: 'operationId must be a non-empty string.',
-          },
-        };
-      }
-      if (this.state.operationLedger?.applied?.includes(operationId)) {
-        return {
-          ok: true,
-          value: { status: 'deduplicated', update: this.emptyUpdate() },
-        };
-      }
+      const operationFailure = this.validateOperationId(operationId);
+      if (operationFailure) return operationFailure;
+      const known = this.resolveKnownOperation(operationId);
+      if (known) return known;
     }
 
     const before = durable ? cloneProgressionState(this.state) : undefined;
     const update = this.mutateStageCompletion(input);
     if (durable && operationId !== undefined) {
-      const applied = [...(this.state.operationLedger?.applied ?? []), operationId];
-      this.state.operationLedger = { version: 1, applied: applied.slice(-256) };
+      this.recordOperation(operationId);
       if (!this.persistOperation(operationId)) {
         if (before) this.state = before;
-        return {
-          ok: false,
-          error: {
-            code: 'persistence-failed',
-            message: 'Progression reward was not durably recorded.',
-          },
-        };
+        this.uncertainOperationIds.add(operationId);
+        return this.persistenceFailure();
       }
+      this.uncertainOperationIds.delete(operationId);
       return { ok: true, value: { status: 'applied', update } };
     }
     this.persist();
@@ -182,6 +196,98 @@ export class ProgressionService {
       unlocked: [],
       completedQuests: [],
       previousLevel: this.state.level,
+      currentLevel: this.state.level,
+    };
+  }
+
+  private validateOperationId(operationId: string): ProgressionOperationResult | undefined {
+    if (typeof operationId === 'string' && operationId.trim().length > 0) return undefined;
+    return {
+      ok: false,
+      error: {
+        code: 'invalid-operation-id',
+        message: 'operationId must be a non-empty string.',
+      },
+    };
+  }
+
+  private validateExternalReward(reward: ProgressionReward): ProgressionOperationResult | undefined {
+    if (!reward || typeof reward !== 'object') {
+      return this.invalidReward('Reward must be an object.');
+    }
+    const keys = Object.keys(reward);
+    if (keys.length === 0 || keys.some(key => key !== 'currency' && key !== 'unlocks')) {
+      return this.invalidReward('Only currency and content unlocks are supported.');
+    }
+    if (reward.currency !== undefined &&
+      (!Number.isSafeInteger(reward.currency) || reward.currency <= 0)) {
+      return this.invalidReward('Currency reward must be a positive safe integer.');
+    }
+    if (reward.unlocks !== undefined && (!Array.isArray(reward.unlocks) ||
+      reward.unlocks.length === 0 || reward.unlocks.some(id =>
+        typeof id !== 'string' || id.length === 0 || id.trim() !== id))) {
+      return this.invalidReward('Unlock rewards require normalized non-empty content ids.');
+    }
+    return undefined;
+  }
+
+  private invalidReward(message: string): ProgressionOperationResult {
+    return { ok: false, error: { code: 'invalid-reward', message } };
+  }
+
+  private persistenceFailure(): ProgressionOperationResult {
+    return {
+      ok: false,
+      error: {
+        code: 'persistence-failed',
+        message: 'Progression reward was not durably recorded.',
+      },
+    };
+  }
+
+  private resolveKnownOperation(operationId: string): ProgressionOperationResult | undefined {
+    if (this.state.operationLedger?.applied?.includes(operationId)) {
+      return { ok: true, value: { status: 'deduplicated', update: this.emptyUpdate() } };
+    }
+    if (!this.uncertainOperationIds.has(operationId)) return undefined;
+    let persisted: ProgressionState | undefined;
+    try {
+      persisted = this.storage.load();
+    } catch {
+      return this.persistenceFailure();
+    }
+    if (persisted?.operationLedger?.applied?.includes(operationId)) {
+      this.state = cloneProgressionState(persisted);
+      this.uncertainOperationIds.delete(operationId);
+      return { ok: true, value: { status: 'deduplicated', update: this.emptyUpdate() } };
+    }
+    this.uncertainOperationIds.delete(operationId);
+    return undefined;
+  }
+
+  private recordOperation(operationId: string): void {
+    const applied = [...(this.state.operationLedger?.applied ?? [])];
+    if (!applied.includes(operationId)) applied.push(operationId);
+    this.state.operationLedger = { version: 1, applied };
+  }
+
+  private mutateExternalReward(reward: ProgressionReward): ProgressionUpdate {
+    const previousLevel = this.state.level;
+    const currencyAwarded = reward.currency ?? 0;
+    this.state.currency += currencyAwarded;
+    const unlocked: string[] = [];
+    for (const contentId of reward.unlocks ?? []) {
+      if (!this.state.unlockedContent.includes(contentId)) {
+        this.unlockContent(contentId);
+        unlocked.push(contentId);
+      }
+    }
+    this.reconcile();
+    return {
+      ...this.emptyUpdate(),
+      currencyAwarded,
+      unlocked,
+      previousLevel,
       currentLevel: this.state.level,
     };
   }

@@ -2,6 +2,7 @@ import type {
   MissionState,
   NarrativeStateSnapshot,
   PendingRewardOperation,
+  StageCompletionRecord,
 } from '../contracts';
 import { cloneFrozen, compareStrings } from './data';
 
@@ -18,6 +19,7 @@ export class NarrativeState {
   private appliedCommandIds = new Set<string>();
   private pendingOperations = new Map<string, PendingRewardOperation>();
   private unlockedExitIds = new Set<string>();
+  private completedStageOccurrences = new Map<string, StageCompletionRecord>();
 
   public constructor(initial?: Partial<NarrativeStateSnapshot>) {
     if (initial) this.restore(initial);
@@ -48,6 +50,8 @@ export class NarrativeState {
     this.pendingOperations = new Map((snapshot.pendingOperations ?? [])
       .map(operation => [operation.operationId, cloneFrozen(operation)]));
     this.unlockedExitIds = new Set(snapshot.unlockedExitIds ?? []);
+    this.completedStageOccurrences = new Map((snapshot.completedStageOccurrences ?? [])
+      .map(completion => [completion.occurrenceId, cloneFrozen(completion)]));
   }
 
   public getFlag(flag: string): Scalar | undefined {
@@ -141,6 +145,17 @@ export class NarrativeState {
     return fresh;
   }
 
+  public completeStage(completion: StageCompletionRecord): boolean {
+    if (this.completedStageOccurrences.has(completion.occurrenceId)) return false;
+    this.completedStageOccurrences.set(completion.occurrenceId, cloneFrozen(completion));
+    return true;
+  }
+
+  public getStageCompletions(): readonly StageCompletionRecord[] {
+    return cloneFrozen([...this.completedStageOccurrences.values()]
+      .sort((left, right) => compareStrings(left.occurrenceId, right.occurrenceId)));
+  }
+
   public snapshot(): NarrativeStateSnapshot {
     const sortedRecord = <T>(record: Record<string, T>): Record<string, T> => Object.fromEntries(
       Object.entries(record).sort(([left], [right]) => compareStrings(left, right)),
@@ -165,6 +180,7 @@ export class NarrativeState {
       appliedCommandIds: sorted(this.appliedCommandIds),
       pendingOperations: this.getPendingOperations(),
       unlockedExitIds: sorted(this.unlockedExitIds),
+      completedStageOccurrences: this.getStageCompletions(),
     });
   }
 }

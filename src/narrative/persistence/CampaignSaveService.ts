@@ -262,6 +262,7 @@ export class CampaignSaveService {
     } else if ([...codes].some(item => item.startsWith('save.snapshot') || item.startsWith('save.flag') ||
       item.startsWith('save.choice') || item.startsWith('save.mission') || item.startsWith('save.objective') ||
       item.startsWith('save.pending') || item.startsWith('save.id') || item.startsWith('save.reward') ||
+      item.startsWith('save.stage-completion') || item.startsWith('save.stage-completions') ||
       item.startsWith('save.array'))) {
       code = 'invalid-snapshot';
     }

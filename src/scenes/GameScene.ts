@@ -49,6 +49,7 @@ import {
   poiInteractionPoints,
   resolveWorldInteraction,
 } from '../application/interaction/WorldInteraction';
+import { NarrativeRewardSettlementService } from '../application/rewards';
 
 interface GameSceneInitData {
   skipControls?: boolean;
@@ -161,6 +162,7 @@ export class GameScene extends Phaser.Scene {
   private modularLoadedStage?: LoadedStage;
   private modularNarrativeSession?: GameNarrativeSession;
   private stageSignalAdapter?: StageSignalAdapter;
+  private narrativeRewardSettlement?: NarrativeRewardSettlementService;
   private branchingCampaign = false;
   private branchingRunId = BRANCHING_CAMPAIGN_DEFAULT_RUN_ID;
   private branchingRunSeed: string | number = BRANCHING_CAMPAIGN_DEFAULT_SEED;
@@ -444,6 +446,7 @@ export class GameScene extends Phaser.Scene {
     // 9. HUD & Chapter Title
     this.createHUD();
     this.setupStageInteractions();
+    this.settleNarrativeRewards();
     this.recoverPendingCampaignRewards();
     this.comboManager = new ComboManager(this, this.comboHudText, () => this.player.extendComboWindow());
     this.startCurrentStageEncounter();
@@ -496,7 +499,7 @@ export class GameScene extends Phaser.Scene {
       }
     });
     this.showChapterTitle(this.currentRegionName());
-    this.modularNarrativeSession?.enterStage();
+    this.reportNarrativeSignal(this.modularNarrativeSession?.enterStage());
     this.createAimReticle();
     this.arrowChargeBar = this.add.graphics().setDepth(30).setVisible(false);
     if (loadSettings().showControls && !this.skipControlsGuide) this.showControlsGuide();
@@ -505,6 +508,7 @@ export class GameScene extends Phaser.Scene {
   private initializeModularNarrative(): void {
     this.modularNarrativeSession = undefined;
     this.stageSignalAdapter = undefined;
+    this.narrativeRewardSettlement = undefined;
     this.dialogueOverlay?.destroy();
     this.dialogueOverlay = undefined;
     this.stageNarrativeStage = undefined;
@@ -539,6 +543,10 @@ export class GameScene extends Phaser.Scene {
     if (!created.ok) return;
     this.modularNarrativeSession = created.session;
     this.stageSignalAdapter = new StageSignalAdapter(created.session);
+    this.narrativeRewardSettlement = new NarrativeRewardSettlementService(
+      created.session,
+      this.progression,
+    );
     const names = new Map(loaded.npcs.map(npc => [npc.id, npc.displayName]));
     this.dialogueOverlay = new DialogueOverlay(
       this,
@@ -562,6 +570,7 @@ export class GameScene extends Phaser.Scene {
           this.physics.world.resume();
           this.simulationBridge?.setPaused?.(false);
         },
+        onNarrativeCommitted: () => this.settleNarrativeRewards(),
       },
     );
   }
@@ -689,11 +698,39 @@ export class GameScene extends Phaser.Scene {
   }
 
   private reportNarrativeSignal(
-    result: ReturnType<StageSignalAdapter['dispatch']> | undefined,
+    result: ReturnType<StageSignalAdapter['dispatch']> |
+      ReturnType<GameNarrativeSession['enterStage']> | undefined,
   ): boolean {
-    if (!result || result.ok) return true;
+    if (!result) return true;
+    if (result.ok) return this.settleNarrativeRewards();
     this.showCampaignTransitionFailure(`PROGRESSO NARRATIVO NÃO SALVO: ${result.error.code}`);
     return false;
+  }
+
+  private settleNarrativeRewards(): boolean {
+    const settlement = this.narrativeRewardSettlement?.settlePending();
+    if (!settlement) return true;
+    if (!settlement.ok) {
+      this.showCampaignTransitionFailure(
+        `RECOMPENSA NARRATIVA PENDENTE: ${settlement.error.code}`,
+      );
+      return false;
+    }
+    if (settlement.settlements.length === 0 || !this.levelBannerText) return true;
+    const currency = settlement.settlements.reduce((total, item) =>
+      total + (item.reward.type === 'progression.currency' ? item.reward.amount : 0), 0);
+    const unlocks = settlement.settlements.filter(item =>
+      item.reward.type === 'progression.unlock').length;
+    const details = [
+      currency > 0 ? `+${currency} MOEDA` : '',
+      unlocks > 0 ? `${unlocks} DESBLOQUEIO${unlocks > 1 ? 'S' : ''}` : '',
+    ].filter(Boolean).join('  •  ');
+    this.levelBannerText.setText(`RECOMPENSA CONFIRMADA${details ? `\n${details}` : ''}`);
+    this.levelBannerText.setVisible(true);
+    this.time.delayedCall(1600, () => {
+      if (!this.levelClearedBannerShowing) this.levelBannerText.setVisible(false);
+    });
+    return true;
   }
 
   private requestNarrativeExit(exitId: string, occurrenceId: string): boolean {
@@ -1412,7 +1449,7 @@ export class GameScene extends Phaser.Scene {
     if (this.narrativeReady) {
       this.initializeModularNarrative();
       this.setupStageInteractions();
-      this.modularNarrativeSession?.enterStage();
+      this.reportNarrativeSignal(this.modularNarrativeSession?.enterStage());
     }
     this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
     this.prepareCurrentStageEncounter();

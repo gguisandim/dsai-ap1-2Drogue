@@ -69,6 +69,12 @@ export interface PendingRewardOperation {
   readonly reward: Exclude<StageReward, { readonly type: 'stage.flag' }>;
 }
 
+/** Persisted narrative completion of one causal stage occurrence. */
+export interface StageCompletionRecord {
+  readonly occurrenceId: string;
+  readonly exitId: string;
+}
+
 export interface NarrativeStateSnapshot {
   readonly version: 1;
   readonly flags: Readonly<Record<string, boolean | number | string>>;
@@ -85,6 +91,8 @@ export interface NarrativeStateSnapshot {
   readonly appliedCommandIds?: readonly string[];
   readonly pendingOperations: readonly PendingRewardOperation[];
   readonly unlockedExitIds: readonly string[];
+  /** Additive in save v1; older snapshots restore it as an empty list. */
+  readonly completedStageOccurrences?: readonly StageCompletionRecord[];
 }
 
 export interface DialogueSession {
@@ -189,7 +197,7 @@ export interface NarrativeCommandExecutionResult {
   readonly status: 'applied' | 'duplicate';
   readonly appliedCommandIds: readonly string[];
   readonly skippedCommandIds: readonly string[];
-  /** Known commands whose execution belongs to a later stage (9.4B/9.4C). */
+  /** Known commands whose execution belongs to another application boundary. */
   readonly deferredCommands: readonly StageCommand[];
   readonly commands: readonly StageCommand[];
   readonly generatedSignals: readonly StageSignal[];

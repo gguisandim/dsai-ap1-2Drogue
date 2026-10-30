@@ -139,9 +139,17 @@ export interface StageCompletionProgress {
   operationId?: string;
 }
 
+export interface ProgressionRewardOperation {
+  readonly operationId: string;
+  readonly reward: ProgressionReward;
+}
+
 export type ProgressionOperationStatus = 'applied' | 'deduplicated';
 
-export type ProgressionOperationFailureCode = 'persistence-failed' | 'invalid-operation-id';
+export type ProgressionOperationFailureCode =
+  | 'persistence-failed'
+  | 'invalid-operation-id'
+  | 'invalid-reward';
 
 export interface ProgressionOperationFailure {
   code: ProgressionOperationFailureCode;

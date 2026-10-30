@@ -140,4 +140,39 @@ describe('GameScene confirmed gameplay signal producers', () => {
       'PROGRESSO NARRATIVO NÃO SALVO: storage-write-failed',
     );
   });
+
+  it('keeps the scene thin and cancels navigation when reward settlement remains pending', () => {
+    const { state } = sceneShell();
+    const cancel = jest.fn(() => true);
+    const confirm = jest.fn();
+    const showCampaignTransitionFailure = jest.fn();
+    Object.assign(state, {
+      isTransitioning: false,
+      campaignPersistenceUncertain: false,
+      campaignRouter: {
+        state: () => ({ currentNodeId: 'node.test', revisitCounts: { 'node.test': 1 } }),
+        prepare: jest.fn(() => ({ ok: true, value: {
+          preparationId: 'prepare.transition.reward-pending',
+          stageExitId: 'exit.test.return',
+        } })),
+        cancel,
+        confirm,
+      },
+      stageSignalAdapter: { dispatch: jest.fn(() => ({ ok: true, persistence: 'saved' })) },
+      narrativeRewardSettlement: { settlePending: jest.fn(() => ({
+        ok: false,
+        settlements: [],
+        error: { code: 'progression-failed', message: 'denied' },
+      })) },
+      showCampaignTransitionFailure,
+    });
+
+    state.navigateCampaignExit('physical.test.return');
+
+    expect(cancel).toHaveBeenCalledWith('prepare.transition.reward-pending');
+    expect(confirm).not.toHaveBeenCalled();
+    expect(showCampaignTransitionFailure).toHaveBeenCalledWith(
+      'RECOMPENSA NARRATIVA PENDENTE: progression-failed',
+    );
+  });
 });

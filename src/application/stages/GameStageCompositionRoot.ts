@@ -186,6 +186,10 @@ export class GameNarrativeSession {
     return this.director.pendingRewardCommands();
   }
 
+  public stageCompletions() {
+    return this.director.stageCompletions();
+  }
+
   public confirmOperation(operationId: string): GameNarrativeSessionResult {
     const before = this.director.snapshot();
     const acknowledged = this.director.acknowledgeOperation(operationId);

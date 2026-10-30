@@ -13,6 +13,7 @@ import type {
   NarrativeRegistryFailure,
   NarrativeResult,
   NarrativeStateSnapshot,
+  StageCompletionRecord,
   StageCommand,
 } from '../contracts';
 import { cloneFrozen, failure, isStableId, success } from './data';
@@ -163,6 +164,10 @@ export class StageDirector {
       operationId: operation.operationId,
       reward: operation.reward,
     })));
+  }
+
+  public stageCompletions(): readonly StageCompletionRecord[] {
+    return this.state.getStageCompletions();
   }
 
   public acknowledgeOperation(

@@ -195,6 +195,35 @@ export function validateNarrativeSnapshot(
   }
   validateUniqueStableArray(value.unlockedExitIds, diagnostics, [...path, 'unlockedExitIds']);
 
+  if (value.completedStageOccurrences !== undefined) {
+    if (!Array.isArray(value.completedStageOccurrences)) {
+      add(diagnostics, 'save.stage-completions.invalid', 'completedStageOccurrences must be an array.',
+        [...path, 'completedStageOccurrences']);
+    } else {
+      const occurrences = new Set<string>();
+      value.completedStageOccurrences.forEach((completion, index) => {
+        const completionPath = [...path, 'completedStageOccurrences', index] as const;
+        if (!isRecord(completion) || !isStableId(completion.occurrenceId) ||
+          !isStableId(completion.exitId)) {
+          add(diagnostics, 'save.stage-completion.invalid', 'Stage completion record is invalid.',
+            completionPath);
+          return;
+        }
+        const occurrenceId = completion.occurrenceId;
+        if (!occurrenceId.startsWith(`${scope}.event.`)) {
+          add(diagnostics, 'save.stage-completion.scope-mismatch',
+            'Stage completion belongs to another identity.',
+            [...completionPath, 'occurrenceId'], occurrenceId);
+        }
+        if (occurrences.has(occurrenceId)) {
+          add(diagnostics, 'save.stage-completion.duplicate', 'Stage completion is duplicated.',
+            [...completionPath, 'occurrenceId'], occurrenceId);
+        }
+        occurrences.add(occurrenceId);
+      });
+    }
+  }
+
   if (!Array.isArray(value.pendingOperations)) {
     add(diagnostics, 'save.pending.invalid', 'pendingOperations must be an array.', [...path, 'pendingOperations']);
   } else {
