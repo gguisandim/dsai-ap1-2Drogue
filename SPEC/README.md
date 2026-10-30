@@ -46,3 +46,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-29 | [Primeira região amazônica jogável: Igapó — Etapa 9.3A](./2026-10-29-primeira-regiao-amazonica-igapo.md) |
 | 2026-10-29 | [Modularização de fases e narrativa interativa — Etapa 9.3B](./2026-10-29-etapa-9-3b-modularizacao-narrativa.md) |
 | 2026-10-29 | [Execução de comandos narrativos e escolhas — Etapa 9.4A](./2026-10-29-etapa-9-4a-comandos-narrativos.md) |
+| 2026-10-29 | [Integração dos eventos de gameplay com a narrativa — Etapa 9.4B](./2026-10-29-etapa-9-4b-integracao-eventos-gameplay-narrativa.md) |

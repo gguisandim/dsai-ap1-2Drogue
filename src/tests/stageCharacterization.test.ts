@@ -138,6 +138,7 @@ function configureWaveUpdate(state: SceneInternals, waves: Array<{ enemies: Enem
     waveDelayTimer: 0,
     waveTransition: false,
     currentLevel: levelWith(),
+    stageSignalAdapter: { dispatch: jest.fn(() => ({ ok: true })) },
     levelClearedBannerShowing: false,
     levelBannerText: text,
     lastHandledMeleeAttack: 0,
@@ -314,6 +315,10 @@ describe('legacy wave and exit characterization', () => {
     state.spawnWave(0);
 
     expect(state.spawnSingleEnemy.mock.calls.map((call: EnemyPlacement[]) => call[0])).toEqual(members);
+    expect(state.spawnSingleEnemy.mock.calls.map((call: [EnemyPlacement, string]) => call[1])).toEqual([
+      'stage.characterization-stage.visit.1.wave.0.enemy.0',
+      'stage.characterization-stage.visit.1.wave.0.enemy.1',
+    ]);
     expect(state.simulationBridge.recordWaveStarted).toHaveBeenCalledWith('Frozen Wave', 1, 2);
   });
 
@@ -324,6 +329,11 @@ describe('legacy wave and exit characterization', () => {
 
     scene.update(0, 0);
     expect(state.simulationBridge.recordWaveCompleted).toHaveBeenCalledWith('Characterization Stage', 1);
+    expect(state.stageSignalAdapter.dispatch).toHaveBeenCalledWith({
+      type: 'encounter.completed',
+      occurrenceId: 'stage.characterization-stage.visit.1.wave.0.completed',
+      encounterId: 'wave.1',
+    });
     expect(state.waveTransition).toBe(true);
     expect(state.waveDelayTimer).toBe(1200);
 
@@ -342,6 +352,17 @@ describe('legacy wave and exit characterization', () => {
     scene.update(1, 0);
 
     expect(state.revealExits).toHaveBeenCalledTimes(1);
+    expect(state.stageSignalAdapter.dispatch).toHaveBeenCalledTimes(2);
+    expect(state.stageSignalAdapter.dispatch).toHaveBeenNthCalledWith(1, {
+      type: 'encounter.completed',
+      occurrenceId: 'stage.characterization-stage.visit.1.wave.0.completed',
+      encounterId: 'wave.1',
+    });
+    expect(state.stageSignalAdapter.dispatch).toHaveBeenNthCalledWith(2, {
+      type: 'encounter.completed',
+      occurrenceId: 'stage.characterization-stage.visit.1.encounter.completed',
+      encounterId: 'encounter.characterization-stage',
+    });
     expect(state.levelClearedBannerShowing).toBe(true);
     expect(state.levelBannerText.setText).toHaveBeenCalledWith('CAMINHO LIBERADO!\nEncontre o portal dourado');
   });

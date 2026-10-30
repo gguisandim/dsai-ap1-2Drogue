@@ -28,6 +28,7 @@ export interface GameCampaignNavigationPort {
   state(): CampaignRunState;
   inspect(): GameCampaignNavigationResult<CampaignNavigationView>;
   prepare(physicalExitId: string): GameCampaignNavigationResult<CampaignPreparedTransition>;
+  cancel(preparationId: string): boolean;
   confirm(preparationId: string): GameCampaignNavigationResult<CampaignConfirmedTransition>;
   rewards(): readonly CampaignRewardRecord[];
   unsettledRewards(): readonly CampaignRewardRecord[];
@@ -115,6 +116,14 @@ export class GameMacroCampaignAdapter implements GameCampaignNavigationPort {
       state: confirmed.value.state,
       persistence: confirmed.value.persistence,
     }));
+  }
+
+  public cancel(preparationId: string): boolean {
+    const pending = this.prepared;
+    if (!pending || pending.transition.preparationId !== preparationId) return false;
+    const cancelled = this.binder.cancel(preparationId);
+    if (cancelled) this.prepared = undefined;
+    return cancelled;
   }
 
   public rewards(): readonly CampaignRewardRecord[] {

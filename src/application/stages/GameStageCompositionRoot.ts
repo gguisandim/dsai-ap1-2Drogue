@@ -10,6 +10,7 @@ import type {
   DialogueResult,
   DialogueSession,
   DialogueTurn,
+  NarrativeDomainEvent,
   NarrativeCommandExecutionResult,
   NarrativeOperationFailure,
   NarrativeProgressionView,
@@ -107,6 +108,17 @@ export class GameNarrativeSession {
       id: `scene.exit-requested.${exitId}`,
       signal: { type: 'stage.exit.requested', exitId },
     });
+    if (!processed.ok) return processed;
+    return this.save();
+  }
+
+  /**
+   * Processes a confirmed gameplay fact and persists through the existing
+   * narrative save. A failed write keeps the processed in-memory snapshot so
+   * replaying the same event retries persistence without advancing twice.
+   */
+  public processGameplayEvent(event: NarrativeDomainEvent): GameNarrativeSessionResult {
+    const processed = this.director.process(event);
     if (!processed.ok) return processed;
     return this.save();
   }

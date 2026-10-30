@@ -100,21 +100,35 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   public die(): void {
+    const narrativeEnemyId = this.getData('narrativeEnemyId') as string | undefined;
+    const narrativeArchetype = this.getData('narrativeArchetype') as string | undefined;
     this.scene.events.emit('enemyDefeated', {
       role: this.enemyRole,
       enemyType: this.enemyType,
       maximumHealth: this.maxHp,
       difficulty: this.progressionDifficulty,
+      ...(narrativeEnemyId ? { enemyId: narrativeEnemyId } : {}),
+      ...(narrativeArchetype ? { archetype: narrativeArchetype } : {}),
     });
     // Drop halos as currency on death
     const drops = 1 + Math.floor(Math.random() * 3);
     for (let i = 0; i < drops; i++) {
       const ox = (Math.random() - 0.5) * 24;
       const oy = (Math.random() - 0.5) * 24;
-      this.scene.events.emit('enemyDropHalo', this.x + ox, this.y + oy);
+      this.scene.events.emit(
+        'enemyDropHalo',
+        this.x + ox,
+        this.y + oy,
+        narrativeEnemyId ? `${narrativeEnemyId}.drop.halo.${i}` : undefined,
+      );
     }
     if (shouldDropHeart(Math.random())) {
-      this.scene.events.emit('enemyDropHeart', this.x, this.y);
+      this.scene.events.emit(
+        'enemyDropHeart',
+        this.x,
+        this.y,
+        narrativeEnemyId ? `${narrativeEnemyId}.drop.heart` : undefined,
+      );
     }
     this.destroy();
   }

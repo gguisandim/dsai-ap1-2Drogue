@@ -84,6 +84,18 @@ describe('GameMacroCampaignAdapter', () => {
     }));
   });
 
+  it('cancels a prepared transition so a narrative failure can retry safely', () => {
+    const session = create();
+    const destination = inspect(session).snapshot.destinations[0];
+    const prepared = session.adapter.prepare(destination.physicalExitId);
+    if (!prepared.ok) throw prepared.error;
+
+    expect(session.adapter.cancel(prepared.value.preparationId)).toBe(true);
+    expect(session.adapter.cancel(prepared.value.preparationId)).toBe(false);
+    const retried = session.adapter.prepare(destination.physicalExitId);
+    expect(retried.ok).toBe(true);
+  });
+
   it('persists hub, Igapó, hub and route resumption without losing context', () => {
     const storage = new MemorySaveStorage();
     const first = create(storage);

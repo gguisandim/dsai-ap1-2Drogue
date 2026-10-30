@@ -31,6 +31,7 @@ import {
   GameMacroCampaignAdapter,
   GameNarrativeSession,
   GameStageCompositionRoot,
+  StageSignalAdapter,
   UMBRA_ROUTE_SLICE_RUN_ID,
   UMBRA_ROUTE_SLICE_SEED,
   campaignStageNarrativeSaveKey,
@@ -159,6 +160,7 @@ export class GameScene extends Phaser.Scene {
   private modularComposition?: GameStageCompositionRoot;
   private modularLoadedStage?: LoadedStage;
   private modularNarrativeSession?: GameNarrativeSession;
+  private stageSignalAdapter?: StageSignalAdapter;
   private branchingCampaign = false;
   private branchingRunId = BRANCHING_CAMPAIGN_DEFAULT_RUN_ID;
   private branchingRunSeed: string | number = BRANCHING_CAMPAIGN_DEFAULT_SEED;
@@ -213,6 +215,7 @@ export class GameScene extends Phaser.Scene {
     this.modularComposition = undefined;
     this.modularLoadedStage = undefined;
     this.modularNarrativeSession = undefined;
+    this.stageSignalAdapter = undefined;
     this.macroCampaignAdapter = undefined;
     this.macroLoadedStage = undefined;
     if (this.macroCampaign) this.configureMacroCampaign();
@@ -335,6 +338,7 @@ export class GameScene extends Phaser.Scene {
     this.modularComposition = undefined;
     this.modularLoadedStage = undefined;
     this.modularNarrativeSession = undefined;
+    this.stageSignalAdapter = undefined;
     if (!this.modularStageLoading || this.proceduralSeed !== undefined ||
       this.currentLevel.id !== 'verse_01_atrium') return;
 
@@ -444,13 +448,15 @@ export class GameScene extends Phaser.Scene {
     this.comboManager = new ComboManager(this, this.comboHudText, () => this.player.extendComboWindow());
     this.startCurrentStageEncounter();
     this.events.off('enemyDropHalo');
-    this.events.on('enemyDropHalo', (x: number, y: number) => {
+    this.events.on('enemyDropHalo', (x: number, y: number, occurrenceId?: string) => {
       const halo = new Item(this, x, y, 'item_halo', 'item_halo');
+      if (occurrenceId) halo.setData('narrativeItemId', occurrenceId);
       this.items.add(halo);
     });
     this.events.off('enemyDropHeart');
-    this.events.on('enemyDropHeart', (x: number, y: number) => {
+    this.events.on('enemyDropHeart', (x: number, y: number, occurrenceId?: string) => {
       const heart = new Item(this, x, y, 'item_potion', 'item_heart');
+      if (occurrenceId) heart.setData('narrativeItemId', occurrenceId);
       heart.setDepth(9);
       this.items.add(heart);
       this.tweens.add({
@@ -463,17 +469,10 @@ export class GameScene extends Phaser.Scene {
       });
     });
     this.events.off('enemyDefeated');
-    this.events.on('enemyDefeated', (defeat: EnemyDefeatProgress) => {
-      const update = this.progression.recordEnemyDefeat(defeat);
-      this.player.addHalos(update.currencyAwarded);
-      if (update.levelsGained > 0) {
-        this.levelBannerText.setText('NÍVEL ' + update.currentLevel + '!  +' + update.skillPointsAwarded + ' PONTO DE HABILIDADE');
-        this.levelBannerText.setVisible(true);
-        this.time.delayedCall(1500, () => {
-          if (!this.levelClearedBannerShowing) this.levelBannerText.setVisible(false);
-        });
-      }
-    });
+    this.events.on('enemyDefeated', (defeat: EnemyDefeatProgress & {
+      enemyId?: string;
+      archetype?: string;
+    }) => this.handleEnemyDefeated(defeat));
     this.events.off('enemyMeleeStrike');
     this.events.off('playerSummon');
     this.events.off('enemyShockwave');
@@ -505,6 +504,7 @@ export class GameScene extends Phaser.Scene {
 
   private initializeModularNarrative(): void {
     this.modularNarrativeSession = undefined;
+    this.stageSignalAdapter = undefined;
     this.dialogueOverlay?.destroy();
     this.dialogueOverlay = undefined;
     this.stageNarrativeStage = undefined;
@@ -538,6 +538,7 @@ export class GameScene extends Phaser.Scene {
     this.stageNarrativeStage = loaded;
     if (!created.ok) return;
     this.modularNarrativeSession = created.session;
+    this.stageSignalAdapter = new StageSignalAdapter(created.session);
     const names = new Map(loaded.npcs.map(npc => [npc.id, npc.displayName]));
     this.dialogueOverlay = new DialogueOverlay(
       this,
@@ -632,6 +633,80 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private handleEnemyDefeated(defeat: EnemyDefeatProgress & {
+    enemyId?: string;
+    archetype?: string;
+  }): void {
+    const update = this.progression.recordEnemyDefeat(defeat);
+    this.player.addHalos(update.currencyAwarded);
+    if (update.levelsGained > 0) {
+      this.levelBannerText.setText('NÍVEL ' + update.currentLevel + '!  +' + update.skillPointsAwarded + ' PONTO DE HABILIDADE');
+      this.levelBannerText.setVisible(true);
+      this.time.delayedCall(1500, () => {
+        if (!this.levelClearedBannerShowing) this.levelBannerText.setVisible(false);
+      });
+    }
+    if (defeat.enemyId && defeat.archetype) {
+      this.reportNarrativeSignal(this.stageSignalAdapter?.dispatch({
+        type: 'enemy.defeated',
+        occurrenceId: defeat.enemyId,
+        enemyId: defeat.enemyId,
+        archetype: defeat.archetype,
+      }));
+    }
+  }
+
+  private collectItem(itm: Item): void {
+    if (!itm.active) return;
+    const occurrenceId = (itm.getData('narrativeItemId') as string | undefined) ??
+      `${this.narrativeOccurrenceScope()}.item.runtime.${itm.itemType}.${Math.floor(itm.x / 32)}-${Math.floor(itm.y / 32)}`;
+    this.simulationBridge.recordItem(itm.itemType);
+    this.progression.recordItemCollected(itm.itemType);
+    if (itm.itemType === 'item_halo') {
+      this.player.addHalos(100);
+    } else if (itm.itemType === 'item_potion') {
+      this.player.heal(20);
+    } else if (itm.itemType === 'item_magic') {
+      this.player.addMagic(25);
+    } else if (itm.itemType === 'item_key') {
+      const keyId = `${this.itemIdentityScope()}:${Math.floor(itm.x / 32)},${Math.floor(itm.y / 32)}`;
+      this.foundKeys.add(keyId);
+      this.levelBannerText.setText('EMBOSCADA! Defenda-se!');
+      this.levelBannerText.setVisible(true);
+      this.time.delayedCall(1200, () => this.levelBannerText.setVisible(false));
+      (this.currentLevel.ambush ?? []).forEach((enemy, index) => this.spawnSingleEnemy(
+        enemy,
+        `${occurrenceId}.ambush.enemy.${index}`,
+      ));
+    }
+    itm.destroy();
+    this.reportNarrativeSignal(this.stageSignalAdapter?.dispatch({
+      type: 'item.collected',
+      occurrenceId,
+      itemId: occurrenceId,
+      itemType: itm.itemType,
+    }));
+  }
+
+  private reportNarrativeSignal(
+    result: ReturnType<StageSignalAdapter['dispatch']> | undefined,
+  ): boolean {
+    if (!result || result.ok) return true;
+    this.showCampaignTransitionFailure(`PROGRESSO NARRATIVO NÃO SALVO: ${result.error.code}`);
+    return false;
+  }
+
+  private requestNarrativeExit(exitId: string, occurrenceId: string): boolean {
+    const result = this.stageSignalAdapter
+      ? this.stageSignalAdapter.dispatch({
+          type: 'stage.exit.requested',
+          occurrenceId,
+          exitId,
+        })
+      : this.modularNarrativeSession?.requestExit(exitId);
+    return this.reportNarrativeSignal(result);
+  }
+
   private setupColliders(): void {
     // Player vs Walls
     this.physics.add.collider(this.player, this.wallTiles);
@@ -660,24 +735,7 @@ export class GameScene extends Phaser.Scene {
 
     // Player vs Item Pickups
     this.physics.add.overlap(this.player, this.items, (_playerObj, itemObj) => {
-      const itm = itemObj as Item;
-      this.simulationBridge.recordItem(itm.itemType);
-      this.progression.recordItemCollected(itm.itemType);
-      if (itm.itemType === 'item_halo') {
-        this.player.addHalos(100);
-      } else if (itm.itemType === 'item_potion') {
-        this.player.heal(20);
-      } else if (itm.itemType === 'item_magic') {
-        this.player.addMagic(25);
-      } else if (itm.itemType === 'item_key') {
-        const keyId = `${this.itemIdentityScope()}:${Math.floor(itm.x / 32)},${Math.floor(itm.y / 32)}`;
-        this.foundKeys.add(keyId);
-        this.levelBannerText.setText('EMBOSCADA! Defenda-se!');
-        this.levelBannerText.setVisible(true);
-        this.time.delayedCall(1200, () => this.levelBannerText.setVisible(false));
-        (this.currentLevel.ambush ?? []).forEach(e => this.spawnSingleEnemy(e));
-      }
-      itm.destroy();
+      this.collectItem(itemObj as Item);
     });
 
     // Player vs Section Doors → travel between sections
@@ -880,7 +938,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private spawnSingleEnemy(e: EnemyPlacement): void {
+  private spawnSingleEnemy(e: EnemyPlacement, occurrenceId: string): void {
     const px = e.x * 32 + 16;
     const py = e.y * 32 + 16;
     let enemy: Enemy;
@@ -900,13 +958,18 @@ export class GameScene extends Phaser.Scene {
     const patrol = (e.patrol ?? []).map((point) => ({ x: point.x * 32 + 16, y: point.y * 32 + 16 }));
     enemy.configureAI(this.navigation, patrol);
     enemy.configureProgression(Math.max(e.level, this.currentLevel.difficulty));
+    enemy.setData('narrativeEnemyId', occurrenceId);
+    enemy.setData('narrativeArchetype', e.type);
     this.enemies.add(enemy);
   }
 
   private spawnWave(index: number): void {
     const wave = this.waves[index];
     if (!wave) return;
-    wave.enemies.forEach(e => this.spawnSingleEnemy(e));
+    wave.enemies.forEach((enemy, enemyIndex) => this.spawnSingleEnemy(
+      enemy,
+      `${this.narrativeOccurrenceScope()}.wave.${index}.enemy.${enemyIndex}`,
+    ));
     this.simulationBridge.recordWaveStarted(this.currentLevel.name, index + 1, wave.enemies.length);
     if (this.levelBannerText) {
       this.levelBannerText.setText(`ONDA ${index + 1} / ${this.waves.length}`);
@@ -938,7 +1001,7 @@ export class GameScene extends Phaser.Scene {
     this.waveTransition = false;
     // Wave 0 is spawned in create() once the HUD (banner text) exists.
 
-    level.items.forEach(itm => {
+    level.items.forEach((itm, itemIndex) => {
       // Keys already collected stay collected across revisits
       if (itm.type === 'key') {
         const keyId = `${this.itemIdentityScope()}:${itm.x},${itm.y}`;
@@ -952,6 +1015,10 @@ export class GameScene extends Phaser.Scene {
       const itemType = isHealth ? 'item_potion' : isMagic ? 'item_magic' : isKey ? 'item_key' : 'item_halo';
       const textureKey = isHealth ? 'item_heart' : isMagic ? 'item_potion' : itemType;
       const itemEntity = new Item(this, px, py, itemType, textureKey);
+      itemEntity.setData(
+        'narrativeItemId',
+        `${this.narrativeOccurrenceScope()}.item.authored.${itemIndex}`,
+      );
       this.items.add(itemEntity);
     });
   }
@@ -1168,6 +1235,16 @@ export class GameScene extends Phaser.Scene {
       this.showCampaignTransitionFailure(`SAÍDA INDISPONÍVEL: ${prepared.error.code}`);
       return;
     }
+    if (!this.requestNarrativeExit(
+      prepared.value.stageExitId,
+      `${this.narrativeOccurrenceScope()}.exit.${prepared.value.stageExitId}`,
+    )) {
+      if (!this.campaignRouter.cancel(prepared.value.preparationId)) {
+        this.campaignPersistenceUncertain = true;
+        this.showCampaignTransitionFailure('CANCELAMENTO DA TRANSIÇÃO INCERTO. REINICIE PARA RECONCILIAR.');
+      }
+      return;
+    }
     this.isTransitioning = true;
     this.levelBannerText.setText('TRAVESSIA EM ANDAMENTO...');
     this.levelBannerText.setVisible(true);
@@ -1372,6 +1449,23 @@ export class GameScene extends Phaser.Scene {
     return this.campaignRouter?.state().currentNodeId ?? String(this.currentLevelIndex);
   }
 
+  private narrativeOccurrenceScope(): string {
+    const campaign = this.campaignRouter && typeof this.campaignRouter.state === 'function'
+      ? this.campaignRouter.state()
+      : undefined;
+    if (!campaign) return `stage.${this.currentLevel.id}.visit.1`;
+    const visit = campaign.revisitCounts[campaign.currentNodeId] ?? 1;
+    return `${campaign.currentNodeId}.visit.${visit}`;
+  }
+
+  private notifyEncounterCompleted(encounterId: string, occurrenceSuffix: string): boolean {
+    return this.reportNarrativeSignal(this.stageSignalAdapter?.dispatch({
+      type: 'encounter.completed',
+      occurrenceId: `${this.narrativeOccurrenceScope()}.${occurrenceSuffix}`,
+      encounterId,
+    }));
+  }
+
   private isMacroHub(): boolean {
     return this.macroStageSource === 'campaign' &&
       this.macroCampaignAdapter?.location().isHub === true;
@@ -1393,8 +1487,12 @@ export class GameScene extends Phaser.Scene {
 
   public advanceToNextLevel(): void {
     if (this.isTransitioning) return;
+    const exitId = 'legacy.next';
+    if (!this.requestNarrativeExit(
+      exitId,
+      `${this.narrativeOccurrenceScope()}.exit.${exitId}`,
+    )) return;
     this.isTransitioning = true;
-    this.modularNarrativeSession?.requestExit('legacy.next');
     const stageReward = this.progression.recordStageCompleted({
       stageId: this.currentLevel.id,
       difficulty: this.currentLevel.difficulty,
@@ -1417,6 +1515,7 @@ export class GameScene extends Phaser.Scene {
       this.currentLevelIndex = (this.currentLevelIndex + 1) % this.allLevels.length;
       this.currentLevel = this.allLevels[this.currentLevelIndex];
       this.modularNarrativeSession = undefined;
+      this.stageSignalAdapter = undefined;
       this.modularLoadedStage = undefined;
       this.modularComposition = undefined;
       this.modularStageSource = 'legacy';
@@ -1527,13 +1626,29 @@ export class GameScene extends Phaser.Scene {
     if (activeEnemies.length === 0 && !this.waveTransition) {
       if (this.currentWaveIndex < this.waves.length - 1) {
         this.simulationBridge.recordWaveCompleted(this.currentLevel.name, this.currentWaveIndex + 1);
+        this.notifyEncounterCompleted(
+          `wave.${this.currentWaveIndex + 1}`,
+          `wave.${this.currentWaveIndex}.completed`,
+        );
         this.waveTransition = true;
         this.waveDelayTimer = 1200;
       } else if (!this.levelClearedBannerShowing) {
         this.levelClearedBannerShowing = true;
+        this.simulationBridge.recordWaveCompleted(this.currentLevel.name, this.currentWaveIndex + 1);
+        const waveNarrativeSaved = this.notifyEncounterCompleted(
+          `wave.${this.currentWaveIndex + 1}`,
+          `wave.${this.currentWaveIndex}.completed`,
+        );
+        const encounterNarrativeSaved = this.notifyEncounterCompleted(
+          `encounter.${this.currentLevel.id}`,
+          'encounter.completed',
+        );
         this.revealExits();
         this.levelBannerText.setText('CAMINHO LIBERADO!\nEncontre o portal dourado');
         this.levelBannerText.setVisible(true);
+        if (!waveNarrativeSaved || !encounterNarrativeSaved) {
+          this.showCampaignTransitionFailure('PROGRESSO NARRATIVO NÃO SALVO. A SAÍDA TENTARÁ PERSISTIR NOVAMENTE.');
+        }
       }
     }
     if (this.waveTransition) {
