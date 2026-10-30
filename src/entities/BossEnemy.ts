@@ -8,8 +8,17 @@ export class BossEnemy extends Enemy {
   private phase: number = 1;
   private bossName: string;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, bossName: string = 'Fortitudo', textureKey: string = 'boss_guardian_anim', hp = 1600, scale = 1) {
-    super(scene, x, y, textureKey);
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    bossName: string = 'Fortitudo',
+    textureKey: string = 'boss_guardian_anim',
+    hp = 1600,
+    scale = 1,
+    animationKeys?: Readonly<{ walk?: string; attack?: string; hurt?: string }>,
+  ) {
+    super(scene, x, y, textureKey, animationKeys);
     this.enemyRole = 'boss';
     this.enemyType = 'boss';
     this.bossName = bossName;

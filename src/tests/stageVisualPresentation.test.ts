@@ -5,6 +5,8 @@ import {
   AGUAS_VISUAL_RESOURCES,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   IGAPO_DAS_MEMORIAS_STAGE,
+  IGAPO_AUDIO_PROFILE_ID,
+  IGAPO_ENVIRONMENT_ID,
   IGAPO_VISUAL_THEME_ID,
   IGAPO_VISUAL_TILESET_ID,
   LEGACY_RESOLVED_STAGE_PRESENTATION,
@@ -36,6 +38,7 @@ class FakeImage {
   public setScale(value: number): this { this.scale = value; return this; }
   public setRotation(value: number): this { this.rotation = value; return this; }
   public refreshBody(): this { this.refreshes += 1; return this; }
+  public setScrollFactor(): this { return this; }
 }
 
 function loadIgapo() {
@@ -55,13 +58,20 @@ function loadIgapo() {
 function fakeRenderingSurface(missingTexture?: string) {
   const images: FakeImage[] = [];
   const obstacles: FakeImage[] = [];
+  const rectangles: FakeImage[] = [];
   const scene = {
     textures: { exists: (key: string) => key !== missingTexture },
+    anims: { exists: () => true },
     add: { image: (x: number, y: number, key: string) => {
       const image = new FakeImage(x, y, key);
       images.push(image);
       return image;
+    }, rectangle: (x: number, y: number) => {
+      const rectangle = new FakeImage(x, y, 'rectangle');
+      rectangles.push(rectangle);
+      return rectangle;
     } },
+    cameras: { main: { width: 1280, height: 720 } },
   } as unknown as Phaser.Scene;
   const group = {
     create: (x: number, y: number, key: string) => {
@@ -70,7 +80,7 @@ function fakeRenderingSurface(missingTexture?: string) {
       return image;
     },
   } as unknown as Phaser.Physics.Arcade.StaticGroup;
-  return { scene, group, images, obstacles };
+  return { scene, group, images, obstacles, rectangles };
 }
 
 describe('declarative stage visual presentation', () => {
@@ -255,7 +265,12 @@ describe('declarative stage visual presentation', () => {
         summary: 'Seeded topology with a declarative presentation.',
         layout: { kind: 'procedural', preset: 'cathedral-intro', seed: 'run' },
         exits: [{ id: 'exit.visual.complete', anchor: { kind: 'map-exit' }, targetStageId: 'campaign.complete' }],
-        presentation: { themeId: IGAPO_VISUAL_THEME_ID, tilesetId: IGAPO_VISUAL_TILESET_ID },
+        presentation: {
+          themeId: IGAPO_VISUAL_THEME_ID,
+          tilesetId: IGAPO_VISUAL_TILESET_ID,
+          audioProfileId: IGAPO_AUDIO_PROFILE_ID,
+          environmentId: IGAPO_ENVIRONMENT_ID,
+        },
       },
     };
     const decorations = [
@@ -295,5 +310,7 @@ describe('declarative stage visual presentation', () => {
     expect(second.value.level.tileMap).toEqual(first.value.level.tileMap);
     expect(second.value.presentation).toEqual(first.value.presentation);
     expect(first.value.presentation?.themeId).toBe(IGAPO_VISUAL_THEME_ID);
+    expect(first.value.presentation?.audio?.id).toBe(IGAPO_AUDIO_PROFILE_ID);
+    expect(first.value.presentation?.environment?.id).toBe(IGAPO_ENVIRONMENT_ID);
   });
 });

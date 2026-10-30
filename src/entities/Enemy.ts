@@ -29,7 +29,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   protected enemyRole: EnemyRole = 'melee';
   private healthBarBg: Phaser.GameObjects.Rectangle;
   private healthBarFill: Phaser.GameObjects.Rectangle;
-  private readonly animationPrefix: string;
+  private readonly animationKeys: Readonly<{
+    walk?: string;
+    attack?: string;
+    hurt?: string;
+  }>;
   private animationLocked = false;
   private animationToken = 0;
   private attackAnimationCooldown = 0;
@@ -59,9 +63,17 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private progressionDifficulty = 1;
   private appearanceTint?: number;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, textureKey: string = 'enemy_affinity') {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    textureKey: string = 'enemy_affinity',
+    animationKeys?: Readonly<{ walk?: string; attack?: string; hurt?: string }>,
+  ) {
     super(scene, x, y, textureKey);
-    this.animationPrefix = textureKey;
+    this.animationKeys = animationKeys ?? Object.freeze({
+      walk: `${textureKey}_walk`, attack: `${textureKey}_attack`, hurt: `${textureKey}_hurt`,
+    });
     this.aiHome = { x, y };
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -386,8 +398,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   protected updateMovementAnimation(moving: boolean): void {
     if (this.animationLocked) return;
-    if (moving) {
-      this.play(`${this.animationPrefix}_walk`, true);
+    if (moving && this.animationKeys.walk) {
+      this.play(this.animationKeys.walk, true);
     } else {
       this.stop();
       this.setFrame(0);
@@ -395,9 +407,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   protected playEnemyAction(action: 'attack' | 'hurt'): void {
+    const animationKey = this.animationKeys[action];
+    if (!animationKey) return;
     const token = ++this.animationToken;
     this.animationLocked = true;
-    this.play(`${this.animationPrefix}_${action}`, true);
+    this.play(animationKey, true);
     this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       if (token !== this.animationToken || this.dying) return;
       this.animationLocked = false;

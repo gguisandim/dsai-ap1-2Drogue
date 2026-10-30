@@ -160,7 +160,7 @@ export class StageLoader {
 
     const visuals = new StageVisualRegistry();
     this.registry.listChapters().forEach(chapter => visuals.registerChapter(chapter));
-    const visualResolution = visuals.resolve(module.manifest, resolution.level);
+    const visualResolution = visuals.resolve(module.manifest, resolution.level, module.npcs ?? []);
     if (!visualResolution.ok) {
       return this.failure('invalid-reference', request.stageId, visualResolution.diagnostics);
     }

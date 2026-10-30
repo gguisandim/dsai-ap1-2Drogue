@@ -24,7 +24,6 @@ import { PresetId, ProceduralLevelFactory } from '../procedural';
 import { DamageType, GameCombatBridge } from '../combat';
 import { NavigationService } from '../ai';
 import { EnemyDefeatProgress, ProgressionService } from '../progression';
-import { ENEMY_PRESENTATIONS } from '../data/EnemyPresentation';
 import {
   BRANCHING_CAMPAIGN_DEFAULT_RUN_ID,
   BRANCHING_CAMPAIGN_DEFAULT_SEED,
@@ -43,7 +42,7 @@ import type {
   GameCampaignNavigationPort,
   GameSceneStageResolution,
 } from '../application/stages';
-import { LEGACY_RESOLVED_STAGE_PRESENTATION } from '../stages';
+import { LEGACY_RESOLVED_NPC_SPRITE, LEGACY_RESOLVED_STAGE_PRESENTATION } from '../stages';
 import type { LoadedStage, ResolvedStagePresentation } from '../stages';
 import { StageMapRenderer } from '../presentation/stages/StageMapRenderer';
 import { DialogueOverlay } from '../ui/DialogueOverlay';
@@ -117,7 +116,7 @@ export class GameScene extends Phaser.Scene {
   private exitsRevealed = false;
 
   // Floor tile images (so we can destroy them on level transition)
-  private floorImages: Phaser.GameObjects.Image[] = [];
+  private floorImages: Phaser.GameObjects.GameObject[] = [];
   private activeStagePresentation: ResolvedStagePresentation = LEGACY_RESOLVED_STAGE_PRESENTATION;
 
   private allLevels: LevelDefinition[] = [...VERSE_SECTIONS, ...ALL_LEVELS];
@@ -198,7 +197,7 @@ export class GameScene extends Phaser.Scene {
   private macroLoadedStage?: LoadedStage;
   private stageNarrativeStage?: LoadedStage;
   private interactionPoints: WorldInteractionPoint[] = [];
-  private poiMarkers: Phaser.GameObjects.Image[] = [];
+  private poiMarkers: Phaser.GameObjects.Sprite[] = [];
   private dialogueOverlay?: DialogueOverlay;
   private dialogueOpen = false;
   private narrativeReady = false;
@@ -454,6 +453,7 @@ export class GameScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.simulationBridge.dispose();
       this.combatBridge.dispose();
+      SoundManager.stopStageAudio();
     });
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
     const worldWidth = this.currentLevel.tileMap[0].length * 32;
@@ -542,6 +542,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.showChapterTitle(this.currentRegionName());
     this.reportNarrativeSignal(this.modularNarrativeSession?.enterStage());
+    SoundManager.playStageEvent('stage.entered');
     this.createAimReticle();
     this.arrowChargeBar = this.add.graphics().setDepth(30).setVisible(false);
     if (loadSettings().showControls && !this.skipControlsGuide) this.showControlsGuide();
@@ -632,21 +633,15 @@ export class GameScene extends Phaser.Scene {
     this.interactionPoints = [];
     const loaded = this.stageNarrativeStage;
     if (!this.modularNarrativeSession || !loaded) return;
-    if (!this.textures.exists('poi_vestige')) {
-      const graphics = this.make.graphics({ x: 0, y: 0 }, false);
-      graphics.fillStyle(0x0b2a24, 1);
-      graphics.fillCircle(12, 12, 11);
-      graphics.lineStyle(2, 0x8fe0c8, 1);
-      graphics.strokeCircle(12, 12, 10);
-      graphics.fillStyle(0x8fe0c8, 1);
-      graphics.fillCircle(12, 12, 4);
-      graphics.generateTexture('poi_vestige', 24, 24);
-      graphics.destroy();
-    }
     const points = poiInteractionPoints(loaded.npcs);
     this.interactionPoints.push(...points);
     for (const point of points) {
-      const marker = this.add.image(point.x, point.y - 10, 'poi_vestige').setDepth(6).setAlpha(0.95);
+      const npc = loaded.npcs.find(candidate => candidate.id === point.id);
+      const sprite = npc
+        ? loaded.presentation?.npcSprites[npc.presentationId] ?? LEGACY_RESOLVED_NPC_SPRITE
+        : LEGACY_RESOLVED_NPC_SPRITE;
+      const marker = (this.stageMapRenderer ?? new StageMapRenderer())
+        .createNpcSprite(this, point.x, point.y - 10, sprite).setAlpha(0.95);
       this.tweens.add({
         targets: marker,
         y: point.y - 16,
@@ -687,6 +682,7 @@ export class GameScene extends Phaser.Scene {
     if (poi) this.interactionPromptText.setText(`E — ${poi.point.label}`);
     if (!poi || !poi.dialogueId) return;
     if (this.keyInteract && Phaser.Input.Keyboard.JustDown(this.keyInteract)) {
+      SoundManager.playStageEvent('npc.interacted');
       this.modularNarrativeSession.interactNpc(poi.point.id);
       this.dialogueOverlay?.openDialogue(poi.dialogueId);
     }
@@ -696,6 +692,7 @@ export class GameScene extends Phaser.Scene {
     enemyId?: string;
     archetype?: string;
   }): void {
+    SoundManager.playStageEvent('enemy.defeated');
     const update = this.progression.recordEnemyDefeat(defeat);
     this.player.addHalos(update.currencyAwarded);
     if (update.levelsGained > 0) {
@@ -1017,6 +1014,7 @@ export class GameScene extends Phaser.Scene {
     const loaded = [this.modularLoadedStage, this.macroLoadedStage]
       .find(stage => stage?.level.id === level.id);
     this.activeStagePresentation = loaded?.presentation ?? LEGACY_RESOLVED_STAGE_PRESENTATION;
+    void SoundManager.applyStageAudio(this.activeStagePresentation.audio);
     const rendered = (this.stageMapRenderer ?? new StageMapRenderer()).render(
       this,
       level,
@@ -1025,6 +1023,7 @@ export class GameScene extends Phaser.Scene {
       !this.campaignRouter,
     );
     this.floorImages.push(...rendered.images);
+    this.floorImages.push(...rendered.environmentObjects);
     this.pendingExitTiles.push(...rendered.pendingExitTiles);
   }
 
@@ -1032,19 +1031,23 @@ export class GameScene extends Phaser.Scene {
     const px = e.x * 32 + 16;
     const py = e.y * 32 + 16;
     let enemy: Enemy;
+    const logicalArchetype = e.type === 'ranged' || e.type === 'applaud'
+      ? e.type
+      : e.type === 'boss' || e.type === 'fortitudo' || e.type === 'miniboss'
+        ? e.type
+        : 'affinity';
+    const visual = this.activeStagePresentation.enemySprites[logicalArchetype];
     if (e.type === 'ranged' || e.type === 'applaud') {
-      enemy = new RangedEnemy(this, px, py, this.enemyBullets);
-      enemy.configureAppearance(ENEMY_PRESENTATIONS.applaud.tint);
+      enemy = new RangedEnemy(this, px, py, this.enemyBullets, visual.textureKey, visual.animations);
     } else if (e.type === 'boss' || e.type === 'fortitudo') {
-      enemy = new BossEnemy(this, px, py, 'Fortitudo');
-      enemy.configureAppearance(ENEMY_PRESENTATIONS.fortitudo.tint);
+      enemy = new BossEnemy(this, px, py, 'Fortitudo', visual.textureKey, 1600, 1, visual.animations);
     } else if (e.type === 'miniboss') {
-      enemy = new BossEnemy(this, px, py, 'Sevido', 'boss_guardian_anim', 700, 0.6);
-      enemy.configureAppearance(0xc07cff);
+      enemy = new BossEnemy(this, px, py, 'Sevido', visual.textureKey, 700, 0.6, visual.animations);
     } else {
-      enemy = new Enemy(this, px, py, 'enemy_melee_anim');
-      enemy.configureAppearance(ENEMY_PRESENTATIONS.affinity.tint);
+      enemy = new Enemy(this, px, py, visual.textureKey, visual.animations);
     }
+    if (visual.tint !== undefined) enemy.configureAppearance(visual.tint);
+    enemy.setDepth(visual.depth);
     const patrol = (e.patrol ?? []).map((point) => ({ x: point.x * 32 + 16, y: point.y * 32 + 16 }));
     enemy.configureAI(this.navigation, patrol);
     enemy.configureProgression(Math.max(e.level, this.currentLevel.difficulty));

@@ -215,6 +215,19 @@ export class TextureGenerator {
       g.destroy();
     }
 
+    // Narrative marker fallback used by legacy stages without a custom NPC sprite.
+    if (!tm.exists('poi_vestige')) {
+      const g = scene.make.graphics({ x: 0, y: 0 });
+      g.fillStyle(0x0b2a24, 1);
+      g.fillCircle(12, 12, 11);
+      g.lineStyle(2, 0x8fe0c8, 1);
+      g.strokeCircle(12, 12, 10);
+      g.fillStyle(0x8fe0c8, 1);
+      g.fillCircle(12, 12, 4);
+      g.generateTexture('poi_vestige', 24, 24);
+      g.destroy();
+    }
+
     // 7b. Key pickup
     if (!tm.exists('item_key')) {
       const g = scene.make.graphics({ x: 0, y: 0 });

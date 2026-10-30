@@ -92,6 +92,27 @@ export interface WorldLabStageVisualPresentation {
   readonly decorationIds: readonly string[];
   readonly missingResourceIds: readonly string[];
   readonly diagnostics: readonly string[];
+  readonly npcSprites?: readonly WorldLabSpritePresentation[];
+  readonly enemySprites?: readonly WorldLabSpritePresentation[];
+  readonly audio?: {
+    readonly profileId: string;
+    readonly musicSoundId?: string;
+    readonly ambientSoundId?: string;
+    readonly eventSoundIds: Readonly<Record<string, string>>;
+  };
+  readonly environment?: {
+    readonly id: string;
+    readonly ambientColor: number;
+    readonly lightIntensity: number;
+    readonly fog?: { readonly color: number; readonly opacity: number; readonly depth: number };
+  };
+}
+
+export interface WorldLabSpritePresentation {
+  readonly logicalId: string;
+  readonly spriteId: string;
+  readonly textureKey: string;
+  readonly animations: readonly string[];
 }
 
 export interface WorldLabThemePresentation {

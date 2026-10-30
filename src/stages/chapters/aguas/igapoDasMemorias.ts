@@ -1,5 +1,13 @@
 import type { StageModule } from '../../contracts';
-import { IGAPO_VISUAL_THEME_ID, IGAPO_VISUAL_TILESET_ID } from './igapoVisuals';
+import {
+  IGAPO_AFFINITY_SPRITE_ID,
+  IGAPO_APPLAUD_SPRITE_ID,
+  IGAPO_AUDIO_PROFILE_ID,
+  IGAPO_ENVIRONMENT_ID,
+  IGAPO_NPC_SPRITE_ID,
+  IGAPO_VISUAL_THEME_ID,
+  IGAPO_VISUAL_TILESET_ID,
+} from './igapoVisuals';
 
 export const IGAPO_DAS_MEMORIAS_STAGE_ID = 'stage.aguas.igapo-das-memorias';
 export const IGAPO_DAS_MEMORIAS_CHAPTER_ID = 'chapter.aguas';
@@ -83,6 +91,15 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
     presentation: Object.freeze({
       themeId: IGAPO_VISUAL_THEME_ID,
       tilesetId: IGAPO_VISUAL_TILESET_ID,
+      npcSprites: Object.freeze({
+        'environment.memory-vestige': IGAPO_NPC_SPRITE_ID,
+      }),
+      enemySprites: Object.freeze({
+        affinity: IGAPO_AFFINITY_SPRITE_ID,
+        applaud: IGAPO_APPLAUD_SPRITE_ID,
+      }),
+      audioProfileId: IGAPO_AUDIO_PROFILE_ID,
+      environmentId: IGAPO_ENVIRONMENT_ID,
     }),
     exits: Object.freeze([Object.freeze({
       id: IGAPO_RETURN_EXIT_ID,
@@ -101,7 +118,31 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
       }),
       Object.freeze({
         id: 'audio.level-music', category: 'audio' as const,
-        minimumVersion: 1, requirement: 'optional' as const,
+        minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
+        id: 'audio.level-ambience', category: 'audio' as const,
+        minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
+        id: 'audio.stage-event-sfx', category: 'audio' as const,
+        minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
+        id: 'lighting.level-ambience', category: 'lighting' as const,
+        minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
+        id: 'effect.level-fog', category: 'effect' as const,
+        minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
+        id: 'npc.custom-sprite', category: 'npc' as const,
+        minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
+        id: 'enemy.visual-variant', category: 'enemy' as const,
+        minimumVersion: 1, requirement: 'required' as const,
       }),
       Object.freeze({
         id: IGAPO_VISUAL_THEME_ID, category: 'theme' as const,

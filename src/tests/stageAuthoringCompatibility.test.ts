@@ -117,7 +117,7 @@ describe('Etapa 9.5 authoring compatibility contracts', () => {
         capabilities: [{
           id: 'navigation.authored-map', category: 'navigation', minimumVersion: 1, requirement: 'required',
         }, {
-          id: 'audio.level-music', category: 'audio', minimumVersion: 1, requirement: 'optional',
+          id: 'theme.gothic-cathedral', category: 'theme', minimumVersion: 1, requirement: 'optional',
         }],
       },
     };
@@ -128,13 +128,13 @@ describe('Etapa 9.5 authoring compatibility contracts', () => {
     ], [compatible]);
     expect(diagnostics.filter(item => item.severity === 'error')).toEqual([]);
     expect(diagnostics).toEqual(expect.arrayContaining([
-      expect.objectContaining({ code: 'capability.unavailable', severity: 'warning', referenceId: 'audio.level-music' }),
+      expect.objectContaining({ code: 'capability.unavailable', severity: 'warning', referenceId: 'theme.gothic-cathedral' }),
     ]));
   });
 
   it.each([
     ['required planned capability', {
-      id: 'lighting.level-ambience', category: 'lighting', minimumVersion: 1, requirement: 'required',
+      id: 'theme.gothic-cathedral', category: 'theme', minimumVersion: 1, requirement: 'required',
     }, 'capability.unavailable'],
     ['unknown capability', {
       id: 'audio.external-orchestra', category: 'audio', minimumVersion: 1, requirement: 'optional',
@@ -154,7 +154,7 @@ describe('Etapa 9.5 authoring compatibility contracts', () => {
     const module = stage();
     const registry = new StageRegistry();
     registry.registerChapter(chapter(module, { capabilities: [{
-      id: 'lighting.level-ambience', category: 'lighting', minimumVersion: 1, requirement: 'required',
+      id: 'theme.gothic-cathedral', category: 'theme', minimumVersion: 1, requirement: 'required',
     }] }), [module]);
     const result = new StageLoader(registry).load({
       stageId: module.manifest.id, runId: 'run.chapter-capability', runSeed: 'seed.chapter-capability',

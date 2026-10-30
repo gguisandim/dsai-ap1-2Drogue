@@ -47,6 +47,12 @@ export function renderStageInspector(
       `Decorações: ${stage.visualPresentation.decorationIds.join(', ') || 'nenhuma'}`,
       `Ausentes: ${stage.visualPresentation.missingResourceIds.join(', ') || 'nenhum'}`,
       `Diagnósticos: ${stage.visualPresentation.diagnostics.join(', ') || 'nenhum'}`,
+      `NPCs: ${stage.visualPresentation.npcSprites?.map(item => `${item.logicalId}→${item.spriteId}`).join(', ') || 'fallback'}`,
+      `Inimigos: ${stage.visualPresentation.enemySprites?.map(item => `${item.logicalId}→${item.spriteId}`).join(', ') || 'fallback'}`,
+      `Áudio: ${stage.visualPresentation.audio?.profileId ?? 'silêncio legado'}`,
+      `Ambiente: ${stage.visualPresentation.environment
+        ? `${stage.visualPresentation.environment.id}, luz ${stage.visualPresentation.environment.lightIntensity}, névoa ${stage.visualPresentation.environment.fog?.opacity ?? 0}`
+        : 'legado'}`,
     ].join(' · ');
     container.append(visual);
   }

@@ -106,13 +106,7 @@ describe('Igapó das Memórias authored chapter', () => {
     });
     const diagnostics = stages.validate();
     expect(diagnostics.filter(item => item.severity === 'error')).toEqual([]);
-    expect(diagnostics).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        code: 'capability.unavailable',
-        severity: 'warning',
-        referenceId: 'audio.level-music',
-      }),
-    ]));
+    expect(diagnostics.filter(item => item.code === 'capability.unavailable')).toEqual([]);
   });
 
   it('loads deterministically without sharing mutable map state', () => {

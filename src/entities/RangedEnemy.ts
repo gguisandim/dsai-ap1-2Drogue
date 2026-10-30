@@ -10,8 +10,15 @@ export class RangedEnemy extends Enemy {
   private windupTimer = 0;
   private shotCount = 0;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, projectileGroup?: Phaser.Physics.Arcade.Group) {
-    super(scene, x, y, 'enemy_ranged_anim');
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    projectileGroup?: Phaser.Physics.Arcade.Group,
+    textureKey = 'enemy_ranged_anim',
+    animationKeys?: Readonly<{ walk?: string; attack?: string; hurt?: string }>,
+  ) {
+    super(scene, x, y, textureKey, animationKeys);
     this.projectileGroup = projectileGroup;
     this.enemyRole = 'ranged';
     this.enemyType = 'applaud';

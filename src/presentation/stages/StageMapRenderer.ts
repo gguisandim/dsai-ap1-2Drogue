@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { LevelDefinition } from '../../data/LevelData';
 import type {
   ResolvedStagePresentation,
+  ResolvedStageSprite,
   ResolvedStageTexture,
   StageLogicalTileId,
 } from '../../stages/contracts';
@@ -14,12 +15,16 @@ export interface RenderedStageExitTile {
 export interface StageMapRenderResult {
   readonly images: readonly Phaser.GameObjects.Image[];
   readonly decorationImages: readonly Phaser.GameObjects.Image[];
+  readonly environmentObjects: readonly Phaser.GameObjects.GameObject[];
   readonly pendingExitTiles: readonly RenderedStageExitTile[];
 }
 
 export class StageMapRenderError extends Error {
   public constructor(
-    public readonly code: 'stage.visual.texture.runtime-missing' | 'stage.visual.decoration.unresolved',
+    public readonly code:
+      | 'stage.visual.texture.runtime-missing'
+      | 'stage.visual.animation.runtime-missing'
+      | 'stage.visual.decoration.unresolved',
     message: string,
     public readonly referenceId: string,
   ) {
@@ -66,6 +71,21 @@ function applyVisual<T extends Phaser.GameObjects.Image | Phaser.Physics.Arcade.
 }
 
 export class StageMapRenderer {
+  public createNpcSprite(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    sprite: ResolvedStageSprite,
+  ): Phaser.GameObjects.Sprite {
+    this.assertSprite(scene, sprite);
+    const marker = scene.add.sprite(x, y, sprite.textureKey)
+      .setDepth(sprite.depth)
+      .setScale(sprite.scale);
+    if (sprite.tint !== undefined) marker.setTint(sprite.tint);
+    if (sprite.animations.idle) marker.play(sprite.animations.idle);
+    return marker;
+  }
+
   public render(
     scene: Phaser.Scene,
     level: LevelDefinition,
@@ -76,6 +96,7 @@ export class StageMapRenderer {
     this.assertTextures(scene, presentation);
     const images: Phaser.GameObjects.Image[] = [];
     const decorationImages: Phaser.GameObjects.Image[] = [];
+    const environmentObjects: Phaser.GameObjects.GameObject[] = [];
     const pendingExitTiles: RenderedStageExitTile[] = [];
     const tileSize = presentation.tileSize;
 
@@ -128,9 +149,27 @@ export class StageMapRenderer {
       decorationImages.push(image);
     });
 
+    if (presentation.environment) {
+      const environment = presentation.environment;
+      const width = scene.cameras.main.width;
+      const height = scene.cameras.main.height;
+      const ambientOpacity = Math.min(0.3, Math.max(0, (1 - environment.lightIntensity) * 0.35));
+      if (ambientOpacity > 0) {
+        environmentObjects.push(scene.add.rectangle(
+          width / 2, height / 2, width, height, environment.ambientColor, ambientOpacity,
+        ).setScrollFactor(0).setDepth(3));
+      }
+      if (environment.fog && environment.fog.opacity > 0) {
+        environmentObjects.push(scene.add.rectangle(
+          width / 2, height / 2, width, height, environment.fog.color, environment.fog.opacity,
+        ).setScrollFactor(0).setDepth(environment.fog.depth));
+      }
+    }
+
     return Object.freeze({
       images: Object.freeze(images),
       decorationImages: Object.freeze(decorationImages),
+      environmentObjects: Object.freeze(environmentObjects),
       pendingExitTiles: Object.freeze(pendingExitTiles),
     });
   }
@@ -142,11 +181,30 @@ export class StageMapRenderer {
       tile.variants.forEach(variant => keys.add(variant.textureKey));
     });
     Object.values(presentation.decorations).forEach(decoration => keys.add(decoration.textureKey));
+    Object.values(presentation.npcSprites).forEach(sprite => keys.add(sprite.textureKey));
+    Object.values(presentation.enemySprites).forEach(sprite => keys.add(sprite.textureKey));
     [...keys].sort().forEach(textureKey => {
       if (!scene.textures.exists(textureKey)) throw new StageMapRenderError(
         'stage.visual.texture.runtime-missing',
         `Renderer texture is not loaded: ${textureKey}`,
         textureKey,
+      );
+    });
+    Object.values(presentation.npcSprites).forEach(sprite => this.assertSprite(scene, sprite));
+    Object.values(presentation.enemySprites).forEach(sprite => this.assertSprite(scene, sprite));
+  }
+
+  private assertSprite(scene: Phaser.Scene, sprite: ResolvedStageSprite): void {
+    if (!scene.textures.exists(sprite.textureKey)) throw new StageMapRenderError(
+      'stage.visual.texture.runtime-missing',
+      `Renderer texture is not loaded: ${sprite.textureKey}`,
+      sprite.textureKey,
+    );
+    Object.values(sprite.animations).forEach(animationKey => {
+      if (!scene.anims.exists(animationKey)) throw new StageMapRenderError(
+        'stage.visual.animation.runtime-missing',
+        `Renderer animation is not loaded: ${animationKey}`,
+        animationKey,
       );
     });
   }

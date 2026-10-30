@@ -30,5 +30,25 @@ describe('World Lab POI projection', () => {
     expect(igapo?.visualPresentation?.textureKeys).toEqual(expect.arrayContaining([
       'tile_floor', 'tile_pillar', 'tile_water',
     ]));
+    expect(igapo?.visualPresentation?.npcSprites).toContainEqual(expect.objectContaining({
+      logicalId: 'environment.memory-vestige',
+      spriteId: 'sprite.aguas.memory-vestige',
+      textureKey: 'enemy_ranged_anim',
+      animations: ['enemy_ranged_anim_walk'],
+    }));
+    expect(igapo?.visualPresentation?.enemySprites).toContainEqual(expect.objectContaining({
+      logicalId: 'affinity', spriteId: 'sprite.aguas.affinity-forgotten',
+    }));
+    expect(igapo?.visualPresentation?.audio).toMatchObject({
+      profileId: 'audio-profile.aguas.forgotten-waters',
+      musicSoundId: 'sound.aguas.memory-current',
+      ambientSoundId: 'sound.aguas.flooded-canopy',
+    });
+    expect(igapo?.visualPresentation?.environment).toEqual({
+      id: 'environment.aguas.forgotten-waters',
+      ambientColor: 0x153e39,
+      lightIntensity: 0.62,
+      fog: { color: 0x123d42, opacity: 0.16, depth: 4 },
+    });
   });
 });

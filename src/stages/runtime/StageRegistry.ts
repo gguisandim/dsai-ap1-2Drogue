@@ -58,7 +58,15 @@ function cloneManifest(manifest: StageManifest): StageManifest {
     ...manifest,
     layout,
     exits,
-    ...(manifest.presentation ? { presentation: Object.freeze({ ...manifest.presentation }) } : {}),
+    ...(manifest.presentation ? { presentation: Object.freeze({
+      ...manifest.presentation,
+      ...(manifest.presentation.npcSprites
+        ? { npcSprites: Object.freeze({ ...manifest.presentation.npcSprites }) }
+        : {}),
+      ...(manifest.presentation.enemySprites
+        ? { enemySprites: Object.freeze({ ...manifest.presentation.enemySprites }) }
+        : {}),
+    }) } : {}),
     ...(manifest.capabilities ? {
       capabilities: Object.freeze(manifest.capabilities.map(capability => Object.freeze({ ...capability }))),
     } : {}),
@@ -103,6 +111,27 @@ function cloneChapter(chapter: ChapterManifest): ChapterManifest {
         }))),
         ...(chapter.visualResources.decorations ? {
           decorations: Object.freeze(chapter.visualResources.decorations.map(value => Object.freeze({ ...value }))),
+        } : {}),
+        ...(chapter.visualResources.sprites ? {
+          sprites: Object.freeze(chapter.visualResources.sprites.map(value => Object.freeze({
+            ...value,
+            ...(value.animations ? { animations: Object.freeze({ ...value.animations }) } : {}),
+          }))),
+        } : {}),
+        ...(chapter.visualResources.sounds ? {
+          sounds: Object.freeze(chapter.visualResources.sounds.map(value => Object.freeze({ ...value }))),
+        } : {}),
+        ...(chapter.visualResources.audioProfiles ? {
+          audioProfiles: Object.freeze(chapter.visualResources.audioProfiles.map(value => Object.freeze({
+            ...value,
+            ...(value.eventSoundIds ? { eventSoundIds: Object.freeze({ ...value.eventSoundIds }) } : {}),
+          }))),
+        } : {}),
+        ...(chapter.visualResources.environments ? {
+          environments: Object.freeze(chapter.visualResources.environments.map(value => Object.freeze({
+            ...value,
+            ...(value.fog ? { fog: Object.freeze({ ...value.fog }) } : {}),
+          }))),
         } : {}),
       }),
     } : {}),

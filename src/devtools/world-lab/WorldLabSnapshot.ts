@@ -92,7 +92,13 @@ function validStage(value: unknown): value is WorldLabStageView {
     !Array.isArray(value.visualPresentation.decorationIds) || !value.visualPresentation.decorationIds.every(text) ||
     !Array.isArray(value.visualPresentation.missingResourceIds) ||
       !value.visualPresentation.missingResourceIds.every(text) ||
-    !Array.isArray(value.visualPresentation.diagnostics) || !value.visualPresentation.diagnostics.every(text))) return false;
+    !Array.isArray(value.visualPresentation.diagnostics) || !value.visualPresentation.diagnostics.every(text) ||
+    (value.visualPresentation.npcSprites !== undefined &&
+      (!Array.isArray(value.visualPresentation.npcSprites) || !value.visualPresentation.npcSprites.every(validSprite))) ||
+    (value.visualPresentation.enemySprites !== undefined &&
+      (!Array.isArray(value.visualPresentation.enemySprites) || !value.visualPresentation.enemySprites.every(validSprite))) ||
+    (value.visualPresentation.audio !== undefined && !validVisualAudio(value.visualPresentation.audio)) ||
+    (value.visualPresentation.environment !== undefined && !validVisualEnvironment(value.visualPresentation.environment)))) return false;
   const width = value.width as number;
   const height = value.height as number;
   if (height !== value.tiles.length || width < 1 || height < 1) return false;
@@ -101,6 +107,24 @@ function validStage(value: unknown): value is WorldLabStageView {
   if (!value.markers.every(validMarker) || !value.physicalExitIds.every(text)) return false;
   return value.markers.every(marker => marker.x >= 0 && marker.y >= 0 &&
     marker.x < width && marker.y < height);
+}
+
+function validSprite(value: unknown): boolean {
+  return isRecord(value) && text(value.logicalId) && text(value.spriteId) && text(value.textureKey) &&
+    Array.isArray(value.animations) && value.animations.every(text);
+}
+
+function validVisualAudio(value: unknown): boolean {
+  return isRecord(value) && text(value.profileId) &&
+    (value.musicSoundId === undefined || text(value.musicSoundId)) &&
+    (value.ambientSoundId === undefined || text(value.ambientSoundId)) &&
+    isRecord(value.eventSoundIds) && Object.values(value.eventSoundIds).every(text);
+}
+
+function validVisualEnvironment(value: unknown): boolean {
+  return isRecord(value) && text(value.id) && integer(value.ambientColor) && finite(value.lightIntensity) &&
+    (value.fog === undefined || (isRecord(value.fog) && integer(value.fog.color) &&
+      finite(value.fog.opacity) && finite(value.fog.depth)));
 }
 
 function validDiagnostic(value: unknown): value is WorldLabDiagnostic {
@@ -144,6 +168,32 @@ function cloneStage(stage: WorldLabStageView): WorldLabStageView {
       decorationIds: Object.freeze([...stage.visualPresentation.decorationIds].sort(compare)),
       missingResourceIds: Object.freeze([...stage.visualPresentation.missingResourceIds].sort(compare)),
       diagnostics: Object.freeze([...stage.visualPresentation.diagnostics].sort(compare)),
+      ...(stage.visualPresentation.npcSprites ? {
+        npcSprites: Object.freeze([...stage.visualPresentation.npcSprites]
+          .sort((left, right) => compare(left.logicalId, right.logicalId))
+          .map(item => Object.freeze({
+            ...item, animations: Object.freeze([...item.animations].sort(compare)),
+          }))),
+      } : {}),
+      ...(stage.visualPresentation.enemySprites ? {
+        enemySprites: Object.freeze([...stage.visualPresentation.enemySprites]
+          .sort((left, right) => compare(left.logicalId, right.logicalId))
+          .map(item => Object.freeze({
+            ...item, animations: Object.freeze([...item.animations].sort(compare)),
+          }))),
+      } : {}),
+      ...(stage.visualPresentation.audio ? { audio: Object.freeze({
+        ...stage.visualPresentation.audio,
+        eventSoundIds: Object.freeze(Object.fromEntries(
+          Object.entries(stage.visualPresentation.audio.eventSoundIds).sort(([left], [right]) => compare(left, right)),
+        )),
+      }) } : {}),
+      ...(stage.visualPresentation.environment ? { environment: Object.freeze({
+        ...stage.visualPresentation.environment,
+        ...(stage.visualPresentation.environment.fog
+          ? { fog: Object.freeze({ ...stage.visualPresentation.environment.fog }) }
+          : {}),
+      }) } : {}),
     }) } : {}),
   });
 }

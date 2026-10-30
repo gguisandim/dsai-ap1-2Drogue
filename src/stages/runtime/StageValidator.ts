@@ -134,7 +134,7 @@ export class StageValidator {
     const visuals = new StageVisualRegistry();
     chapters.forEach(chapter => visuals.registerChapter(chapter));
     diagnostics.push(...visuals.diagnostics());
-    modules.forEach(module => diagnostics.push(...visuals.validateManifest(module.manifest)));
+    modules.forEach(module => diagnostics.push(...visuals.validateManifest(module.manifest, module.npcs ?? [])));
 
     for (const module of moduleById.values()) {
       if (!chapterById.has(module.manifest.chapterId)) {

@@ -153,6 +153,27 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
       missingResourceIds: Object.freeze([]),
       diagnostics: Object.freeze(stage.diagnostics
         .filter(item => item.code.startsWith('stage.visual.')).map(item => item.code).sort(compare)),
+      npcSprites: Object.freeze(Object.entries(presentation.npcSprites).map(([logicalId, sprite]) => Object.freeze({
+        logicalId, spriteId: sprite.id, textureKey: sprite.textureKey,
+        animations: Object.freeze(Object.values(sprite.animations).sort(compare)),
+      })).sort((left, right) => compare(left.logicalId, right.logicalId))),
+      enemySprites: Object.freeze(Object.entries(presentation.enemySprites).map(([logicalId, sprite]) => Object.freeze({
+        logicalId, spriteId: sprite.id, textureKey: sprite.textureKey,
+        animations: Object.freeze(Object.values(sprite.animations).sort(compare)),
+      })).sort((left, right) => compare(left.logicalId, right.logicalId))),
+      ...(presentation.audio ? { audio: Object.freeze({
+        profileId: presentation.audio.id,
+        ...(presentation.audio.music ? { musicSoundId: presentation.audio.music.id } : {}),
+        ...(presentation.audio.ambient ? { ambientSoundId: presentation.audio.ambient.id } : {}),
+        eventSoundIds: Object.freeze(Object.fromEntries(Object.entries(presentation.audio.eventSounds)
+          .map(([event, sound]) => [event, sound.id]))),
+      }) } : {}),
+      ...(presentation.environment ? { environment: Object.freeze({
+        id: presentation.environment.id,
+        ambientColor: presentation.environment.ambientColor,
+        lightIntensity: presentation.environment.lightIntensity,
+        ...(presentation.environment.fog ? { fog: Object.freeze({ ...presentation.environment.fog }) } : {}),
+      }) } : {}),
     }) } : {}),
   });
 }
