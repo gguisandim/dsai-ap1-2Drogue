@@ -8,11 +8,36 @@
 - Esforço: `desconhecido`
 - SPEC: `SPEC/2026-10-30-etapa-9-5-contratos-autoria-capabilities.md`
 - Commit: `pendente`
-- Execução: `pendente`
+- Execução: `7 suítes/44 testes direcionados e 66 suítes/912 testes completos aprovados; typecheck, build com 723 módulos, architecture, traceability, auditoria de 20 arquivos de sessões sem segredos e diff-check aprovados`
 
 ## Arquivos modificados
 
-- `pendente`
+- `SPEC/2026-10-30-etapa-9-5-contratos-autoria-capabilities.md`
+- `SPEC/README.md`
+- `prompts/32-etapa-9-5-contratos-autoria-capabilities.md`
+- `src/application/stages/GameStageCompositionRoot.ts`
+- `src/narrative/contracts/CampaignSave.ts`
+- `src/narrative/persistence/CampaignSaveService.ts`
+- `src/narrative/persistence/CampaignSaveValidator.ts`
+- `src/stages/chapters/CampaignChapterCatalog.ts`
+- `src/stages/chapters/aguas/igapoDasMemorias.ts`
+- `src/stages/chapters/aguas/index.ts`
+- `src/stages/chapters/registerCampaignChapters.ts`
+- `src/stages/contracts/StageCapabilities.ts`
+- `src/stages/contracts/StageLoad.ts`
+- `src/stages/contracts/StageManifest.ts`
+- `src/stages/contracts/index.ts`
+- `src/stages/index.ts`
+- `src/stages/runtime/StageLoader.ts`
+- `src/stages/runtime/StageRegistry.ts`
+- `src/stages/runtime/StageRuntimeCapabilities.ts`
+- `src/stages/runtime/StageValidator.ts`
+- `src/tests/campaignChapterCatalog.test.ts`
+- `src/tests/igapoDasMemorias.test.ts`
+- `src/tests/narrativeCycleScenario.test.ts`
+- `src/tests/stageAuthoringCompatibility.test.ts`
+- `src/tests/stageLoaderHardening.test.ts`
+- `src/tests/stageLoaderValidation.test.ts`
 
 ## Prompt efetivamente recebido
 
