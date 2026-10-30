@@ -75,7 +75,7 @@ function validEdge(value: unknown): value is WorldLabGraphEdgeView {
 
 function validMarker(value: unknown): value is WorldLabStageMarker {
   return isRecord(value) && text(value.id) &&
-    ['spawn', 'enemy', 'boss', 'item', 'npc', 'anchor', 'section-exit', 'physical-exit']
+    ['spawn', 'enemy', 'boss', 'item', 'npc', 'anchor', 'section-exit', 'physical-exit', 'decoration']
       .includes(String(value.kind)) && integer(value.x) && integer(value.y) && text(value.label) &&
     (value.edgeId === undefined || text(value.edgeId)) &&
     (value.physicalExitId === undefined || text(value.physicalExitId));
@@ -86,6 +86,13 @@ function validStage(value: unknown): value is WorldLabStageView {
     !text(value.theme) || !integer(value.width) || !integer(value.height) ||
     !Array.isArray(value.tiles) || !Array.isArray(value.markers) ||
     !Array.isArray(value.physicalExitIds)) return false;
+  if (value.visualPresentation !== undefined && (!isRecord(value.visualPresentation) ||
+    !text(value.visualPresentation.themeId) || !text(value.visualPresentation.tilesetId) ||
+    !Array.isArray(value.visualPresentation.textureKeys) || !value.visualPresentation.textureKeys.every(text) ||
+    !Array.isArray(value.visualPresentation.decorationIds) || !value.visualPresentation.decorationIds.every(text) ||
+    !Array.isArray(value.visualPresentation.missingResourceIds) ||
+      !value.visualPresentation.missingResourceIds.every(text) ||
+    !Array.isArray(value.visualPresentation.diagnostics) || !value.visualPresentation.diagnostics.every(text))) return false;
   const width = value.width as number;
   const height = value.height as number;
   if (height !== value.tiles.length || width < 1 || height < 1) return false;
@@ -131,6 +138,13 @@ function cloneStage(stage: WorldLabStageView): WorldLabStageView {
       .sort((left, right) => compare(left.id, right.id) || compare(left.kind, right.kind))
       .map(cloneMarker)),
     physicalExitIds: Object.freeze([...stage.physicalExitIds].sort(compare)),
+    ...(stage.visualPresentation ? { visualPresentation: Object.freeze({
+      ...stage.visualPresentation,
+      textureKeys: Object.freeze([...stage.visualPresentation.textureKeys].sort(compare)),
+      decorationIds: Object.freeze([...stage.visualPresentation.decorationIds].sort(compare)),
+      missingResourceIds: Object.freeze([...stage.visualPresentation.missingResourceIds].sort(compare)),
+      diagnostics: Object.freeze([...stage.visualPresentation.diagnostics].sort(compare)),
+    }) } : {}),
   });
 }
 

@@ -43,7 +43,9 @@ import type {
   GameCampaignNavigationPort,
   GameSceneStageResolution,
 } from '../application/stages';
-import type { LoadedStage } from '../stages';
+import { LEGACY_RESOLVED_STAGE_PRESENTATION } from '../stages';
+import type { LoadedStage, ResolvedStagePresentation } from '../stages';
+import { StageMapRenderer } from '../presentation/stages/StageMapRenderer';
 import { DialogueOverlay } from '../ui/DialogueOverlay';
 import {
   WorldInteractionPoint,
@@ -103,6 +105,7 @@ const DEFAULT_PROCEDURAL_RUN: readonly PresetId[] = [
 ];
 
 export class GameScene extends Phaser.Scene {
+  private readonly stageMapRenderer = new StageMapRenderer();
   private player!: Player;
   private enemies!: Phaser.Physics.Arcade.Group;
   private items!: Phaser.Physics.Arcade.Group;
@@ -115,6 +118,7 @@ export class GameScene extends Phaser.Scene {
 
   // Floor tile images (so we can destroy them on level transition)
   private floorImages: Phaser.GameObjects.Image[] = [];
+  private activeStagePresentation: ResolvedStagePresentation = LEGACY_RESOLVED_STAGE_PRESENTATION;
 
   private allLevels: LevelDefinition[] = [...VERSE_SECTIONS, ...ALL_LEVELS];
   private currentLevelIndex: number = 0;
@@ -1010,36 +1014,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildMapFromDefinition(level: LevelDefinition): void {
-    const map = level.tileMap;
-    for (let r = 0; r < map.length; r++) {
-      for (let c = 0; c < map[r].length; c++) {
-        const tileVal = map[r][c];
-        const posX = c * 32 + 16;
-        const posY = r * 32 + 16;
-
-        // Base Floor
-        const floorImg = this.add.image(posX, posY, 'tile_floor');
-        this.floorImages.push(floorImg);
-
-        if (tileVal === 1) {
-          this.wallTiles.create(posX, posY, 'tile_wall');
-        } else if (tileVal === 2) {
-          this.wallTiles.create(posX, posY, 'tile_pillar');
-        } else if (tileVal === 3) {
-          // Water/pits already use non-walkable navigation semantics. Reuse the
-          // existing water tile in the collision group so authored wetlands
-          // have the same physical boundary for players and enemies.
-          this.wallTiles.create(posX, posY, 'tile_water');
-        } else if (tileVal === 4) {
-          const lava = this.add.image(posX, posY, 'tile_lava');
-          this.floorImages.push(lava);
-        } else if (tileVal === 5 && !this.campaignRouter) {
-          // The tunnel is intentionally absent until the final enemy dies.
-          // Store its position without creating a visible/interactive sprite.
-          this.pendingExitTiles.push({ x: posX, y: posY });
-        }
-      }
-    }
+    const loaded = [this.modularLoadedStage, this.macroLoadedStage]
+      .find(stage => stage?.level.id === level.id);
+    this.activeStagePresentation = loaded?.presentation ?? LEGACY_RESOLVED_STAGE_PRESENTATION;
+    const rendered = (this.stageMapRenderer ?? new StageMapRenderer()).render(
+      this,
+      level,
+      this.activeStagePresentation,
+      this.wallTiles,
+      !this.campaignRouter,
+    );
+    this.floorImages.push(...rendered.images);
+    this.pendingExitTiles.push(...rendered.pendingExitTiles);
   }
 
   private spawnSingleEnemy(e: EnemyPlacement, occurrenceId: string): void {
@@ -1828,7 +1814,10 @@ export class GameScene extends Phaser.Scene {
     if (this.exitsRevealed) return;
     this.exitsRevealed = true;
     this.pendingExitTiles.forEach(({ x, y, physicalExitId, available = true }, index) => {
-      const tunnel = this.stairTiles.create(x, y, 'tile_stairs') as Phaser.Physics.Arcade.Sprite;
+      const exitVisual = this.activeStagePresentation.tiles.exit;
+      const tunnel = this.stairTiles.create(x, y, exitVisual.textureKey) as Phaser.Physics.Arcade.Sprite;
+      if (exitVisual.tint !== undefined) tunnel.setTint(exitVisual.tint);
+      if (exitVisual.alpha !== undefined) tunnel.setAlpha(exitVisual.alpha);
       if (physicalExitId) {
         tunnel.setData('physicalExitId', physicalExitId);
         tunnel.setData('available', available);

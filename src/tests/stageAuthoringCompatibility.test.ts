@@ -154,7 +154,7 @@ describe('Etapa 9.5 authoring compatibility contracts', () => {
     const module = stage();
     const registry = new StageRegistry();
     registry.registerChapter(chapter(module, { capabilities: [{
-      id: 'effect.level-decoration', category: 'effect', minimumVersion: 1, requirement: 'required',
+      id: 'lighting.level-ambience', category: 'lighting', minimumVersion: 1, requirement: 'required',
     }] }), [module]);
     const result = new StageLoader(registry).load({
       stageId: module.manifest.id, runId: 'run.chapter-capability', runSeed: 'seed.chapter-capability',

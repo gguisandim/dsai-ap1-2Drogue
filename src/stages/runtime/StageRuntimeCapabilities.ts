@@ -36,15 +36,18 @@ export const DEFAULT_STAGE_RUNTIME_CAPABILITIES: StageRuntimeCapabilityProfile =
   revision: 1,
   capabilities: Object.freeze([
     ...TILE_NAMES.map(name => capability(`tile.${name}`, 'tile')),
+    capability('tile.custom-tileset', 'tile'),
     ...BIOMES.map(name => capability(`biome.${name}`, 'biome')),
     ...THEMES.map(name => capability(`theme.${name}`, 'theme', 'planned')),
+    capability('theme.legacy.default', 'theme'),
+    capability('theme.aguas.igapo', 'theme'),
     ...['affinity', 'applaud', 'fortitudo', 'ranged', 'boss', 'miniboss']
       .map(name => capability(`enemy.${name}`, 'enemy')),
     ...['key', 'potion', 'health-herb', 'mana-shard']
       .map(name => capability(`item.${name}`, 'item')),
     capability('audio.level-music', 'audio', 'planned'),
     capability('lighting.level-ambience', 'lighting', 'planned'),
-    capability('effect.level-decoration', 'effect', 'planned'),
+    capability('effect.level-decoration', 'effect'),
     capability('npc.authored', 'npc'),
     capability('interaction.npc-dialogue', 'interaction'),
     capability('narrative.dialogue', 'narrative'),

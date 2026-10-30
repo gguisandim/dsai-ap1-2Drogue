@@ -1,4 +1,5 @@
 import type { StageModule } from '../../contracts';
+import { IGAPO_VISUAL_THEME_ID, IGAPO_VISUAL_TILESET_ID } from './igapoVisuals';
 
 export const IGAPO_DAS_MEMORIAS_STAGE_ID = 'stage.aguas.igapo-das-memorias';
 export const IGAPO_DAS_MEMORIAS_CHAPTER_ID = 'chapter.aguas';
@@ -79,6 +80,10 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
     title: 'Igapó das Memórias',
     summary: 'Ilhas de terra e raízes atravessam águas escuras onde lembranças estão desaparecendo.',
     layout: Object.freeze({ kind: 'authored' as const }),
+    presentation: Object.freeze({
+      themeId: IGAPO_VISUAL_THEME_ID,
+      tilesetId: IGAPO_VISUAL_TILESET_ID,
+    }),
     exits: Object.freeze([Object.freeze({
       id: IGAPO_RETURN_EXIT_ID,
       anchor: Object.freeze({ kind: 'tile' as const, ...IGAPO_RETURN_ANCHOR }),
@@ -97,6 +102,18 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
       Object.freeze({
         id: 'audio.level-music', category: 'audio' as const,
         minimumVersion: 1, requirement: 'optional' as const,
+      }),
+      Object.freeze({
+        id: IGAPO_VISUAL_THEME_ID, category: 'theme' as const,
+        minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
+        id: 'tile.custom-tileset', category: 'tile' as const,
+        minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
+        id: 'effect.level-decoration', category: 'effect' as const,
+        minimumVersion: 1, requirement: 'required' as const,
       }),
     ]),
     tags: Object.freeze(['amazon', 'aguas', 'igapo', 'authored']),

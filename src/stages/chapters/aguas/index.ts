@@ -4,8 +4,10 @@ import {
   IGAPO_DAS_MEMORIAS_STAGE,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
 } from './igapoDasMemorias';
+import { AGUAS_VISUAL_RESOURCES } from './igapoVisuals';
 
 export * from './igapoDasMemorias';
+export * from './igapoVisuals';
 
 export const AGUAS_CHAPTER_MANIFEST: ChapterManifest = Object.freeze({
   schemaVersion: 1 as const,
@@ -14,6 +16,7 @@ export const AGUAS_CHAPTER_MANIFEST: ChapterManifest = Object.freeze({
   title: 'Rota das Águas',
   stageIds: Object.freeze([IGAPO_DAS_MEMORIAS_STAGE_ID]),
   entryStageId: IGAPO_DAS_MEMORIAS_STAGE_ID,
+  visualResources: AGUAS_VISUAL_RESOURCES,
   dependencies: Object.freeze([Object.freeze({
     chapterId: 'legacy.verse',
     minimumRevision: 1,

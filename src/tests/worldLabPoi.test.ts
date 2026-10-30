@@ -20,5 +20,15 @@ describe('World Lab POI projection', () => {
       x: 27,
       y: 17,
     }));
+    expect(igapo?.markers.filter(marker => marker.kind === 'decoration')).toHaveLength(3);
+    expect(igapo?.visualPresentation).toMatchObject({
+      themeId: 'theme.aguas.igapo',
+      tilesetId: 'tileset.aguas.igapo-technical',
+      missingResourceIds: [],
+      diagnostics: [],
+    });
+    expect(igapo?.visualPresentation?.textureKeys).toEqual(expect.arrayContaining([
+      'tile_floor', 'tile_pillar', 'tile_water',
+    ]));
   });
 });

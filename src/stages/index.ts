@@ -88,6 +88,20 @@ export type {
   StageRuntimeCapabilityStatus,
   StageResumeState,
   LoadedStage,
+  ChapterVisualResources,
+  ResolvedStageDecorationVisual,
+  ResolvedStagePresentation,
+  ResolvedStageTexture,
+  ResolvedStageTileVisual,
+  StageDecorationVisualDefinition,
+  StageLogicalTileId,
+  StagePresentationDefinition,
+  StageTilesetDefinition,
+  StageTileVisualDefinition,
+  StageTileVisualVariant,
+  StageVisualLayer,
+  StageVisualTextureDefinition,
+  StageVisualThemeDefinition,
 } from './contracts';
 export { StageRegistry, StageRegistryError } from './runtime/StageRegistry';
 export type { StageRegistryErrorCode } from './runtime/StageRegistry';
@@ -102,6 +116,13 @@ export { LegacyLevelAdapter } from './compatibility/LegacyLevelAdapter';
 export { ProceduralStageAdapter } from './compatibility/ProceduralStageAdapter';
 export { StageLoader } from './runtime/StageLoader';
 export type { StageLoaderOptions } from './runtime/StageLoader';
+export {
+  LEGACY_STAGE_VISUAL_RESOURCES,
+  LEGACY_RESOLVED_STAGE_PRESENTATION,
+  STAGE_LOGICAL_TILE_IDS,
+  StageVisualRegistry,
+} from './runtime/StageVisualRegistry';
+export type { StageVisualResolution } from './runtime/StageVisualRegistry';
 export { registerCampaignChapters } from './chapters/registerCampaignChapters';
 export {
   CAMPAIGN_CHAPTER_CATALOG,
@@ -118,6 +139,7 @@ export type {
 export {
   AGUAS_CHAPTER_MANIFEST,
   AGUAS_CHAPTER_STAGES,
+  AGUAS_VISUAL_RESOURCES,
   ECO_DAS_AGUAS_DIALOGUE_ID,
   ECO_DAS_AGUAS_EVENT_ID,
   ECO_DAS_AGUAS_FLAG,
@@ -128,4 +150,6 @@ export {
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   IGAPO_RETURN_ANCHOR,
   IGAPO_RETURN_EXIT_ID,
+  IGAPO_VISUAL_THEME_ID,
+  IGAPO_VISUAL_TILESET_ID,
 } from './chapters/aguas';

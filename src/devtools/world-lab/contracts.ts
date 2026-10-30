@@ -59,7 +59,8 @@ export type WorldLabMarkerKind =
   | 'npc'
   | 'anchor'
   | 'section-exit'
-  | 'physical-exit';
+  | 'physical-exit'
+  | 'decoration';
 
 export interface WorldLabStageMarker {
   readonly id: string;
@@ -81,6 +82,16 @@ export interface WorldLabStageView {
   readonly tiles: readonly (readonly number[])[];
   readonly markers: readonly WorldLabStageMarker[];
   readonly physicalExitIds: readonly string[];
+  readonly visualPresentation?: WorldLabStageVisualPresentation;
+}
+
+export interface WorldLabStageVisualPresentation {
+  readonly themeId: string;
+  readonly tilesetId: string;
+  readonly textureKeys: readonly string[];
+  readonly decorationIds: readonly string[];
+  readonly missingResourceIds: readonly string[];
+  readonly diagnostics: readonly string[];
 }
 
 export interface WorldLabThemePresentation {

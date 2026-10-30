@@ -13,7 +13,7 @@ const TILE_COLORS: Readonly<Record<number, string>> = Object.freeze({
 
 const MARKER_LABEL: Readonly<Record<WorldLabStageMarker['kind'], string>> = Object.freeze({
   spawn: 'S', enemy: 'E', boss: 'B', item: 'I', npc: 'N', anchor: 'A',
-  'section-exit': '↗', 'physical-exit': 'X',
+  'section-exit': '↗', 'physical-exit': 'X', decoration: 'D',
 });
 
 function markerClass(marker: WorldLabStageMarker): string {
@@ -37,6 +37,19 @@ export function renderStageInspector(
     return;
   }
   const size = 22;
+  if (stage.visualPresentation) {
+    const visual = document.createElement('div');
+    visual.className = 'wl-stage-visual-meta';
+    visual.textContent = [
+      `Tema: ${stage.visualPresentation.themeId}`,
+      `Tileset: ${stage.visualPresentation.tilesetId}`,
+      `Recursos: ${stage.visualPresentation.textureKeys.join(', ') || 'nenhum'}`,
+      `Decorações: ${stage.visualPresentation.decorationIds.join(', ') || 'nenhuma'}`,
+      `Ausentes: ${stage.visualPresentation.missingResourceIds.join(', ') || 'nenhum'}`,
+      `Diagnósticos: ${stage.visualPresentation.diagnostics.join(', ') || 'nenhum'}`,
+    ].join(' · ');
+    container.append(visual);
+  }
   const svg = svgElement('svg', {
     class: 'wl-stage-svg', role: 'img', 'aria-label': `Stage map ${stage.stageId}`,
   });

@@ -15,6 +15,7 @@ import type {
 import { StageRegistry } from './StageRegistry';
 import { StageValidator } from './StageValidator';
 import { ResolvedLevelValidator } from './ResolvedLevelValidator';
+import { StageVisualRegistry } from './StageVisualRegistry';
 
 export interface StageLoaderOptions {
   readonly legacy?: LegacyLevelAdapter;
@@ -157,12 +158,20 @@ export class StageLoader {
       return this.failure('invalid-level', request.stageId, levelDiagnostics);
     }
 
+    const visuals = new StageVisualRegistry();
+    this.registry.listChapters().forEach(chapter => visuals.registerChapter(chapter));
+    const visualResolution = visuals.resolve(module.manifest, resolution.level);
+    if (!visualResolution.ok) {
+      return this.failure('invalid-reference', request.stageId, visualResolution.diagnostics);
+    }
+
     const diagnostics = freezeDiagnostics([
       ...requestDiagnostics,
       ...manifestDiagnostics,
       ...referenceDiagnostics,
       ...levelDiagnostics,
       ...resumeDiagnostics,
+      ...visualResolution.diagnostics,
     ]);
     const loaded: LoadedStage = {
       manifest: cloneData(module.manifest),
@@ -172,6 +181,7 @@ export class StageLoader {
       dialogues: cloneData(module.dialogues ?? []),
       missions: cloneData(module.missions ?? []),
       events: cloneData(module.events ?? []),
+      presentation: cloneData(visualResolution.value),
       diagnostics,
     };
     return { ok: true, value: loaded };

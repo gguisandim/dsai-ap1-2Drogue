@@ -16,6 +16,7 @@ import {
   itemCapabilityId,
   tileCapabilityId,
 } from './StageRuntimeCapabilities';
+import { StageVisualRegistry } from './StageVisualRegistry';
 
 const STABLE_ID = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 const PRESET_IDS = new Set<string>(GENERATION_PRESETS.map(preset => preset.id));
@@ -129,6 +130,11 @@ export class StageValidator {
       }
     });
     chapters.forEach(chapter => this.validateChapter(chapter, chapterById, moduleById, diagnostics));
+
+    const visuals = new StageVisualRegistry();
+    chapters.forEach(chapter => visuals.registerChapter(chapter));
+    diagnostics.push(...visuals.diagnostics());
+    modules.forEach(module => diagnostics.push(...visuals.validateManifest(module.manifest)));
 
     for (const module of moduleById.values()) {
       if (!chapterById.has(module.manifest.chapterId)) {

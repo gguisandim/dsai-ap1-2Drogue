@@ -49,6 +49,9 @@ export interface DecorationPlacement {
   scale?: number;
   rotation?: number;
   tint?: number;
+  layer?: 'background' | 'terrain' | 'foreground';
+  depth?: number;
+  visible?: boolean;
 }
 
 export interface LevelDefinition {

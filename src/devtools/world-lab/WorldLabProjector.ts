@@ -72,6 +72,10 @@ function entityMarkers(stage: LoadedStage): WorldLabStageMarker[] {
     id: `${stage.manifest.id}.item.${item.type}.${item.x}.${item.y}`,
     kind: 'item', x: item.x, y: item.y, label: item.type,
   }));
+  stage.level.decorations.forEach((decoration, index) => markers.push({
+    id: `${stage.manifest.id}.decoration.${decoration.type}.${index}`,
+    kind: 'decoration', x: decoration.x, y: decoration.y, label: decoration.type,
+  }));
   stage.npcs.forEach(npc => {
     if (npc.spawn.kind !== 'tile') return;
     markers.push({
@@ -122,6 +126,15 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
   const physicalExitIds = input.physicalExitResult?.ok
     ? input.physicalExitResult.value.exits.map(exit => exit.id).sort(compare)
     : [];
+  const presentation = stage.presentation;
+  const textureKeys = presentation
+    ? [...new Set([
+        ...Object.values(presentation.tiles).flatMap(tile => [
+          tile.textureKey, ...tile.variants.map(variant => variant.textureKey),
+        ]),
+        ...Object.values(presentation.decorations).map(decoration => decoration.textureKey),
+      ])].sort(compare)
+    : [];
   return Object.freeze({
     nodeId: input.node.id,
     stageId: stage.manifest.id,
@@ -132,6 +145,15 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
     tiles: Object.freeze(stage.level.tileMap.map(row => Object.freeze([...row]))),
     markers: Object.freeze(markers.map(freezeMarker)),
     physicalExitIds: Object.freeze(physicalExitIds),
+    ...(presentation ? { visualPresentation: Object.freeze({
+      themeId: presentation.themeId,
+      tilesetId: presentation.tilesetId,
+      textureKeys: Object.freeze(textureKeys),
+      decorationIds: Object.freeze(Object.keys(presentation.decorations).sort(compare)),
+      missingResourceIds: Object.freeze([]),
+      diagnostics: Object.freeze(stage.diagnostics
+        .filter(item => item.code.startsWith('stage.visual.')).map(item => item.code).sort(compare)),
+    }) } : {}),
   });
 }
 

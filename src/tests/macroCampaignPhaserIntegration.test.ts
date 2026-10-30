@@ -272,8 +272,18 @@ describe('GameScene macro campaign vertical slice', () => {
     });
     if (!loaded.ok) throw loaded.error;
     const { state } = sceneShell();
-    state.add = { image: jest.fn(() => ({})) };
-    state.wallTiles = { create: jest.fn(() => ({})) };
+    const visual = () => ({
+      setTint: jest.fn().mockReturnThis(),
+      setAlpha: jest.fn().mockReturnThis(),
+      setDepth: jest.fn().mockReturnThis(),
+      setScale: jest.fn().mockReturnThis(),
+      setRotation: jest.fn().mockReturnThis(),
+      refreshBody: jest.fn().mockReturnThis(),
+    });
+    state.textures = { exists: jest.fn(() => true) };
+    state.add = { image: jest.fn(() => visual()) };
+    state.wallTiles = { create: jest.fn(() => visual()) };
+    state.macroLoadedStage = loaded.value;
     state.campaignRouter = {};
 
     state.buildMapFromDefinition(loaded.value.level);

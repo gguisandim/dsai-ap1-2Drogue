@@ -10,6 +10,7 @@ import type {
   NpcDefinition,
   StageEventRule,
 } from './StageModule';
+import type { ResolvedStagePresentation } from './StagePresentation';
 
 export interface StageResumeState {
   readonly stageId: StageId;
@@ -41,6 +42,8 @@ export interface LoadedStage {
   readonly dialogues: readonly DialogueDefinition[];
   readonly missions: readonly MissionDefinition[];
   readonly events: readonly StageEventRule[];
+  /** Always resolved by StageLoader; optional only for pre-9.5B.1 compatible fixtures/adapters. */
+  readonly presentation?: ResolvedStagePresentation;
   readonly diagnostics: readonly StageDiagnostic[];
 }
 

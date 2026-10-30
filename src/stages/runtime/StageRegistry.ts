@@ -58,6 +58,7 @@ function cloneManifest(manifest: StageManifest): StageManifest {
     ...manifest,
     layout,
     exits,
+    ...(manifest.presentation ? { presentation: Object.freeze({ ...manifest.presentation }) } : {}),
     ...(manifest.capabilities ? {
       capabilities: Object.freeze(manifest.capabilities.map(capability => Object.freeze({ ...capability }))),
     } : {}),
@@ -85,6 +86,25 @@ function cloneChapter(chapter: ChapterManifest): ChapterManifest {
     } : {}),
     ...(chapter.capabilities ? {
       capabilities: Object.freeze(chapter.capabilities.map(capability => Object.freeze({ ...capability }))),
+    } : {}),
+    ...(chapter.visualResources ? {
+      visualResources: Object.freeze({
+        textures: Object.freeze(chapter.visualResources.textures.map(value => Object.freeze({ ...value }))),
+        tilesets: Object.freeze(chapter.visualResources.tilesets.map(value => Object.freeze({
+          ...value,
+          tiles: Object.freeze(Object.fromEntries(Object.entries(value.tiles).map(([key, tile]) => [key, Object.freeze({
+            ...tile,
+            ...(tile.variants ? { variants: Object.freeze(tile.variants.map(variant => Object.freeze({ ...variant }))) } : {}),
+          })])) as unknown as typeof value.tiles),
+        }))),
+        themes: Object.freeze(chapter.visualResources.themes.map(value => Object.freeze({
+          ...value,
+          ...(value.decorationIds ? { decorationIds: Object.freeze([...value.decorationIds]) } : {}),
+        }))),
+        ...(chapter.visualResources.decorations ? {
+          decorations: Object.freeze(chapter.visualResources.decorations.map(value => Object.freeze({ ...value }))),
+        } : {}),
+      }),
     } : {}),
     ...(chapter.tags ? { tags: Object.freeze([...chapter.tags]) } : {}),
   });

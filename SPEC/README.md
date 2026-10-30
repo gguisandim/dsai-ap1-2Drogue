@@ -50,3 +50,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-29 | [Liquidação de recompensas e conclusão de fases — Etapa 9.4C](./2026-10-29-etapa-9-4c-recompensas-conclusao-fases.md) |
 | 2026-10-30 | [Homologação integrada do ciclo narrativo — Etapa 9.4D](./2026-10-30-etapa-9-4d-homologacao-ciclo-narrativo.md) |
 | 2026-10-30 | [Contratos de autoria independente, capabilities e compatibilidade — Etapa 9.5](./2026-10-30-etapa-9-5-contratos-autoria-capabilities.md) |
+| 2026-10-30 | [Apresentação visual extensível de fases e biomas — Etapa 9.5B.1](./2026-10-30-etapa-9-5b1-apresentacao-visual-biomas.md) |
