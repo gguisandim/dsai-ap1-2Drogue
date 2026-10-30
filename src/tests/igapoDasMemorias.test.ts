@@ -104,7 +104,15 @@ describe('Igapó das Memórias authored chapter', () => {
       layout: { kind: 'authored' },
       exits: [{ id: IGAPO_RETURN_EXIT_ID, targetStageId: 'verse_01_atrium' }],
     });
-    expect(stages.validate()).toEqual([]);
+    const diagnostics = stages.validate();
+    expect(diagnostics.filter(item => item.severity === 'error')).toEqual([]);
+    expect(diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: 'capability.unavailable',
+        severity: 'warning',
+        referenceId: 'audio.level-music',
+      }),
+    ]));
   });
 
   it('loads deterministically without sharing mutable map state', () => {

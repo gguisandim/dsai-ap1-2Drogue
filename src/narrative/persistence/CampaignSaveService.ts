@@ -255,6 +255,8 @@ export class CampaignSaveService {
     let code: CampaignSaveFailureCode = 'invalid-envelope';
     if (codes.has('save.version.unsupported') || codes.has('save.snapshot.version-unsupported')) {
       code = 'unsupported-version';
+    } else if (codes.has('save.identity.chapter-revision-mismatch')) {
+      code = 'identity-mismatch';
     } else if ([...codes].some(item => item.startsWith('save.identity.') && item !== 'save.identity.mismatch')) {
       code = 'invalid-identity';
     } else if (codes.has('save.identity.mismatch')) {

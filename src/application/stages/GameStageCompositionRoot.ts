@@ -293,11 +293,13 @@ export class GameStageCompositionRoot {
     progression: NarrativeProgressionView,
     narrativeStorageKey?: string,
   ): GameNarrativeSessionCreation {
+    const chapter = this.registry.getChapter(loadedStage.manifest.chapterId);
     const identity: CampaignSaveIdentity = Object.freeze({
       campaignId: identityInput.campaignId,
       runId: identityInput.runId,
       runSeed: String(identityInput.runSeed),
       chapterId: loadedStage.manifest.chapterId,
+      ...(chapter ? { chapterRevision: chapter.revision } : {}),
       stageId: loadedStage.manifest.id,
       manifestRevision: loadedStage.manifest.revision,
       ...(identityInput.stageInstanceId ? { stageInstanceId: identityInput.stageInstanceId } : {}),

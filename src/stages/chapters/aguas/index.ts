@@ -14,6 +14,20 @@ export const AGUAS_CHAPTER_MANIFEST: ChapterManifest = Object.freeze({
   title: 'Rota das Águas',
   stageIds: Object.freeze([IGAPO_DAS_MEMORIAS_STAGE_ID]),
   entryStageId: IGAPO_DAS_MEMORIAS_STAGE_ID,
+  dependencies: Object.freeze([Object.freeze({
+    chapterId: 'legacy.verse',
+    minimumRevision: 1,
+  })]),
+  capabilities: Object.freeze([
+    Object.freeze({
+      id: 'navigation.physical-exit', category: 'navigation' as const,
+      minimumVersion: 1, requirement: 'required' as const,
+    }),
+    Object.freeze({
+      id: 'narrative.event', category: 'narrative' as const,
+      minimumVersion: 1, requirement: 'required' as const,
+    }),
+  ]),
   tags: Object.freeze(['campaign', 'aguas', 'amazon']),
 });
 

@@ -85,6 +85,20 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
       targetStageId: 'verse_01_atrium',
     })]),
     entryDialogueId: ECO_DAS_AGUAS_DIALOGUE_ID,
+    capabilities: Object.freeze([
+      Object.freeze({
+        id: 'navigation.authored-map', category: 'navigation' as const,
+        minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
+        id: 'interaction.npc-dialogue', category: 'interaction' as const,
+        minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
+        id: 'audio.level-music', category: 'audio' as const,
+        minimumVersion: 1, requirement: 'optional' as const,
+      }),
+    ]),
     tags: Object.freeze(['amazon', 'aguas', 'igapo', 'authored']),
   }),
   authoredLevel: Object.freeze({

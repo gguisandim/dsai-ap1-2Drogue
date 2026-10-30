@@ -120,8 +120,8 @@ describe('StageLoader resolved level validation', () => {
     expect(result).toMatchObject({
       ok: false,
       error: {
-        code: 'invalid-level',
-        diagnostics: [expect.objectContaining({ code: 'level.tile.invalid' })],
+        code: 'invalid-manifest',
+        diagnostics: [expect.objectContaining({ code: 'stage.content.tile.unsupported' })],
       },
     });
     expect('value' in result).toBe(false);
@@ -129,8 +129,8 @@ describe('StageLoader resolved level validation', () => {
 
   it('rejects solid gameplay positions, out-of-bounds positions and non-walkable anchors', () => {
     const invalid = level({
-      enemies: [{ type: 'blocked', x: 0, y: 0, level: 1 }],
-      items: [{ type: 'outside', x: 99, y: 99 }],
+      enemies: [{ type: 'affinity', x: 0, y: 0, level: 1 }],
+      items: [{ type: 'key', x: 99, y: 99 }],
       decorations: [{ type: 'outside-decoration', x: -1, y: 2 }],
     });
     const result = loaderFor(authoredModule(invalid, { kind: 'tile', x: 0, y: 0 })).load({

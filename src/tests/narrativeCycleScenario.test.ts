@@ -6,7 +6,7 @@ import {
 } from '../application/stages';
 import { MemorySaveStorage } from '../narrative';
 import { MemoryProgressionStorage, ProgressionService } from '../progression';
-import { StageRegistry, registerCampaignChapters } from '../stages';
+import { StageRegistry, registerCampaignChapters, registerLegacyStages } from '../stages';
 import {
   NARRATIVE_CYCLE_CAMPAIGN_ID,
   NARRATIVE_CYCLE_CHAPTER,
@@ -63,6 +63,7 @@ describe('isolated narrative-cycle development scenario', () => {
       .toBe(NARRATIVE_CYCLE_MISSION_ID);
 
     const production = new StageRegistry();
+    registerLegacyStages(production);
     registerCampaignChapters(production);
     expect(production.get(NARRATIVE_CYCLE_STAGE_ID)).toBeUndefined();
   });

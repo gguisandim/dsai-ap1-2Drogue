@@ -58,6 +58,9 @@ function cloneManifest(manifest: StageManifest): StageManifest {
     ...manifest,
     layout,
     exits,
+    ...(manifest.capabilities ? {
+      capabilities: Object.freeze(manifest.capabilities.map(capability => Object.freeze({ ...capability }))),
+    } : {}),
     ...(manifest.tags ? { tags: Object.freeze([...manifest.tags]) } : {}),
   });
 }
@@ -77,6 +80,12 @@ function cloneChapter(chapter: ChapterManifest): ChapterManifest {
   return Object.freeze({
     ...chapter,
     stageIds: Object.freeze([...chapter.stageIds]),
+    ...(chapter.dependencies ? {
+      dependencies: Object.freeze(chapter.dependencies.map(dependency => Object.freeze({ ...dependency }))),
+    } : {}),
+    ...(chapter.capabilities ? {
+      capabilities: Object.freeze(chapter.capabilities.map(capability => Object.freeze({ ...capability }))),
+    } : {}),
     ...(chapter.tags ? { tags: Object.freeze([...chapter.tags]) } : {}),
   });
 }
@@ -169,6 +178,16 @@ export class StageRegistry {
       .map(module => module.manifest)
       .sort((left, right) => left.order - right.order || compareIds(left.id, right.id));
     return Object.freeze(manifests);
+  }
+
+  /** Immutable snapshots used by composition-time compatibility validation. */
+  public listChapters(): readonly ChapterManifest[] {
+    return Object.freeze([...this.chapters.values()].map(cloneChapter).sort((left, right) => compareIds(left.id, right.id)));
+  }
+
+  public listModules(): readonly StageModule[] {
+    return Object.freeze([...this.stages.values()].map(cloneModule).sort((left, right) =>
+      compareIds(left.manifest.id, right.manifest.id)));
   }
 
   public validate(): readonly StageDiagnostic[] {

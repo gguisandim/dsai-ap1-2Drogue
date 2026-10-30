@@ -287,11 +287,11 @@ describe('StageLoader hardened boundary', () => {
   it('deep-copies nested level and stage content across repeated loads', () => {
     const sourceLevel = level({
       enemies: [{
-        type: 'fixture', x: 2, y: 2, level: 1,
+        type: 'affinity', x: 2, y: 2, level: 1,
         patrol: [{ x: 2, y: 3 }],
         dropTable: [{ itemId: 'drop', chance: 1 }],
       }],
-      waves: [{ delay: 1, enemies: [{ type: 'wave', x: 3, y: 3, level: 1 }] }],
+      waves: [{ delay: 1, enemies: [{ type: 'applaud', x: 3, y: 3, level: 1 }] }],
     });
     const source = moduleFor({ kind: 'authored' }, sourceLevel);
     const enriched: StageModule = {

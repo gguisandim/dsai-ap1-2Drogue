@@ -14,6 +14,8 @@ import type {
 export interface StageResumeState {
   readonly stageId: StageId;
   readonly manifestRevision: number;
+  /** Optional on v1 legacy resumes; compared when present. */
+  readonly chapterRevision?: number;
   /** Optional only for resume snapshots created before the Stage 2 run binding. */
   readonly runId?: string;
   /** Optional only for resume snapshots created before the Stage 2 run binding. */

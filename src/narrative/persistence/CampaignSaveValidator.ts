@@ -96,6 +96,11 @@ export function validateCampaignIdentity(
     add(diagnostics, 'save.identity.revision-invalid', 'manifestRevision must be a positive safe integer.',
       [...path, 'manifestRevision']);
   }
+  if (value.chapterRevision !== undefined &&
+    (!Number.isSafeInteger(value.chapterRevision) || Number(value.chapterRevision) < 1)) {
+    add(diagnostics, 'save.identity.chapter-revision-invalid',
+      'chapterRevision must be a positive safe integer when present.', [...path, 'chapterRevision']);
+  }
   if (value.stageInstanceId !== undefined && !isStableId(value.stageInstanceId)) {
     add(diagnostics, 'save.identity.stage-instance-invalid',
       'stageInstanceId must be a stable lowercase identifier when present.',
@@ -107,9 +112,11 @@ export function validateCampaignIdentity(
 export function identitiesEqual(left: CampaignSaveIdentity, right: CampaignSaveIdentity): boolean {
   const sameInstance = left.stageInstanceId === undefined || right.stageInstanceId === undefined ||
     left.stageInstanceId === right.stageInstanceId;
+  const sameChapterRevision = left.chapterRevision === undefined || right.chapterRevision === undefined ||
+    left.chapterRevision === right.chapterRevision;
   return left.campaignId === right.campaignId && left.runId === right.runId &&
     left.runSeed === right.runSeed && left.chapterId === right.chapterId &&
-    left.stageId === right.stageId && left.manifestRevision === right.manifestRevision &&
+    left.stageId === right.stageId && left.manifestRevision === right.manifestRevision && sameChapterRevision &&
     sameInstance;
 }
 
@@ -275,7 +282,14 @@ export function validateCampaignEnvelope(
   if (diagnostics.length === identityDiagnosticsBefore) {
     const identity = value.identity as unknown as CampaignSaveIdentity;
     if (expectedIdentity && !identitiesEqual(identity, expectedIdentity)) {
-      add(diagnostics, 'save.identity.mismatch', 'Save identity does not match the requested run.', ['identity']);
+      if (identity.chapterRevision !== undefined && expectedIdentity.chapterRevision !== undefined &&
+        identity.chapterRevision !== expectedIdentity.chapterRevision) {
+        add(diagnostics, 'save.identity.chapter-revision-mismatch',
+          'Save chapter revision does not match the current chapter.', ['identity', 'chapterRevision'],
+          identity.chapterId);
+      } else {
+        add(diagnostics, 'save.identity.mismatch', 'Save identity does not match the requested run.', ['identity']);
+      }
     }
     validateNarrativeSnapshot(value.narrative, identity, diagnostics);
   }

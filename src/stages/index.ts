@@ -51,6 +51,7 @@ export type {
   CampaignNodeKind,
   CampaignSlotId,
   ChapterId,
+  ChapterDependency,
   ChapterManifest,
   DialogueId,
   MissionId,
@@ -68,6 +69,9 @@ export type {
   RegionTemplateId,
   StageAnchor,
   StageCondition,
+  StageCapabilityCategory,
+  StageCapabilityRequirement,
+  StageCapabilityRequirementKind,
   StageDiagnostic,
   StageExitDefinition,
   StageFlag,
@@ -79,12 +83,16 @@ export type {
   StageLoadResult,
   StageManifest,
   StageModule,
+  StageRuntimeCapability,
+  StageRuntimeCapabilityProfile,
+  StageRuntimeCapabilityStatus,
   StageResumeState,
   LoadedStage,
 } from './contracts';
 export { StageRegistry, StageRegistryError } from './runtime/StageRegistry';
 export type { StageRegistryErrorCode } from './runtime/StageRegistry';
 export { StageValidator } from './runtime/StageValidator';
+export { DEFAULT_STAGE_RUNTIME_CAPABILITIES } from './runtime/StageRuntimeCapabilities';
 export { CampaignGraphValidator } from './runtime/CampaignGraphValidator';
 export { CampaignGraphGenerator } from './runtime/CampaignGraphGenerator';
 export { PhysicalExitResolver } from './runtime/PhysicalExitResolver';
@@ -97,11 +105,14 @@ export type { StageLoaderOptions } from './runtime/StageLoader';
 export { registerCampaignChapters } from './chapters/registerCampaignChapters';
 export {
   CAMPAIGN_CHAPTER_CATALOG,
+  CampaignChapterCatalogError,
   applyCampaignRegionBindings,
   campaignRegionBindings,
+  validateCampaignChapterCatalog,
 } from './chapters/CampaignChapterCatalog';
 export type {
   CampaignChapterEntry,
+  CampaignChapterCatalogDiagnostic,
   CampaignRegionBinding,
 } from './chapters/CampaignChapterCatalog';
 export {

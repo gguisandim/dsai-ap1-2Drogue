@@ -1,14 +1,32 @@
 import { GENERATION_PRESETS } from '../../procedural';
 import type {
   ChapterManifest,
+  StageCapabilityCategory,
+  StageCapabilityRequirement,
   StageAnchor,
+  StageCondition,
   StageDiagnostic,
   StageId,
   StageModule,
+  StageRuntimeCapabilityProfile,
 } from '../contracts';
+import {
+  DEFAULT_STAGE_RUNTIME_CAPABILITIES,
+  enemyCapabilityId,
+  itemCapabilityId,
+  tileCapabilityId,
+} from './StageRuntimeCapabilities';
 
 const STABLE_ID = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 const PRESET_IDS = new Set<string>(GENERATION_PRESETS.map(preset => preset.id));
+const CAPABILITY_CATEGORIES = new Set<StageCapabilityCategory>([
+  'tile', 'theme', 'biome', 'enemy', 'item', 'audio', 'lighting',
+  'effect', 'npc', 'interaction', 'narrative', 'navigation',
+]);
+const CONDITION_TYPES = new Set([
+  'flag.equals', 'mission.status', 'progression.unlocked', 'all', 'any', 'not',
+]);
+const MISSION_STATUSES = new Set(['locked', 'available', 'active', 'completed', 'failed']);
 
 function isStableId(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0 && value === value.trim() && STABLE_ID.test(value);
@@ -60,6 +78,14 @@ function sortDiagnostics(diagnostics: StageDiagnostic[]): readonly StageDiagnost
 }
 
 export class StageValidator {
+  private readonly runtimeCapabilities: ReadonlyMap<string, StageRuntimeCapabilityProfile['capabilities'][number]>;
+
+  public constructor(
+    capabilityProfile: StageRuntimeCapabilityProfile = DEFAULT_STAGE_RUNTIME_CAPABILITIES,
+  ) {
+    this.runtimeCapabilities = new Map(capabilityProfile.capabilities.map(capability => [capability.id, capability]));
+  }
+
   public validateModule(module: StageModule): readonly StageDiagnostic[] {
     const diagnostics: StageDiagnostic[] = [];
     this.validateStageModule(module, diagnostics);
@@ -101,8 +127,8 @@ export class StageValidator {
       } else {
         chapterById.set(chapter.id, chapter);
       }
-      this.validateChapter(chapter, moduleById, diagnostics);
     });
+    chapters.forEach(chapter => this.validateChapter(chapter, chapterById, moduleById, diagnostics));
 
     for (const module of moduleById.values()) {
       if (!chapterById.has(module.manifest.chapterId)) {
@@ -125,6 +151,21 @@ export class StageValidator {
             stageId: module.manifest.id,
             referenceId: exit.targetStageId,
           });
+        } else if (exit.targetStageId !== 'campaign.complete') {
+          const target = moduleById.get(exit.targetStageId);
+          if (target && target.manifest.chapterId !== module.manifest.chapterId) {
+            const sourceChapter = chapterById.get(module.manifest.chapterId);
+            const dependency = sourceChapter?.dependencies?.find(item =>
+              item.chapterId === target.manifest.chapterId && !item.optional);
+            if (!dependency) diagnostics.push({
+              code: 'stage.exit.chapter-dependency-missing',
+              severity: 'error',
+              message: `Cross-chapter exit requires an explicit dependency on ${target.manifest.chapterId}.`,
+              path: ['stages', module.manifest.id, 'manifest', 'exits', exitIndex, 'targetStageId'],
+              stageId: module.manifest.id,
+              referenceId: target.manifest.chapterId,
+            });
+          }
         }
       });
     }
@@ -201,6 +242,8 @@ export class StageValidator {
       });
     }
 
+    this.validateCapabilities(manifest.capabilities, ['manifest', 'capabilities'], stageId, diagnostics);
+
     if (manifest.layout.kind === 'authored') {
       if (!module.authoredLevel) {
         diagnostics.push({
@@ -211,6 +254,7 @@ export class StageValidator {
           stageId,
         });
       }
+      if (module.authoredLevel) this.validateAuthoredCapabilities(module, diagnostics);
     } else if (module.authoredLevel) {
       diagnostics.push({
         code: 'stage.layout.authored-level-unexpected',
@@ -273,6 +317,8 @@ export class StageValidator {
     }
 
     const exitIds = new Set<string>();
+    const flags = new Set(Object.keys(module.narrative?.flags ?? {}));
+    const missions = new Set((module.missions ?? []).map(mission => mission.id));
     manifest.exits.forEach((exit, index) => {
       if (!isStableId(exit.id)) {
         diagnostics.push({
@@ -314,11 +360,277 @@ export class StageValidator {
           referenceId: exit.targetStageId,
         });
       }
+      if (exit.condition !== undefined) this.validateCondition(
+        exit.condition,
+        flags,
+        missions,
+        diagnostics,
+        ['manifest', 'exits', index, 'condition'],
+        stageId,
+        exit.id,
+      );
+    });
+
+    this.validateLocalConditionReferences(module, flags, missions, diagnostics);
+    if (manifest.entryDialogueId && !(module.dialogues ?? []).some(item => item.id === manifest.entryDialogueId)) {
+      diagnostics.push({
+        code: 'stage.entry-dialogue.missing', severity: 'error',
+        message: 'Stage entryDialogueId is not declared by the module.',
+        path: ['manifest', 'entryDialogueId'], stageId, referenceId: manifest.entryDialogueId,
+      });
+    }
+    if (manifest.completionMissionId && !missions.has(manifest.completionMissionId)) {
+      diagnostics.push({
+        code: 'stage.completion-mission.missing', severity: 'error',
+        message: 'Stage completionMissionId is not declared by the module.',
+        path: ['manifest', 'completionMissionId'], stageId, referenceId: manifest.completionMissionId,
+      });
+    }
+  }
+
+  private validateCapabilities(
+    requirements: readonly StageCapabilityRequirement[] | undefined,
+    path: readonly (string | number)[],
+    stageId: StageId | undefined,
+    diagnostics: StageDiagnostic[],
+  ): void {
+    if (requirements === undefined) return;
+    if (!Array.isArray(requirements)) {
+      diagnostics.push({
+        code: 'capability.requirements.invalid', severity: 'error',
+        message: 'Capabilities must be an array.', path, ...(stageId ? { stageId } : {}),
+      });
+      return;
+    }
+    const seen = new Set<string>();
+    requirements.forEach((requirement, index) => {
+      const itemPath = [...path, index];
+      if (!requirement || typeof requirement !== 'object') {
+        diagnostics.push({
+          code: 'capability.requirement.invalid', severity: 'error',
+          message: 'Capability requirement must be an object.', path: itemPath,
+          ...(stageId ? { stageId } : {}),
+        });
+        return;
+      }
+      const id = (requirement as { id?: unknown }).id;
+      const category = (requirement as { category?: unknown }).category;
+      const minimumVersion = (requirement as { minimumVersion?: unknown }).minimumVersion;
+      const kind = (requirement as { requirement?: unknown }).requirement;
+      if (!isStableId(id)) diagnostics.push({
+        code: 'capability.id.invalid', severity: 'error', message: 'Capability id must be stable.',
+        path: [...itemPath, 'id'], ...(stageId ? { stageId } : {}),
+      });
+      if (!CAPABILITY_CATEGORIES.has(category as StageCapabilityCategory)) diagnostics.push({
+        code: 'capability.category.unknown', severity: 'error', message: 'Capability category is unknown.',
+        path: [...itemPath, 'category'], ...(stageId ? { stageId } : {}), referenceId: String(category),
+      });
+      if (!isPositiveRevision(minimumVersion)) diagnostics.push({
+        code: 'capability.version.invalid', severity: 'error', message: 'Capability minimumVersion must be positive.',
+        path: [...itemPath, 'minimumVersion'], ...(stageId ? { stageId } : {}),
+      });
+      if (kind !== 'required' && kind !== 'optional') diagnostics.push({
+        code: 'capability.requirement-kind.invalid', severity: 'error',
+        message: 'Capability requirement must be required or optional.',
+        path: [...itemPath, 'requirement'], ...(stageId ? { stageId } : {}),
+      });
+      if (!isStableId(id)) return;
+      if (seen.has(id)) diagnostics.push({
+        code: 'capability.id.duplicate', severity: 'error', message: `Capability is declared twice: ${id}.`,
+        path: [...itemPath, 'id'], ...(stageId ? { stageId } : {}), referenceId: id,
+      });
+      seen.add(id);
+      const runtime = this.runtimeCapabilities.get(id);
+      if (!runtime) {
+        diagnostics.push({
+          code: 'capability.unknown', severity: 'error', message: `Runtime does not recognize capability ${id}.`,
+          path: itemPath, ...(stageId ? { stageId } : {}), referenceId: id,
+        });
+        return;
+      }
+      if (runtime.category !== category) diagnostics.push({
+        code: 'capability.category.mismatch', severity: 'error',
+        message: `Capability ${id} belongs to ${runtime.category}, not ${String(category)}.`,
+        path: [...itemPath, 'category'], ...(stageId ? { stageId } : {}), referenceId: id,
+      });
+      if (!isPositiveRevision(minimumVersion) || (kind !== 'required' && kind !== 'optional')) return;
+      if (runtime.status !== 'supported') diagnostics.push({
+        code: 'capability.unavailable', severity: kind === 'optional' ? 'warning' : 'error',
+        message: `Capability ${id} is planned but not implemented.`, path: itemPath,
+        ...(stageId ? { stageId } : {}), referenceId: id,
+      });
+      else if (runtime.version < minimumVersion) diagnostics.push({
+        code: 'capability.version.unsupported', severity: kind === 'optional' ? 'warning' : 'error',
+        message: `Capability ${id} supports version ${runtime.version}, below ${minimumVersion}.`,
+        path: [...itemPath, 'minimumVersion'], ...(stageId ? { stageId } : {}), referenceId: id,
+      });
+    });
+  }
+
+  private validateAuthoredCapabilities(module: StageModule, diagnostics: StageDiagnostic[]): void {
+    const level = module.authoredLevel!;
+    const stageId = module.manifest.id;
+    level.tileMap?.forEach((row, y) => row.forEach((tile, x) => {
+      const id = tileCapabilityId(tile);
+      if (!id || this.runtimeCapabilities.get(id)?.status !== 'supported') diagnostics.push({
+        code: 'stage.content.tile.unsupported', severity: 'error',
+        message: `Authored tile is not supported by the runtime: ${tile}.`,
+        path: ['authoredLevel', 'tileMap', y, x], stageId, referenceId: String(tile),
+      });
+    }));
+    const enemyGroups = [
+      { enemies: level.enemies ?? [], path: ['authoredLevel', 'enemies'] as const },
+      { enemies: level.ambush ?? [], path: ['authoredLevel', 'ambush'] as const },
+      ...(level.waves ?? []).map((wave, index) => ({
+        enemies: wave.enemies ?? [], path: ['authoredLevel', 'waves', index, 'enemies'] as const,
+      })),
+    ];
+    enemyGroups.forEach(group => group.enemies.forEach((enemy, index) => {
+      const id = enemyCapabilityId(enemy.type);
+      if (this.runtimeCapabilities.get(id)?.status !== 'supported') diagnostics.push({
+        code: 'stage.content.enemy.unsupported', severity: 'error',
+        message: `Enemy archetype has no explicit runtime implementation: ${enemy.type}.`,
+        path: [...group.path, index, 'type'], stageId, referenceId: enemy.type,
+      });
+    }));
+    (level.items ?? []).forEach((item, index) => {
+      const id = itemCapabilityId(item.type);
+      if (this.runtimeCapabilities.get(id)?.status !== 'supported') diagnostics.push({
+        code: 'stage.content.item.unsupported', severity: 'error',
+        message: `Item type has no explicit runtime implementation: ${item.type}.`,
+        path: ['authoredLevel', 'items', index, 'type'], stageId, referenceId: item.type,
+      });
+    });
+  }
+
+  private validateCondition(
+    condition: unknown,
+    flags: ReadonlySet<string>,
+    missions: ReadonlySet<string>,
+    diagnostics: StageDiagnostic[],
+    path: readonly (string | number)[],
+    stageId: StageId,
+    ownerId?: string,
+    depth = 0,
+  ): void {
+    const add = (code: string, message: string, referenceId?: string, suffix: readonly (string | number)[] = []): void => {
+      diagnostics.push({ code, severity: 'error', message, path: [...path, ...suffix], stageId,
+        ...(referenceId ? { referenceId } : ownerId ? { referenceId: ownerId } : {}) });
+    };
+    if (depth > 32) {
+      add('stage.condition.depth-exceeded', 'Condition nesting exceeds 32 levels.');
+      return;
+    }
+    if (!condition || typeof condition !== 'object' || Array.isArray(condition)) {
+      add('stage.condition.invalid', 'Condition must be a discriminated object.');
+      return;
+    }
+    const value = condition as Record<string, unknown>;
+    if (typeof value.type !== 'string' || !CONDITION_TYPES.has(value.type)) {
+      add('stage.condition.unknown', 'Condition type is unknown.', String(value.type), ['type']);
+      return;
+    }
+    if (value.type === 'flag.equals') {
+      if (!isStableId(value.flag) || !['boolean', 'number', 'string'].includes(typeof value.value)) {
+        add('stage.condition.flag.invalid', 'Flag condition requires a stable flag and scalar value.', String(value.flag));
+      } else if (!flags.has(value.flag)) {
+        add('stage.condition.flag.missing', 'Condition references an undeclared stage flag.', value.flag, ['flag']);
+      }
+    } else if (value.type === 'mission.status') {
+      if (!isStableId(value.missionId) || !MISSION_STATUSES.has(String(value.status))) {
+        add('stage.condition.mission.invalid', 'Mission condition is invalid.', String(value.missionId));
+      } else if (!missions.has(value.missionId)) {
+        add('stage.condition.mission.missing', 'Condition references an undeclared mission.', value.missionId, ['missionId']);
+      }
+    } else if (value.type === 'progression.unlocked') {
+      if (!isStableId(value.contentId)) add(
+        'stage.condition.content-id.invalid', 'Progression condition requires a stable contentId.',
+        String(value.contentId), ['contentId'],
+      );
+    } else if (value.type === 'all' || value.type === 'any') {
+      if (!Array.isArray(value.conditions) || value.conditions.length === 0) {
+        add('stage.condition.composite.empty', 'Composite condition requires at least one child.', ownerId, ['conditions']);
+      } else value.conditions.forEach((child, index) => this.validateCondition(
+        child, flags, missions, diagnostics, [...path, 'conditions', index], stageId, ownerId, depth + 1,
+      ));
+    } else if (value.type === 'not') {
+      this.validateCondition(value.condition, flags, missions, diagnostics, [...path, 'condition'], stageId, ownerId, depth + 1);
+    }
+  }
+
+  private validateLocalConditionReferences(
+    module: StageModule,
+    flags: ReadonlySet<string>,
+    missions: ReadonlySet<string>,
+    diagnostics: StageDiagnostic[],
+  ): void {
+    const stageId = module.manifest.id;
+    (module.npcs ?? []).forEach((npc, index) => {
+      if (npc.condition) this.validateCondition(npc.condition, flags, missions, diagnostics,
+        ['npcs', index, 'condition'], stageId, npc.id);
+    });
+    (module.dialogues ?? []).forEach((dialogue, dialogueIndex) => dialogue.nodes.forEach((node, nodeIndex) =>
+      (node.choices ?? []).forEach((choice, choiceIndex) => {
+        if (choice.condition) this.validateCondition(choice.condition, flags, missions, diagnostics,
+          ['dialogues', dialogueIndex, 'nodes', nodeIndex, 'choices', choiceIndex, 'condition'], stageId, choice.id);
+      })));
+    (module.events ?? []).forEach((event, index) => {
+      if (event.condition) this.validateCondition(event.condition, flags, missions, diagnostics,
+        ['events', index, 'condition'], stageId, event.id);
+    });
+  }
+
+  private validateDependencies(
+    chapter: ChapterManifest,
+    chapterById: ReadonlyMap<string, ChapterManifest>,
+    diagnostics: StageDiagnostic[],
+  ): void {
+    if (chapter.dependencies === undefined) return;
+    if (!Array.isArray(chapter.dependencies)) {
+      diagnostics.push({ code: 'chapter.dependencies.invalid', severity: 'error',
+        message: 'Chapter dependencies must be an array.', path: ['chapters', chapter.id, 'dependencies'],
+        referenceId: chapter.id });
+      return;
+    }
+    const seen = new Set<string>();
+    chapter.dependencies.forEach((dependency, index) => {
+      const path = ['chapters', chapter.id, 'dependencies', index] as const;
+      if (!isStableId(dependency.chapterId)) diagnostics.push({
+        code: 'chapter.dependency.id.invalid', severity: 'error', message: 'Dependency chapterId must be stable.',
+        path: [...path, 'chapterId'], referenceId: String(dependency.chapterId),
+      });
+      if (!isPositiveRevision(dependency.minimumRevision)) diagnostics.push({
+        code: 'chapter.dependency.revision.invalid', severity: 'error',
+        message: 'Dependency minimumRevision must be positive.', path: [...path, 'minimumRevision'],
+        referenceId: dependency.chapterId,
+      });
+      if (seen.has(dependency.chapterId)) diagnostics.push({
+        code: 'chapter.dependency.duplicate', severity: 'error', message: 'Chapter dependency is duplicated.',
+        path: [...path, 'chapterId'], referenceId: dependency.chapterId,
+      });
+      seen.add(dependency.chapterId);
+      if (dependency.chapterId === chapter.id) diagnostics.push({
+        code: 'chapter.dependency.self', severity: 'error', message: 'Chapter cannot depend on itself.',
+        path: [...path, 'chapterId'], referenceId: dependency.chapterId,
+      });
+      const target = chapterById.get(dependency.chapterId);
+      if (!target && !dependency.optional) diagnostics.push({
+        code: 'chapter.dependency.missing', severity: 'error', message: 'Required chapter dependency is not registered.',
+        path: [...path, 'chapterId'], referenceId: dependency.chapterId,
+      });
+      else if (target && isPositiveRevision(dependency.minimumRevision) && target.revision < dependency.minimumRevision) {
+        diagnostics.push({
+          code: 'chapter.dependency.revision.unsupported', severity: dependency.optional ? 'warning' : 'error',
+          message: `Chapter ${dependency.chapterId} revision ${target.revision} is below ${dependency.minimumRevision}.`,
+          path: [...path, 'minimumRevision'], referenceId: dependency.chapterId,
+        });
+      }
     });
   }
 
   private validateChapter(
     chapter: ChapterManifest,
+    chapterById: ReadonlyMap<string, ChapterManifest>,
     moduleById: ReadonlyMap<StageId, StageModule>,
     diagnostics: StageDiagnostic[],
   ): void {
@@ -359,6 +671,8 @@ export class StageValidator {
         referenceId: chapter.id,
       });
     }
+    this.validateCapabilities(chapter.capabilities, ['chapters', chapter.id, 'capabilities'], undefined, diagnostics);
+    this.validateDependencies(chapter, chapterById, diagnostics);
     if (!Array.isArray(chapter.stageIds) || chapter.stageIds.length === 0) {
       diagnostics.push({
         code: 'chapter.stage.required',

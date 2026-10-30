@@ -1,4 +1,5 @@
 import type { GeneratorOptions, PresetId } from '../../procedural';
+import type { ChapterDependency, StageCapabilityRequirement } from './StageCapabilities';
 
 export type ChapterId = string;
 export type StageId = string;
@@ -31,6 +32,8 @@ export interface ChapterManifest {
   readonly title: string;
   readonly stageIds: readonly StageId[];
   readonly entryStageId: StageId;
+  readonly dependencies?: readonly ChapterDependency[];
+  readonly capabilities?: readonly StageCapabilityRequirement[];
   readonly tags?: readonly string[];
 }
 
@@ -63,5 +66,6 @@ export interface StageManifest {
   readonly exits: readonly StageExitDefinition[];
   readonly entryDialogueId?: DialogueId;
   readonly completionMissionId?: MissionId;
+  readonly capabilities?: readonly StageCapabilityRequirement[];
   readonly tags?: readonly string[];
 }

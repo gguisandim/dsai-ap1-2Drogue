@@ -13,6 +13,8 @@ export interface CampaignSaveIdentity extends NarrativeIdentityScope {
   readonly campaignId: string;
   readonly runSeed: string;
   readonly chapterId: ChapterId;
+  /** Optional only for compatibility with campaign-save v1 bytes written before Etapa 9.5. */
+  readonly chapterRevision?: number;
   readonly stageId: StageId;
 }
 

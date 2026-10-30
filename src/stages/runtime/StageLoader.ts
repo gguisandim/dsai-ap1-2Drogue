@@ -131,6 +131,14 @@ export class StageLoader {
       return this.failure('invalid-manifest', request.stageId, manifestDiagnostics);
     }
 
+    const chapterDiagnostics = this.registry.validate().filter(diagnostic =>
+      diagnostic.severity === 'error' && diagnostic.path[0] === 'chapters' &&
+      diagnostic.path[1] === module.manifest.chapterId &&
+      (diagnostic.code.startsWith('capability.') || diagnostic.code.startsWith('chapter.dependency.')));
+    if (hasErrors(chapterDiagnostics)) {
+      return this.failure('invalid-manifest', request.stageId, chapterDiagnostics);
+    }
+
     const referenceDiagnostics = this.validateReferences(module);
     if (hasErrors(referenceDiagnostics)) {
       return this.failure('invalid-reference', request.stageId, referenceDiagnostics);
@@ -224,6 +232,23 @@ export class StageLoader {
           stageId: manifest.id,
           referenceId: exit.targetStageId,
         });
+      } else if (exit.targetStageId !== 'campaign.complete') {
+        const target = this.registry.get(exit.targetStageId);
+        if (target && target.manifest.chapterId !== manifest.chapterId) {
+          const targetChapter = this.registry.getChapter(target.manifest.chapterId);
+          const dependency = chapter?.dependencies?.find(item =>
+            item.chapterId === target.manifest.chapterId && !item.optional);
+          if (!dependency || !targetChapter || targetChapter.revision < dependency.minimumRevision) {
+            diagnostics.push({
+              code: 'stage.load.chapter-dependency-incompatible',
+              severity: 'error',
+              message: `Cross-chapter target is not covered by a compatible dependency: ${target.manifest.chapterId}`,
+              path: ['manifest', 'exits', index, 'targetStageId'],
+              stageId: manifest.id,
+              referenceId: target.manifest.chapterId,
+            });
+          }
+        }
       }
     });
     return freezeDiagnostics(diagnostics);
@@ -325,6 +350,26 @@ export class StageLoader {
         path: ['request', 'resume', 'manifestRevision'],
         stageId: manifest.id,
       });
+    }
+
+    if (resume.chapterRevision !== undefined) {
+      if (!Number.isInteger(resume.chapterRevision) || (resume.chapterRevision as number) < 1) {
+        add(
+          'stage.load.resume-chapter-revision-invalid',
+          'Resume chapterRevision must be a positive integer when present.',
+          ['request', 'resume', 'chapterRevision'],
+        );
+      } else {
+        const currentChapter = this.registry.getChapter(manifest.chapterId);
+        if (currentChapter && resume.chapterRevision !== currentChapter.revision) diagnostics.push({
+          code: 'stage.load.resume-chapter-revision-mismatch',
+          severity: 'error',
+          message: `Resume chapter revision ${resume.chapterRevision} does not match ${currentChapter.revision}.`,
+          path: ['request', 'resume', 'chapterRevision'],
+          stageId: manifest.id,
+          referenceId: manifest.chapterId,
+        });
+      }
     }
 
     const hasRunId = resume.runId !== undefined;

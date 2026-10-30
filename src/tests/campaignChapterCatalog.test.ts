@@ -53,9 +53,18 @@ const TEST_STAGE: StageModule = {
     title: 'Catalog test',
     summary: 'Catalog test stage.',
     layout: { kind: 'authored' },
-    exits: [],
+    exits: [{ id: 'test.exit', anchor: { kind: 'map-exit' }, targetStageId: 'campaign.complete' }],
   },
   authoredLevel: TEST_LEVEL,
+  dialogues: [{
+    id: 'dialogue.test.mangues',
+    startNodeId: 'start',
+    nodes: [{ id: 'start', speakerId: 'narrator', text: 'Mangues.' }],
+  }],
+  events: [{
+    id: 'event.test.mangues', once: true, when: 'stage.entered',
+    commands: [{ type: 'flag.set', flag: 'flag.test.mangues', value: true }],
+  }],
 };
 
 function registry(): StageRegistry {
