@@ -12,3 +12,4 @@ export * from './UmbraCampaignSkeleton';
 export * from './CampaignMacroRouteBinder';
 export * from './UmbraCampaignRouteSlice';
 export * from './GameMacroCampaignAdapter';
+export * from './CampaignNarrativeAccessBinder';

@@ -6,6 +6,7 @@ import type {
   CampaignPreparedTransition,
   CampaignRewardClaim,
   CampaignRewardRecord,
+  CampaignRouteAccess,
   CampaignRouterDependencies,
   CampaignRouterFailure,
   CampaignRunSaveFailure,
@@ -162,6 +163,10 @@ function activateContext(
  */
 export class CampaignMacroRouteBinder {
   private pending?: PendingNavigation;
+  private access: CampaignRouteAccess = Object.freeze({
+    eligibleEdgeIds: Object.freeze([]),
+    unlockedStageExitIds: Object.freeze([]),
+  });
 
   private constructor(
     private readonly definition: CampaignMacroDefinition,
@@ -207,6 +212,13 @@ export class CampaignMacroRouteBinder {
 
   public state(): CampaignRunState {
     return this.stateValue;
+  }
+
+  public setAccess(access: CampaignRouteAccess): void {
+    this.access = Object.freeze({
+      eligibleEdgeIds: Object.freeze([...access.eligibleEdgeIds]),
+      unlockedStageExitIds: Object.freeze([...access.unlockedStageExitIds]),
+    });
   }
 
   public rewards(): readonly CampaignRewardRecord[] {
@@ -423,7 +435,7 @@ export class CampaignMacroRouteBinder {
       loader: this.dependencies.loader,
       resolver: this.dependencies.resolver,
       binder: this.dependencies.binder,
-    });
+    }, this.access);
   }
 
   private journalRouter(): CampaignRouter {
@@ -432,7 +444,7 @@ export class CampaignMacroRouteBinder {
       resolver: this.dependencies.resolver,
       binder: this.dependencies.binder,
       ...(this.dependencies.saves ? { saves: this.dependencies.saves } : {}),
-    });
+    }, this.access);
   }
 
   private failure<T = never>(

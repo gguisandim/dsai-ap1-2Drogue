@@ -186,6 +186,10 @@ export class GameNarrativeSession {
     return this.director.pendingRewardCommands();
   }
 
+  public conditionSatisfied(condition: import('../../stages').StageCondition): boolean {
+    return this.director.conditionSatisfied(condition);
+  }
+
   public stageCompletions() {
     return this.director.stageCompletions();
   }

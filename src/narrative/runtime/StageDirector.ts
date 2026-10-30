@@ -14,6 +14,7 @@ import type {
   NarrativeResult,
   NarrativeStateSnapshot,
   StageCompletionRecord,
+  StageCondition,
   StageCommand,
 } from '../contracts';
 import { cloneFrozen, failure, isStableId, success } from './data';
@@ -22,6 +23,7 @@ import { NarrativeEventProcessor } from './NarrativeEventProcessor';
 import { NarrativeRegistry } from './NarrativeRegistry';
 import { NarrativeState } from './NarrativeState';
 import { QuestEngine } from './QuestEngine';
+import { evaluateCondition } from './conditions';
 
 export class StageDirector {
   public readonly chapterId: string;
@@ -156,6 +158,11 @@ export class StageDirector {
 
   public snapshot(): NarrativeStateSnapshot {
     return this.state.snapshot();
+  }
+
+  /** Public condition query for application adapters such as campaign navigation. */
+  public conditionSatisfied(condition: StageCondition): boolean {
+    return evaluateCondition(condition, this.state.snapshot(), this.progression);
   }
 
   public pendingRewardCommands(): readonly StageCommand[] {

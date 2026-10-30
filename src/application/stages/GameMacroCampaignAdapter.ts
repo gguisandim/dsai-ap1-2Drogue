@@ -5,6 +5,7 @@ import type {
   CampaignPreparedTransition,
   CampaignRewardClaim,
   CampaignRewardRecord,
+  CampaignRouteAccess,
   CampaignRunState,
 } from './CampaignNavigation';
 import type {
@@ -26,6 +27,7 @@ export type GameCampaignNavigationResult<T> =
 /** Minimum navigation surface consumed by GameScene for either campaign mode. */
 export interface GameCampaignNavigationPort {
   state(): CampaignRunState;
+  setAccess(access: CampaignRouteAccess): void;
   inspect(): GameCampaignNavigationResult<CampaignNavigationView>;
   prepare(physicalExitId: string): GameCampaignNavigationResult<CampaignPreparedTransition>;
   cancel(preparationId: string): boolean;
@@ -63,6 +65,10 @@ export class GameMacroCampaignAdapter implements GameCampaignNavigationPort {
 
   public state(): CampaignRunState {
     return this.binder.state();
+  }
+
+  public setAccess(access: CampaignRouteAccess): void {
+    this.binder.setAccess(access);
   }
 
   public campaignId(): string {

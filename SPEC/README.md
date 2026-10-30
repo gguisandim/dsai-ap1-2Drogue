@@ -48,3 +48,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-29 | [Execução de comandos narrativos e escolhas — Etapa 9.4A](./2026-10-29-etapa-9-4a-comandos-narrativos.md) |
 | 2026-10-29 | [Integração dos eventos de gameplay com a narrativa — Etapa 9.4B](./2026-10-29-etapa-9-4b-integracao-eventos-gameplay-narrativa.md) |
 | 2026-10-29 | [Liquidação de recompensas e conclusão de fases — Etapa 9.4C](./2026-10-29-etapa-9-4c-recompensas-conclusao-fases.md) |
+| 2026-10-30 | [Homologação integrada do ciclo narrativo — Etapa 9.4D](./2026-10-30-etapa-9-4d-homologacao-ciclo-narrativo.md) |

@@ -96,6 +96,26 @@ export class BootScene extends Phaser.Scene {
       });
     });
     SoundManager.setEnabled(loadSettings().sound);
+    const developmentHost = globalThis.location?.hostname === '127.0.0.1' ||
+      globalThis.location?.hostname === 'localhost';
+    const narrativeCycleLab = developmentHost &&
+      new URLSearchParams(globalThis.location?.search ?? '').get('narrativeCycleLab') === '1';
+    if (narrativeCycleLab) {
+      void import('../devtools/narrative-cycle').then(({ createNarrativeCycleScenario }) => {
+        const scenario = createNarrativeCycleScenario();
+        (globalThis as typeof globalThis & {
+          __UMBRA_NARRATIVE_CYCLE__?: typeof scenario;
+        }).__UMBRA_NARRATIVE_CYCLE__ = scenario;
+        this.scene.start('GameScene', {
+          campaignRuntime: scenario.runtime,
+          skipControls: true,
+        });
+      }).catch(error => {
+        console.error('Narrative cycle lab failed to start.', error);
+        this.scene.start('MenuScene');
+      });
+      return;
+    }
     this.scene.start('MenuScene');
   }
 }

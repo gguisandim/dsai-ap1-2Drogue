@@ -28,6 +28,7 @@ import { ENEMY_PRESENTATIONS } from '../data/EnemyPresentation';
 import {
   BRANCHING_CAMPAIGN_DEFAULT_RUN_ID,
   BRANCHING_CAMPAIGN_DEFAULT_SEED,
+  CampaignNarrativeAccessBinder,
   GameMacroCampaignAdapter,
   GameNarrativeSession,
   GameStageCompositionRoot,
@@ -51,7 +52,18 @@ import {
 } from '../application/interaction/WorldInteraction';
 import { NarrativeRewardSettlementService } from '../application/rewards';
 
-interface GameSceneInitData {
+export interface GameSceneCampaignRuntime {
+  readonly campaignId: string;
+  readonly runId: string;
+  readonly runSeed: string | number;
+  readonly composition: GameStageCompositionRoot;
+  readonly router: GameCampaignNavigationPort;
+  readonly navigation: CampaignNavigationView;
+  readonly progression: ProgressionService;
+  readonly onNarrativeSession?: (session: GameNarrativeSession) => void;
+}
+
+export interface GameSceneInitData {
   skipControls?: boolean;
   proceduralSeed?: string | number;
   proceduralPresets?: PresetId[];
@@ -68,6 +80,7 @@ interface GameSceneInitData {
   macroRunId?: string;
   macroRunSeed?: string | number;
   macroRecoveryAttempt?: number;
+  campaignRuntime?: GameSceneCampaignRuntime;
 }
 
 interface PendingExitTile {
@@ -176,6 +189,8 @@ export class GameScene extends Phaser.Scene {
   private campaignNavigation?: CampaignNavigationView;
   private campaignPersistenceUncertain = false;
   private campaignRecoveryAttempt = 0;
+  private injectedCampaignRuntime?: GameSceneCampaignRuntime;
+  private readonly campaignAccessBinder = new CampaignNarrativeAccessBinder();
   private macroLoadedStage?: LoadedStage;
   private stageNarrativeStage?: LoadedStage;
   private interactionPoints: WorldInteractionPoint[] = [];
@@ -200,11 +215,13 @@ export class GameScene extends Phaser.Scene {
     this.modularRunSeed = data?.modularRunSeed ?? 'legacy.verse.default-seed';
     this.modularPersistenceEnabled = Boolean(data?.modularRunId?.trim());
     const query = typeof window === 'undefined' ? undefined : new URLSearchParams(window.location.search);
-    this.macroCampaign = data?.macroCampaign === true || query?.get('macroCampaign') === '1';
+    this.injectedCampaignRuntime = data?.campaignRuntime;
+    this.macroCampaign = !this.injectedCampaignRuntime &&
+      (data?.macroCampaign === true || query?.get('macroCampaign') === '1');
     this.macroRunId = data?.macroRunId?.trim() ||
       query?.get('macroRun')?.trim() || UMBRA_ROUTE_SLICE_RUN_ID;
     this.macroRunSeed = data?.macroRunSeed ?? query?.get('macroSeed') ?? UMBRA_ROUTE_SLICE_SEED;
-    this.branchingCampaign = !this.macroCampaign &&
+    this.branchingCampaign = !this.injectedCampaignRuntime && !this.macroCampaign &&
       (data?.branchingCampaign === true || query?.get('branchingCampaign') === '1');
     this.branchingRunId = data?.branchingRunId?.trim() ||
       query?.get('branchingRun')?.trim() || BRANCHING_CAMPAIGN_DEFAULT_RUN_ID;
@@ -220,9 +237,12 @@ export class GameScene extends Phaser.Scene {
     this.stageSignalAdapter = undefined;
     this.macroCampaignAdapter = undefined;
     this.macroLoadedStage = undefined;
-    if (this.macroCampaign) this.configureMacroCampaign();
+    if (this.injectedCampaignRuntime) this.configureInjectedCampaign(this.injectedCampaignRuntime);
+    else if (this.macroCampaign) this.configureMacroCampaign();
     else this.configureBranchingCampaign();
-    if (!this.macroCampaign && !this.branchingCampaign) this.configureModularStage();
+    if (!this.injectedCampaignRuntime && !this.macroCampaign && !this.branchingCampaign) {
+      this.configureModularStage();
+    }
     this.startingHalos = Math.max(0, Math.floor(data?.halos ?? 5000));
     this.isTransitioning = false;
     this.levelClearedBannerShowing = false;
@@ -241,6 +261,24 @@ export class GameScene extends Phaser.Scene {
     this.dialogueOverlay = undefined;
     this.dialogueOpen = false;
     this.narrativeReady = false;
+  }
+
+  private configureInjectedCampaign(runtime: GameSceneCampaignRuntime): void {
+    this.campaignRouter = runtime.router;
+    this.campaignNavigation = runtime.navigation;
+    this.modularComposition = runtime.composition;
+    this.macroLoadedStage = runtime.navigation.loadedStage;
+    this.campaignPersistenceUncertain = false;
+    this.allLevels = [...this.allLevels];
+    let levelIndex = this.allLevels.findIndex(level => level.id === runtime.navigation.currentNode.stageId);
+    if (levelIndex < 0) {
+      levelIndex = this.allLevels.length;
+      this.allLevels.push(runtime.navigation.loadedStage.level);
+    } else {
+      this.allLevels[levelIndex] = runtime.navigation.loadedStage.level;
+    }
+    this.currentLevelIndex = levelIndex;
+    this.currentLevel = runtime.navigation.loadedStage.level;
   }
 
   private configureMacroCampaign(): void {
@@ -382,7 +420,7 @@ export class GameScene extends Phaser.Scene {
     this.buildMapFromDefinition(this.currentLevel);
     this.queueCampaignExitTiles();
     this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
-    this.progression = new ProgressionService();
+    this.progression = this.injectedCampaignRuntime?.progression ?? new ProgressionService();
     this.narrativeReady = true;
     this.initializeModularNarrative();
 
@@ -446,7 +484,7 @@ export class GameScene extends Phaser.Scene {
     // 9. HUD & Chapter Title
     this.createHUD();
     this.setupStageInteractions();
-    this.settleNarrativeRewards();
+    this.commitNarrativeConsequences();
     this.recoverPendingCampaignRewards();
     this.comboManager = new ComboManager(this, this.comboHudText, () => this.player.extendComboWindow());
     this.startCurrentStageEncounter();
@@ -515,17 +553,23 @@ export class GameScene extends Phaser.Scene {
     const loaded = this.modularLoadedStage ?? this.macroLoadedStage;
     if (!this.modularComposition || !loaded) return;
     const isMacro = !this.modularLoadedStage && this.macroLoadedStage !== undefined;
+    const campaignRuntime = this.injectedCampaignRuntime;
     const progression = this.progression.snapshot();
     const storageKey = isMacro
-      ? campaignStageNarrativeSaveKey(String(this.macroRunId), loaded.manifest.chapterId, loaded.manifest.id)
+      ? campaignStageNarrativeSaveKey(
+          campaignRuntime?.runId ?? String(this.macroRunId),
+          loaded.manifest.chapterId,
+          loaded.manifest.id,
+        )
       : undefined;
     const created = this.modularComposition.createNarrativeSession(
       loaded,
       isMacro
         ? {
-            campaignId: this.macroCampaignAdapter?.campaignId() ?? 'campaign.umbra-trail.independent-routes',
-            runId: this.macroRunId,
-            runSeed: this.macroRunSeed,
+            campaignId: campaignRuntime?.campaignId ??
+              this.macroCampaignAdapter?.campaignId() ?? 'campaign.umbra-trail.independent-routes',
+            runId: campaignRuntime?.runId ?? this.macroRunId,
+            runSeed: campaignRuntime?.runSeed ?? this.macroRunSeed,
             stageInstanceId: this.campaignNavigation?.currentNode.id,
           }
         : {
@@ -542,6 +586,7 @@ export class GameScene extends Phaser.Scene {
     this.stageNarrativeStage = loaded;
     if (!created.ok) return;
     this.modularNarrativeSession = created.session;
+    campaignRuntime?.onNarrativeSession?.(created.session);
     this.stageSignalAdapter = new StageSignalAdapter(created.session);
     this.narrativeRewardSettlement = new NarrativeRewardSettlementService(
       created.session,
@@ -570,9 +615,10 @@ export class GameScene extends Phaser.Scene {
           this.physics.world.resume();
           this.simulationBridge?.setPaused?.(false);
         },
-        onNarrativeCommitted: () => this.settleNarrativeRewards(),
+        onNarrativeCommitted: () => this.commitNarrativeConsequences(),
       },
     );
+    this.synchronizeNarrativeAccess();
   }
 
   /** Rebuilds POI markers and the interaction points for the current stage. */
@@ -702,7 +748,7 @@ export class GameScene extends Phaser.Scene {
       ReturnType<GameNarrativeSession['enterStage']> | undefined,
   ): boolean {
     if (!result) return true;
-    if (result.ok) return this.settleNarrativeRewards();
+    if (result.ok) return this.commitNarrativeConsequences();
     this.showCampaignTransitionFailure(`PROGRESSO NARRATIVO NÃO SALVO: ${result.error.code}`);
     return false;
   }
@@ -730,6 +776,27 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(1600, () => {
       if (!this.levelClearedBannerShowing) this.levelBannerText.setVisible(false);
     });
+    return true;
+  }
+
+  private commitNarrativeConsequences(): boolean {
+    if (!this.settleNarrativeRewards()) return false;
+    return this.synchronizeNarrativeAccess();
+  }
+
+  private synchronizeNarrativeAccess(): boolean {
+    if (!this.campaignRouter || !this.modularNarrativeSession) return true;
+    const synchronized = this.campaignAccessBinder.synchronize(
+      this.campaignRouter,
+      this.modularNarrativeSession,
+    );
+    if (!synchronized.ok) {
+      this.showCampaignTransitionFailure(`ACESSO NARRATIVO INDISPONÍVEL: ${synchronized.error.code}`);
+      return false;
+    }
+    this.campaignNavigation = synchronized.value;
+    this.queueCampaignExitTiles();
+    this.setupStageInteractions();
     return true;
   }
 
@@ -1404,7 +1471,9 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     const data = {
-      ...(this.macroCampaign && this.macroStageSource === 'campaign'
+      ...(this.injectedCampaignRuntime
+        ? { campaignRuntime: this.injectedCampaignRuntime }
+        : this.macroCampaign && this.macroStageSource === 'campaign'
         ? {
             macroCampaign: true,
             macroRunId: this.macroRunId,
