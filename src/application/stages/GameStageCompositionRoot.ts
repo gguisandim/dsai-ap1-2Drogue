@@ -10,6 +10,7 @@ import type {
   DialogueResult,
   DialogueSession,
   DialogueTurn,
+  NarrativeCommandExecutionResult,
   NarrativeOperationFailure,
   NarrativeProgressionView,
   NarrativeRegistryFailure,
@@ -76,6 +77,14 @@ export type GameNarrativeSessionResult =
   | { readonly ok: true; readonly persistence: 'saved' | 'skipped' }
   | { readonly ok: false; readonly error: GameNarrativeSessionFailure };
 
+export type GameNarrativeConsequenceResult =
+  | {
+      readonly ok: true;
+      readonly persistence: 'saved' | 'skipped';
+      readonly consequence: NarrativeCommandExecutionResult;
+    }
+  | { readonly ok: false; readonly error: GameNarrativeSessionFailure };
+
 export class GameNarrativeSession {
   public constructor(
     public readonly identity: CampaignSaveIdentity,
@@ -132,6 +141,33 @@ export class GameNarrativeSession {
 
   public advanceDialogue(session: DialogueSession): NarrativeResult<DialogueResult, NarrativeOperationFailure> {
     return this.director.advanceDialogue(session);
+  }
+
+  public chooseDialogue(
+    session: DialogueSession,
+    choiceId: string,
+  ): NarrativeResult<DialogueTurn, NarrativeOperationFailure> {
+    return this.director.chooseDialogue(session, choiceId);
+  }
+
+  /**
+   * Applies the turn's commands atomically and persists. On persistence failure
+   * the narrative snapshot is rolled back, so the UI never reports false success.
+   */
+  public applyDialogueTurn(turn: DialogueTurn): GameNarrativeConsequenceResult {
+    const before = this.director.snapshot();
+    const applied = this.director.executeDialogueTurn(turn);
+    if (!applied.ok) return applied;
+    const saved = this.save();
+    if (!saved.ok) {
+      this.director.state.restore(before);
+      return saved;
+    }
+    return Object.freeze({
+      ok: true as const,
+      persistence: saved.persistence,
+      consequence: applied.value,
+    });
   }
 
   public pendingRewardCommands(): readonly StageCommand[] {

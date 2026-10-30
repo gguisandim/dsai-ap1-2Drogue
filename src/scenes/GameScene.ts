@@ -117,6 +117,8 @@ export class GameScene extends Phaser.Scene {
   private keyShop?: Phaser.Input.Keyboard.Key;
   private keyMenu?: Phaser.Input.Keyboard.Key;
   private keyInteract?: Phaser.Input.Keyboard.Key;
+  private keyChoiceUp?: Phaser.Input.Keyboard.Key;
+  private keyChoiceDown?: Phaser.Input.Keyboard.Key;
 
   // HUD & UI Elements
   private hpHudText!: Phaser.GameObjects.Text;
@@ -431,6 +433,8 @@ export class GameScene extends Phaser.Scene {
       this.keyShop = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.B);
       this.keyMenu = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
       this.keyInteract = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+      this.keyChoiceUp = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
+      this.keyChoiceDown = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
     }
 
     // 9. HUD & Chapter Title
@@ -1438,8 +1442,16 @@ export class GameScene extends Phaser.Scene {
         this.dialogueOverlay.close();
         return;
       }
+      if (this.keyChoiceUp && Phaser.Input.Keyboard.JustDown(this.keyChoiceUp)) {
+        this.dialogueOverlay.moveSelection(-1);
+        return;
+      }
+      if (this.keyChoiceDown && Phaser.Input.Keyboard.JustDown(this.keyChoiceDown)) {
+        this.dialogueOverlay.moveSelection(1);
+        return;
+      }
       if (this.keyInteract && Phaser.Input.Keyboard.JustDown(this.keyInteract)) {
-        this.dialogueOverlay.advance();
+        this.dialogueOverlay.confirm();
       }
       return;
     }

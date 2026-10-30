@@ -1,6 +1,6 @@
 import type { NarrativeIdentityScope } from '../contracts';
 
-export type NarrativeScopedIdKind = 'event' | 'rule' | 'operation';
+export type NarrativeScopedIdKind = 'event' | 'rule' | 'operation' | 'command';
 
 export function narrativeScopePrefix(identity: NarrativeIdentityScope): string {
   const stageScope = `run.${identity.runId}.chapter.${identity.chapterId}.stage.${identity.stageId}.revision.${identity.manifestRevision}`;

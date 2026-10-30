@@ -2,6 +2,8 @@ import type {
   DialogueResult,
   DialogueSession,
   DialogueTurn,
+  NarrativeCommandBatch,
+  NarrativeCommandExecutionResult,
   NarrativeContent,
   NarrativeDomainEvent,
   NarrativeEventProcessingResult,
@@ -88,6 +90,67 @@ export class StageDirector {
 
   public advanceDialogue(session: DialogueSession): NarrativeResult<DialogueResult, NarrativeOperationFailure> {
     return this.dialogues.continue(session, this.state, this.progression);
+  }
+
+  public chooseDialogue(
+    session: DialogueSession,
+    choiceId: string,
+  ): NarrativeResult<DialogueTurn, NarrativeOperationFailure> {
+    // DialogueEngine keeps its public immediate-recording contract. The
+    // integrated flow resolves on a clone so the choice can be committed with
+    // the turn commands and persistence as one transaction.
+    return this.dialogues.choose(session, choiceId, this.state.clone(), this.progression);
+  }
+
+  /**
+   * Applies a dialogue turn's commands (choice first, then node onEnter) in one
+   * atomic command execution. Deduplication is per logical occurrence.
+   */
+  public executeDialogueTurn(
+    turn: DialogueTurn,
+  ): NarrativeResult<NarrativeCommandExecutionResult, NarrativeOperationFailure> {
+    const dialogueId = turn.session.dialogueId;
+    const batches: NarrativeCommandBatch[] = [];
+    const choiceCommands = turn.choiceCommands ?? [];
+    if (choiceCommands.length > 0) {
+      const origin = turn.fromChoice;
+      if (!origin) {
+        return failure({
+          code: 'invalid-command',
+          message: 'Choice commands require the originating node and choice.',
+        });
+      }
+      const key = `dialogue.${dialogueId}.choice.${origin.nodeId}.${origin.choiceId}`;
+      batches.push({ commands: choiceCommands, occurrenceKey: key, causeId: key });
+    }
+    const nodeCommands = turn.nodeCommands ?? [];
+    if (nodeCommands.length > 0) {
+      const key = `dialogue.${dialogueId}.node.${turn.node.id}`;
+      batches.push({ commands: nodeCommands, occurrenceKey: key, causeId: key });
+    }
+    const working = this.state.clone();
+    if (turn.fromChoice) {
+      working.recordChoice(dialogueId, turn.fromChoice.nodeId, turn.fromChoice.choiceId);
+    }
+    if (batches.length === 0) {
+      this.state.restore(working.snapshot());
+      return success(cloneFrozen({
+        status: 'duplicate' as const,
+        appliedCommandIds: [] as string[],
+        skippedCommandIds: [] as string[],
+        deferredCommands: [] as StageCommand[],
+        commands: [] as StageCommand[],
+        generatedSignals: [],
+        snapshot: this.state.snapshot(),
+      }));
+    }
+    const executed = this.events.executeCommands(batches, working, this.progression);
+    if (!executed.ok) return executed;
+    this.state.restore(working.snapshot());
+    return success(cloneFrozen({
+      ...executed.value,
+      snapshot: this.state.snapshot(),
+    }));
   }
 
   public snapshot(): NarrativeStateSnapshot {

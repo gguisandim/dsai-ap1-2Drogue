@@ -62,6 +62,27 @@ describe('CampaignSaveService', () => {
     expect(target.snapshot()).toEqual(source.snapshot());
   });
 
+  it('loads snapshots created before the dialogue command ledger existed', () => {
+    const identity = saveIdentity();
+    const source = stateWithScopedHistory(identity);
+    const service = new CampaignSaveService(new MemorySaveStorage());
+    const serialized = service.serialize(identity, source);
+    if (!serialized.ok) throw serialized.error;
+    const legacyEnvelope = JSON.parse(serialized.value) as Record<string, any>;
+    delete legacyEnvelope.narrative.appliedCommandIds;
+    const storage = new MemorySaveStorage({
+      [CAMPAIGN_SAVE_STORAGE_KEY]: JSON.stringify(legacyEnvelope),
+    });
+    const target = new NarrativeState({ flags: { 'test.original': true } });
+
+    const restored = new CampaignSaveService(storage).loadAndRestore(identity, target);
+    expect(restored).toMatchObject({ ok: true, value: { status: 'loaded' } });
+    expect(target.snapshot()).toMatchObject({
+      flags: source.snapshot().flags,
+      appliedCommandIds: [],
+    });
+  });
+
   it('treats an absent campaign save as a successful empty load', () => {
     expect(new CampaignSaveService(new MemorySaveStorage()).load(saveIdentity())).toEqual({
       ok: true,

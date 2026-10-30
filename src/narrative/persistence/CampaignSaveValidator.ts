@@ -185,6 +185,14 @@ export function validateNarrativeSnapshot(
     [...path, 'appliedOperationIds'],
     `${scope}.operation.`,
   );
+  if (value.appliedCommandIds !== undefined) {
+    validateUniqueStableArray(
+      value.appliedCommandIds,
+      diagnostics,
+      [...path, 'appliedCommandIds'],
+      `${scope}.command.`,
+    );
+  }
   validateUniqueStableArray(value.unlockedExitIds, diagnostics, [...path, 'unlockedExitIds']);
 
   if (!Array.isArray(value.pendingOperations)) {

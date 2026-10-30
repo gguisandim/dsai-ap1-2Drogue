@@ -15,6 +15,7 @@ export class NarrativeState {
   private processedEventIds = new Set<string>();
   private firedRuleIds = new Set<string>();
   private appliedOperationIds = new Set<string>();
+  private appliedCommandIds = new Set<string>();
   private pendingOperations = new Map<string, PendingRewardOperation>();
   private unlockedExitIds = new Set<string>();
 
@@ -43,6 +44,7 @@ export class NarrativeState {
     this.processedEventIds = new Set(snapshot.processedEventIds ?? []);
     this.firedRuleIds = new Set(snapshot.firedRuleIds ?? []);
     this.appliedOperationIds = new Set(snapshot.appliedOperationIds ?? []);
+    this.appliedCommandIds = new Set(snapshot.appliedCommandIds ?? []);
     this.pendingOperations = new Map((snapshot.pendingOperations ?? [])
       .map(operation => [operation.operationId, cloneFrozen(operation)]));
     this.unlockedExitIds = new Set(snapshot.unlockedExitIds ?? []);
@@ -108,6 +110,16 @@ export class NarrativeState {
     return fresh;
   }
 
+  public hasAppliedCommand(commandId: string): boolean {
+    return this.appliedCommandIds.has(commandId);
+  }
+
+  public markCommandApplied(commandId: string): boolean {
+    const fresh = !this.appliedCommandIds.has(commandId);
+    this.appliedCommandIds.add(commandId);
+    return fresh;
+  }
+
   public queuePendingOperation(operation: PendingRewardOperation): boolean {
     if (this.pendingOperations.has(operation.operationId)) return false;
     this.pendingOperations.set(operation.operationId, cloneFrozen(operation));
@@ -150,6 +162,7 @@ export class NarrativeState {
       processedEventIds: sorted(this.processedEventIds),
       firedRuleIds: sorted(this.firedRuleIds),
       appliedOperationIds: sorted(this.appliedOperationIds),
+      appliedCommandIds: sorted(this.appliedCommandIds),
       pendingOperations: this.getPendingOperations(),
       unlockedExitIds: sorted(this.unlockedExitIds),
     });

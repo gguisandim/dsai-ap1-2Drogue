@@ -78,6 +78,11 @@ export interface NarrativeStateSnapshot {
   readonly processedEventIds: readonly string[];
   readonly firedRuleIds: readonly string[];
   readonly appliedOperationIds: readonly string[];
+  /**
+   * Additive idempotency ledger for dialogue commands. Older saves omit it and
+   * are read as an empty list.
+   */
+  readonly appliedCommandIds?: readonly string[];
   readonly pendingOperations: readonly PendingRewardOperation[];
   readonly unlockedExitIds: readonly string[];
 }
@@ -98,7 +103,19 @@ export interface DialogueTurn {
   readonly session: DialogueSession;
   readonly node: DialogueNode;
   readonly choices: readonly DialogueChoiceView[];
+  /** Combined commands in semantic order: choice commands, then node onEnter. */
   readonly commands: readonly StageCommand[];
+  /** Commands belonging to the selected choice (empty for start/advance). */
+  readonly choiceCommands?: readonly StageCommand[];
+  /** Commands from the entered node's onEnter. */
+  readonly nodeCommands?: readonly StageCommand[];
+  /** Origin of a turn produced by a choice. */
+  readonly fromChoice?: DialogueChoiceOrigin;
+}
+
+export interface DialogueChoiceOrigin {
+  readonly nodeId: string;
+  readonly choiceId: string;
 }
 
 export interface DialogueCompletion {
@@ -119,6 +136,7 @@ export type NarrativeOperationFailureCode =
   | 'mission-not-found'
   | 'objective-not-found'
   | 'invalid-event'
+  | 'invalid-command'
   | 'invalid-transition'
   | 'invalid-amount'
   | 'operation-not-pending'
@@ -153,6 +171,26 @@ export interface NarrativeDomainEvent {
 export interface NarrativeEventProcessingResult {
   readonly status: 'processed' | 'duplicate';
   readonly eventId: string;
+  readonly commands: readonly StageCommand[];
+  readonly generatedSignals: readonly StageSignal[];
+  readonly snapshot: NarrativeStateSnapshot;
+}
+
+/** One ordered command group with a stable logical-occurrence key. */
+export interface NarrativeCommandBatch {
+  readonly commands: readonly StageCommand[];
+  /** Local, stable key for deduplication, e.g. `dialogue.x.node.y`. */
+  readonly occurrenceKey: string;
+  /** Local, stable id used for derived signals (mission completion). */
+  readonly causeId: string;
+}
+
+export interface NarrativeCommandExecutionResult {
+  readonly status: 'applied' | 'duplicate';
+  readonly appliedCommandIds: readonly string[];
+  readonly skippedCommandIds: readonly string[];
+  /** Known commands whose execution belongs to a later stage (9.4B/9.4C). */
+  readonly deferredCommands: readonly StageCommand[];
   readonly commands: readonly StageCommand[];
   readonly generatedSignals: readonly StageSignal[];
   readonly snapshot: NarrativeStateSnapshot;

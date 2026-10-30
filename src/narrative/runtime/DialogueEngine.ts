@@ -1,4 +1,5 @@
 import type {
+  DialogueChoiceOrigin,
   DialogueCompletion,
   DialogueEngineOptions,
   DialogueResult,
@@ -87,6 +88,7 @@ export class DialogueEngine {
       state,
       progression,
       choice.commands ?? [],
+      { nodeId: node.id, choiceId: choice.id },
     ));
   }
 
@@ -97,6 +99,7 @@ export class DialogueEngine {
     state: NarrativeState,
     progression: NarrativeProgressionView,
     precedingCommands: readonly StageCommand[],
+    fromChoice?: DialogueChoiceOrigin,
   ): DialogueTurn {
     const dialogue = this.registry.getDialogue(dialogueId)!;
     const node = dialogue.nodes.find(candidate => candidate.id === nodeId)!;
@@ -110,6 +113,9 @@ export class DialogueEngine {
       node,
       choices,
       commands: [...precedingCommands, ...(node.onEnter ?? [])],
+      choiceCommands: [...precedingCommands],
+      nodeCommands: [...(node.onEnter ?? [])],
+      ...(fromChoice ? { fromChoice } : {}),
     });
   }
 
