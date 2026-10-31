@@ -19,6 +19,38 @@ diretório fora de `src` ficaria fora do typecheck e dos gates. Por isso o
 template fica aqui. Ele não é importado por `src/main.ts`, portanto não entra no
 bundle nem no jogo de produção.
 
+## CLI de autoria
+
+Requisitos: Node e as dependências já instaladas. A CLI usa `ts-node`, que já é
+dependência de desenvolvimento do projeto; não é necessário instalar nada novo.
+
+O repositório oferece a CLI local `npm run chapter -- ...`:
+
+```sh
+npm run chapter -- create exemplo-floresta --title "Floresta das Raízes"
+npm run chapter -- validate exemplo-floresta
+npm run chapter -- inspect exemplo-floresta
+npm run chapter -- inspect exemplo-floresta --json
+npm run chapter -- preview exemplo-floresta
+```
+
+- `create` gera um capítulo independente a partir deste template em
+  `src/examples/chapters/<slug>/`. O namespace derivado é
+  `authoring.<slug-com-pontos>`; use `--namespace <id>` para escolher outro e
+  `--revision <n>` para a revisão inicial.
+- `validate` reutiliza `StageValidator`, `StageCatalogService`, `StageLoader` e
+  `StageDirector`. Erros bloqueantes retornam código 1; avisos não bloqueiam.
+- `inspect` mostra IDs, fases, encontros, apresentação, elegibilidade e
+  diagnósticos; `--json` mantém os mesmos dados e códigos.
+- `preview` é headless: valida, carrega no modo individual e projeta no World
+  Lab, sem renderizar com Phaser.
+- `--chapters-dir <path>` permite um diretório de autoria alternativo; ele
+  precisa estar dentro de `src/`.
+- O catálogo de produção nunca é alterado. Capítulos gerados não são
+  registrados automaticamente; use o `registration.ts` local.
+- A CLI verifica path traversal, diretório existente, colisão de namespace/ID e
+  criação atômica com limpeza do diretório temporário em caso de falha.
+
 ## 1. Estrutura dos arquivos
 
 | Arquivo | Responsabilidade |

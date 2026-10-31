@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview",
-    "test": "jest"
+    "test": "jest",
+    "chapter": "ts-node --project tsconfig.cli.json src/cli/chapter-cli.ts"
   },
   "devDependencies": {
     "vite": "^5.2.0",

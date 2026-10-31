@@ -61,3 +61,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-31 | [Topologias flexíveis, bifurcações e revisitas — Etapa 9.6E.2](./2026-10-31-etapa-9-6e2-topologias-flexiveis-revisitas.md) |
 | 2026-10-31 | [Consolidação de contratos, identidades e persistência versionada — Etapa 9.6E.3](./2026-10-31-etapa-9-6e3-versionamento-identidades-snapshots.md) |
 | 2026-10-31 | [Template de autoria de capítulos independentes — Etapa 9.7A](./2026-10-31-etapa-9-7a-template-autoria-capitulos.md) |
+| 2026-10-31 | [CLI de criação, validação e inspeção de capítulos — Etapa 9.7B](./2026-10-31-etapa-9-7b-cli-autoria-validacao-capitulos.md) |
