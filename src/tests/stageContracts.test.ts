@@ -122,4 +122,64 @@ describe('stage public contracts', () => {
       'stage.layout.procedural-seed-invalid',
     ]);
   });
+
+  it('reports invalid declarative encounter composition deterministically', () => {
+    const fixture = validAuthoredModule() as unknown as Record<string, any>;
+    fixture.encounter = {
+      schemaVersion: 2,
+      id: 'Invalid Encounter',
+      start: 'on-sight',
+      completion: 'timer',
+      scaling: 'custom',
+      source: {
+        kind: 'authored-waves',
+        waves: [{
+          id: 'same.wave',
+          delayBeforeMs: 5,
+          enemies: [{ type: 'unknown', x: -1, y: 1.5, level: 0 }],
+        }, {
+          id: 'same.wave',
+          delayBeforeMs: -1,
+          enemies: [],
+        }],
+      },
+    };
+
+    const first = new StageValidator().validateModule(fixture as StageModule);
+    const second = new StageValidator().validateModule(fixture as StageModule);
+
+    expect(second).toEqual(first);
+    expect(first.map(diagnostic => diagnostic.code)).toEqual(expect.arrayContaining([
+      'stage.encounter.archetype.unknown',
+      'stage.encounter.completion.unsupported',
+      'stage.encounter.delay.invalid',
+      'stage.encounter.enemy-level.invalid',
+      'stage.encounter.id.invalid',
+      'stage.encounter.scaling.unsupported',
+      'stage.encounter.schema-version.unsupported',
+      'stage.encounter.spawn.invalid',
+      'stage.encounter.start.unsupported',
+      'stage.encounter.wave-enemies.empty',
+      'stage.encounter.wave-id.duplicate',
+    ]));
+  });
+
+  it('rejects invalid resolved-level wave sizing', () => {
+    const fixture = validAuthoredModule() as unknown as Record<string, any>;
+    fixture.encounter = {
+      schemaVersion: 1,
+      id: 'encounter.test',
+      start: 'stage-ready',
+      completion: 'all-waves-defeated',
+      scaling: 'stage-difficulty-floor',
+      source: {
+        kind: 'resolved-level-enemies',
+        maximumEnemiesPerWave: 0,
+        delayBeforeWaveMs: -1,
+      },
+    };
+
+    expect(new StageValidator().validateModule(fixture as StageModule).map(diagnostic => diagnostic.code))
+      .toEqual(['stage.encounter.delay.invalid', 'stage.encounter.wave-size.invalid']);
+  });
 });

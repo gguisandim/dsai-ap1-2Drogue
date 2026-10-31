@@ -79,6 +79,46 @@ describe('StageLoader procedural resolution', () => {
     expect(second.value.level.tileMap).not.toBe(first.value.level.tileMap);
   });
 
+  it('resolves declared wave sizing deterministically from procedural enemies', () => {
+    const base = proceduralModule();
+    const module: StageModule = {
+      ...base,
+      encounter: {
+        schemaVersion: 1,
+        id: 'encounter.test.procedural',
+        start: 'stage-ready',
+        completion: 'all-waves-defeated',
+        scaling: 'stage-difficulty-floor',
+        source: {
+          kind: 'resolved-level-enemies',
+          maximumEnemiesPerWave: 2,
+          delayBeforeWaveMs: 450,
+          archetypeMapping: {
+            imp_melee: 'affinity',
+            cultist_archer: 'ranged',
+            stone_guardian: 'fortitudo',
+            hex_weaver: 'applaud',
+            winged_hunter: 'ranged',
+            infernal_champion: 'boss',
+          },
+        },
+      },
+    };
+    const loader = new StageLoader(registryWith(module));
+    const request = { stageId: 'test.procedural', runId: 'run-1', runSeed: 'seed-42' } as const;
+    const first = loader.load(request);
+    const second = loader.load(request);
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) throw new Error('procedural encounter did not resolve');
+    expect(first.value.encounter?.source).toBe('declarative');
+    expect(first.value.encounter?.waves.length).toBeGreaterThan(0);
+    expect(first.value.encounter?.waves.every(wave => wave.enemies.length <= 2)).toBe(true);
+    expect(first.value.encounter?.waves.slice(1).every(wave => wave.delayBeforeMs === 450)).toBe(true);
+    expect(second.value.encounter).toEqual(first.value.encounter);
+  });
+
   it('passes the run seed combined with the stable stage id to the procedural factory', () => {
     const create = jest.fn(() => disconnectedLevel());
     const adapter = new ProceduralStageAdapter({ create });

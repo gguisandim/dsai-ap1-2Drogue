@@ -1,4 +1,5 @@
 import type { LevelDefinition } from '../../data/LevelData';
+import type { StageEncounterDefinition } from './StageEncounter';
 import type {
   DialogueId,
   MissionId,
@@ -119,6 +120,7 @@ export type StageCommand =
 export interface StageModule {
   readonly manifest: StageManifest;
   readonly authoredLevel?: LevelDefinition;
+  readonly encounter?: StageEncounterDefinition;
   readonly narrative?: NarrativeDefinition;
   readonly npcs?: readonly NpcDefinition[];
   readonly dialogues?: readonly DialogueDefinition[];

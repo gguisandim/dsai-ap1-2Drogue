@@ -1,6 +1,11 @@
 import type { EnemyPlacement, LevelDefinition } from '../../data/LevelData';
 import { isWalkableTile, TileKind } from '../../procedural';
-import type { StageDiagnostic, StageManifest } from '../contracts';
+import type {
+  ResolvedStageEncounter,
+  StageDiagnostic,
+  StageEncounterEnemyPlacement,
+  StageManifest,
+} from '../contracts';
 
 interface Point {
   readonly x: number;
@@ -25,8 +30,16 @@ function isHazard(tile: number): boolean {
   return tile === TileKind.Pit || tile === TileKind.Lava;
 }
 
+const ENCOUNTER_ARCHETYPES = new Set([
+  'affinity', 'applaud', 'fortitudo', 'ranged', 'boss', 'miniboss',
+]);
+
 export class ResolvedLevelValidator {
-  public validate(level: LevelDefinition, manifest: StageManifest): readonly StageDiagnostic[] {
+  public validate(
+    level: LevelDefinition,
+    manifest: StageManifest,
+    encounter?: ResolvedStageEncounter,
+  ): readonly StageDiagnostic[] {
     const diagnostics: StageDiagnostic[] = [];
     const stageId = manifest.id;
     const add = (
@@ -212,7 +225,11 @@ export class ResolvedLevelValidator {
       }
     };
 
-    const validateEnemy = (enemy: EnemyPlacement, path: readonly (string | number)[], label: string): void => {
+    const validateEnemy = (
+      enemy: EnemyPlacement | StageEncounterEnemyPlacement,
+      path: readonly (string | number)[],
+      label: string,
+    ): void => {
       validatePosition(enemy, path, label, true);
       if (!isRecord(enemy as unknown)) return;
       if (enemy.patrol !== undefined && !Array.isArray(enemy.patrol)) {
@@ -244,6 +261,18 @@ export class ResolvedLevelValidator {
       ['level', 'waves', waveIndex, 'enemies', enemyIndex],
       'Wave enemy',
     )));
+    if (encounter?.source === 'declarative') encounter.waves.forEach((wave, waveIndex) =>
+      wave.enemies.forEach((enemy, enemyIndex) => {
+        const path = ['encounter', 'waves', waveIndex, 'enemies', enemyIndex] as const;
+        validateEnemy(enemy, path, 'Encounter enemy');
+        if (!ENCOUNTER_ARCHETYPES.has(enemy.type)) add(
+          'stage.encounter.archetype.unknown',
+          'error',
+          `Resolved encounter archetype is unsupported: ${enemy.type}.`,
+          [...path, 'type'],
+          enemy.type,
+        );
+      }));
     level.exits?.forEach((exit, index) => {
       validatePosition(exit, ['level', 'exits', index], 'Legacy exit', false);
       if (!isRecord(exit as unknown)) return;

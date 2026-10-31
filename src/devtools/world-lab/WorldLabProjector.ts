@@ -58,7 +58,7 @@ function tileMarkers(stage: LoadedStage): WorldLabStageMarker[] {
 
 function entityMarkers(stage: LoadedStage): WorldLabStageMarker[] {
   const markers: WorldLabStageMarker[] = [];
-  const addEnemy = (enemy: LoadedStage['level']['enemies'][number], group: string): void => {
+  const addEnemy = (enemy: { readonly type: string; readonly x: number; readonly y: number }, group: string): void => {
     markers.push({
       id: `${stage.manifest.id}.${group}.${enemy.type}.${enemy.x}.${enemy.y}`,
       kind: 'enemy', x: enemy.x, y: enemy.y, label: enemy.type,
@@ -66,8 +66,9 @@ function entityMarkers(stage: LoadedStage): WorldLabStageMarker[] {
   };
   stage.level.enemies.forEach(enemy => addEnemy(enemy, 'enemy'));
   stage.level.ambush?.forEach(enemy => addEnemy(enemy, 'ambush'));
-  stage.level.waves?.forEach(wave => wave.enemies.forEach(enemy =>
-    addEnemy(enemy, `wave-${wave.delay}`)));
+  const waves = stage.encounter?.waves ?? stage.level.waves;
+  waves?.forEach((wave, index) => wave.enemies.forEach(enemy =>
+    addEnemy(enemy, `wave-${'id' in wave ? wave.id : `${index}-${wave.delay}`}`)));
   stage.level.items.forEach(item => markers.push({
     id: `${stage.manifest.id}.item.${item.type}.${item.x}.${item.y}`,
     kind: 'item', x: item.x, y: item.y, label: item.type,

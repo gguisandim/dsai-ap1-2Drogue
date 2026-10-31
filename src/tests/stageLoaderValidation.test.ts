@@ -147,6 +147,39 @@ describe('StageLoader resolved level validation', () => {
     ]));
   });
 
+  it('rejects declarative encounter spawns on solid or out-of-bounds tiles', () => {
+    const module = authoredModule(level()) as unknown as Record<string, any>;
+    module.encounter = {
+      schemaVersion: 1,
+      id: 'encounter.test.invalid-spawns',
+      start: 'stage-ready',
+      completion: 'all-waves-defeated',
+      scaling: 'stage-difficulty-floor',
+      source: {
+        kind: 'authored-waves',
+        waves: [{
+          id: 'wave.invalid-spawns',
+          delayBeforeMs: 0,
+          enemies: [
+            { type: 'affinity', x: 0, y: 0, level: 1 },
+            { type: 'ranged', x: 99, y: 99, level: 1 },
+          ],
+        }],
+      },
+    };
+    const result = loaderFor(module as StageModule).load({
+      stageId: 'test.authored', runId: 'run', runSeed: 'unused',
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('invalid encounter unexpectedly loaded');
+    expect(result.error.code).toBe('invalid-level');
+    expect(result.error.diagnostics.map(diagnostic => diagnostic.code)).toEqual([
+      'level.position.on-solid',
+      'level.position.out-of-bounds',
+    ]);
+  });
+
   it('rejects resume data for another stage or manifest revision without mutating it', () => {
     const resume = {
       stageId: 'other.stage',

@@ -104,7 +104,7 @@ describe('stage entity presentation', () => {
     expect(loaded.presentation.enemySprites.applaud).toMatchObject({
       id: 'sprite.aguas.applaud-forgotten', textureKey: 'enemy_ranged_anim', tint: 0x59b8c0,
     });
-    expect(loaded.level.waves?.flatMap(wave => wave.enemies.map(enemy => enemy.type)))
+    expect(loaded.encounter?.waves.flatMap(wave => wave.enemies.map(enemy => enemy.type)))
       .toEqual(['affinity', 'applaud', 'affinity', 'affinity', 'applaud']);
   });
 

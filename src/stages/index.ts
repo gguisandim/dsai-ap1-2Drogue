@@ -116,6 +116,13 @@ export type {
   StageAudioProfileDefinition,
   StageEnemyArchetype,
   StageEnvironmentDefinition,
+  StageEncounterCompletion,
+  StageEncounterDefinition,
+  StageEncounterEnemyPlacement,
+  StageEncounterScaling,
+  StageEncounterSource,
+  StageEncounterStart,
+  StageEncounterWaveDefinition,
   StageFogDefinition,
   StageLogicalTileId,
   StagePresentationDefinition,
@@ -128,6 +135,8 @@ export type {
   StageTileVisualVariant,
   StageVisualLayer,
   StageVisualTextureDefinition,
+  ResolvedStageEncounter,
+  ResolvedStageEncounterWave,
   StageVisualThemeDefinition,
   StageCampaignAvailability,
   StageCampaignCatalogMetadata,
@@ -166,6 +175,7 @@ export { createLegacyStageModule, registerLegacyStages } from './compatibility/L
 export { LegacyLevelAdapter } from './compatibility/LegacyLevelAdapter';
 export { ProceduralStageAdapter } from './compatibility/ProceduralStageAdapter';
 export { StageLoader } from './runtime/StageLoader';
+export { StageEncounterResolver } from './runtime/StageEncounterResolver';
 export type { StageLoaderOptions } from './runtime/StageLoader';
 export { StageCatalogService } from './runtime/StageCatalogService';
 export type {

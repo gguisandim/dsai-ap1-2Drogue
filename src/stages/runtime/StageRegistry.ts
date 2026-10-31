@@ -3,6 +3,7 @@ import type {
   ChapterManifest,
   StageCondition,
   StageDiagnostic,
+  StageEncounterDefinition,
   StageId,
   StageManifest,
   StageModule,
@@ -93,10 +94,37 @@ function cloneManifest(manifest: StageManifest): StageManifest {
   });
 }
 
+function cloneEncounter(encounter: StageEncounterDefinition): StageEncounterDefinition {
+  const source = encounter.source.kind === 'authored-waves'
+    ? Object.freeze({
+        kind: 'authored-waves' as const,
+        waves: Object.freeze(encounter.source.waves.map(wave => Object.freeze({
+          ...wave,
+          enemies: Object.freeze(wave.enemies.map(enemy => Object.freeze({
+            ...enemy,
+            ...(enemy.patrol ? {
+              patrol: Object.freeze(enemy.patrol.map(point => Object.freeze({ ...point }))),
+            } : {}),
+            ...(enemy.dropTable ? {
+              dropTable: Object.freeze(enemy.dropTable.map(entry => Object.freeze({ ...entry }))),
+            } : {}),
+          }))),
+        }))),
+      })
+    : Object.freeze({
+        ...encounter.source,
+        ...(encounter.source.archetypeMapping ? {
+          archetypeMapping: Object.freeze({ ...encounter.source.archetypeMapping }),
+        } : {}),
+      });
+  return Object.freeze({ ...encounter, source });
+}
+
 function cloneModule(module: StageModule): StageModule {
   return Object.freeze({
     ...module,
     manifest: cloneManifest(module.manifest),
+    ...(module.encounter ? { encounter: cloneEncounter(module.encounter) } : {}),
     ...(module.npcs ? { npcs: Object.freeze([...module.npcs]) } : {}),
     ...(module.dialogues ? { dialogues: Object.freeze([...module.dialogues]) } : {}),
     ...(module.missions ? { missions: Object.freeze([...module.missions]) } : {}),

@@ -4,6 +4,7 @@ export type StageCapabilityCategory =
   | 'theme'
   | 'biome'
   | 'enemy'
+  | 'encounter'
   | 'item'
   | 'audio'
   | 'lighting'

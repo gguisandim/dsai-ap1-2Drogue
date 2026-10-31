@@ -10,7 +10,7 @@ import { BossEnemy } from '../entities/BossEnemy';
 import { RangedEnemy } from '../entities/RangedEnemy';
 import { Item } from '../entities/Item';
 import { TextureGenerator } from '../utils/TextureGenerator';
-import { LevelDefinition, EnemyPlacement } from '../data/LevelData';
+import { EnemyPlacement, LevelDefinition } from '../data/LevelData';
 import { VERSE_SECTIONS } from '../data/VerseLevelData';
 import { ALL_LEVELS } from '../data/LevelData';
 import { loadAppearance, loadSettings } from '../data/PlayerProfile';
@@ -42,8 +42,18 @@ import type {
   GameCampaignNavigationPort,
   GameSceneStageResolution,
 } from '../application/stages';
-import { LEGACY_RESOLVED_NPC_SPRITE, LEGACY_RESOLVED_STAGE_PRESENTATION } from '../stages';
-import type { LoadedStage, ResolvedStagePresentation } from '../stages';
+import {
+  LEGACY_RESOLVED_NPC_SPRITE,
+  LEGACY_RESOLVED_STAGE_PRESENTATION,
+  StageEncounterResolver,
+} from '../stages';
+import type {
+  LoadedStage,
+  ResolvedStageEncounter,
+  ResolvedStageEncounterWave,
+  ResolvedStagePresentation,
+  StageEncounterEnemyPlacement,
+} from '../stages';
 import { StageMapRenderer } from '../presentation/stages/StageMapRenderer';
 import { DialogueOverlay } from '../ui/DialogueOverlay';
 import {
@@ -117,6 +127,7 @@ const DEFAULT_PROCEDURAL_RUN: readonly PresetId[] = [
 
 export class GameScene extends Phaser.Scene {
   private readonly stageMapRenderer = new StageMapRenderer();
+  private readonly stageEncounterResolver = new StageEncounterResolver();
   private player!: Player;
   private enemies!: Phaser.Physics.Arcade.Group;
   private items!: Phaser.Physics.Arcade.Group;
@@ -139,7 +150,8 @@ export class GameScene extends Phaser.Scene {
 
   private shopUI!: ShopUI;
   private summons: Summon[] = [];
-  private waves: { enemies: EnemyPlacement[] }[] = [];
+  private activeEncounter?: ResolvedStageEncounter;
+  private waves: ResolvedStageEncounterWave[] = [];
   private currentWaveIndex = 0;
   private waveDelayTimer = 0;
   private waveTransition = false;
@@ -1073,7 +1085,10 @@ export class GameScene extends Phaser.Scene {
     this.pendingExitTiles.push(...rendered.pendingExitTiles);
   }
 
-  private spawnSingleEnemy(e: EnemyPlacement, occurrenceId: string): void {
+  private spawnSingleEnemy(
+    e: EnemyPlacement | StageEncounterEnemyPlacement,
+    occurrenceId: string,
+  ): void {
     const px = e.x * 32 + 16;
     const py = e.y * 32 + 16;
     let enemy: Enemy;
@@ -1122,19 +1137,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnEnemiesAndItems(level: LevelDefinition): void {
-    // Build wave schedule: hand-authored waves if present, otherwise chunk by level
-    if (level.waves && level.waves.length > 0) {
-      this.waves = level.waves.map(w => ({ enemies: w.enemies }));
-    } else {
-      const sorted = [...level.enemies].sort((a, b) => a.level - b.level);
-      this.waves = [];
-      for (let i = 0; i < sorted.length; i += 8) {
-        this.waves.push({ enemies: sorted.slice(i, i + 8) });
-      }
-      const minibossSpots = [{ x: 25, y: 8 }, { x: 30, y: 9 }, { x: 34, y: 9 }];
-      const mb = minibossSpots[this.currentLevelIndex] ?? { x: 20, y: 8 };
-      this.waves.push({ enemies: [{ type: 'miniboss', x: mb.x, y: mb.y, level: 9 }] });
-    }
+    const loaded = [this.modularLoadedStage, this.macroLoadedStage]
+      .find(stage => stage?.level.id === level.id);
+    this.activeEncounter = loaded?.encounter ??
+      (this.stageEncounterResolver ?? new StageEncounterResolver())
+        .resolveLegacy(level, undefined, this.currentLevelIndex);
+    this.waves = [...this.activeEncounter.waves];
     this.currentWaveIndex = 0;
     this.waveDelayTimer = 0;
     this.waveTransition = false;
@@ -1165,6 +1173,7 @@ export class GameScene extends Phaser.Scene {
   private prepareCurrentStageEncounter(): void {
     if (this.isMacroHub()) {
       this.waves = [];
+      this.activeEncounter = undefined;
       this.currentWaveIndex = 0;
       this.waveDelayTimer = 0;
       this.waveTransition = false;
@@ -1783,20 +1792,20 @@ export class GameScene extends Phaser.Scene {
       if (this.currentWaveIndex < this.waves.length - 1) {
         this.simulationBridge.recordWaveCompleted(this.currentLevel.name, this.currentWaveIndex + 1);
         this.notifyEncounterCompleted(
-          `wave.${this.currentWaveIndex + 1}`,
+          this.waves[this.currentWaveIndex].id,
           `wave.${this.currentWaveIndex}.completed`,
         );
         this.waveTransition = true;
-        this.waveDelayTimer = 1200;
+        this.waveDelayTimer = this.waves[this.currentWaveIndex + 1].delayBeforeMs;
       } else if (!this.levelClearedBannerShowing) {
         this.levelClearedBannerShowing = true;
         this.simulationBridge.recordWaveCompleted(this.currentLevel.name, this.currentWaveIndex + 1);
         const waveNarrativeSaved = this.notifyEncounterCompleted(
-          `wave.${this.currentWaveIndex + 1}`,
+          this.waves[this.currentWaveIndex].id,
           `wave.${this.currentWaveIndex}.completed`,
         );
         const encounterNarrativeSaved = this.notifyEncounterCompleted(
-          `encounter.${this.currentLevel.id}`,
+          this.activeEncounter?.id ?? `encounter.${this.currentLevel.id}`,
           'encounter.completed',
         );
         this.revealExits();

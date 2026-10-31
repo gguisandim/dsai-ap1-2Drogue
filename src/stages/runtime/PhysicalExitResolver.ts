@@ -201,8 +201,9 @@ function levelDigest(stage: LoadedStage, level: LevelDefinition): string {
   const enemies = [
     ...(Array.isArray(level.enemies) ? level.enemies : []),
     ...(Array.isArray(level.ambush) ? level.ambush : []),
-    ...(Array.isArray(level.waves) ? level.waves.flatMap(wave =>
-      Array.isArray(wave.enemies) ? wave.enemies : []) : []),
+    ...(stage.encounter?.waves.flatMap(wave => wave.enemies) ??
+      (Array.isArray(level.waves) ? level.waves.flatMap(wave =>
+        Array.isArray(wave.enemies) ? wave.enemies : []) : [])),
   ];
   const patrol = enemies.flatMap(enemy => Array.isArray(enemy.patrol) ? enemy.patrol : []);
   const legacyExits = (Array.isArray(level.exits) ? level.exits : []).flatMap(exit => [
@@ -741,8 +742,9 @@ export class PhysicalExitResolver {
     const enemies = [
       ...(Array.isArray(level.enemies) ? level.enemies : []),
       ...(Array.isArray(level.ambush) ? level.ambush : []),
-      ...(Array.isArray(level.waves) ? level.waves.flatMap(wave =>
-        Array.isArray(wave.enemies) ? wave.enemies : []) : []),
+      ...(stage.encounter?.waves.flatMap(wave => wave.enemies) ??
+        (Array.isArray(level.waves) ? level.waves.flatMap(wave =>
+          Array.isArray(wave.enemies) ? wave.enemies : []) : [])),
     ];
     for (const enemy of enemies) {
       add(enemy);

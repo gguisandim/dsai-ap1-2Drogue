@@ -16,6 +16,7 @@ import { StageRegistry } from './StageRegistry';
 import { StageValidator } from './StageValidator';
 import { ResolvedLevelValidator } from './ResolvedLevelValidator';
 import { StageVisualRegistry } from './StageVisualRegistry';
+import { StageEncounterResolver } from './StageEncounterResolver';
 
 export interface StageLoaderOptions {
   readonly legacy?: LegacyLevelAdapter;
@@ -85,6 +86,7 @@ export class StageLoader {
   private readonly procedural: ProceduralStageAdapter;
   private readonly stageValidator = new StageValidator();
   private readonly levelValidator = new ResolvedLevelValidator();
+  private readonly encounterResolver = new StageEncounterResolver();
 
   public constructor(
     private readonly registry: StageRegistry,
@@ -153,7 +155,31 @@ export class StageLoader {
     const resolution = this.resolveLevel(module, request);
     if (!resolution.ok) return resolution;
 
-    const levelDiagnostics = this.levelValidator.validate(resolution.level, module.manifest);
+    const baseLevelDiagnostics = this.levelValidator.validate(resolution.level, module.manifest);
+    if (hasErrors(baseLevelDiagnostics)) {
+      return this.failure('invalid-level', request.stageId, baseLevelDiagnostics);
+    }
+
+    const encounter = this.encounterResolver.resolve(module.encounter, resolution.level, module.manifest);
+    const encounterDiagnostics: StageDiagnostic[] = module.encounter && encounter.waves.length === 0
+      ? [{
+          code: 'stage.encounter.resolved-empty',
+          severity: 'error',
+          message: 'Declarative encounter resolved without enemies.',
+          path: ['encounter', 'source'],
+          stageId: module.manifest.id,
+          referenceId: module.encounter.id,
+        }]
+      : [];
+    const encounterLevelDiagnostics = module.encounter
+      ? this.levelValidator.validate(resolution.level, module.manifest, encounter)
+        .filter(diagnostic => diagnostic.path[0] === 'encounter')
+      : [];
+    const levelDiagnostics = [
+      ...baseLevelDiagnostics,
+      ...encounterLevelDiagnostics,
+      ...encounterDiagnostics,
+    ];
     if (hasErrors(levelDiagnostics)) {
       return this.failure('invalid-level', request.stageId, levelDiagnostics);
     }
@@ -181,6 +207,7 @@ export class StageLoader {
       dialogues: cloneData(module.dialogues ?? []),
       missions: cloneData(module.missions ?? []),
       events: cloneData(module.events ?? []),
+      encounter: cloneData(encounter),
       presentation: cloneData(visualResolution.value),
       diagnostics,
     };

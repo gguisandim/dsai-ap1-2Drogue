@@ -29,6 +29,13 @@ import {
   createProgressionState,
 } from '../progression';
 import { GameScene } from '../scenes/GameScene';
+import {
+  ChapterManifest,
+  StageLoader,
+  StageModule,
+  StageRegistry,
+  StageValidator,
+} from '../stages';
 import { DocumentSerializer, EditorValue } from '../tools';
 
 type SceneInternals = Record<string, any>;
@@ -84,11 +91,91 @@ function levelWith(overrides: Partial<LevelDefinition> = {}): LevelDefinition {
   };
 }
 
+function independentEncounterModule(): StageModule {
+  return {
+    manifest: {
+      schemaVersion: 1,
+      id: 'test.independent-encounter',
+      revision: 1,
+      chapterId: 'test.independent-chapter',
+      order: 0,
+      title: 'Independent Encounter',
+      summary: 'Synthetic stage that is never registered in production.',
+      layout: { kind: 'authored' },
+      exits: [{ id: 'test.exit', anchor: { kind: 'map-exit' }, targetStageId: 'campaign.complete' }],
+      capabilities: [{
+        id: 'encounter.declarative', category: 'encounter', minimumVersion: 1, requirement: 'required',
+      }],
+    },
+    authoredLevel: {
+      ...levelWith({ id: 'test.independent-encounter', name: 'Independent Encounter' }),
+      tileMap: [
+        [1, 1, 1, 1, 1, 1, 1],
+        [1, 8, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 5, 1],
+        [1, 1, 1, 1, 1, 1, 1],
+      ],
+    },
+    encounter: {
+      schemaVersion: 1,
+      id: 'encounter.test.independent',
+      start: 'stage-ready',
+      completion: 'all-waves-defeated',
+      scaling: 'stage-difficulty-floor',
+      source: {
+        kind: 'authored-waves',
+        waves: [
+          {
+            id: 'wave.test.skirmish', delayBeforeMs: 0,
+            enemies: [
+              { type: 'affinity', x: 3, y: 2, level: 2 },
+              { type: 'ranged', x: 4, y: 2, level: 2 },
+            ],
+          },
+          {
+            id: 'wave.test.elites', delayBeforeMs: 275,
+            enemies: [
+              { type: 'miniboss', x: 3, y: 4, level: 4 },
+              { type: 'boss', x: 4, y: 4, level: 5 },
+            ],
+          },
+        ],
+      },
+    },
+  };
+}
+
+function loadIndependentEncounter() {
+  const module = independentEncounterModule();
+  const chapter: ChapterManifest = {
+    schemaVersion: 1,
+    id: module.manifest.chapterId,
+    revision: 1,
+    title: 'Synthetic Independent Chapter',
+    stageIds: [module.manifest.id],
+    entryStageId: module.manifest.id,
+  };
+  const registry = new StageRegistry();
+  registry.registerChapter(chapter, [module]);
+  return { module, registry, loaded: new StageLoader(registry).load({
+    stageId: module.manifest.id,
+    runId: 'synthetic.run',
+    runSeed: 'synthetic.seed',
+  }) };
+}
+
 function emptyGroup() {
   return { clear: jest.fn(), getChildren: jest.fn(() => []), countActive: jest.fn(() => 0) };
 }
 
-function configureWaveUpdate(state: SceneInternals, waves: Array<{ enemies: EnemyPlacement[] }>): void {
+function configureWaveUpdate(state: SceneInternals, waves: Array<{
+  id?: string;
+  delayBeforeMs?: number;
+  enemies: EnemyPlacement[];
+}>): void {
   const text = { setText: jest.fn(), setVisible: jest.fn() };
   Object.assign(state, {
     arrowChargeBar: { setVisible: jest.fn() },
@@ -133,7 +220,11 @@ function configureWaveUpdate(state: SceneInternals, waves: Array<{ enemies: Enem
     enemies: emptyGroup(),
     enemyBullets: emptyGroup(),
     summons: [],
-    waves,
+    waves: waves.map((wave, index) => ({
+      id: wave.id ?? `wave.${index + 1}`,
+      delayBeforeMs: wave.delayBeforeMs ?? (index === 0 ? 0 : 1200),
+      enemies: wave.enemies,
+    })),
     currentWaveIndex: 0,
     waveDelayTimer: 0,
     waveTransition: false,
@@ -281,7 +372,10 @@ describe('legacy wave and exit characterization', () => {
       ],
     }));
 
-    expect(state.waves).toEqual([{ enemies: firstWave }, { enemies: secondWave }]);
+    expect(state.waves).toEqual([
+      { id: 'wave.1', delayBeforeMs: 0, enemies: firstWave },
+      { id: 'wave.2', delayBeforeMs: 1200, enemies: secondWave },
+    ]);
     expect(state.currentWaveIndex).toBe(0);
     expect(state.waveDelayTimer).toBe(0);
     expect(state.waveTransition).toBe(false);
@@ -299,6 +393,8 @@ describe('legacy wave and exit characterization', () => {
     expect(state.waves[0].enemies.map((entry: EnemyPlacement) => entry.level)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(state.waves[1].enemies.map((entry: EnemyPlacement) => entry.level)).toEqual([9, 10]);
     expect(state.waves[2]).toEqual({
+      id: 'wave.3',
+      delayBeforeMs: 1200,
       enemies: [{ type: 'miniboss', x: 30, y: 9, level: 9 }],
     });
   });
@@ -306,7 +402,7 @@ describe('legacy wave and exit characterization', () => {
   it('spawns the requested wave and journals its one-based number and enemy count', () => {
     const { state } = createSceneShell();
     const members = [enemy(1), enemy(2)];
-    state.waves = [{ enemies: members }];
+    state.waves = [{ id: 'wave.1', delayBeforeMs: 0, enemies: members }];
     state.currentLevel = levelWith({ name: 'Frozen Wave' });
     state.spawnSingleEnemy = jest.fn();
     state.simulationBridge = { recordWaveStarted: jest.fn() };
@@ -365,6 +461,63 @@ describe('legacy wave and exit characterization', () => {
     });
     expect(state.levelClearedBannerShowing).toBe(true);
     expect(state.levelBannerText.setText).toHaveBeenCalledWith('CAMINHO LIBERADO!\nEncontre o portal dourado');
+  });
+});
+
+describe('independent declarative encounter integration', () => {
+  it('registers, validates and loads a synthetic chapter with its own waves and special enemies', () => {
+    const { module, registry, loaded } = loadIndependentEncounter();
+
+    expect(new StageValidator().validateModule(module)).toEqual([]);
+    expect(registry.validate()).toEqual([]);
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) throw new Error(loaded.error.code);
+    expect(loaded.value.encounter).toMatchObject({
+      id: 'encounter.test.independent',
+      source: 'declarative',
+      waves: [
+        { id: 'wave.test.skirmish', delayBeforeMs: 0 },
+        { id: 'wave.test.elites', delayBeforeMs: 275 },
+      ],
+    });
+    expect(loaded.value.encounter?.waves[1].enemies.map(enemy => enemy.type))
+      .toEqual(['miniboss', 'boss']);
+  });
+
+  it('feeds the loaded declaration to the existing wave executor and emits declared completion ids', () => {
+    const { loaded } = loadIndependentEncounter();
+    if (!loaded.ok || !loaded.value.encounter) throw new Error('synthetic encounter did not load');
+    const { scene, state } = createSceneShell();
+    configureWaveUpdate(state, [...loaded.value.encounter.waves] as any);
+    state.currentLevel = loaded.value.level;
+    state.activeEncounter = loaded.value.encounter;
+    state.spawnWave = jest.fn();
+    state.revealExits = jest.fn();
+
+    scene.update(0, 0);
+
+    expect(state.stageSignalAdapter.dispatch).toHaveBeenCalledWith({
+      type: 'encounter.completed',
+      occurrenceId: 'stage.test.independent-encounter.visit.1.wave.0.completed',
+      encounterId: 'wave.test.skirmish',
+    });
+    expect(state.waveDelayTimer).toBe(275);
+
+    scene.update(275, 275);
+    expect(state.spawnWave).toHaveBeenCalledWith(1);
+    scene.update(276, 0);
+
+    expect(state.stageSignalAdapter.dispatch).toHaveBeenCalledWith({
+      type: 'encounter.completed',
+      occurrenceId: 'stage.test.independent-encounter.visit.1.wave.1.completed',
+      encounterId: 'wave.test.elites',
+    });
+    expect(state.stageSignalAdapter.dispatch).toHaveBeenCalledWith({
+      type: 'encounter.completed',
+      occurrenceId: 'stage.test.independent-encounter.visit.1.encounter.completed',
+      encounterId: 'encounter.test.independent',
+    });
+    expect(state.revealExits).toHaveBeenCalledTimes(1);
   });
 });
 

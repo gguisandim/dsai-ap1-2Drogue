@@ -159,6 +159,10 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
         minimumVersion: 1, requirement: 'required' as const,
       }),
       Object.freeze({
+        id: 'encounter.declarative', category: 'encounter' as const,
+        minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
         id: IGAPO_VISUAL_THEME_ID, category: 'theme' as const,
         minimumVersion: 1, requirement: 'required' as const,
       }),
@@ -195,28 +199,40 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
       { type: 'igapo_fallen_trunk', x: 20, y: 10, rotation: 0.08, tint: 0x594735 },
       { type: 'igapo_memory_reeds', x: 27, y: 17, scale: 0.9, tint: 0x78b9a5 },
     ],
-    waves: [
-      {
-        delay: 0,
-        enemies: [
-          {
-            type: 'affinity', x: 29, y: 8, level: 2,
-            patrol: [{ x: 29, y: 8 }, { x: 33, y: 8 }],
-          },
-          { type: 'applaud', x: 35, y: 10, level: 2 },
-        ],
-      },
-      {
-        delay: 1200,
-        enemies: [
-          { type: 'affinity', x: 16, y: 9, level: 3 },
-          { type: 'affinity', x: 26, y: 19, level: 3 },
-          { type: 'applaud', x: 30, y: 18, level: 3 },
-        ],
-      },
-    ],
     parTime: 210,
     difficulty: 3,
+  }),
+  encounter: Object.freeze({
+    schemaVersion: 1 as const,
+    id: `encounter.${IGAPO_DAS_MEMORIAS_STAGE_ID}`,
+    start: 'stage-ready' as const,
+    completion: 'all-waves-defeated' as const,
+    scaling: 'stage-difficulty-floor' as const,
+    source: Object.freeze({
+      kind: 'authored-waves' as const,
+      waves: Object.freeze([
+        Object.freeze({
+          id: 'wave.1',
+          delayBeforeMs: 0,
+          enemies: Object.freeze([
+            Object.freeze({
+              type: 'affinity' as const, x: 29, y: 8, level: 2,
+              patrol: Object.freeze([{ x: 29, y: 8 }, { x: 33, y: 8 }]),
+            }),
+            Object.freeze({ type: 'applaud' as const, x: 35, y: 10, level: 2 }),
+          ]),
+        }),
+        Object.freeze({
+          id: 'wave.2',
+          delayBeforeMs: 1200,
+          enemies: Object.freeze([
+            Object.freeze({ type: 'affinity' as const, x: 16, y: 9, level: 3 }),
+            Object.freeze({ type: 'affinity' as const, x: 26, y: 19, level: 3 }),
+            Object.freeze({ type: 'applaud' as const, x: 30, y: 18, level: 3 }),
+          ]),
+        }),
+      ]),
+    }),
   }),
   narrative: Object.freeze({
     flags: Object.freeze({ [ECO_DAS_AGUAS_FLAG]: false }),

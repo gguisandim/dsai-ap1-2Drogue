@@ -6,6 +6,8 @@ import type {
   StageAnchor,
   StageCondition,
   StageDiagnostic,
+  StageEncounterDefinition,
+  StageEncounterEnemyPlacement,
   StageId,
   StageModule,
   StageRuntimeCapabilityProfile,
@@ -22,7 +24,10 @@ const STABLE_ID = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 const PRESET_IDS = new Set<string>(GENERATION_PRESETS.map(preset => preset.id));
 const CAPABILITY_CATEGORIES = new Set<StageCapabilityCategory>([
   'tile', 'theme', 'biome', 'enemy', 'item', 'audio', 'lighting',
-  'effect', 'npc', 'interaction', 'narrative', 'navigation',
+  'effect', 'npc', 'interaction', 'narrative', 'navigation', 'encounter',
+]);
+const ENCOUNTER_ARCHETYPES = new Set([
+  'affinity', 'applaud', 'fortitudo', 'ranged', 'boss', 'miniboss',
 ]);
 const CONDITION_TYPES = new Set([
   'flag.equals', 'mission.status', 'progression.unlocked', 'all', 'any', 'not',
@@ -254,6 +259,7 @@ export class StageValidator {
 
     this.validateCapabilities(manifest.capabilities, ['manifest', 'capabilities'], stageId, diagnostics);
     this.validateCampaignCatalog(module, diagnostics);
+    this.validateEncounter(module.encounter, stageId, diagnostics);
 
     if (manifest.layout.kind === 'authored') {
       if (!module.authoredLevel) {
@@ -397,6 +403,135 @@ export class StageValidator {
         path: ['manifest', 'completionMissionId'], stageId, referenceId: manifest.completionMissionId,
       });
     }
+  }
+
+  private validateEncounter(
+    encounter: StageEncounterDefinition | undefined,
+    stageId: StageId,
+    diagnostics: StageDiagnostic[],
+  ): void {
+    if (encounter === undefined) return;
+    const base = ['encounter'] as const;
+    const add = (
+      code: string,
+      message: string,
+      suffix: readonly (string | number)[] = [],
+      referenceId?: string,
+    ): void => {
+      diagnostics.push({
+        code, severity: 'error', message, path: [...base, ...suffix], stageId,
+        ...(referenceId ? { referenceId } : {}),
+      });
+    };
+    if (!encounter || typeof encounter !== 'object' || Array.isArray(encounter)) {
+      add('stage.encounter.invalid', 'Encounter must be an object.');
+      return;
+    }
+    if (encounter.schemaVersion !== 1) add(
+      'stage.encounter.schema-version.unsupported', 'Encounter schemaVersion must be 1.', ['schemaVersion'],
+    );
+    if (!isStableId(encounter.id)) add(
+      'stage.encounter.id.invalid', 'Encounter id must be stable.', ['id'], String(encounter.id),
+    );
+    if (encounter.start !== 'stage-ready') add(
+      'stage.encounter.start.unsupported', 'Encounter start mode is not supported.', ['start'], String(encounter.start),
+    );
+    if (encounter.completion !== 'all-waves-defeated') add(
+      'stage.encounter.completion.unsupported', 'Encounter completion mode is not supported.',
+      ['completion'], String(encounter.completion),
+    );
+    if (encounter.scaling !== 'stage-difficulty-floor') add(
+      'stage.encounter.scaling.unsupported', 'Encounter scaling mode is not supported.',
+      ['scaling'], String(encounter.scaling),
+    );
+    if (!encounter.source || typeof encounter.source !== 'object' || Array.isArray(encounter.source)) {
+      add('stage.encounter.source.invalid', 'Encounter source must be an object.', ['source']);
+      return;
+    }
+    if (encounter.source.kind === 'resolved-level-enemies') {
+      if (!Number.isInteger(encounter.source.maximumEnemiesPerWave) ||
+        encounter.source.maximumEnemiesPerWave < 1 || encounter.source.maximumEnemiesPerWave > 64) add(
+        'stage.encounter.wave-size.invalid', 'maximumEnemiesPerWave must be an integer from 1 to 64.',
+        ['source', 'maximumEnemiesPerWave'],
+      );
+      if (!Number.isInteger(encounter.source.delayBeforeWaveMs) || encounter.source.delayBeforeWaveMs < 0) add(
+        'stage.encounter.delay.invalid', 'Encounter delay must be a non-negative integer.',
+        ['source', 'delayBeforeWaveMs'],
+      );
+      if (encounter.source.archetypeMapping !== undefined) {
+        if (!encounter.source.archetypeMapping || typeof encounter.source.archetypeMapping !== 'object' ||
+          Array.isArray(encounter.source.archetypeMapping)) add(
+          'stage.encounter.archetype-mapping.invalid', 'archetypeMapping must be an object.',
+          ['source', 'archetypeMapping'],
+        );
+        else Object.entries(encounter.source.archetypeMapping).forEach(([sourceId, archetype]) => {
+          if (!isStableId(sourceId)) add(
+            'stage.encounter.archetype-mapping-id.invalid', 'Mapped source archetype id must be stable.',
+            ['source', 'archetypeMapping', sourceId], sourceId,
+          );
+          if (!ENCOUNTER_ARCHETYPES.has(archetype)) add(
+            'stage.encounter.archetype.unknown', `Mapped enemy archetype is not supported: ${archetype}.`,
+            ['source', 'archetypeMapping', sourceId], String(archetype),
+          );
+        });
+      }
+      return;
+    }
+    if (encounter.source.kind !== 'authored-waves') {
+      add('stage.encounter.source.unsupported', 'Encounter source kind is not supported.',
+        ['source', 'kind'], String((encounter.source as { kind?: unknown }).kind));
+      return;
+    }
+    if (!Array.isArray(encounter.source.waves) || encounter.source.waves.length === 0) {
+      add('stage.encounter.waves.empty', 'Authored encounters require at least one wave.', ['source', 'waves']);
+      return;
+    }
+    const waveIds = new Set<string>();
+    encounter.source.waves.forEach((wave, waveIndex) => {
+      const path = ['source', 'waves', waveIndex] as const;
+      if (!wave || typeof wave !== 'object' || Array.isArray(wave)) {
+        add('stage.encounter.wave.invalid', 'Encounter wave must be an object.', path);
+        return;
+      }
+      if (!isStableId(wave.id)) add(
+        'stage.encounter.wave-id.invalid', 'Encounter wave id must be stable.', [...path, 'id'], String(wave.id),
+      );
+      else if (waveIds.has(wave.id)) add(
+        'stage.encounter.wave-id.duplicate', 'Encounter wave id must be unique.', [...path, 'id'], wave.id,
+      );
+      waveIds.add(wave.id);
+      if (!Number.isInteger(wave.delayBeforeMs) || wave.delayBeforeMs < 0 ||
+        (waveIndex === 0 && wave.delayBeforeMs !== 0)) add(
+        'stage.encounter.delay.invalid', 'Wave delay must be non-negative and the first wave must use zero.',
+        [...path, 'delayBeforeMs'],
+      );
+      if (!Array.isArray(wave.enemies) || wave.enemies.length === 0) {
+        add('stage.encounter.wave-enemies.empty', 'Encounter wave requires at least one enemy.', [...path, 'enemies']);
+        return;
+      }
+      wave.enemies.forEach((enemy: StageEncounterEnemyPlacement, enemyIndex: number) => {
+        const enemyPath = [...path, 'enemies', enemyIndex];
+        if (!enemy || typeof enemy !== 'object' || Array.isArray(enemy)) {
+          add('stage.encounter.enemy.invalid', 'Encounter enemy must be an object.', enemyPath);
+          return;
+        }
+        if (!ENCOUNTER_ARCHETYPES.has(enemy.type)) add(
+          'stage.encounter.archetype.unknown', `Enemy archetype is not supported: ${enemy.type}.`,
+          [...enemyPath, 'type'], String(enemy.type),
+        );
+        else if (this.runtimeCapabilities.get(enemyCapabilityId(enemy.type))?.status !== 'supported') add(
+          'stage.encounter.archetype.unavailable', `Enemy archetype is unavailable: ${enemy.type}.`,
+          [...enemyPath, 'type'], enemy.type,
+        );
+        if (!Number.isInteger(enemy.x) || enemy.x < 0 || !Number.isInteger(enemy.y) || enemy.y < 0) add(
+          'stage.encounter.spawn.invalid', 'Encounter enemy requires non-negative integer tile coordinates.', enemyPath,
+        );
+        if (!Number.isInteger(enemy.level) || enemy.level < 1 || enemy.level > 10) add(
+          'stage.encounter.enemy-level.invalid', 'Encounter enemy level must be an integer from 1 to 10.',
+          [...enemyPath, 'level'],
+        );
+      });
+    });
   }
 
   private validateCampaignCatalog(module: StageModule, diagnostics: StageDiagnostic[]): void {

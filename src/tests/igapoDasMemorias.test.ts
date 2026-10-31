@@ -152,13 +152,14 @@ describe('Igapó das Memórias authored chapter', () => {
   });
 
   it('places every encounter on reachable ground with portal clearance', () => {
-    const level = loadIgapo().level;
+    const loaded = loadIgapo();
+    const level = loaded.level;
     const spawn = findTile(level.tileMap, 8);
     const all = reachable(level.tileMap, spawn);
     const enemies = [
       ...level.enemies,
       ...(level.ambush ?? []),
-      ...(level.waves ?? []).flatMap(wave => wave.enemies),
+      ...(loaded.encounter?.waves ?? []).flatMap(wave => wave.enemies),
     ];
     expect(enemies.length).toBeGreaterThanOrEqual(5);
     enemies.forEach(enemy => {
