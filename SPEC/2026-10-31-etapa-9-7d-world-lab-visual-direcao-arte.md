@@ -1,7 +1,9 @@
 # Etapa 9.7D — World Lab visual e padronização da direção de arte
 
-**Data:** 2026-10-31  
-**Estado:** especificação anterior à implementação  
+**Data:** 2026-10-31
+
+**Estado:** especificação anterior à implementação
+
 **Continuidade:** sucede a Etapa 9.7C e reutiliza seus previews, registry visual,
 renderer Phaser, assets locais e variantes. Não cria renderer, física, asset
 manager, save, formato de mapa ou editor alternativo.

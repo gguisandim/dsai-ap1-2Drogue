@@ -63,8 +63,32 @@ describe('Umbra World Lab UI', () => {
     overlays.click();
 
     expect(session.state().document).toBe(before);
-    expect(session.state().filters).toEqual({ showGrid: false, showOverlays: false });
+    expect(session.state().filters).toEqual({
+      showGrid: false,
+      showOverlays: false,
+      showEntities: true,
+      showDecorations: true,
+      showExits: true,
+    });
     expect(document.querySelectorAll('.wl-marker')).toHaveLength(0);
+  });
+
+  it('switches between structural, Phaser visual and equivalent comparison previews', () => {
+    mount();
+    const mode = document.querySelector<HTMLSelectElement>('[data-role="stage-mode"]') as HTMLSelectElement;
+    mode.value = 'visual';
+    mode.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(document.querySelectorAll('iframe.wl-phaser-frame')).toHaveLength(1);
+    expect(document.querySelector('iframe')?.getAttribute('sandbox')).toBe('allow-scripts allow-same-origin');
+
+    mode.value = 'compare';
+    mode.dispatchEvent(new Event('change', { bubbles: true }));
+    const frames = [...document.querySelectorAll<HTMLIFrameElement>('iframe.wl-phaser-frame')];
+    expect(frames).toHaveLength(2);
+    expect(frames[0].style.transform).toBe(frames[1].style.transform);
+    expect(new URL(frames[0].src).searchParams.get('stagePreview')).toBe(
+      documentModel.stages.find(stage => stage.nodeId === documentModel.nodes[0].id)?.stageId,
+    );
   });
 });
 

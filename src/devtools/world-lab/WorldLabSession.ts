@@ -8,6 +8,7 @@ import type {
   WorldLabSnapshotResult,
 } from './contracts';
 import { WorldLabDataService } from './WorldLabDataService';
+import type { WorldLabStageOption } from './WorldLabDataService';
 import { WorldLabSnapshotCodec } from './WorldLabSnapshot';
 
 export interface WorldLabDataSource {
@@ -16,6 +17,9 @@ export interface WorldLabDataSource {
   presentationVariantId?(): string | undefined;
   setPresentationVariant?(id?: string): void;
   focusNodeId?(): string | undefined;
+  stageOptions?(): readonly WorldLabStageOption[];
+  focusStageId?(): string | undefined;
+  setFocusStageId?(id?: string): void;
 }
 
 type Listener = (state: WorldLabSessionState) => void;
@@ -50,7 +54,13 @@ export class WorldLabSession {
       generation: 0,
       diagnostics: [],
       selection: {},
-      filters: { showGrid: true, showOverlays: true },
+      filters: {
+        showGrid: true,
+        showOverlays: true,
+        showEntities: true,
+        showDecorations: true,
+        showExits: true,
+      },
     });
   }
 
@@ -78,6 +88,20 @@ export class WorldLabSession {
   public setPresentationVariant(id?: string): WorldLabGenerationResult | undefined {
     if (!this.dataSource.setPresentationVariant) return undefined;
     this.dataSource.setPresentationVariant(id);
+    return this.generate();
+  }
+
+  public stageOptions(): readonly WorldLabStageOption[] {
+    return this.dataSource.stageOptions?.() ?? Object.freeze([]);
+  }
+
+  public focusStageId(): string | undefined {
+    return this.dataSource.focusStageId?.();
+  }
+
+  public setFocusStageId(id?: string): WorldLabGenerationResult | undefined {
+    if (!this.dataSource.setFocusStageId) return undefined;
+    this.dataSource.setFocusStageId(id);
     return this.generate();
   }
 

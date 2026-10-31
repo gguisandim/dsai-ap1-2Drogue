@@ -145,6 +145,64 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex="0"]:
 .wl-marker--physical-exit { pointer-events: auto; cursor: pointer; }
 .wl-marker--physical-exit circle { fill: #48e0cd; stroke: #f6fffd; stroke-width: 2; }
 
+.wl-stage-visual-meta {
+  max-height: 88px;
+  overflow: auto;
+  padding: 7px 9px;
+  border-bottom: 1px solid #203441;
+  background: #0a1621;
+  color: #8da6b7;
+  font: 9px/1.45 ui-monospace, monospace;
+}
+.wl-stage-visual-meta + .wl-stage-svg { height: calc(100% - 88px); }
+.wl-phaser-preview {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  gap: 5px;
+  overflow: hidden;
+  background: #050a0f;
+}
+.wl-phaser-preview--compare { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wl-phaser-frame-shell { position: relative; min-width: 0; overflow: hidden; border-right: 1px solid #2b4354; }
+.wl-phaser-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  transform-origin: center center;
+  image-rendering: pixelated;
+  background: #000;
+}
+.wl-phaser-label {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  max-width: calc(100% - 12px);
+  overflow: hidden;
+  padding: 4px 6px;
+  border: 1px solid #49667a;
+  border-radius: 3px;
+  background: rgb(4 13 20 / 82%);
+  color: #d9edf7;
+  font: 9px ui-monospace, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wl-phaser-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: .18;
+  background-image:
+    linear-gradient(to right, #b6e7ef 1px, transparent 1px),
+    linear-gradient(to bottom, #b6e7ef 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
 .wl-fields { display: grid; grid-template-columns: minmax(90px, auto) minmax(0, 1fr); gap: 0; margin: 0; border-top: 1px solid #203542; }
 .wl-fields dt, .wl-fields dd { margin: 0; padding: 8px 4px; border-bottom: 1px solid #1a2c38; font-size: 11px; overflow-wrap: anywhere; }
 .wl-fields dt { color: #7892a5; font-family: ui-monospace, monospace; }

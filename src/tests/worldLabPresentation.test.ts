@@ -72,6 +72,17 @@ describe('World Lab visual presentation inspection', () => {
       logicalId: 'environment.memory-vestige', textureKey: 'puny_mage',
       animations: ['puny_mage_idle'],
     });
+    expect(visual?.artAssets).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'floor', category: 'tile', sourceDimensions: { width: 432, height: 1040 },
+        frameDimensions: { width: 16, height: 16 }, renderedDimensions: { width: 32, height: 32 },
+        compatibility: 'compatible',
+      }),
+      expect.objectContaining({
+        id: 'igapo_emergent_tree', category: 'decoration', scaleClass: 'oversized',
+        compatibility: 'compatible', warnings: [],
+      }),
+    ]));
   });
 
   it('projects the sombrio variant with different tiles and environment over the same map', () => {
@@ -90,6 +101,22 @@ describe('World Lab visual presentation inspection', () => {
     expect(project().service.presentationVariants()).toEqual([
       'variant.aguas.igapo-ribeirinho',
       'variant.aguas.igapo-sombrio',
+    ]);
+  });
+
+  it('lists registered stages and scopes variants to the selected stage', () => {
+    const service = project().service;
+    expect(service.stageOptions()).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: IGAPO_DAS_MEMORIAS_STAGE_ID,
+        presentationVariantIds: [
+          'variant.aguas.igapo-ribeirinho', 'variant.aguas.igapo-sombrio',
+        ],
+      }),
+    ]));
+    service.setFocusStageId(IGAPO_DAS_MEMORIAS_STAGE_ID);
+    expect(service.presentationVariants()).toEqual([
+      'variant.aguas.igapo-ribeirinho', 'variant.aguas.igapo-sombrio',
     ]);
   });
 

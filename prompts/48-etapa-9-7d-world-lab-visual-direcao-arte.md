@@ -8,13 +8,30 @@
 - Esforço: `desconhecido`
 - SPEC: `SPEC/2026-10-31-etapa-9-7d-world-lab-visual-direcao-arte.md`
 - Commit: `pendente`
-- Execução: `pendente`
+- Execução: `testes dirigidos aprovados (37 casos do World Lab, apresentação e Igapó); npm run check:gates aprovado; npm run build aprovado (typecheck e Vite); npm test -- --runInBand aprovado (84 suítes, 1079 testes); git diff --check aprovado; homologação visual no Edge headless em 1280×720 aprovada para os modos Visual e Compare; duas capturas temporárias foram inspecionadas e removidas após registrar seus hashes; a checagem adicional via console/CDP excedeu o tempo e não foi usada como evidência`
 
 ## Arquivos modificados
 
 - `SPEC/2026-10-31-etapa-9-7d-world-lab-visual-direcao-arte.md`
 - `SPEC/README.md`
 - `prompts/48-etapa-9-7d-world-lab-visual-direcao-arte.md`
+- `docs/art-direction.md`
+- `docs/autoria-capitulos-e-assets.md`
+- `src/devtools/world-lab/WorldLabDataService.ts`
+- `src/devtools/world-lab/WorldLabProjector.ts`
+- `src/devtools/world-lab/WorldLabSession.ts`
+- `src/devtools/world-lab/WorldLabSnapshot.ts`
+- `src/devtools/world-lab/contracts.ts`
+- `src/devtools/world-lab/ui/PhaserPreviewView.ts`
+- `src/devtools/world-lab/ui/StageInspectorView.ts`
+- `src/devtools/world-lab/ui/WorldLabApp.ts`
+- `src/devtools/world-lab/world-lab.css`
+- `src/stages/chapters/aguas/igapoVisuals.ts`
+- `src/stages/contracts/StagePresentation.ts`
+- `src/stages/runtime/StageVisualRegistry.ts`
+- `src/tests/worldLabPresentation.test.ts`
+- `src/tests/worldLabUi.test.ts`
+- `src/tests/worldLabVisualPreview.test.ts`
 
 ## Prompt efetivamente recebido
 
@@ -169,6 +186,6 @@ A implementação deve permitir que novos agentes criem fases com pacotes 2D dif
 ## Observações factuais
 
 - Sessão bruta: `desconhecido`
-- Metadados adicionais: `desconhecido`
+- Metadados adicionais: capturas temporárias `97d-world-lab-compare-2.png` (SHA-256 `a04d5042ee98297eb86194c019fdaac33e7723f74dfdb3d40065677aeae7e12a`) e `97d-world-lab-visual-2.png` (SHA-256 `92793accd820458d20d142f9042321d2f99b2bc92e1db226d0e047cd466a0d93`) foram geradas e inspecionadas em 1280×720; removidas de `.tmp/evidence/` antes da entrega conforme a política do repositório.
 - Política de commit: use `pendente` antes da consolidação; o gate deriva o
   commit que adicionou este arquivo sem exigir que o registro seja reescrito.

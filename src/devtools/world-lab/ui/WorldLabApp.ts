@@ -15,6 +15,12 @@ import {
   type MacroCampaignSelection,
 } from './MacroCampaignGraphView';
 import { renderStageInspector } from './StageInspectorView';
+import {
+  createWorldLabCaptureDescriptor,
+  downloadWorldLabCapture,
+  renderPhaserPreview,
+  type WorldLabStageMode,
+} from './PhaserPreviewView';
 
 function appendField(container: HTMLElement, label: string, value: unknown): void {
   const term = document.createElement('dt');
@@ -90,6 +96,21 @@ function renderInspector(container: HTMLElement, state: WorldLabSessionState): v
     appendField(fields, 'walkable', tile === undefined ? undefined : tileWalkable(tile));
     appendField(fields, 'entities', markers.map(marker => `${marker.kind}:${marker.label}`).join(', ') || 'none');
   }
+  const stage = selectedStage(state);
+  stage?.visualPresentation?.artAssets?.forEach(asset => {
+    const rendered = asset.renderedDimensions
+      ? `${Math.round(asset.renderedDimensions.width)}×${Math.round(asset.renderedDimensions.height)}`
+      : 'unavailable';
+    appendField(fields, `${asset.category}:${asset.id}`, [
+      asset.textureKey + (asset.frame !== undefined ? `#${asset.frame}` : ''),
+      `world ${rendered}`,
+      `scale ${asset.scale}`,
+      `anchor ${asset.anchor ? `${asset.anchor.x},${asset.anchor.y}` : 'default'}`,
+      asset.layer,
+      asset.compatibility,
+      asset.warnings.join(', '),
+    ].filter(Boolean).join(' · '));
+  });
   container.append(fields);
 }
 
@@ -275,6 +296,9 @@ export class WorldLabApp {
   private macroSelection: MacroCampaignSelection = {};
   private macroTile?: { readonly x: number; readonly y: number };
   private macroGeneration = 0;
+  private stageMode: WorldLabStageMode = 'structural';
+  private previewZoom = 1;
+  private comparisonVariantId?: string;
 
   private readonly elements: {
     proceduralMode: HTMLButtonElement;
@@ -283,9 +307,17 @@ export class WorldLabApp {
     generate: HTMLButtonElement;
     regenerate: HTMLButtonElement;
     nodeSelect: HTMLSelectElement;
+    stageSelect: HTMLSelectElement;
     variant: HTMLSelectElement;
+    comparisonVariant: HTMLSelectElement;
+    stageMode: HTMLSelectElement;
+    zoom: HTMLSelectElement;
     grid: HTMLInputElement;
     overlays: HTMLInputElement;
+    entities: HTMLInputElement;
+    decorations: HTMLInputElement;
+    exits: HTMLInputElement;
+    capture: HTMLButtonElement;
     exportButton: HTMLButtonElement;
     importInput: HTMLInputElement;
     graph: HTMLElement;
@@ -303,7 +335,15 @@ export class WorldLabApp {
     private readonly session = new WorldLabSession(),
     private readonly macroSource: { generate(seed: string): WorldLabMacroRouteResult } =
       new WorldLabMacroDataService(),
+    private readonly previewEnabled = ['localhost', '127.0.0.1', '0.0.0.0', '[::1]']
+      .includes(globalThis.location?.hostname ?? ''),
   ) {
+    const urlParameters = new URLSearchParams(globalThis.location?.search ?? '');
+    const requestedView = urlParameters.get('view');
+    if (requestedView === 'visual' || requestedView === 'compare') this.stageMode = requestedView;
+    const requestedZoom = Number(urlParameters.get('zoom'));
+    if ([0.5, 0.75, 1, 1.25].includes(requestedZoom)) this.previewZoom = requestedZoom;
+    this.comparisonVariantId = urlParameters.get('comparisonVariant')?.trim() || undefined;
     root.className = 'world-lab';
     root.innerHTML = `
       <header class="wl-header">
@@ -317,9 +357,17 @@ export class WorldLabApp {
           <button data-role="generate" class="is-primary">Generate</button>
           <button data-role="regenerate">Regenerate</button>
           <label>Node <select data-role="node-select"></select></label>
+          <label>Stage <select data-role="stage-select"></select></label>
           <label>Variant <select data-role="variant"></select></label>
+          <label>View <select data-role="stage-mode"><option value="structural">Structural</option><option value="visual">Visual</option><option value="compare">Compare</option></select></label>
+          <label>Compare <select data-role="comparison-variant"></select></label>
+          <label>Zoom <select data-role="zoom"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.25">125%</option></select></label>
           <label class="wl-check"><input type="checkbox" data-role="grid"> Grid</label>
           <label class="wl-check"><input type="checkbox" data-role="overlays"> Overlays</label>
+          <label class="wl-check"><input type="checkbox" data-role="entities"> Entities</label>
+          <label class="wl-check"><input type="checkbox" data-role="decorations"> Decorations</label>
+          <label class="wl-check"><input type="checkbox" data-role="exits"> Exits</label>
+          <button data-role="capture">Capture</button>
           <button data-role="export">Export snapshot</button>
           <label class="wl-file">Import snapshot<input type="file" accept="application/json,.json" data-role="import"></label>
         </div>
@@ -339,7 +387,10 @@ export class WorldLabApp {
     this.elements = {
       proceduralMode: query('mode-procedural'), macroMode: query('mode-macro'),
       seed: query('seed'), generate: query('generate'), regenerate: query('regenerate'),
-      nodeSelect: query('node-select'), variant: query('variant'), grid: query('grid'), overlays: query('overlays'),
+      nodeSelect: query('node-select'), stageSelect: query('stage-select'), variant: query('variant'),
+      comparisonVariant: query('comparison-variant'), stageMode: query('stage-mode'), zoom: query('zoom'),
+      grid: query('grid'), overlays: query('overlays'), entities: query('entities'),
+      decorations: query('decorations'), exits: query('exits'), capture: query('capture'),
       exportButton: query('export'), importInput: query('import'), graph: query('graph'),
       stage: query('stage'), inspector: query('inspector'), diagnostics: query('diagnostics'),
       source: query('source'), stageTitle: query('stage-title'),
@@ -364,12 +415,43 @@ export class WorldLabApp {
       if (this.mode === 'macro') this.selectMacroNode(this.elements.nodeSelect.value);
       else this.session.selectNode(this.elements.nodeSelect.value);
     });
+    this.elements.stageSelect.addEventListener('change', () => {
+      this.comparisonVariantId = undefined;
+      this.session.setFocusStageId(this.elements.stageSelect.value || undefined);
+    });
     this.elements.variant.addEventListener('change', () => {
       this.session.setPresentationVariant(this.elements.variant.value || undefined);
       if (this.mode === 'macro') this.generateMacro();
     });
     this.elements.grid.addEventListener('change', () => this.session.setFilters({ showGrid: this.elements.grid.checked }));
     this.elements.overlays.addEventListener('change', () => this.session.setFilters({ showOverlays: this.elements.overlays.checked }));
+    this.elements.entities.addEventListener('change', () => this.session.setFilters({ showEntities: this.elements.entities.checked }));
+    this.elements.decorations.addEventListener('change', () => this.session.setFilters({ showDecorations: this.elements.decorations.checked }));
+    this.elements.exits.addEventListener('change', () => this.session.setFilters({ showExits: this.elements.exits.checked }));
+    this.elements.stageMode.addEventListener('change', () => {
+      this.stageMode = this.elements.stageMode.value as WorldLabStageMode;
+      this.render(this.session.state());
+    });
+    this.elements.zoom.addEventListener('change', () => {
+      this.previewZoom = Number(this.elements.zoom.value);
+      this.render(this.session.state());
+    });
+    this.elements.comparisonVariant.addEventListener('change', () => {
+      this.comparisonVariantId = this.elements.comparisonVariant.value || undefined;
+      this.render(this.session.state());
+    });
+    this.elements.capture.addEventListener('click', () => {
+      const stage = selectedStage(this.session.state());
+      if (!stage || this.stageMode === 'structural') return;
+      const primary = this.session.presentationVariantId();
+      const variants = this.stageMode === 'compare'
+        ? [primary, this.comparisonVariantId]
+        : [primary];
+      const descriptor = createWorldLabCaptureDescriptor(stage, variants, this.previewZoom);
+      if (!downloadWorldLabCapture(this.elements.stage, descriptor)) {
+        this.elements.source.textContent = 'Preview ainda não carregou; aguarde antes de capturar.';
+      }
+    });
     this.elements.exportButton.addEventListener('click', () => {
       if (this.mode === 'macro') return;
       const serialized = this.session.exportSnapshot();
@@ -462,8 +544,44 @@ export class WorldLabApp {
     }
     this.elements.variant.value = selectedVariant;
     this.elements.variant.disabled = variants.length === 0;
+    const stageOptions = this.session.stageOptions();
+    const stageSignature = stageOptions.map(option => `${option.id}@${option.manifestRevision}`).join('|');
+    if (this.elements.stageSelect.dataset.signature !== stageSignature) {
+      this.elements.stageSelect.replaceChildren();
+      const campaign = document.createElement('option');
+      campaign.value = '';
+      campaign.textContent = 'campaign node';
+      this.elements.stageSelect.append(campaign);
+      stageOptions.forEach(stageOption => {
+        const option = document.createElement('option');
+        option.value = stageOption.id;
+        option.textContent = `${stageOption.title} · ${stageOption.id}`;
+        this.elements.stageSelect.append(option);
+      });
+      this.elements.stageSelect.dataset.signature = stageSignature;
+    }
+    this.elements.stageSelect.value = this.session.focusStageId() ?? '';
+    this.elements.comparisonVariant.replaceChildren();
+    variants.forEach(variantId => {
+      const option = document.createElement('option');
+      option.value = variantId;
+      option.textContent = variantId;
+      this.elements.comparisonVariant.append(option);
+    });
+    const primaryComparisonVariant = selectedVariant || variants[0];
+    const fallbackComparison = variants.find(variant => variant !== primaryComparisonVariant) ?? variants[0];
+    if (!this.comparisonVariantId || !variants.includes(this.comparisonVariantId)) {
+      this.comparisonVariantId = fallbackComparison;
+    }
+    this.elements.comparisonVariant.value = this.comparisonVariantId ?? '';
+    this.elements.comparisonVariant.disabled = this.stageMode !== 'compare' || variants.length === 0;
+    this.elements.stageMode.value = this.stageMode;
+    this.elements.zoom.value = String(this.previewZoom);
     this.elements.grid.checked = state.filters.showGrid;
     this.elements.overlays.checked = state.filters.showOverlays;
+    this.elements.entities.checked = state.filters.showEntities;
+    this.elements.decorations.checked = state.filters.showDecorations;
+    this.elements.exits.checked = state.filters.showExits;
     const procedural = this.mode === 'procedural';
     this.elements.proceduralMode.classList.toggle('is-active', procedural);
     this.elements.macroMode.classList.toggle('is-active', !procedural);
@@ -471,6 +589,9 @@ export class WorldLabApp {
     this.elements.macroMode.setAttribute('aria-selected', String(!procedural));
     this.elements.exportButton.disabled = !procedural;
     this.elements.importInput.disabled = !procedural;
+    this.elements.stageSelect.disabled = !procedural;
+    this.elements.stageMode.disabled = !procedural;
+    this.elements.capture.disabled = !procedural || this.stageMode === 'structural';
     if (!procedural) {
       this.renderMacro(state);
       return;
@@ -499,17 +620,37 @@ export class WorldLabApp {
     }
     const stage = selectedStage(state);
     this.elements.stageTitle.textContent = stage ? `Stage Inspector · ${stage.title}` : 'Stage Inspector';
-    renderStageInspector(
-      this.elements.stage,
-      stage,
-      state.selection,
-      state.filters.showGrid,
-      state.filters.showOverlays,
-      {
-        selectTile: (x, y) => this.session.selectTile(x, y),
-        selectPhysicalExit: physicalExitId => this.session.selectPhysicalExit(physicalExitId),
-      },
-    );
+    if (this.stageMode === 'structural') {
+      renderStageInspector(
+        this.elements.stage,
+        stage,
+        state.selection,
+        state.filters.showGrid,
+        state.filters.showOverlays,
+        {
+          selectTile: (x, y) => this.session.selectTile(x, y),
+          selectPhysicalExit: physicalExitId => this.session.selectPhysicalExit(physicalExitId),
+        },
+        {
+          entities: state.filters.showEntities,
+          decorations: state.filters.showDecorations,
+          exits: state.filters.showExits,
+        },
+      );
+    } else if (stage) {
+      renderPhaserPreview(this.elements.stage, {
+        stage,
+        variantId: selectedVariant || undefined,
+        comparisonVariantId: this.comparisonVariantId,
+        mode: this.stageMode,
+        zoom: this.previewZoom,
+        showGrid: state.filters.showGrid,
+        enabled: this.previewEnabled,
+      });
+    } else renderStageInspector(this.elements.stage, undefined, state.selection, true, true, {
+      selectTile: () => undefined,
+      selectPhysicalExit: () => undefined,
+    });
     renderInspector(this.elements.inspector, state);
     renderDiagnostics(this.elements.diagnostics, state.diagnostics,
       diagnostic => this.session.selectDiagnostic(diagnostic));

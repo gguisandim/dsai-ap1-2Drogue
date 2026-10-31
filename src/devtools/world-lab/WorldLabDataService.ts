@@ -51,6 +51,13 @@ export interface WorldLabDataServiceOptions {
   readonly focusStageId?: string;
 }
 
+export interface WorldLabStageOption {
+  readonly id: string;
+  readonly title: string;
+  readonly manifestRevision: number;
+  readonly presentationVariantIds: readonly string[];
+}
+
 function diagnosticFromStage(
   diagnostic: StageDiagnostic,
   origin: WorldLabDiagnosticOrigin,
@@ -90,7 +97,7 @@ export class WorldLabDataService {
   private readonly binder: CampaignExitBinder;
   private readonly projector: WorldLabProjector;
   private readonly registry: StageRegistry;
-  private readonly focusStageId?: string;
+  private currentFocusStageId?: string;
   private currentPresentationVariantId?: string;
   private lastFocusNodeId?: string;
 
@@ -102,7 +109,7 @@ export class WorldLabDataService {
       registerCampaignChapters(registry);
     }
     this.registry = registry;
-    this.focusStageId = options.focusStageId;
+    this.currentFocusStageId = options.focusStageId;
     this.currentPresentationVariantId = options.presentationVariantId;
     this.loader = options.loader ?? new StageLoader(registry);
     this.generator = options.generator ?? new CampaignGraphGenerator();
@@ -112,8 +119,32 @@ export class WorldLabDataService {
   }
 
   public presentationVariants(): readonly string[] {
-    return Object.freeze([...new Set(this.registry.listModules()
+    const modules = this.currentFocusStageId
+      ? this.registry.listModules().filter(module => module.manifest.id === this.currentFocusStageId)
+      : this.registry.listModules();
+    return Object.freeze([...new Set(modules
       .flatMap(module => Object.keys(module.manifest.presentationVariants ?? {})))].sort());
+  }
+
+  public stageOptions(): readonly WorldLabStageOption[] {
+    return Object.freeze(this.registry.listModules().map(module => Object.freeze({
+      id: module.manifest.id,
+      title: module.manifest.title,
+      manifestRevision: module.manifest.revision,
+      presentationVariantIds: Object.freeze(Object.keys(module.manifest.presentationVariants ?? {}).sort()),
+    })).sort((left, right) => left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
+  }
+
+  public focusStageId(): string | undefined {
+    return this.currentFocusStageId;
+  }
+
+  public setFocusStageId(id?: string): void {
+    this.currentFocusStageId = id?.trim() || undefined;
+    if (this.currentPresentationVariantId &&
+      !this.presentationVariants().includes(this.currentPresentationVariantId)) {
+      this.currentPresentationVariantId = undefined;
+    }
   }
 
   public presentationVariantId(): string | undefined {
@@ -152,14 +183,14 @@ export class WorldLabDataService {
 
     this.lastFocusNodeId = undefined;
     let graph = generated.value;
-    if (this.focusStageId) {
-      if (!this.registry.get(this.focusStageId)) {
+    if (this.currentFocusStageId) {
+      if (!this.registry.get(this.currentFocusStageId)) {
         return this.failure([{
           code: 'world-lab.focus-stage.unknown',
           severity: 'error',
           origin: 'integration',
-          message: `Focus stage is not registered: ${this.focusStageId}.`,
-          stageId: this.focusStageId,
+          message: `Focus stage is not registered: ${this.currentFocusStageId}.`,
+          stageId: this.currentFocusStageId,
         }]);
       }
       const target = [...graph.nodes].sort((left, right) =>
@@ -168,7 +199,7 @@ export class WorldLabDataService {
       graph = Object.freeze({
         ...graph,
         nodes: Object.freeze(graph.nodes.map(node => node.id === target.id
-          ? Object.freeze({ ...node, stageId: this.focusStageId as string })
+          ? Object.freeze({ ...node, stageId: this.currentFocusStageId as string })
           : node)),
       });
     }

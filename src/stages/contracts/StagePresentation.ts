@@ -12,6 +12,31 @@ export type StageLogicalTileId =
 
 export type StageVisualLayer = 'background' | 'terrain' | 'foreground';
 
+export type StageVisualPerspective = 'top-down' | 'neutral' | 'side-view' | 'isometric';
+export type StageVisualScaleClass = 'tile' | 'character' | 'prop' | 'oversized';
+
+export interface StageVisualBounds {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+export interface StageVisualAnchor {
+  /** Normalized horizontal origin: 0 is left and 1 is right. */
+  readonly x: number;
+  /** Normalized vertical origin: 0 is top and 1 is bottom. */
+  readonly y: number;
+}
+
+/** Inspection-only metadata. It never configures a Phaser physics body. */
+export interface StageVisualCollisionMetadata {
+  readonly width: number;
+  readonly height: number;
+  readonly offsetX: number;
+  readonly offsetY: number;
+}
+
 export type StageEnemyArchetype =
   | 'affinity'
   | 'applaud'
@@ -60,6 +85,14 @@ export interface StageVisualTextureDefinition {
   readonly frameWidth?: number;
   readonly frameHeight?: number;
   readonly frameCount?: number;
+  /** Dimensions of the source image, distinct from an individual frame. */
+  readonly sourceWidth?: number;
+  readonly sourceHeight?: number;
+  /** Alpha-visible region inside one frame when it is known. */
+  readonly visibleBounds?: StageVisualBounds;
+  readonly pixelArt?: boolean;
+  readonly perspective?: StageVisualPerspective;
+  readonly originId?: string;
 }
 
 export interface StageTileVisualVariant {
@@ -87,6 +120,8 @@ export interface StageDecorationVisualDefinition {
   readonly depth: number;
   readonly defaultScale?: number;
   readonly frame?: number;
+  readonly anchor?: StageVisualAnchor;
+  readonly scaleClass?: StageVisualScaleClass;
 }
 
 export interface StageVisualThemeDefinition {
@@ -113,6 +148,9 @@ export interface StageSpriteDefinition {
   readonly scale?: number;
   readonly depth?: number;
   readonly frame?: number;
+  readonly anchor?: StageVisualAnchor;
+  readonly scaleClass?: StageVisualScaleClass;
+  readonly collision?: StageVisualCollisionMetadata;
 }
 
 export interface StageSoundDefinition {
@@ -174,6 +212,12 @@ export interface ResolvedStageTexture {
   readonly frameWidth?: number;
   readonly frameHeight?: number;
   readonly frameCount?: number;
+  readonly sourceWidth?: number;
+  readonly sourceHeight?: number;
+  readonly visibleBounds?: StageVisualBounds;
+  readonly pixelArt?: boolean;
+  readonly perspective?: StageVisualPerspective;
+  readonly originId?: string;
 }
 
 export interface ResolvedStageTileVisual extends ResolvedStageTexture {
@@ -191,6 +235,14 @@ export interface ResolvedStageDecorationVisual {
   readonly frameWidth?: number;
   readonly frameHeight?: number;
   readonly frameCount?: number;
+  readonly sourceWidth?: number;
+  readonly sourceHeight?: number;
+  readonly visibleBounds?: StageVisualBounds;
+  readonly pixelArt?: boolean;
+  readonly perspective?: StageVisualPerspective;
+  readonly originId?: string;
+  readonly anchor?: StageVisualAnchor;
+  readonly scaleClass?: StageVisualScaleClass;
 }
 
 export interface ResolvedStageSprite {
@@ -205,6 +257,15 @@ export interface ResolvedStageSprite {
   readonly frameWidth?: number;
   readonly frameHeight?: number;
   readonly frameCount?: number;
+  readonly sourceWidth?: number;
+  readonly sourceHeight?: number;
+  readonly visibleBounds?: StageVisualBounds;
+  readonly pixelArt?: boolean;
+  readonly perspective?: StageVisualPerspective;
+  readonly originId?: string;
+  readonly anchor?: StageVisualAnchor;
+  readonly scaleClass?: StageVisualScaleClass;
+  readonly collision?: StageVisualCollisionMetadata;
 }
 
 export interface ResolvedStageSound {

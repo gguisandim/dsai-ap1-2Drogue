@@ -85,7 +85,9 @@ function validStage(value: unknown): value is WorldLabStageView {
   if (!isRecord(value) || !text(value.nodeId) || !text(value.stageId) || !text(value.title) ||
     !text(value.theme) || !integer(value.width) || !integer(value.height) ||
     !Array.isArray(value.tiles) || !Array.isArray(value.markers) ||
-    !Array.isArray(value.physicalExitIds)) return false;
+    !Array.isArray(value.physicalExitIds) ||
+    (value.manifestRevision !== undefined && (!integer(value.manifestRevision) || value.manifestRevision < 1)) ||
+    (value.themeRevision !== undefined && (!integer(value.themeRevision) || value.themeRevision < 1))) return false;
   if (value.visualPresentation !== undefined && (!isRecord(value.visualPresentation) ||
     !text(value.visualPresentation.themeId) || !text(value.visualPresentation.tilesetId) ||
     !Array.isArray(value.visualPresentation.textureKeys) || !value.visualPresentation.textureKeys.every(text) ||
@@ -97,6 +99,9 @@ function validStage(value: unknown): value is WorldLabStageView {
       (!Array.isArray(value.visualPresentation.npcSprites) || !value.visualPresentation.npcSprites.every(validSprite))) ||
     (value.visualPresentation.enemySprites !== undefined &&
       (!Array.isArray(value.visualPresentation.enemySprites) || !value.visualPresentation.enemySprites.every(validSprite))) ||
+    (value.visualPresentation.artAssets !== undefined &&
+      (!Array.isArray(value.visualPresentation.artAssets) ||
+        !value.visualPresentation.artAssets.every(validArtAsset))) ||
     (value.visualPresentation.audio !== undefined && !validVisualAudio(value.visualPresentation.audio)) ||
     (value.visualPresentation.environment !== undefined && !validVisualEnvironment(value.visualPresentation.environment)))) return false;
   const width = value.width as number;
@@ -107,6 +112,23 @@ function validStage(value: unknown): value is WorldLabStageView {
   if (!value.markers.every(validMarker) || !value.physicalExitIds.every(text)) return false;
   return value.markers.every(marker => marker.x >= 0 && marker.y >= 0 &&
     marker.x < width && marker.y < height);
+}
+
+function validDimensions(value: unknown): boolean {
+  return isRecord(value) && finite(value.width) && value.width > 0 && finite(value.height) && value.height > 0;
+}
+
+function validArtAsset(value: unknown): boolean {
+  return isRecord(value) && text(value.id) &&
+    ['tile', 'decoration', 'npc', 'enemy'].includes(String(value.category)) &&
+    text(value.textureKey) && finite(value.scale) && value.scale > 0 && text(value.layer) &&
+    ['compatible', 'review', 'incomplete'].includes(String(value.compatibility)) &&
+    Array.isArray(value.warnings) && value.warnings.every(text) &&
+    (value.sourceDimensions === undefined || validDimensions(value.sourceDimensions)) &&
+    (value.frameDimensions === undefined || validDimensions(value.frameDimensions)) &&
+    (value.visibleDimensions === undefined || validDimensions(value.visibleDimensions)) &&
+    (value.renderedDimensions === undefined || validDimensions(value.renderedDimensions)) &&
+    (value.anchor === undefined || (isRecord(value.anchor) && finite(value.anchor.x) && finite(value.anchor.y)));
 }
 
 function validSprite(value: unknown): boolean {
@@ -181,6 +203,17 @@ function cloneStage(stage: WorldLabStageView): WorldLabStageView {
           .map(item => Object.freeze({
             ...item, animations: Object.freeze([...item.animations].sort(compare)),
           }))),
+      } : {}),
+      ...(stage.visualPresentation.artAssets ? {
+        artAssets: Object.freeze(stage.visualPresentation.artAssets.map(item => Object.freeze({
+          ...item,
+          ...(item.sourceDimensions ? { sourceDimensions: Object.freeze({ ...item.sourceDimensions }) } : {}),
+          ...(item.frameDimensions ? { frameDimensions: Object.freeze({ ...item.frameDimensions }) } : {}),
+          ...(item.visibleDimensions ? { visibleDimensions: Object.freeze({ ...item.visibleDimensions }) } : {}),
+          ...(item.renderedDimensions ? { renderedDimensions: Object.freeze({ ...item.renderedDimensions }) } : {}),
+          ...(item.anchor ? { anchor: Object.freeze({ ...item.anchor }) } : {}),
+          warnings: Object.freeze([...item.warnings]),
+        }))),
       } : {}),
       ...(stage.visualPresentation.audio ? { audio: Object.freeze({
         ...stage.visualPresentation.audio,

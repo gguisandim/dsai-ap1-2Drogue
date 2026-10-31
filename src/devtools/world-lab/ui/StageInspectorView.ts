@@ -6,6 +6,12 @@ export interface StageInspectorCallbacks {
   readonly selectPhysicalExit: (physicalExitId: string) => void;
 }
 
+export interface StageInspectorLayers {
+  readonly entities?: boolean;
+  readonly decorations?: boolean;
+  readonly exits?: boolean;
+}
+
 const TILE_COLORS: Readonly<Record<number, string>> = Object.freeze({
   0: '#263849', 1: '#0c1520', 2: '#44515f', 3: '#174f68', 4: '#8f2e1f',
   5: '#1f9d74', 6: '#80662b', 7: '#8a5a24', 8: '#1e8f63', 9: '#7e2b4d',
@@ -27,6 +33,7 @@ export function renderStageInspector(
   showGrid: boolean,
   showOverlays: boolean,
   callbacks: StageInspectorCallbacks,
+  layers: StageInspectorLayers = {},
 ): void {
   container.replaceChildren();
   if (!stage) {
@@ -44,6 +51,7 @@ export function renderStageInspector(
     const spritesheets = stage.visualPresentation.spritesheets ?? [];
     const origins = stage.visualPresentation.assetOrigins ?? [];
     const decorations = stage.visualPresentation.decorations ?? [];
+    const artAssets = stage.visualPresentation.artAssets ?? [];
     visual.textContent = [
       `Tema: ${stage.visualPresentation.themeId}`,
       `Variante: ${stage.visualPresentation.variantId ?? 'default'}`,
@@ -59,6 +67,16 @@ export function renderStageInspector(
       `Overrides: ${Object.entries(stage.visualPresentation.decorationOverrides ?? {})
         .map(([from, to]) => `${from}→${to}`).join(', ') || 'nenhum'}`,
       `Origem: ${origins.map(origin => `${origin.assetId} (${origin.pack}, ${origin.license})`).join(', ') || 'legado'}`,
+      `Escala artística: ${artAssets.map(asset => {
+        const source = asset.sourceDimensions ? `${asset.sourceDimensions.width}×${asset.sourceDimensions.height}` : '?';
+        const frame = asset.frameDimensions ? `${asset.frameDimensions.width}×${asset.frameDimensions.height}` : '?';
+        const rendered = asset.renderedDimensions
+          ? `${Math.round(asset.renderedDimensions.width)}×${Math.round(asset.renderedDimensions.height)}` : '?';
+        const anchor = asset.anchor ? `${asset.anchor.x},${asset.anchor.y}` : 'default';
+        return `${asset.category}:${asset.id} ${asset.textureKey}${asset.frame !== undefined ? `#${asset.frame}` : ''}`
+          + ` fonte ${source} frame ${frame} mundo ${rendered} escala ${asset.scale} âncora ${anchor}`
+          + ` camada ${asset.layer} [${asset.compatibility}]${asset.warnings.length ? ` ⚠ ${asset.warnings.join(',')}` : ''}`;
+      }).join(' · ') || 'metadados indisponíveis'}`,
       `Ausentes: ${stage.visualPresentation.missingResourceIds.join(', ') || 'nenhum'}`,
       `Diagnósticos: ${stage.visualPresentation.diagnostics.join(', ') || 'nenhum'}`,
       `NPCs: ${stage.visualPresentation.npcSprites?.map(item => `${item.logicalId}→${item.spriteId}`
@@ -101,7 +119,12 @@ export function renderStageInspector(
     });
     svg.append(rect);
   }));
-  if (showOverlays) stage.markers.forEach(marker => {
+  const markerVisible = (marker: WorldLabStageMarker): boolean => {
+    if (marker.kind === 'decoration') return layers.decorations ?? true;
+    if (['anchor', 'section-exit', 'physical-exit'].includes(marker.kind)) return layers.exits ?? true;
+    return layers.entities ?? true;
+  };
+  if (showOverlays) stage.markers.filter(markerVisible).forEach(marker => {
     const group = svgElement('g', {
       transform: `translate(${marker.x * size + size / 2} ${marker.y * size + size / 2})`,
       class: markerClass(marker),

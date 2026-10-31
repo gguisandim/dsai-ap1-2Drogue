@@ -13,6 +13,7 @@ import type {
   WorldLabAssetOrigin,
   WorldLabStageMarker,
   WorldLabStageView,
+  WorldLabArtAssetPresentation,
 } from './contracts';
 import { fixturePresentation } from './fixtures/fixtureCatalog';
 import { PUNY_ASSET_ORIGINS, punyTextureByKey } from '../../presentation/assets/punyAssetCatalog';
@@ -50,6 +51,66 @@ function markerKey(marker: WorldLabStageMarker): string {
 
 function freezeMarker(marker: WorldLabStageMarker): WorldLabStageMarker {
   return Object.freeze({ ...marker });
+}
+
+type ArtSource = {
+  readonly textureKey: string;
+  readonly frame?: number;
+  readonly frameWidth?: number;
+  readonly frameHeight?: number;
+  readonly sourceWidth?: number;
+  readonly sourceHeight?: number;
+  readonly visibleBounds?: { readonly width: number; readonly height: number };
+  readonly perspective?: string;
+  readonly originId?: string;
+};
+
+function artAsset(
+  id: string,
+  category: WorldLabArtAssetPresentation['category'],
+  source: ArtSource,
+  scale: number,
+  layer: string,
+  options: {
+    readonly anchor?: { readonly x: number; readonly y: number };
+    readonly scaleClass?: WorldLabArtAssetPresentation['scaleClass'];
+    readonly renderedTile?: boolean;
+  } = {},
+): WorldLabArtAssetPresentation {
+  const visibleWidth = source.visibleBounds?.width ?? source.frameWidth;
+  const visibleHeight = source.visibleBounds?.height ?? source.frameHeight;
+  const renderedWidth = options.renderedTile ? 32 : visibleWidth === undefined ? undefined : visibleWidth * scale;
+  const renderedHeight = options.renderedTile ? 32 : visibleHeight === undefined ? undefined : visibleHeight * scale;
+  const warnings: string[] = [];
+  if (source.perspective && !['top-down', 'neutral'].includes(source.perspective)) {
+    warnings.push(`perspective:${source.perspective}`);
+  }
+  if (options.scaleClass === 'character' && renderedHeight !== undefined &&
+    (renderedHeight < 24 || renderedHeight > 96)) warnings.push('character-proportion-review');
+  if (source.frameWidth === undefined || source.frameHeight === undefined) warnings.push('frame-dimensions-unavailable');
+  const compatibility = warnings.some(warning => warning !== 'frame-dimensions-unavailable')
+    ? 'review' as const
+    : warnings.length > 0 ? 'incomplete' as const : 'compatible' as const;
+  return Object.freeze({
+    id, category, textureKey: source.textureKey,
+    ...(source.frame !== undefined ? { frame: source.frame } : {}),
+    ...(source.sourceWidth !== undefined && source.sourceHeight !== undefined
+      ? { sourceDimensions: Object.freeze({ width: source.sourceWidth, height: source.sourceHeight }) } : {}),
+    ...(source.frameWidth !== undefined && source.frameHeight !== undefined
+      ? { frameDimensions: Object.freeze({ width: source.frameWidth, height: source.frameHeight }) } : {}),
+    ...(visibleWidth !== undefined && visibleHeight !== undefined
+      ? { visibleDimensions: Object.freeze({ width: visibleWidth, height: visibleHeight }) } : {}),
+    ...(renderedWidth !== undefined && renderedHeight !== undefined
+      ? { renderedDimensions: Object.freeze({ width: renderedWidth, height: renderedHeight }) } : {}),
+    scale,
+    ...(options.anchor ? { anchor: Object.freeze({ ...options.anchor }) } : {}),
+    ...(options.scaleClass ? { scaleClass: options.scaleClass } : {}),
+    layer,
+    ...(source.originId ? { originId: source.originId } : {}),
+    ...(source.perspective ? { perspective: source.perspective } : {}),
+    compatibility,
+    warnings: Object.freeze(warnings),
+  });
 }
 
 function tileMarkers(stage: LoadedStage): WorldLabStageMarker[] {
@@ -225,6 +286,25 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
       }))
       .sort((left, right) => compare(left.id, right.id))
     : [];
+  const artAssets = presentation
+    ? [
+        ...Object.entries(presentation.tiles).map(([logicalId, tile]) => artAsset(
+          logicalId, 'tile', tile, 2, 'terrain', { scaleClass: 'tile', renderedTile: true },
+        )),
+        ...Object.values(presentation.decorations).map(decoration => artAsset(
+          decoration.id, 'decoration', decoration, decoration.defaultScale, decoration.layer,
+          { anchor: decoration.anchor, scaleClass: decoration.scaleClass },
+        )),
+        ...Object.entries(presentation.npcSprites).map(([logicalId, sprite]) => artAsset(
+          logicalId, 'npc', sprite, sprite.scale, `depth:${sprite.depth}`,
+          { anchor: sprite.anchor, scaleClass: sprite.scaleClass },
+        )),
+        ...Object.entries(presentation.enemySprites).map(([logicalId, sprite]) => artAsset(
+          logicalId, 'enemy', sprite, sprite.scale, `depth:${sprite.depth}`,
+          { anchor: sprite.anchor, scaleClass: sprite.scaleClass },
+        )),
+      ].sort((left, right) => compare(`${left.category}.${left.id}`, `${right.category}.${right.id}`))
+    : [];
   return Object.freeze({
     nodeId: input.node.id,
     stageId: stage.manifest.id,
@@ -235,6 +315,8 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
     tiles: Object.freeze(stage.level.tileMap.map(row => Object.freeze([...row]))),
     markers: Object.freeze(markers.map(freezeMarker)),
     physicalExitIds: Object.freeze(physicalExitIds),
+    manifestRevision: stage.manifest.revision,
+    ...(presentation ? { themeRevision: presentation.themeRevision } : {}),
     ...(presentation ? { visualPresentation: Object.freeze({
       themeId: presentation.themeId,
       tilesetId: presentation.tilesetId,
@@ -248,6 +330,7 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
       spritesheets: Object.freeze(spritesheets),
       assetOrigins: Object.freeze(assetOrigins),
       decorations: Object.freeze(decorationPresentations),
+      artAssets: Object.freeze(artAssets),
       ...(presentation.decorationOverrides
         ? { decorationOverrides: Object.freeze({ ...presentation.decorationOverrides }) }
         : {}),

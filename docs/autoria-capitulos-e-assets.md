@@ -72,7 +72,19 @@ http://localhost:5173/world-lab.html?stage=stage.aguas.igapo-das-memorias&presen
 ```
 
 O seletor **Variant** alterna A e B e mostra tema, tileset, frames, spritesheets,
-decorações, origens e diagnósticos no inspector.
+decorações, origens e diagnósticos no inspector. A partir da 9.7D, o seletor
+**View** oferece:
+
+- **Structural**: SVG de mapa, colisões, entidades e saídas;
+- **Visual**: preview Phaser real incorporado, sem segundo renderer;
+- **Compare**: duas variantes da mesma fase com viewport, zoom e câmera inicial
+  equivalentes.
+
+**Stage** escolhe um módulo registrado; **Zoom**, **Grid**, **Entities**,
+**Decorations** e **Exits** controlam somente a inspeção. **Capture** baixa o
+canvas real de cada preview e um descritor `umbra-world-lab-capture/v1` com
+fase, revisões, variantes, viewport, zoom e câmera. Aguarde os iframes
+carregarem antes da captura.
 
 A escolha não entra em save. `StageLoadRequest.presentationVariantId` é
 re-resolvido a cada load.
@@ -105,6 +117,11 @@ final de existência.
 5. adicione a URL estática em `bootPunyAssets.ts`;
 6. referencie a textura/frame no `ChapterVisualResources`;
 7. adicione ou atualize o teste em `src/tests/punyAssets.test.ts`.
+
+Registre também, quando conhecidos, `sourceWidth`/`sourceHeight`, região visível,
+`pixelArt`, perspectiva e origem. Sprites e decorações podem declarar âncora e
+classe de escala; colisão é metadado de inspeção e nunca configura física. As
+regras globais e a referência do Igapó estão em [art-direction.md](./art-direction.md).
 
 ### Substituir placeholders
 

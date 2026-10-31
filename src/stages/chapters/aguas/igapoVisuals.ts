@@ -181,6 +181,8 @@ const igapoRibeirinhoDecorations = Object.freeze([
     layer: 'foreground' as const,
     depth: 5,
     defaultScale: 2.2,
+    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+    scaleClass: 'oversized' as const,
   }),
   Object.freeze({
     id: 'igapo_fallen_trunk',
@@ -189,6 +191,8 @@ const igapoRibeirinhoDecorations = Object.freeze([
     layer: 'terrain' as const,
     depth: 2,
     defaultScale: 1.8,
+    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+    scaleClass: 'oversized' as const,
   }),
   Object.freeze({
     id: 'igapo_memory_reeds',
@@ -197,6 +201,8 @@ const igapoRibeirinhoDecorations = Object.freeze([
     layer: 'foreground' as const,
     depth: 4,
     defaultScale: 1.5,
+    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+    scaleClass: 'prop' as const,
   }),
 ]);
 
@@ -208,6 +214,8 @@ const igapoSombrioDecorations = Object.freeze([
     layer: 'foreground' as const,
     depth: 5,
     defaultScale: 2.4,
+    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+    scaleClass: 'oversized' as const,
   }),
   Object.freeze({
     id: 'igapo_sombrio_roots',
@@ -216,6 +224,8 @@ const igapoSombrioDecorations = Object.freeze([
     layer: 'terrain' as const,
     depth: 2,
     defaultScale: 2,
+    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+    scaleClass: 'oversized' as const,
   }),
   Object.freeze({
     id: 'igapo_sombrio_reeds',
@@ -224,6 +234,8 @@ const igapoSombrioDecorations = Object.freeze([
     layer: 'foreground' as const,
     depth: 4,
     defaultScale: 1.6,
+    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+    scaleClass: 'prop' as const,
   }),
 ]);
 
@@ -235,6 +247,12 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       frameWidth: 16,
       frameHeight: 16,
       frameCount: 27 * 65,
+      sourceWidth: 432,
+      sourceHeight: 1040,
+      visibleBounds: Object.freeze({ x: 0, y: 0, width: 16, height: 16 }),
+      pixelArt: true,
+      perspective: 'top-down' as const,
+      originId: 'origin.puny-world',
     }),
     Object.freeze({
       id: PUNY_MAGE_TEXTURE,
@@ -242,6 +260,11 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       frameWidth: 32,
       frameHeight: 32,
       frameCount: 24 * 8,
+      sourceWidth: 768,
+      sourceHeight: 256,
+      pixelArt: true,
+      perspective: 'top-down' as const,
+      originId: 'origin.puny-characters',
     }),
     Object.freeze({
       id: PUNY_WARRIOR_TEXTURE,
@@ -249,6 +272,11 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       frameWidth: 128,
       frameHeight: 114,
       frameCount: 12,
+      sourceWidth: 512,
+      sourceHeight: 342,
+      pixelArt: true,
+      perspective: 'top-down' as const,
+      originId: 'origin.puny-characters',
     }),
     Object.freeze({
       id: PUNY_ARCHER_TEXTURE,
@@ -256,6 +284,11 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       frameWidth: 128,
       frameHeight: 114,
       frameCount: 12,
+      sourceWidth: 512,
+      sourceHeight: 342,
+      pixelArt: true,
+      perspective: 'top-down' as const,
+      originId: 'origin.puny-characters',
     }),
   ]),
   tilesets: Object.freeze([igapoRibeirinhoTileset, igapoSombrioTileset]),
@@ -271,6 +304,8 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       tint: 0xb8fff0,
       scale: 1.7,
       depth: 6,
+      anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+      scaleClass: 'character' as const,
     }),
     Object.freeze({
       id: IGAPO_AFFINITY_SPRITE_ID,
@@ -279,6 +314,8 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       tint: 0x9fe0b8,
       scale: 1,
       depth: 5,
+      anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+      scaleClass: 'character' as const,
     }),
     Object.freeze({
       id: IGAPO_APPLAUD_SPRITE_ID,
@@ -287,6 +324,8 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       tint: 0x9fd8e8,
       scale: 1,
       depth: 5,
+      anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+      scaleClass: 'character' as const,
     }),
     Object.freeze({
       id: IGAPO_SOMBRIO_NPC_SPRITE_ID,
@@ -295,6 +334,8 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       tint: 0x6fae9f,
       scale: 1.7,
       depth: 6,
+      anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+      scaleClass: 'character' as const,
     }),
     Object.freeze({
       id: IGAPO_SOMBRIO_AFFINITY_SPRITE_ID,
@@ -303,6 +344,8 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       tint: 0x6f9f8f,
       scale: 1,
       depth: 5,
+      anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+      scaleClass: 'character' as const,
     }),
     Object.freeze({
       id: IGAPO_SOMBRIO_APPLAUD_SPRITE_ID,
@@ -311,6 +354,8 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       tint: 0x6f8fa8,
       scale: 1,
       depth: 5,
+      anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+      scaleClass: 'character' as const,
     }),
   ]),
   sounds: Object.freeze([

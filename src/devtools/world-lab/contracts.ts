@@ -89,6 +89,8 @@ export interface WorldLabStageView {
   readonly tiles: readonly (readonly number[])[];
   readonly markers: readonly WorldLabStageMarker[];
   readonly physicalExitIds: readonly string[];
+  readonly manifestRevision?: number;
+  readonly themeRevision?: number;
   readonly visualPresentation?: WorldLabStageVisualPresentation;
 }
 
@@ -108,6 +110,7 @@ export interface WorldLabStageVisualPresentation {
   readonly npcSprites?: readonly WorldLabSpritePresentation[];
   readonly enemySprites?: readonly WorldLabSpritePresentation[];
   readonly effects?: readonly WorldLabEffectPresentation[];
+  readonly artAssets?: readonly WorldLabArtAssetPresentation[];
   readonly audio?: {
     readonly profileId: string;
     readonly musicSoundId?: string;
@@ -120,6 +123,25 @@ export interface WorldLabStageVisualPresentation {
     readonly lightIntensity: number;
     readonly fog?: { readonly color: number; readonly opacity: number; readonly depth: number };
   };
+}
+
+export interface WorldLabArtAssetPresentation {
+  readonly id: string;
+  readonly category: 'tile' | 'decoration' | 'npc' | 'enemy';
+  readonly textureKey: string;
+  readonly frame?: number;
+  readonly sourceDimensions?: { readonly width: number; readonly height: number };
+  readonly frameDimensions?: { readonly width: number; readonly height: number };
+  readonly visibleDimensions?: { readonly width: number; readonly height: number };
+  readonly renderedDimensions?: { readonly width: number; readonly height: number };
+  readonly scale: number;
+  readonly anchor?: { readonly x: number; readonly y: number };
+  readonly scaleClass?: 'tile' | 'character' | 'prop' | 'oversized';
+  readonly layer: string;
+  readonly originId?: string;
+  readonly perspective?: string;
+  readonly compatibility: 'compatible' | 'review' | 'incomplete';
+  readonly warnings: readonly string[];
 }
 
 export interface WorldLabEffectPresentation {
@@ -226,6 +248,9 @@ export interface WorldLabSelection {
 export interface WorldLabFilters {
   readonly showGrid: boolean;
   readonly showOverlays: boolean;
+  readonly showEntities: boolean;
+  readonly showDecorations: boolean;
+  readonly showExits: boolean;
 }
 
 export interface WorldLabSessionState {

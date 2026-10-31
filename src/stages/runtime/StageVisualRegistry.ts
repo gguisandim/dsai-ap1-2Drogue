@@ -167,6 +167,25 @@ function validPositiveInteger(value: unknown): value is number | undefined {
   return value === undefined || (Number.isInteger(value) && Number(value) > 0);
 }
 
+function validAnchor(value: StageSpriteDefinition['anchor']): boolean {
+  return value === undefined || (Number.isFinite(value.x) && value.x >= 0 && value.x <= 1 &&
+    Number.isFinite(value.y) && value.y >= 0 && value.y <= 1);
+}
+
+function textureMetadata(texture: StageVisualTextureDefinition) {
+  return {
+    ...(texture.frameWidth !== undefined ? { frameWidth: texture.frameWidth } : {}),
+    ...(texture.frameHeight !== undefined ? { frameHeight: texture.frameHeight } : {}),
+    ...(texture.frameCount !== undefined ? { frameCount: texture.frameCount } : {}),
+    ...(texture.sourceWidth !== undefined ? { sourceWidth: texture.sourceWidth } : {}),
+    ...(texture.sourceHeight !== undefined ? { sourceHeight: texture.sourceHeight } : {}),
+    ...(texture.visibleBounds ? { visibleBounds: Object.freeze({ ...texture.visibleBounds }) } : {}),
+    ...(texture.pixelArt !== undefined ? { pixelArt: texture.pixelArt } : {}),
+    ...(texture.perspective ? { perspective: texture.perspective } : {}),
+    ...(texture.originId ? { originId: texture.originId } : {}),
+  };
+}
+
 export class StageVisualRegistry {
   private readonly textures = new Map<string, Registered<StageVisualTextureDefinition>>();
   private readonly tilesets = new Map<string, Registered<StageTilesetDefinition>>();
@@ -338,13 +357,32 @@ export class StageVisualRegistry {
       'stage.visual.texture.key-invalid', 'Texture key must be a stable renderer resource key.',
       [...path, 'textureKey'], undefined, value.id,
     ));
-    (['frameWidth', 'frameHeight', 'frameCount'] as const).forEach(field => {
+    (['frameWidth', 'frameHeight', 'frameCount', 'sourceWidth', 'sourceHeight'] as const).forEach(field => {
       if (!validPositiveInteger(value[field])) diagnostics.push(this.diagnostic(
         'stage.visual.texture.frame-size-invalid',
         `Texture ${field} must be a positive integer when present.`,
         [...path, field], undefined, value.id,
       ));
     });
+    if (value.perspective !== undefined &&
+      !['top-down', 'neutral', 'side-view', 'isometric'].includes(value.perspective)) {
+      diagnostics.push(this.diagnostic(
+        'stage.visual.texture.perspective-invalid', 'Texture perspective is unsupported.',
+        [...path, 'perspective'], undefined, value.id,
+      ));
+    }
+    const bounds = value.visibleBounds;
+    const frameWidth = value.frameWidth ?? value.sourceWidth;
+    const frameHeight = value.frameHeight ?? value.sourceHeight;
+    if (bounds && (!Number.isFinite(bounds.x) || bounds.x < 0 || !Number.isFinite(bounds.y) || bounds.y < 0 ||
+      !Number.isFinite(bounds.width) || bounds.width <= 0 || !Number.isFinite(bounds.height) || bounds.height <= 0 ||
+      (frameWidth !== undefined && bounds.x + bounds.width > frameWidth) ||
+      (frameHeight !== undefined && bounds.y + bounds.height > frameHeight))) {
+      diagnostics.push(this.diagnostic(
+        'stage.visual.texture.visible-bounds-invalid', 'Visible bounds must fit inside one frame.',
+        [...path, 'visibleBounds'], undefined, value.id,
+      ));
+    }
   }
 
   public resolve(
@@ -436,6 +474,9 @@ export class StageVisualRegistry {
           ...(texture.frameWidth !== undefined ? { frameWidth: texture.frameWidth } : {}),
           ...(texture.frameHeight !== undefined ? { frameHeight: texture.frameHeight } : {}),
           ...(texture.frameCount !== undefined ? { frameCount: texture.frameCount } : {}),
+          ...textureMetadata(texture),
+          ...(definition.anchor ? { anchor: Object.freeze({ ...definition.anchor }) } : {}),
+          ...(definition.scaleClass ? { scaleClass: definition.scaleClass } : {}),
         });
       });
     }
@@ -660,6 +701,10 @@ export class StageVisualRegistry {
       ));
     }
     this.validateFrame(value.frame, value.textureId, diagnostics, [...path, 'frame']);
+    if (!validAnchor(value.anchor)) diagnostics.push(this.diagnostic(
+      'stage.visual.decoration.anchor-invalid', 'Decoration anchor values must be between 0 and 1.',
+      [...path, 'anchor'], undefined, value.id,
+    ));
   }
 
   private validateSprite(registered: Registered<StageSpriteDefinition>, diagnostics: StageDiagnostic[]): void {
@@ -684,6 +729,18 @@ export class StageVisualRegistry {
       'stage.visual.sprite.depth-invalid', 'Sprite depth must be finite.', [...path, 'depth'], undefined, value.id,
     ));
     this.validateFrame(value.frame, value.textureId, diagnostics, [...path, 'frame']);
+    if (!validAnchor(value.anchor)) diagnostics.push(this.diagnostic(
+      'stage.visual.sprite.anchor-invalid', 'Sprite anchor values must be between 0 and 1.',
+      [...path, 'anchor'], undefined, value.id,
+    ));
+    if (value.collision && (!Number.isFinite(value.collision.width) || value.collision.width <= 0 ||
+      !Number.isFinite(value.collision.height) || value.collision.height <= 0 ||
+      !Number.isFinite(value.collision.offsetX) || !Number.isFinite(value.collision.offsetY))) {
+      diagnostics.push(this.diagnostic(
+        'stage.visual.sprite.collision-invalid', 'Inspection collision metadata must be finite and positive.',
+        [...path, 'collision'], undefined, value.id,
+      ));
+    }
   }
 
   private validateSound(registered: Registered<StageSoundDefinition>, diagnostics: StageDiagnostic[]): void {
@@ -791,6 +848,10 @@ export class StageVisualRegistry {
       ...(texture.frameWidth !== undefined ? { frameWidth: texture.frameWidth } : {}),
       ...(texture.frameHeight !== undefined ? { frameHeight: texture.frameHeight } : {}),
       ...(texture.frameCount !== undefined ? { frameCount: texture.frameCount } : {}),
+      ...textureMetadata(texture),
+      ...(sprite.anchor ? { anchor: Object.freeze({ ...sprite.anchor }) } : {}),
+      ...(sprite.scaleClass ? { scaleClass: sprite.scaleClass } : {}),
+      ...(sprite.collision ? { collision: Object.freeze({ ...sprite.collision }) } : {}),
     });
   }
 
@@ -881,6 +942,7 @@ export class StageVisualRegistry {
       ...(texture.frameWidth !== undefined ? { frameWidth: texture.frameWidth } : {}),
       ...(texture.frameHeight !== undefined ? { frameHeight: texture.frameHeight } : {}),
       ...(texture.frameCount !== undefined ? { frameCount: texture.frameCount } : {}),
+      ...textureMetadata(texture),
     });
   }
 
