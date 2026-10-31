@@ -56,3 +56,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-31 | [Eficiência do desenvolvimento assistido por IA — Etapa 1](./2026-10-31-eficiencia-desenvolvimento-assistido-etapa-1.md) |
 | 2026-10-31 | [Composição determinística de campanhas — Etapa 9.6B](./2026-10-31-etapa-9-6b-composicao-deterministica-campanhas.md) |
 | 2026-10-31 | [Menu de campanhas e modos de jogo — Etapa 9.6C](./2026-10-31-etapa-9-6c-menu-modos-jogo.md) |
+| 2026-10-31 | [Estabilização, persistência e transições — Etapa 9.6D](./2026-10-31-etapa-9-6d-estabilizacao-persistencia-transicoes.md) |

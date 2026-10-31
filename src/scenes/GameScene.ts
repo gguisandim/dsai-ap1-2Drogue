@@ -92,6 +92,7 @@ export interface GameSceneInitData {
   macroRunSeed?: string | number;
   macroRecoveryAttempt?: number;
   campaignRuntime?: GameSceneCampaignRuntime;
+  campaignRecoveryAttempt?: number;
   individualRuntime?: GameSceneIndividualRuntime;
 }
 
@@ -246,7 +247,11 @@ export class GameScene extends Phaser.Scene {
     this.branchingRunSeed = data?.branchingRunSeed ??
       query?.get('branchingSeed') ?? BRANCHING_CAMPAIGN_DEFAULT_SEED;
     this.campaignRecoveryAttempt = Math.max(0, Math.floor(
-      this.macroCampaign ? data?.macroRecoveryAttempt ?? 0 : data?.branchingRecoveryAttempt ?? 0,
+      this.injectedCampaignRuntime
+        ? data?.campaignRecoveryAttempt ?? 0
+        : this.macroCampaign
+          ? data?.macroRecoveryAttempt ?? 0
+          : data?.branchingRecoveryAttempt ?? 0,
     ));
     this.modularStageSource = 'legacy';
     this.modularComposition = undefined;
@@ -603,6 +608,9 @@ export class GameScene extends Phaser.Scene {
           campaignRuntime?.runId ?? String(this.macroRunId),
           loaded.manifest.chapterId,
           loaded.manifest.id,
+          // Injected composed runs scope narrative state per node occurrence.
+          // The classic macro campaign keeps its legacy key.
+          campaignRuntime ? this.campaignNavigation?.currentNode.id : undefined,
         )
       : undefined;
     const created = this.modularComposition.createNarrativeSession(
@@ -1497,22 +1505,37 @@ export class GameScene extends Phaser.Scene {
       this.time.delayedCall(1800, () => this.scene.start('MenuScene'));
       return;
     }
-    const data = {
-      ...(this.injectedCampaignRuntime
-        ? { campaignRuntime: this.injectedCampaignRuntime }
-        : this.macroCampaign && this.macroStageSource === 'campaign'
-        ? {
-            macroCampaign: true,
-            macroRunId: this.macroRunId,
-            macroRunSeed: this.macroRunSeed,
-            macroRecoveryAttempt: this.campaignRecoveryAttempt + 1,
-          }
-        : {
-            branchingCampaign: true,
-            branchingRunId: this.branchingRunId,
-            branchingRunSeed: this.branchingRunSeed,
-            branchingRecoveryAttempt: this.campaignRecoveryAttempt + 1,
-          }),
+    let base: GameSceneInitData;
+    const injected = this.injectedCampaignRuntime;
+    if (injected) {
+      // The router already advanced and persisted. Rebuild the navigation view
+      // from the advanced router instead of restarting with the stale view.
+      const inspected = injected.router.inspect();
+      if (!inspected.ok) {
+        this.time.delayedCall(1800, () => this.scene.start('MenuScene'));
+        return;
+      }
+      base = {
+        campaignRuntime: Object.freeze({ ...injected, navigation: inspected.value }),
+        campaignRecoveryAttempt: this.campaignRecoveryAttempt + 1,
+      };
+    } else if (this.macroCampaign && this.macroStageSource === 'campaign') {
+      base = {
+        macroCampaign: true,
+        macroRunId: this.macroRunId,
+        macroRunSeed: this.macroRunSeed,
+        macroRecoveryAttempt: this.campaignRecoveryAttempt + 1,
+      };
+    } else {
+      base = {
+        branchingCampaign: true,
+        branchingRunId: this.branchingRunId,
+        branchingRunSeed: this.branchingRunSeed,
+        branchingRecoveryAttempt: this.campaignRecoveryAttempt + 1,
+      };
+    }
+    const data: GameSceneInitData = {
+      ...base,
       halos: this.player?.halos,
       skipControls: true,
     };

@@ -60,9 +60,10 @@ export class GameModesScene extends Phaser.Scene {
   public create(): void {
     this.service = new GameSessionService({ storage: createBrowserCampaignSaveStorage() });
     this.menuState = this.service.menuState();
-    this.seed = this.menuState.savedCampaign?.seed ?? generateSeed();
+    const savedCampaign = this.menuState.savedCampaign;
+    this.seed = savedCampaign?.status === 'active' ? savedCampaign.seed : generateSeed();
     this.customSelections.clear();
-    this.menuState.savedCampaign?.assignments.forEach(assignment => {
+    savedCampaign?.assignments.forEach(assignment => {
       this.customSelections.set(assignment.slotId, assignment.stageId);
     });
     this.cameras.main.setBackgroundColor('#100b18');
@@ -181,9 +182,14 @@ export class GameModesScene extends Phaser.Scene {
     this.track(this.add.text(760, 150, [
       `Fases candidatas: ${this.menuState.candidateStageCount} / ${this.menuState.requiredStageCount}`,
       reason ? `Indisponível: ${reason}` : 'Composição validada com o catálogo real.',
-      this.menuState.savedCampaign
-        ? `Retomada disponível: ${this.menuState.savedCampaign.currentStageId}`
-        : 'Nenhuma campanha composta salva.',
+      this.menuState.savedCampaign?.status === 'completed'
+        ? `Campanha anterior concluída em ${this.menuState.savedCampaign.currentStageId}.`
+        : this.menuState.savedCampaign
+          ? `Retomada disponível: ${this.menuState.savedCampaign.currentStageId}`
+          : 'Nenhuma campanha composta salva.',
+      ...(this.menuState.savedCampaignError
+        ? [`Save composto inválido: ${this.menuState.savedCampaignError}`]
+        : []),
     ].join('\n'), {
       fontFamily: 'Courier New, monospace', fontSize: '14px', color: '#b89dc7',
       wordWrap: { width: 420 }, lineSpacing: 4,
@@ -206,7 +212,7 @@ export class GameModesScene extends Phaser.Scene {
     });
     this.button(760, 432, 'INICIAR CAMPANHA', () => this.startRandom(),
       this.menuState.randomCampaignAvailable);
-    if (this.menuState.savedCampaign) {
+    if (this.menuState.savedCampaign?.status === 'active') {
       this.button(760, 494, 'RETOMAR CAMPANHA SALVA', () => {
         this.seed = this.menuState.savedCampaign?.seed ?? this.seed;
         this.startRandom();

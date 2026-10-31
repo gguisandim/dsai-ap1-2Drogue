@@ -55,9 +55,24 @@ function hash(value: string): string {
 }
 
 function samePhysicalResolution(left: PhysicalExitResolution, right: PhysicalExitResolution): boolean {
+  // Canonicalise every field explicitly: persisted resolutions are cloned with
+  // sorted keys, so a raw JSON.stringify comparison is key-order sensitive and
+  // falsely rejects an identical deterministic regeneration.
   const normalize = (value: PhysicalExitResolution): string => JSON.stringify({
-    ...value,
-    exits: [...value.exits].sort((a, b) => compare(a.edgeId, b.edgeId)),
+    nodeId: value.nodeId,
+    stageId: value.stageId,
+    levelDigest: value.levelDigest,
+    exits: [...value.exits]
+      .sort((a, b) => compare(a.edgeId, b.edgeId) || compare(a.id, b.id))
+      .map(exit => ({
+        id: exit.id,
+        edgeId: exit.edgeId,
+        sourceNodeId: exit.sourceNodeId,
+        targetNodeId: exit.targetNodeId,
+        stageExitId: exit.stageExitId,
+        tile: { x: exit.tile.x, y: exit.tile.y },
+        placementAttempt: exit.placementAttempt,
+      })),
   });
   return normalize(left) === normalize(right);
 }

@@ -24,6 +24,7 @@ import type {
 } from '../../stages';
 import type {
   CampaignNavigationView,
+  CampaignRouterFailure,
   CampaignRunSaveFailure,
   CampaignRunState,
 } from './CampaignNavigation';
@@ -110,6 +111,7 @@ export type GameSessionFailureCode =
   | 'save-failed'
   | 'navigation-failed'
   | 'restore-failed'
+  | 'run-completed'
   | 'stage-not-found'
   | 'stage-incompatible'
   | 'stage-load-failed';
@@ -123,6 +125,7 @@ export interface GameSessionFailure {
   };
   readonly save?: CampaignRunSaveFailure;
   readonly stage?: StageLoadFailure;
+  readonly router?: CampaignRouterFailure;
 }
 
 export type GameSessionResult<T> =
@@ -154,6 +157,19 @@ function hashHex(...parts: readonly string[]): string {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
+/** Two independent 32-bit accumulators widen the persisted run identity to 64 bits. */
+function hashHex64(...parts: readonly string[]): string {
+  const text = parts.map(part => `${part.length}:${part}`).join('|');
+  let fnv = 2166136261;
+  let djb = 5381;
+  for (let index = 0; index < text.length; index += 1) {
+    const code = text.charCodeAt(index);
+    fnv = Math.imul(fnv ^ code, 16777619) >>> 0;
+    djb = (Math.imul(djb, 33) + code) >>> 0;
+  }
+  return `${fnv.toString(16).padStart(8, '0')}${djb.toString(16).padStart(8, '0')}`;
+}
+
 function canonicalSelections(
   selections: readonly CampaignCompositionSlotSelection[],
 ): readonly CampaignCompositionSlotSelection[] {
@@ -167,10 +183,25 @@ export function composedCampaignRunId(
   seed: string,
   selections?: readonly CampaignCompositionSlotSelection[],
 ): string {
-  const material = selections
+  const material = selectionMaterial(selections);
+  return `run.composed.${hashHex64('composed', seed, material)}`;
+}
+
+/**
+ * Pre-9.6D identity kept only so existing composed saves remain resumable.
+ * New runs always use the 64-bit `composedCampaignRunId`.
+ */
+export function legacyComposedCampaignRunId(
+  seed: string,
+  selections?: readonly CampaignCompositionSlotSelection[],
+): string {
+  return `run.composed.${hashHex('composed', seed, selectionMaterial(selections))}`;
+}
+
+function selectionMaterial(selections?: readonly CampaignCompositionSlotSelection[]): string {
+  return selections
     ? canonicalSelections(selections).map(item => `${item.slotId}=${item.stageId}`).join('|')
     : 'random';
-  return `run.composed.${hashHex('composed', seed, material)}`;
 }
 
 function graphMatchesSnapshot(graph: CampaignGraph, snapshot: CampaignCompositionSnapshot): boolean {
@@ -406,9 +437,18 @@ export class GameSessionService {
       if (loaded.value.status === 'loaded') {
         stored = loaded.value.envelope.state;
         const persisted = stored.composition;
-        if (persisted && stored.graph.runId === requestValue.runId &&
+        const legacyRunId = legacyComposedCampaignRunId(
+          String(requestValue.seed),
+          input.selections ? canonicalSelections(input.selections) : undefined,
+        );
+        if (persisted && (stored.graph.runId === requestValue.runId ||
+          stored.graph.runId === legacyRunId) &&
           persisted.campaignId === COMPOSED_CAMPAIGN_ID &&
           persisted.seed === String(requestValue.seed)) {
+          if (stored.status === 'completed') return failure(
+            'run-completed',
+            'A campanha composta já foi concluída. Gere uma nova seed para iniciar outra run.',
+          );
           return this.restoreComposed(stored, composition);
         }
       }
@@ -423,7 +463,7 @@ export class GameSessionService {
     const router = this.router(state);
     const navigation = router.inspect();
     if (!navigation.ok) return failure('navigation-failed',
-      `Navigation inspection failed: ${navigation.error.code}.`);
+      `Navigation inspection failed: ${navigation.error.code}.`, { router: navigation.error });
     let persistence: GameComposedSession['persistence'] = 'volatile';
     if (this.saves) {
       const saved = this.saves.save(state, stored);
@@ -458,7 +498,7 @@ export class GameSessionService {
     const router = this.router(state);
     const navigation = router.inspect();
     if (!navigation.ok) return failure('navigation-failed',
-      `Navigation inspection failed: ${navigation.error.code}.`);
+      `Navigation inspection failed: ${navigation.error.code}.`, { router: navigation.error });
     return success(Object.freeze({
       campaignId: COMPOSED_CAMPAIGN_ID,
       runId: state.graph.runId,

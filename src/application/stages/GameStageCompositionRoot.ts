@@ -60,13 +60,18 @@ export interface GameNarrativeIdentityInput {
 /**
  * Additive per-stage narrative save key for campaign stages. The legacy
  * `umbra-trail-campaign-v1` key used by the modular pilot is untouched.
+ *
+ * Composed runs pass the campaign node id so two occurrences of the same stage
+ * definition never share narrative state. Omitting it preserves legacy keys.
  */
 export function campaignStageNarrativeSaveKey(
   runId: string,
   chapterId: string,
   stageId: string,
+  stageInstanceId?: string,
 ): string {
-  return `${CAMPAIGN_SAVE_STORAGE_KEY}:${runId}:${chapterId}:${stageId}`;
+  const base = `${CAMPAIGN_SAVE_STORAGE_KEY}:${runId}:${chapterId}:${stageId}`;
+  return stageInstanceId ? `${base}:${stageInstanceId}` : base;
 }
 
 export type GameNarrativeSessionFailure =

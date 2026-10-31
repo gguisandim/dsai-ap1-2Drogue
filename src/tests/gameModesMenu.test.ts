@@ -43,6 +43,14 @@ describe('Game mode menu wiring', () => {
     expect(modes).toContain('this.customSelections.set(assignment.slotId, assignment.stageId)');
   });
 
+  it('recovers an advanced composed run from the router instead of stale navigation', () => {
+    expect(game).toContain('campaignRecoveryAttempt: this.campaignRecoveryAttempt + 1');
+    expect(game).toContain('navigation: inspected.value');
+    expect(game).toContain('injected.router.inspect()');
+    expect(modes).toContain("savedCampaign?.status === 'active'");
+    expect(modes).toContain("savedCampaign?.status === 'completed'");
+  });
+
   it('runs individual stages with isolated memory progression and no campaign router', () => {
     expect(game).toContain('individualRuntime?: GameSceneIndividualRuntime');
     expect(game).toContain('new ProgressionService({ storage: new MemoryProgressionStorage() })');

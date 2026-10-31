@@ -2,14 +2,22 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
   CAMPAIGN_RUN_SAVE_STORAGE_KEY,
+  COMPOSED_CAMPAIGN_ID,
   COMPOSED_CAMPAIGN_RUN_STORAGE_KEY,
+  CampaignRunSaveService,
   GameSessionService,
+  campaignStageNarrativeSaveKey,
   composedCampaignRunId,
+  createCampaignRunState,
+  legacyComposedCampaignRunId,
 } from '../application/stages';
 import {
+  CampaignCompositionService,
   FIXED_NINE_COMPOSITION_SLOTS,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
+  StageCatalogService,
   StageRegistry,
+  createFixedNineCompositionRequest,
   type ChapterManifest,
   type StageCampaignCatalogMetadata,
   type StageExitDefinition,
@@ -139,6 +147,27 @@ function withRevision(
     : item);
 }
 
+function withoutStage(
+  stages: readonly StageModule[],
+  removedStageId: string,
+): readonly StageModule[] {
+  return stages.filter(item => item.manifest.id !== removedStageId).map(item => Object.freeze({
+    ...item,
+    manifest: Object.freeze({
+      ...item.manifest,
+      exits: exitsTo(item.manifest.id, item.manifest.exits
+        .map(exit => exit.targetStageId)
+        .filter(target => target !== removedStageId)),
+    }),
+  }));
+}
+
+class FailingWriteStorage extends MemorySaveStorage {
+  public override write(): void {
+    throw new Error('write blocked');
+  }
+}
+
 function manualSelections(stageIds: readonly string[]) {
   return Object.freeze(FIXED_NINE_COMPOSITION_SLOTS.map((slot, index) => Object.freeze({
     slotId: slot.slotId,
@@ -240,6 +269,68 @@ describe('GameSessionService', () => {
     expect(storage.read(COMPOSED_CAMPAIGN_RUN_STORAGE_KEY)).toBe('{invalid');
   });
 
+  it('fails atomically when the composed save cannot be written', () => {
+    const storage = new FailingWriteStorage();
+    const result = new GameSessionService({ registry: registryFor(fanOutStages()), storage })
+      .startRandomCampaign('seed.session.write-failure');
+    expect(result).toMatchObject({ ok: false, error: { code: 'save-failed' } });
+    expect(storage.read(COMPOSED_CAMPAIGN_RUN_STORAGE_KEY)).toBeUndefined();
+  });
+
+  it('rejects a persisted run whose selected stage disappeared and preserves the save', () => {
+    const stages = fanOutStages();
+    const storage = new MemorySaveStorage();
+    const seed = 'seed.session.removed-stage';
+    const created = startFixture(
+      new GameSessionService({ registry: registryFor(stages), storage }),
+      seed,
+    );
+    const bytes = storage.read(COMPOSED_CAMPAIGN_RUN_STORAGE_KEY);
+    const removed = created.snapshot.assignments[2].stageId;
+    const reduced = new GameSessionService({
+      registry: registryFor(withoutStage(stages, removed)),
+      storage,
+    });
+    const rejected = reduced.startRandomCampaign(seed);
+    expect(rejected).toMatchObject({
+      ok: false,
+      error: { code: 'composition-failed', composition: { code: expect.stringMatching(
+        /stage-reference-missing|stage-revision-incompatible/,
+      ) } },
+    });
+    expect(storage.read(COMPOSED_CAMPAIGN_RUN_STORAGE_KEY)).toBe(bytes);
+  });
+
+  it('treats a valid run without a composition as a fresh composed campaign', () => {
+    const stages = fanOutStages();
+    const storage = new MemorySaveStorage();
+    const registry = registryFor(stages);
+    const catalog = StageCatalogService.create(registry);
+    if (!catalog.ok) throw new Error(JSON.stringify(catalog.error));
+    const legacyRunId = 'run.composed.legacy-without-composition';
+    const composed = new CampaignCompositionService(catalog.value).compose(
+      createFixedNineCompositionRequest({
+        campaignId: COMPOSED_CAMPAIGN_ID,
+        campaignRevision: 1,
+        runId: legacyRunId,
+        seed: 'seed.session.no-snapshot',
+      }),
+    );
+    if (!composed.ok) throw new Error(JSON.stringify(composed.error));
+    const saves = new CampaignRunSaveService({
+      storage,
+      storageKey: COMPOSED_CAMPAIGN_RUN_STORAGE_KEY,
+    });
+    expect(saves.save(createCampaignRunState(composed.value.graph)).ok).toBe(true);
+
+    const started = new GameSessionService({ registry, storage })
+      .startRandomCampaign('seed.session.no-snapshot');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    expect(started.value.persistence).toBe('created');
+    expect(started.value.router.state().composition).toBeDefined();
+  });
+
   it('validates manual selections through the same composer', () => {
     const registry = registryFor(fanOutStages());
     const storage = new MemorySaveStorage();
@@ -291,6 +382,53 @@ describe('GameSessionService', () => {
     expect(composedCampaignRunId('seed.x', selections)).not.toBe(composedCampaignRunId('seed.x'));
     expect(composedCampaignRunId('seed.x', selections))
       .not.toBe(composedCampaignRunId('seed.y', selections));
+    expect(composedCampaignRunId('seed.x', selections)).toMatch(/^run\.composed\.[0-9a-f]{16}$/);
+    expect(legacyComposedCampaignRunId('seed.x', selections))
+      .toMatch(/^run\.composed\.[0-9a-f]{8}$/);
+    expect(composedCampaignRunId('seed.x', selections))
+      .not.toBe(legacyComposedCampaignRunId('seed.x', selections));
+  });
+
+  it('resumes a legacy 32-bit run identity without recomposing', () => {
+    const registry = registryFor(fanOutStages());
+    const storage = new MemorySaveStorage();
+    const seed = 'seed.session.legacy';
+    const legacyRunId = legacyComposedCampaignRunId(seed);
+    const catalog = StageCatalogService.create(registry);
+    if (!catalog.ok) throw new Error(JSON.stringify(catalog.error));
+    const composed = new CampaignCompositionService(catalog.value).compose(
+      createFixedNineCompositionRequest({
+        campaignId: COMPOSED_CAMPAIGN_ID,
+        campaignRevision: 1,
+        runId: legacyRunId,
+        seed,
+      }),
+    );
+    if (!composed.ok) throw new Error(JSON.stringify(composed.error));
+    const saves = new CampaignRunSaveService({
+      storage,
+      storageKey: COMPOSED_CAMPAIGN_RUN_STORAGE_KEY,
+    });
+    expect(saves.save(createCampaignRunState(composed.value.graph, composed.value.snapshot)).ok)
+      .toBe(true);
+
+    const resumed = new GameSessionService({ registry, storage }).startRandomCampaign(seed);
+    expect(resumed.ok).toBe(true);
+    if (!resumed.ok) return;
+    expect(resumed.value.persistence).toBe('restored');
+    expect(resumed.value.runId).toBe(legacyRunId);
+    expect(resumed.value.snapshot).toEqual(composed.value.snapshot);
+  });
+
+  it('scopes composed narrative saves by node occurrence and preserves legacy keys', () => {
+    const legacy = campaignStageNarrativeSaveKey('run.x', 'chapter.x', 'stage.x');
+    const first = campaignStageNarrativeSaveKey('run.x', 'chapter.x', 'stage.x', 'node.x.1');
+    const second = campaignStageNarrativeSaveKey('run.x', 'chapter.x', 'stage.x', 'node.x.2');
+    expect(first).toBe(campaignStageNarrativeSaveKey('run.x', 'chapter.x', 'stage.x', 'node.x.1'));
+    expect(first).not.toBe(second);
+    expect(legacy).not.toBe(first);
+    expect(campaignStageNarrativeSaveKey('run.a', 'chapter.x', 'stage.x', 'node.x.1'))
+      .not.toBe(campaignStageNarrativeSaveKey('run.b', 'chapter.x', 'stage.x', 'node.x.1'));
   });
 
   it('starts an individual stage without writing any campaign save', () => {
