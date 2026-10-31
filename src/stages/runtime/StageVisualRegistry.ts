@@ -5,6 +5,7 @@ import type {
   NpcDefinition,
   ResolvedStageAudioProfile,
   ResolvedStageDecorationVisual,
+  ResolvedStageEffect,
   ResolvedStageEnvironment,
   ResolvedStagePresentation,
   ResolvedStageSound,
@@ -14,6 +15,7 @@ import type {
   StageDiagnostic,
   StageAudioProfileDefinition,
   StageEnemyArchetype,
+  StageEffectDefinition,
   StageEnvironmentDefinition,
   StageLogicalTileId,
   StageManifest,
@@ -254,7 +256,77 @@ export class StageVisualRegistry {
         ['manifest', 'presentation', 'environmentId'], manifest.id, presentation.environmentId,
       ));
     }
+    this.validateEffects(presentation.effects ?? [], manifest.id, diagnostics);
     return finish(diagnostics);
+  }
+
+  private validateEffects(
+    effects: readonly StageEffectDefinition[],
+    stageId: string,
+    diagnostics: StageDiagnostic[],
+  ): void {
+    const seen = new Set<string>();
+    effects.forEach((effect, index) => {
+      const path = ['manifest', 'presentation', 'effects', index] as const;
+      if (!STABLE_ID.test(effect.id) || seen.has(effect.id)) diagnostics.push(this.diagnostic(
+        seen.has(effect.id) ? 'stage.visual.effect.id-duplicate' : 'stage.visual.effect.id-invalid',
+        seen.has(effect.id) ? `Visual effect id is duplicated: ${effect.id}.` : 'Visual effect id must be stable.',
+        [...path, 'id'], stageId, effect.id,
+      ));
+      seen.add(effect.id);
+      if (!['fireflies', 'mist', 'pulse', 'spirits', 'local-light', 'water-shimmer', 'foliage-sway']
+        .includes(effect.kind)) diagnostics.push(this.diagnostic(
+        'stage.visual.effect.kind-invalid', `Visual effect kind is unsupported: ${effect.kind}.`,
+        [...path, 'kind'], stageId, effect.id,
+      ));
+      if (!validTint(effect.color)) diagnostics.push(this.diagnostic(
+        'stage.visual.effect.color-invalid', 'Visual effect color must be an RGB integer.',
+        [...path, 'color'], stageId, effect.id,
+      ));
+      if (!validAlpha(effect.alpha) || effect.alpha > 0.85) diagnostics.push(this.diagnostic(
+        'stage.visual.effect.alpha-invalid', 'Visual effect alpha must be between 0 and 0.85.',
+        [...path, 'alpha'], stageId, effect.id,
+      ));
+      if (!Number.isFinite(effect.depth)) diagnostics.push(this.diagnostic(
+        'stage.visual.effect.depth-invalid', 'Visual effect depth must be finite.',
+        [...path, 'depth'], stageId, effect.id,
+      ));
+      if (!Number.isFinite(effect.durationMs) || effect.durationMs < 400 || effect.durationMs > 30000) {
+        diagnostics.push(this.diagnostic(
+          'stage.visual.effect.duration-invalid', 'Visual effect duration must be between 400 and 30000 ms.',
+          [...path, 'durationMs'], stageId, effect.id,
+        ));
+      }
+      const positioned = !['water-shimmer', 'foliage-sway'].includes(effect.kind);
+      if (positioned && (!Number.isFinite(effect.x) || !Number.isFinite(effect.y))) diagnostics.push(this.diagnostic(
+        'stage.visual.effect.position-invalid', 'Visual effect requires finite tile coordinates.',
+        [...path, 'x'], stageId, effect.id,
+      ));
+      const area = ['fireflies', 'mist', 'spirits'].includes(effect.kind);
+      if (area && (!Number.isFinite(effect.width) || Number(effect.width) <= 0 ||
+        !Number.isFinite(effect.height) || Number(effect.height) <= 0)) diagnostics.push(this.diagnostic(
+        'stage.visual.effect.area-invalid', 'Area effect width and height must be positive.',
+        [...path, 'width'], stageId, effect.id,
+      ));
+      if (area && (!Number.isInteger(effect.count) || Number(effect.count) < 1 || Number(effect.count) > 64)) {
+        diagnostics.push(this.diagnostic(
+          'stage.visual.effect.count-invalid', 'Area effect count must be an integer between 1 and 64.',
+          [...path, 'count'], stageId, effect.id,
+        ));
+      }
+      if (['pulse', 'local-light'].includes(effect.kind) &&
+        (!Number.isFinite(effect.radius) || Number(effect.radius) <= 0 || Number(effect.radius) > 256)) {
+        diagnostics.push(this.diagnostic(
+          'stage.visual.effect.radius-invalid', 'Glow radius must be between 0 and 256 pixels.',
+          [...path, 'radius'], stageId, effect.id,
+        ));
+      }
+      if (effect.amplitude !== undefined && (!Number.isFinite(effect.amplitude) || effect.amplitude < 0 ||
+        effect.amplitude > 160)) diagnostics.push(this.diagnostic(
+        'stage.visual.effect.amplitude-invalid', 'Visual effect amplitude must be between 0 and 160.',
+        [...path, 'amplitude'], stageId, effect.id,
+      ));
+    });
   }
 
   private validateTexture(
@@ -408,6 +480,9 @@ export class StageVisualRegistry {
     const environment = selectedPresentation?.environmentId
       ? this.resolveEnvironment(selectedPresentation.environmentId, manifest.id, diagnostics)
       : undefined;
+    const effects: readonly ResolvedStageEffect[] = Object.freeze(
+      (selectedPresentation?.effects ?? []).map(effect => Object.freeze({ ...effect })),
+    );
 
     const completed = finish(diagnostics);
     if (completed.some(item => item.severity === 'error') || !theme || !tileset ||
@@ -435,6 +510,7 @@ export class StageVisualRegistry {
         ),
         ...(audio ? { audio } : {}),
         ...(environment ? { environment } : {}),
+        effects,
       }),
     });
   }

@@ -107,6 +107,7 @@ export interface WorldLabStageVisualPresentation {
   readonly decorationOverrides?: Readonly<Record<string, string>>;
   readonly npcSprites?: readonly WorldLabSpritePresentation[];
   readonly enemySprites?: readonly WorldLabSpritePresentation[];
+  readonly effects?: readonly WorldLabEffectPresentation[];
   readonly audio?: {
     readonly profileId: string;
     readonly musicSoundId?: string;
@@ -119,6 +120,15 @@ export interface WorldLabStageVisualPresentation {
     readonly lightIntensity: number;
     readonly fog?: { readonly color: number; readonly opacity: number; readonly depth: number };
   };
+}
+
+export interface WorldLabEffectPresentation {
+  readonly id: string;
+  readonly kind: string;
+  readonly color: number;
+  readonly alpha: number;
+  readonly depth: number;
+  readonly count?: number;
 }
 
 export interface WorldLabSpritePresentation {

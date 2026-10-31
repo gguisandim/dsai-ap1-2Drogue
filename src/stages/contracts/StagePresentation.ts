@@ -24,6 +24,35 @@ export type StageAudioEvent = 'stage.entered' | 'npc.interacted' | 'enemy.defeat
 
 export type StageSoundWaveform = 'sine' | 'triangle' | 'square' | 'sawtooth';
 
+export type StageEffectKind =
+  | 'fireflies'
+  | 'mist'
+  | 'pulse'
+  | 'spirits'
+  | 'local-light'
+  | 'water-shimmer'
+  | 'foliage-sway';
+
+/**
+ * Declarative, visual-only effect. Coordinates and extents use logical tiles;
+ * effects never create physics bodies or mutate the resolved level.
+ */
+export interface StageEffectDefinition {
+  readonly id: string;
+  readonly kind: StageEffectKind;
+  readonly color: number;
+  readonly alpha: number;
+  readonly depth: number;
+  readonly durationMs: number;
+  readonly x?: number;
+  readonly y?: number;
+  readonly width?: number;
+  readonly height?: number;
+  readonly count?: number;
+  readonly radius?: number;
+  readonly amplitude?: number;
+}
+
 export interface StageVisualTextureDefinition {
   readonly id: string;
   readonly textureKey: string;
@@ -133,6 +162,7 @@ export interface StagePresentationDefinition {
   readonly enemySprites?: Readonly<Partial<Record<StageEnemyArchetype, string>>>;
   readonly audioProfileId?: string;
   readonly environmentId?: string;
+  readonly effects?: readonly StageEffectDefinition[];
 }
 
 export interface ResolvedStageTexture {
@@ -200,6 +230,8 @@ export interface ResolvedStageEnvironment {
   readonly fog?: StageFogDefinition;
 }
 
+export interface ResolvedStageEffect extends StageEffectDefinition {}
+
 export interface ResolvedStagePresentation {
   readonly themeId: string;
   readonly themeRevision: number;
@@ -213,4 +245,5 @@ export interface ResolvedStagePresentation {
   readonly enemySprites: Readonly<Record<StageEnemyArchetype, ResolvedStageSprite>>;
   readonly audio?: ResolvedStageAudioProfile;
   readonly environment?: ResolvedStageEnvironment;
+  readonly effects: readonly ResolvedStageEffect[];
 }

@@ -12,6 +12,10 @@ import {
   ECO_DAS_AGUAS_EVENT_ID,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
 } from './aguas';
+import {
+  WORLD_ROOT_CHAPTER_MANIFEST,
+  WORLD_ROOT_CHAPTER_STAGES,
+} from './raiz-do-mundo';
 
 /**
  * Declarative link between a campaign chapter and the macro region it fills.
@@ -62,6 +66,11 @@ export const CAMPAIGN_CHAPTER_CATALOG: readonly CampaignChapterEntry[] = Object.
         eventIds: Object.freeze([ECO_DAS_AGUAS_EVENT_ID]),
       }),
     ]),
+  }),
+  Object.freeze({
+    chapter: WORLD_ROOT_CHAPTER_MANIFEST,
+    stages: WORLD_ROOT_CHAPTER_STAGES,
+    regions: Object.freeze([]),
   }),
 ]);
 

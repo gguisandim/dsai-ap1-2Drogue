@@ -10,11 +10,16 @@ import type {
   WorldLabDocument,
   WorldLabGraphEdgeView,
   WorldLabGraphNodeView,
+  WorldLabAssetOrigin,
   WorldLabStageMarker,
   WorldLabStageView,
 } from './contracts';
 import { fixturePresentation } from './fixtures/fixtureCatalog';
 import { PUNY_ASSET_ORIGINS, punyTextureByKey } from '../../presentation/assets/punyAssetCatalog';
+import {
+  WORLD_ROOT_ASSET_ORIGIN,
+  worldRootTextureByKey,
+} from '../../presentation/assets/worldRootAssetCatalog';
 
 export interface WorldLabStageProjectionInput {
   readonly node: CampaignNode;
@@ -184,24 +189,30 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
         })]),
     ).values()].sort((left, right) => compare(left.textureKey, right.textureKey))
     : [];
-  const assetOrigins = presentation
-    ? [...new Map(
-      allTexturePresentations
-        .map(tile => punyTextureByKey(tile.textureKey))
-        .filter((asset): asset is NonNullable<typeof asset> => asset !== undefined)
-        .map(asset => {
-          const origin = PUNY_ASSET_ORIGINS[asset.originId];
-          return [asset.textureKey, Object.freeze({
-            assetId: asset.id,
-            pack: origin.pack,
-            author: origin.author,
-            license: origin.license,
-            sourceUrl: origin.sourceUrl,
-            modifications: Object.freeze([...asset.modifications]),
-          })] as const;
-        }),
-    ).values()].sort((left, right) => compare(left.assetId, right.assetId))
-    : [];
+  const assetOriginEntries: Array<readonly [string, WorldLabAssetOrigin]> = [];
+  if (presentation) allTexturePresentations.forEach(tile => {
+    const puny = punyTextureByKey(tile.textureKey);
+    if (puny) {
+      const origin = PUNY_ASSET_ORIGINS[puny.originId];
+      assetOriginEntries.push([puny.textureKey, Object.freeze({
+        assetId: puny.id, pack: origin.pack, author: origin.author,
+        license: origin.license, sourceUrl: origin.sourceUrl,
+        modifications: Object.freeze([...puny.modifications]),
+      })]);
+      return;
+    }
+    const original = worldRootTextureByKey(tile.textureKey);
+    if (original) assetOriginEntries.push([original.textureKey, Object.freeze({
+      assetId: original.id,
+      pack: WORLD_ROOT_ASSET_ORIGIN.pack,
+      author: WORLD_ROOT_ASSET_ORIGIN.author,
+      license: WORLD_ROOT_ASSET_ORIGIN.license,
+      sourceUrl: WORLD_ROOT_ASSET_ORIGIN.sourceUrl,
+      modifications: Object.freeze([...original.modifications]),
+    })]);
+  });
+  const assetOrigins = [...new Map(assetOriginEntries).values()]
+    .sort((left, right) => compare(left.assetId, right.assetId));
   const decorationPresentations = presentation
     ? Object.values(presentation.decorations)
       .map(decoration => Object.freeze({
@@ -250,6 +261,11 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
         ...(sprite.frame !== undefined ? { frame: sprite.frame } : {}),
         animations: Object.freeze(Object.values(sprite.animations).sort(compare)),
       })).sort((left, right) => compare(left.logicalId, right.logicalId))),
+      effects: Object.freeze(presentation.effects.map(effect => Object.freeze({
+        id: effect.id, kind: effect.kind, color: effect.color,
+        alpha: effect.alpha, depth: effect.depth,
+        ...(effect.count !== undefined ? { count: effect.count } : {}),
+      }))),
       ...(presentation.audio ? { audio: Object.freeze({
         profileId: presentation.audio.id,
         ...(presentation.audio.music ? { musicSoundId: presentation.audio.music.id } : {}),

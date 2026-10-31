@@ -1,7 +1,8 @@
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
 import type { LevelDefinition } from '../../data/LevelData';
 import type {
   ResolvedStagePresentation,
+  ResolvedStageEffect,
   ResolvedStageSprite,
   ResolvedStageTexture,
   StageLogicalTileId,
@@ -48,6 +49,16 @@ function hashVariant(themeId: string, logicalId: StageLogicalTileId, x: number, 
     hash = Math.imul(hash, 16777619);
   }
   return hash >>> 0;
+}
+
+function effectUnit(effectId: string, index: number, channel: string): number {
+  const source = `${effectId}|${index}|${channel}`;
+  let hash = 2166136261;
+  for (let position = 0; position < source.length; position += 1) {
+    hash ^= source.charCodeAt(position);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) / 0xffffffff;
 }
 
 function selectVisual(
@@ -111,6 +122,7 @@ export class StageMapRenderer {
     const images: Phaser.GameObjects.Image[] = [];
     const decorationImages: Phaser.GameObjects.Image[] = [];
     const environmentObjects: Phaser.GameObjects.GameObject[] = [];
+    const foregroundDecorations: Phaser.GameObjects.Image[] = [];
     const pendingExitTiles: RenderedStageExitTile[] = [];
     const tileSize = presentation.tileSize;
 
@@ -172,6 +184,8 @@ export class StageMapRenderer {
       if (placement.tint !== undefined) image.setTint(placement.tint);
       images.push(image);
       decorationImages.push(image);
+      const layer = placement.layer ?? definition.layer;
+      if (layer === 'foreground') foregroundDecorations.push(image);
     });
 
     if (presentation.environment) {
@@ -191,11 +205,140 @@ export class StageMapRenderer {
       }
     }
 
+    environmentObjects.push(...this.renderEffects(
+      scene, level, presentation.effects, foregroundDecorations, tileSize,
+    ));
+
     return Object.freeze({
       images: Object.freeze(images),
       decorationImages: Object.freeze(decorationImages),
       environmentObjects: Object.freeze(environmentObjects),
       pendingExitTiles: Object.freeze(pendingExitTiles),
+    });
+  }
+
+  private renderEffects(
+    scene: Phaser.Scene,
+    level: LevelDefinition,
+    effects: readonly ResolvedStageEffect[],
+    foregroundDecorations: readonly Phaser.GameObjects.Image[],
+    tileSize: number,
+  ): readonly Phaser.GameObjects.GameObject[] {
+    const objects: Phaser.GameObjects.GameObject[] = [];
+    const tileCenter = (value: number): number => value * tileSize + tileSize / 2;
+    effects.forEach(effect => {
+      if (effect.kind === 'foliage-sway') {
+        foregroundDecorations.forEach((image, index) => {
+          const amplitude = Math.max(0.25, (effect.amplitude ?? 2) * Math.PI / 180);
+          image.setRotation(-amplitude);
+          this.animate(scene, image, {
+            rotation: amplitude,
+            duration: effect.durationMs + index * 47,
+            ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+          });
+        });
+        return;
+      }
+      if (effect.kind === 'water-shimmer') {
+        const waterTiles = level.tileMap.flatMap((row, y) => row.flatMap((tile, x) =>
+          tile === 3 ? [{ x, y }] : []));
+        const maximum = Math.min(effect.count ?? 24, waterTiles.length);
+        for (let index = 0; index < maximum; index += 1) {
+          const tile = waterTiles[Math.floor(index * waterTiles.length / Math.max(1, maximum))];
+          const shimmer = scene.add.rectangle(
+            tileCenter(tile.x), tileCenter(tile.y), tileSize * 0.72, 2,
+            effect.color, effect.alpha * (0.55 + effectUnit(effect.id, index, 'alpha') * 0.45),
+          ).setDepth(effect.depth).setRotation(-0.08 + effectUnit(effect.id, index, 'angle') * 0.16);
+          objects.push(shimmer);
+          this.animate(scene, shimmer, {
+            alpha: effect.alpha * 0.18,
+            scaleX: 0.55,
+            duration: effect.durationMs + index * 31,
+            delay: index * 71,
+            ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+          });
+        }
+        return;
+      }
+
+      const originX = tileCenter(effect.x ?? 0);
+      const originY = tileCenter(effect.y ?? 0);
+      if (effect.kind === 'pulse' || effect.kind === 'local-light') {
+        const glow = scene.add.circle(
+          originX, originY, effect.radius ?? 24, effect.color, effect.alpha,
+        ).setDepth(effect.depth);
+        objects.push(glow);
+        const scale = 1 + (effect.amplitude ?? (effect.kind === 'local-light' ? 0.1 : 0.18));
+        this.animate(scene, glow, {
+          alpha: effect.alpha * 0.45, scaleX: scale, scaleY: scale,
+          duration: effect.durationMs, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+        });
+        return;
+      }
+
+      const width = (effect.width ?? 1) * tileSize;
+      const height = (effect.height ?? 1) * tileSize;
+      const count = effect.count ?? 1;
+      if (effect.kind === 'mist') {
+        for (let index = 0; index < count; index += 1) {
+          const mist = scene.add.ellipse(
+            originX - width / 2 + effectUnit(effect.id, index, 'x') * width,
+            originY - height / 2 + effectUnit(effect.id, index, 'y') * height,
+            width * (0.34 + effectUnit(effect.id, index, 'w') * 0.25),
+            tileSize * (1.2 + effectUnit(effect.id, index, 'h') * 1.4),
+            effect.color, effect.alpha * (0.55 + effectUnit(effect.id, index, 'a') * 0.35),
+          ).setDepth(effect.depth);
+          objects.push(mist);
+          const drift = (effect.amplitude ?? 64) * (index % 2 === 0 ? 1 : -1);
+          this.animate(scene, mist, {
+            x: mist.x + drift, alpha: effect.alpha * 0.2,
+            duration: effect.durationMs + index * 311,
+            delay: index * 397,
+            ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+          });
+        }
+        return;
+      }
+
+      for (let index = 0; index < count; index += 1) {
+        const x = originX - width / 2 + effectUnit(effect.id, index, 'x') * width;
+        const y = originY - height / 2 + effectUnit(effect.id, index, 'y') * height;
+        const spirit = effect.kind === 'spirits';
+        const mote = scene.add.circle(
+          x, y, spirit ? 2 + effectUnit(effect.id, index, 'r') * 2 : 1 + effectUnit(effect.id, index, 'r') * 1.6,
+          effect.color, effect.alpha * (0.55 + effectUnit(effect.id, index, 'a') * 0.45),
+        ).setDepth(effect.depth);
+        objects.push(mote);
+        const direction = index % 2 === 0 ? 1 : -1;
+        this.animate(scene, mote, spirit ? {
+          y: y - height * (0.55 + effectUnit(effect.id, index, 'rise') * 0.45),
+          x: x + direction * (effect.amplitude ?? 18),
+          alpha: 0,
+          duration: effect.durationMs + index * 83,
+          delay: index * 181,
+          ease: 'Sine.easeOut', repeat: -1,
+        } : {
+          x: x + direction * (effect.amplitude ?? 18),
+          y: y - (effect.amplitude ?? 18) * (0.35 + effectUnit(effect.id, index, 'drift')),
+          alpha: effect.alpha * 0.22,
+          duration: effect.durationMs + index * 109,
+          delay: index * 137,
+          ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+        });
+      }
+    });
+    return Object.freeze(objects);
+  }
+
+  private animate(
+    scene: Phaser.Scene,
+    target: Phaser.GameObjects.GameObject,
+    config: Omit<Phaser.Types.Tweens.TweenBuilderConfig, 'targets'>,
+  ): void {
+    const tween = scene.tweens.add({ targets: target, ...config });
+    target.once('destroy', () => {
+      tween.stop();
+      tween.remove();
     });
   }
 

@@ -69,6 +69,8 @@ export function renderStageInspector(
         ...(stage.visualPresentation.npcSprites ?? []),
         ...(stage.visualPresentation.enemySprites ?? []),
       ].flatMap(item => item.animations).join(', ') || 'nenhuma'}`,
+      `VFX: ${stage.visualPresentation.effects?.map(effect => `${effect.kind}:${effect.id}`
+        + `${effect.count !== undefined ? `×${effect.count}` : ''}`).join(', ') || 'nenhum'}`,
       `Áudio: ${stage.visualPresentation.audio?.profileId ?? 'silêncio legado'}`,
       `Ambiente: ${stage.visualPresentation.environment
         ? `${stage.visualPresentation.environment.id}, luz ${stage.visualPresentation.environment.lightIntensity}, névoa ${stage.visualPresentation.environment.fog?.opacity ?? 0}`
