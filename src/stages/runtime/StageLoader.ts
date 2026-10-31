@@ -147,6 +147,22 @@ export class StageLoader {
       return this.failure('invalid-reference', request.stageId, referenceDiagnostics);
     }
 
+    let selectedPresentation = module.manifest.presentation;
+    if (request.presentationVariantId !== undefined) {
+      const variant = module.manifest.presentationVariants?.[request.presentationVariantId];
+      if (!variant) {
+        return this.failure('invalid-reference', request.stageId, [{
+          code: 'stage.visual.variant.unknown',
+          severity: 'error',
+          message: `Presentation variant is not declared: ${request.presentationVariantId}.`,
+          path: ['manifest', 'presentationVariants', request.presentationVariantId],
+          stageId: request.stageId,
+          referenceId: request.presentationVariantId,
+        }]);
+      }
+      selectedPresentation = variant;
+    }
+
     const resumeDiagnostics = this.validateResume(module.manifest, request);
     if (hasErrors(resumeDiagnostics)) {
       return this.failure('incompatible-save', request.stageId, resumeDiagnostics);
@@ -186,7 +202,12 @@ export class StageLoader {
 
     const visuals = new StageVisualRegistry();
     this.registry.listChapters().forEach(chapter => visuals.registerChapter(chapter));
-    const visualResolution = visuals.resolve(module.manifest, resolution.level, module.npcs ?? []);
+    const visualResolution = visuals.resolve(
+      module.manifest,
+      resolution.level,
+      module.npcs ?? [],
+      selectedPresentation,
+    );
     if (!visualResolution.ok) {
       return this.failure('invalid-reference', request.stageId, visualResolution.diagnostics);
     }
@@ -209,6 +230,9 @@ export class StageLoader {
       events: cloneData(module.events ?? []),
       encounter: cloneData(encounter),
       presentation: cloneData(visualResolution.value),
+      ...(request.presentationVariantId !== undefined
+        ? { presentationVariantId: request.presentationVariantId }
+        : {}),
       diagnostics,
     };
     return { ok: true, value: loaded };
@@ -232,6 +256,14 @@ export class StageLoader {
     }
     if (typeof request.runSeed !== 'string' && typeof request.runSeed !== 'number') {
       add('stage.load.request-seed-type-invalid', 'Stage load request seed must be a string or number.', ['request', 'runSeed']);
+    }
+    if (request.presentationVariantId !== undefined &&
+      !validNonEmptyString(request.presentationVariantId)) {
+      add(
+        'stage.load.request-variant-invalid',
+        'Stage load request presentationVariantId must be a non-empty string.',
+        ['request', 'presentationVariantId'],
+      );
     }
     return freezeDiagnostics(diagnostics);
   }

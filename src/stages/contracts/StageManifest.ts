@@ -71,6 +71,8 @@ export interface StageManifest {
   readonly completionMissionId?: MissionId;
   readonly capabilities?: readonly StageCapabilityRequirement[];
   readonly presentation?: StagePresentationDefinition;
+  /** Optional named presentations for the same logical stage. */
+  readonly presentationVariants?: Readonly<Record<string, StagePresentationDefinition>>;
   readonly campaignCatalog?: StageCampaignCatalogMetadata;
   readonly tags?: readonly string[];
 }

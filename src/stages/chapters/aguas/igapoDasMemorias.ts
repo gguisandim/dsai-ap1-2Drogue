@@ -1,12 +1,9 @@
 import type { StageModule } from '../../contracts';
 import {
-  IGAPO_AFFINITY_SPRITE_ID,
-  IGAPO_APPLAUD_SPRITE_ID,
-  IGAPO_AUDIO_PROFILE_ID,
-  IGAPO_ENVIRONMENT_ID,
-  IGAPO_NPC_SPRITE_ID,
+  AGUAS_PRESENTATION_VARIANTS,
+  AGUAS_RIBEIRINHO_PRESENTATION,
+  IGAPO_SOMBRIO_THEME_ID,
   IGAPO_VISUAL_THEME_ID,
-  IGAPO_VISUAL_TILESET_ID,
 } from './igapoVisuals';
 
 export const IGAPO_DAS_MEMORIAS_STAGE_ID = 'stage.aguas.igapo-das-memorias';
@@ -88,19 +85,8 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
     title: 'Igapó das Memórias',
     summary: 'Ilhas de terra e raízes atravessam águas escuras onde lembranças estão desaparecendo.',
     layout: Object.freeze({ kind: 'authored' as const }),
-    presentation: Object.freeze({
-      themeId: IGAPO_VISUAL_THEME_ID,
-      tilesetId: IGAPO_VISUAL_TILESET_ID,
-      npcSprites: Object.freeze({
-        'environment.memory-vestige': IGAPO_NPC_SPRITE_ID,
-      }),
-      enemySprites: Object.freeze({
-        affinity: IGAPO_AFFINITY_SPRITE_ID,
-        applaud: IGAPO_APPLAUD_SPRITE_ID,
-      }),
-      audioProfileId: IGAPO_AUDIO_PROFILE_ID,
-      environmentId: IGAPO_ENVIRONMENT_ID,
-    }),
+    presentation: AGUAS_RIBEIRINHO_PRESENTATION,
+    presentationVariants: AGUAS_PRESENTATION_VARIANTS,
     campaignCatalog: Object.freeze({
       availability: 'available' as const,
       participation: 'candidate' as const,
@@ -165,6 +151,10 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
       Object.freeze({
         id: IGAPO_VISUAL_THEME_ID, category: 'theme' as const,
         minimumVersion: 1, requirement: 'required' as const,
+      }),
+      Object.freeze({
+        id: IGAPO_SOMBRIO_THEME_ID, category: 'theme' as const,
+        minimumVersion: 1, requirement: 'optional' as const,
       }),
       Object.freeze({
         id: 'tile.custom-tileset', category: 'tile' as const,

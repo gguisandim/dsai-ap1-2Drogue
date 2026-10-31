@@ -13,7 +13,7 @@ import {
   validateNamespace,
   validateSlug,
 } from './names';
-import { previewChapterEntry } from './preview';
+import { createVisualPreview, previewChapterEntry } from './preview';
 import {
   printCreateResult,
   printDiagnostics,
@@ -93,11 +93,18 @@ export function runChapterCli(
       return 0;
     }
 
-    const preview = previewChapterEntry(entry);
+    const headlessPreview = previewChapterEntry(entry);
+    const ok = headlessPreview.report.errors.length === 0 &&
+      headlessPreview.individual.every(item => item.ok) &&
+      headlessPreview.worldLab.ok;
+    const preview = parsed.visual && ok
+      ? Object.freeze({
+          ...headlessPreview,
+          rendering: 'prepared' as const,
+          visual: createVisualPreview(parsed.slug as string, repoRoot, chaptersRoot),
+        })
+      : headlessPreview;
     printPreview(preview, print);
-    const ok = preview.report.errors.length === 0 &&
-      preview.individual.every(item => item.ok) &&
-      preview.worldLab.ok;
     return ok ? 0 : 1;
   } catch (error) {
     if (error instanceof ChapterCliError) {

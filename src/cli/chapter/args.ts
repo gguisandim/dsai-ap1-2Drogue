@@ -17,7 +17,7 @@ function requireValue(args: readonly string[], index: number, option: string): s
  */
 export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArguments {
   if (argv.length === 0 || argv.includes('--help') || argv.includes('-h')) {
-    return Object.freeze({ command: 'help' as const, json: false });
+    return Object.freeze({ command: 'help' as const, json: false, visual: false });
   }
   const [rawCommand, ...rest] = argv;
   if (!COMMANDS.has(rawCommand as ChapterCommandName)) {
@@ -29,6 +29,7 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
   let namespace: string | undefined;
   let revision: number | undefined;
   let json = false;
+  let visual = false;
   let chaptersDir: string | undefined;
 
   for (let index = 0; index < rest.length; index += 1) {
@@ -44,6 +45,10 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
       if (argument === '--chapters-dir') {
         chaptersDir = requireValue(rest, index, argument);
         index += 1;
+        continue;
+      }
+      if (command === 'preview' && argument === '--visual') {
+        visual = true;
         continue;
       }
       if (command === 'create' && argument === '--title') {
@@ -90,6 +95,7 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
     ...(revision !== undefined ? { revision } : {}),
     ...(chaptersDir !== undefined ? { chaptersDir } : {}),
     json,
+    visual,
   });
 }
 
@@ -99,11 +105,12 @@ Usage:
   npm run chapter -- create <slug> [--title <text>] [--namespace <id>] [--revision <n>]
   npm run chapter -- validate <slug>
   npm run chapter -- inspect <slug> [--json]
-  npm run chapter -- preview <slug>
+  npm run chapter -- preview <slug> [--visual]
 
 Options:
   --chapters-dir <path>  Authoring root inside src/ (default: src/examples/chapters)
   --json                 JSON output for inspect
+  --visual               Prepare the Phaser browser preview URL (preview only)
   --help, -h             Show this help
 
 Exit codes:

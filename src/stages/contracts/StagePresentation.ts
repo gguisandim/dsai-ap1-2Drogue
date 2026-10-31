@@ -27,12 +27,17 @@ export type StageSoundWaveform = 'sine' | 'triangle' | 'square' | 'sawtooth';
 export interface StageVisualTextureDefinition {
   readonly id: string;
   readonly textureKey: string;
+  /** Optional spritesheet metadata used for validation and inspection. */
+  readonly frameWidth?: number;
+  readonly frameHeight?: number;
+  readonly frameCount?: number;
 }
 
 export interface StageTileVisualVariant {
   readonly textureId: string;
   readonly tint?: number;
   readonly alpha?: number;
+  readonly frame?: number;
 }
 
 export interface StageTileVisualDefinition extends StageTileVisualVariant {
@@ -52,6 +57,7 @@ export interface StageDecorationVisualDefinition {
   readonly layer: StageVisualLayer;
   readonly depth: number;
   readonly defaultScale?: number;
+  readonly frame?: number;
 }
 
 export interface StageVisualThemeDefinition {
@@ -59,6 +65,8 @@ export interface StageVisualThemeDefinition {
   readonly revision: number;
   readonly tilesetId: string;
   readonly decorationIds?: readonly string[];
+  /** Maps a stable placement type to another registered decoration resource. */
+  readonly decorationOverrides?: Readonly<Record<string, string>>;
 }
 
 export interface StageSpriteAnimations {
@@ -75,6 +83,7 @@ export interface StageSpriteDefinition {
   readonly tint?: number;
   readonly scale?: number;
   readonly depth?: number;
+  readonly frame?: number;
 }
 
 export interface StageSoundDefinition {
@@ -131,6 +140,10 @@ export interface ResolvedStageTexture {
   readonly textureKey: string;
   readonly tint?: number;
   readonly alpha?: number;
+  readonly frame?: number;
+  readonly frameWidth?: number;
+  readonly frameHeight?: number;
+  readonly frameCount?: number;
 }
 
 export interface ResolvedStageTileVisual extends ResolvedStageTexture {
@@ -144,6 +157,10 @@ export interface ResolvedStageDecorationVisual {
   readonly layer: StageVisualLayer;
   readonly depth: number;
   readonly defaultScale: number;
+  readonly frame?: number;
+  readonly frameWidth?: number;
+  readonly frameHeight?: number;
+  readonly frameCount?: number;
 }
 
 export interface ResolvedStageSprite {
@@ -154,6 +171,10 @@ export interface ResolvedStageSprite {
   readonly tint?: number;
   readonly scale: number;
   readonly depth: number;
+  readonly frame?: number;
+  readonly frameWidth?: number;
+  readonly frameHeight?: number;
+  readonly frameCount?: number;
 }
 
 export interface ResolvedStageSound {
@@ -187,6 +208,7 @@ export interface ResolvedStagePresentation {
   readonly tileSize: 32;
   readonly tiles: Readonly<Record<StageLogicalTileId, ResolvedStageTileVisual>>;
   readonly decorations: Readonly<Record<string, ResolvedStageDecorationVisual>>;
+  readonly decorationOverrides?: Readonly<Record<string, string>>;
   readonly npcSprites: Readonly<Record<string, ResolvedStageSprite>>;
   readonly enemySprites: Readonly<Record<StageEnemyArchetype, ResolvedStageSprite>>;
   readonly audio?: ResolvedStageAudioProfile;

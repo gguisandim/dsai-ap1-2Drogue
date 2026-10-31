@@ -4,6 +4,7 @@ import { TextureGenerator } from '../utils/TextureGenerator';
 import { loadSettings } from '../data/PlayerProfile';
 import { SoundManager } from '../managers/SoundManager';
 import { createMageCastTexture } from '../utils/MageCastTexture';
+import { createPunyAnimations, preloadPunyAssets } from '../presentation/assets/bootPunyAssets';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -34,10 +35,12 @@ export class BootScene extends Phaser.Scene {
         frameHeight: 114,
       });
     });
+    preloadPunyAssets(this);
   }
 
   create() {
     TextureGenerator.generateAllTextures(this);
+    createPunyAnimations(this);
     const playerSprites = [
       'anim_knight_man', 'anim_knight_woman',
       'anim_mage_man', 'anim_mage_woman',
@@ -98,6 +101,34 @@ export class BootScene extends Phaser.Scene {
     SoundManager.setEnabled(loadSettings().sound);
     const developmentHost = globalThis.location?.hostname === '127.0.0.1' ||
       globalThis.location?.hostname === 'localhost';
+    const search = globalThis.location?.search ?? '';
+    const previewRequested = import.meta.env.DEV && developmentHost &&
+      (new URLSearchParams(search).has('chapterPreview') ||
+        new URLSearchParams(search).has('stagePreview'));
+    if (previewRequested) {
+      void import('../devtools/chapter-preview/authoringPreview')
+        .then(({ startVisualPreviewFromQuery }) => startVisualPreviewFromQuery(search))
+        .then(result => {
+          if ('session' in result) {
+            this.scene.start('GameScene', {
+              individualRuntime: {
+                stageId: result.session.stageId,
+                loadedStage: result.session.loadedStage,
+                composition: result.session.composition,
+              },
+              skipControls: true,
+            });
+            return;
+          }
+          console.error('Visual preview failed.', result);
+          this.scene.start('MenuScene');
+        })
+        .catch(error => {
+          console.error('Visual preview failed to start.', error);
+          this.scene.start('MenuScene');
+        });
+      return;
+    }
     const narrativeCycleLab = developmentHost &&
       new URLSearchParams(globalThis.location?.search ?? '').get('narrativeCycleLab') === '1';
     if (narrativeCycleLab) {

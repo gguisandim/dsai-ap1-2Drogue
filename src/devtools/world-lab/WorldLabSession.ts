@@ -12,6 +12,10 @@ import { WorldLabSnapshotCodec } from './WorldLabSnapshot';
 
 export interface WorldLabDataSource {
   generate(seed: string): WorldLabGenerationResult;
+  presentationVariants?(): readonly string[];
+  presentationVariantId?(): string | undefined;
+  setPresentationVariant?(id?: string): void;
+  focusNodeId?(): string | undefined;
 }
 
 type Listener = (state: WorldLabSessionState) => void;
@@ -63,6 +67,20 @@ export class WorldLabSession {
     this.replace({ ...this.stateValue, seed });
   }
 
+  public presentationVariants(): readonly string[] {
+    return this.dataSource.presentationVariants?.() ?? Object.freeze([]);
+  }
+
+  public presentationVariantId(): string | undefined {
+    return this.dataSource.presentationVariantId?.();
+  }
+
+  public setPresentationVariant(id?: string): WorldLabGenerationResult | undefined {
+    if (!this.dataSource.setPresentationVariant) return undefined;
+    this.dataSource.setPresentationVariant(id);
+    return this.generate();
+  }
+
   public generate(): WorldLabGenerationResult {
     const result = this.dataSource.generate(this.stateValue.seed);
     if (!result.ok) {
@@ -74,7 +92,9 @@ export class WorldLabSession {
       });
       return result;
     }
-    const firstNode = result.value.nodes.find(node => node.entry) ?? result.value.nodes[0];
+    const focusNodeId = this.dataSource.focusNodeId?.();
+    const firstNode = result.value.nodes.find(node => node.id === focusNodeId) ??
+      result.value.nodes.find(node => node.entry) ?? result.value.nodes[0];
     this.replace({
       ...this.stateValue,
       seed: result.value.seed,

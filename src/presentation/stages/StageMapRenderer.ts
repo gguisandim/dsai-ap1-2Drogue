@@ -70,6 +70,18 @@ function applyVisual<T extends Phaser.GameObjects.Image | Phaser.Physics.Arcade.
   return target;
 }
 
+function addVisualImage(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  visual: ResolvedStageTexture,
+): Phaser.GameObjects.Image {
+  const image = visual.frame !== undefined
+    ? scene.add.image(x, y, visual.textureKey, visual.frame)
+    : scene.add.image(x, y, visual.textureKey);
+  return applyVisual(image, visual);
+}
+
 export class StageMapRenderer {
   public createNpcSprite(
     scene: Phaser.Scene,
@@ -78,7 +90,9 @@ export class StageMapRenderer {
     sprite: ResolvedStageSprite,
   ): Phaser.GameObjects.Sprite {
     this.assertSprite(scene, sprite);
-    const marker = scene.add.sprite(x, y, sprite.textureKey)
+    const marker = (sprite.frame !== undefined
+      ? scene.add.sprite(x, y, sprite.textureKey, sprite.frame)
+      : scene.add.sprite(x, y, sprite.textureKey))
       .setDepth(sprite.depth)
       .setScale(sprite.scale);
     if (sprite.tint !== undefined) marker.setTint(sprite.tint);
@@ -104,21 +118,24 @@ export class StageMapRenderer {
       const posX = x * tileSize + tileSize / 2;
       const posY = y * tileSize + tileSize / 2;
       const floorVisual = selectVisual(presentation, 'floor', x, y);
-      const floor = applyVisual(
-        scene.add.image(posX, posY, floorVisual.textureKey),
-        floorVisual,
-      ).setDepth(-2);
+      const floor = addVisualImage(scene, posX, posY, floorVisual)
+        .setDisplaySize(tileSize, tileSize)
+        .setDepth(-2);
       images.push(floor);
 
       const logicalId = TILE_LOGICAL_IDS[tileValue];
       if (tileValue >= 1 && tileValue <= 3 && logicalId) {
         const visual = selectVisual(presentation, logicalId, x, y);
-        const obstacle = collisionGroup.create(posX, posY, visual.textureKey) as Phaser.Physics.Arcade.Sprite;
-        applyVisual(obstacle, visual).setDepth(1);
+        const obstacle = (visual.frame !== undefined
+          ? collisionGroup.create(posX, posY, visual.textureKey, visual.frame)
+          : collisionGroup.create(posX, posY, visual.textureKey)) as Phaser.Physics.Arcade.Sprite;
+        applyVisual(obstacle, visual).setDisplaySize(tileSize, tileSize).setDepth(1);
         obstacle.refreshBody();
       } else if (tileValue === 4) {
         const visual = selectVisual(presentation, 'lava', x, y);
-        const lava = applyVisual(scene.add.image(posX, posY, visual.textureKey), visual).setDepth(-1);
+        const lava = addVisualImage(scene, posX, posY, visual)
+          .setDisplaySize(tileSize, tileSize)
+          .setDepth(-1);
         images.push(lava);
       } else if (tileValue === 5 && includeLegacyExit) {
         pendingExitTiles.push(Object.freeze({ x: posX, y: posY }));
@@ -127,20 +144,28 @@ export class StageMapRenderer {
 
     level.decorations.forEach(placement => {
       if (placement.visible === false) return;
-      const definition = presentation.decorations[placement.type];
+      const decorationId = presentation.decorationOverrides?.[placement.type] ?? placement.type;
+      const definition = presentation.decorations[decorationId];
       if (!definition) {
         if (presentation.themeId === 'theme.legacy.default') return;
         throw new StageMapRenderError(
           'stage.visual.decoration.unresolved',
-          `Decoration is not resolved for theme ${presentation.themeId}: ${placement.type}`,
-          placement.type,
+          `Decoration is not resolved for theme ${presentation.themeId}: ${decorationId}`,
+          decorationId,
         );
       }
-      const image = scene.add.image(
-        placement.x * tileSize + tileSize / 2,
-        placement.y * tileSize + tileSize / 2,
-        definition.textureKey,
-      );
+      const image = definition.frame !== undefined
+        ? scene.add.image(
+            placement.x * tileSize + tileSize / 2,
+            placement.y * tileSize + tileSize / 2,
+            definition.textureKey,
+            definition.frame,
+          )
+        : scene.add.image(
+            placement.x * tileSize + tileSize / 2,
+            placement.y * tileSize + tileSize / 2,
+            definition.textureKey,
+          );
       image.setDepth(placement.depth ?? (placement.layer ? LAYER_DEPTH[placement.layer] : definition.depth));
       image.setScale(placement.scale ?? definition.defaultScale);
       if (placement.rotation !== undefined) image.setRotation(placement.rotation);
@@ -175,20 +200,32 @@ export class StageMapRenderer {
   }
 
   private assertTextures(scene: Phaser.Scene, presentation: ResolvedStagePresentation): void {
-    const keys = new Set<string>();
+    const textures = new Map<string, readonly (number | undefined)[]>();
+    const track = (textureKey: string, frame?: number): void => {
+      const frames = textures.get(textureKey) ?? [];
+      textures.set(textureKey, [...frames, frame]);
+    };
     Object.values(presentation.tiles).forEach(tile => {
-      keys.add(tile.textureKey);
-      tile.variants.forEach(variant => keys.add(variant.textureKey));
+      track(tile.textureKey, tile.frame);
+      tile.variants.forEach(variant => track(variant.textureKey, variant.frame));
     });
-    Object.values(presentation.decorations).forEach(decoration => keys.add(decoration.textureKey));
-    Object.values(presentation.npcSprites).forEach(sprite => keys.add(sprite.textureKey));
-    Object.values(presentation.enemySprites).forEach(sprite => keys.add(sprite.textureKey));
-    [...keys].sort().forEach(textureKey => {
+    Object.values(presentation.decorations).forEach(decoration =>
+      track(decoration.textureKey, decoration.frame));
+    Object.values(presentation.npcSprites).forEach(sprite => track(sprite.textureKey, sprite.frame));
+    Object.values(presentation.enemySprites).forEach(sprite => track(sprite.textureKey, sprite.frame));
+    [...textures.keys()].sort().forEach(textureKey => {
       if (!scene.textures.exists(textureKey)) throw new StageMapRenderError(
         'stage.visual.texture.runtime-missing',
         `Renderer texture is not loaded: ${textureKey}`,
         textureKey,
       );
+      (textures.get(textureKey) ?? []).forEach(frame => {
+        if (frame !== undefined && !scene.textures.getFrame(textureKey, frame)) throw new StageMapRenderError(
+          'stage.visual.texture.runtime-missing',
+          `Renderer frame is not loaded: ${textureKey}#${frame}`,
+          textureKey,
+        );
+      });
     });
     Object.values(presentation.npcSprites).forEach(sprite => this.assertSprite(scene, sprite));
     Object.values(presentation.enemySprites).forEach(sprite => this.assertSprite(scene, sprite));
@@ -200,6 +237,13 @@ export class StageMapRenderer {
       `Renderer texture is not loaded: ${sprite.textureKey}`,
       sprite.textureKey,
     );
+    if (sprite.frame !== undefined && !scene.textures.getFrame(sprite.textureKey, sprite.frame)) {
+      throw new StageMapRenderError(
+        'stage.visual.texture.runtime-missing',
+        `Renderer frame is not loaded: ${sprite.textureKey}#${sprite.frame}`,
+        sprite.textureKey,
+      );
+    }
     Object.values(sprite.animations).forEach(animationKey => {
       if (!scene.anims.exists(animationKey)) throw new StageMapRenderError(
         'stage.visual.animation.runtime-missing',

@@ -41,6 +41,7 @@ export const DEFAULT_STAGE_RUNTIME_CAPABILITIES: StageRuntimeCapabilityProfile =
     ...THEMES.map(name => capability(`theme.${name}`, 'theme', 'planned')),
     capability('theme.legacy.default', 'theme'),
     capability('theme.aguas.igapo', 'theme'),
+    capability('theme.aguas.igapo-sombrio', 'theme'),
     ...['affinity', 'applaud', 'fortitudo', 'ranged', 'boss', 'miniboss']
       .map(name => capability(`enemy.${name}`, 'enemy')),
     capability('encounter.declarative', 'encounter'),

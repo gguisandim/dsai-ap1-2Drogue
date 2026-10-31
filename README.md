@@ -110,7 +110,33 @@ npm run dev
 Durante o servidor de desenvolvimento, o visualizador headless da campanha fica
 disponível em `http://localhost:5173/world-lab.html`. O **Umbra World Lab** usa
 um catálogo marcado como Fixture e os geradores, loaders e validadores reais;
-ele não faz parte da entrada de produção.
+ele não faz parte da entrada de produção. As variantes visuais do Igapó podem ser
+inspecionadas com
+`?stage=stage.aguas.igapo-das-memorias&presentationVariant=variant.aguas.igapo-sombrio`
+ou pelo seletor **Variant** do World Lab.
+
+### Autoria independente e preview visual
+
+```sh
+npm run chapter -- create minha-fase
+npm run chapter -- validate minha-fase
+npm run chapter -- inspect minha-fase
+npm run chapter -- preview minha-fase
+npm run chapter -- preview minha-fase --visual
+npm run dev
+```
+
+O preview visual usa a URL `http://localhost:5173/?chapterPreview=minha-fase`. A
+`BootScene` descobre somente capítulos de `src/examples/chapters/*/index.ts` por
+`import.meta.glob`, cria um `StageRegistry` isolado e inicia uma sessão
+individual. O catálogo de produção e o save da campanha principal não são
+alterados. Para o Igapó, use
+`?stagePreview=stage.aguas.igapo-das-memorias&presentationVariant=variant.aguas.igapo-sombrio`.
+
+Os assets Puny incorporados e suas licenças CC0 estão documentados em
+[`src/assets/puny/README.md`](./src/assets/puny/README.md). O fluxo completo de
+registro, seleção A/B, pipeline de assets e homologação no navegador está em
+[`docs/autoria-capitulos-e-assets.md`](./docs/autoria-capitulos-e-assets.md).
 
 Validação completa:
 

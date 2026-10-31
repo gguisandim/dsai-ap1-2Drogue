@@ -40,15 +40,35 @@ export function renderStageInspector(
   if (stage.visualPresentation) {
     const visual = document.createElement('div');
     visual.className = 'wl-stage-visual-meta';
+    const tiles = stage.visualPresentation.tiles ?? [];
+    const spritesheets = stage.visualPresentation.spritesheets ?? [];
+    const origins = stage.visualPresentation.assetOrigins ?? [];
+    const decorations = stage.visualPresentation.decorations ?? [];
     visual.textContent = [
       `Tema: ${stage.visualPresentation.themeId}`,
+      `Variante: ${stage.visualPresentation.variantId ?? 'default'}`,
       `Tileset: ${stage.visualPresentation.tilesetId}`,
       `Recursos: ${stage.visualPresentation.textureKeys.join(', ') || 'nenhum'}`,
-      `Decorações: ${stage.visualPresentation.decorationIds.join(', ') || 'nenhuma'}`,
+      `Tiles: ${tiles.map(tile => `${tile.logicalId}→${tile.textureKey}`
+        + `${tile.frame !== undefined ? `#${tile.frame}` : ''}`).join(', ') || 'nenhum'}`,
+      `Spritesheets: ${spritesheets.map(sheet => `${sheet.textureKey}`
+        + `${sheet.frameWidth && sheet.frameHeight ? ` ${sheet.frameWidth}x${sheet.frameHeight}` : ''}`
+        + `${sheet.frameCount !== undefined ? ` (${sheet.frameCount} frames)` : ''}`).join(', ') || 'nenhum'}`,
+      `Decorações: ${decorations.map(decoration => `${decoration.id}→${decoration.textureKey}`
+        + `${decoration.frame !== undefined ? `#${decoration.frame}` : ''}`).join(', ') || 'nenhuma'}`,
+      `Overrides: ${Object.entries(stage.visualPresentation.decorationOverrides ?? {})
+        .map(([from, to]) => `${from}→${to}`).join(', ') || 'nenhum'}`,
+      `Origem: ${origins.map(origin => `${origin.assetId} (${origin.pack}, ${origin.license})`).join(', ') || 'legado'}`,
       `Ausentes: ${stage.visualPresentation.missingResourceIds.join(', ') || 'nenhum'}`,
       `Diagnósticos: ${stage.visualPresentation.diagnostics.join(', ') || 'nenhum'}`,
-      `NPCs: ${stage.visualPresentation.npcSprites?.map(item => `${item.logicalId}→${item.spriteId}`).join(', ') || 'fallback'}`,
-      `Inimigos: ${stage.visualPresentation.enemySprites?.map(item => `${item.logicalId}→${item.spriteId}`).join(', ') || 'fallback'}`,
+      `NPCs: ${stage.visualPresentation.npcSprites?.map(item => `${item.logicalId}→${item.spriteId}`
+        + `${item.frame !== undefined ? `#${item.frame}` : ''}`).join(', ') || 'fallback'}`,
+      `Inimigos: ${stage.visualPresentation.enemySprites?.map(item => `${item.logicalId}→${item.spriteId}`
+        + `${item.frame !== undefined ? `#${item.frame}` : ''}`).join(', ') || 'fallback'}`,
+      `Animações NPC/inimigos: ${[
+        ...(stage.visualPresentation.npcSprites ?? []),
+        ...(stage.visualPresentation.enemySprites ?? []),
+      ].flatMap(item => item.animations).join(', ') || 'nenhuma'}`,
       `Áudio: ${stage.visualPresentation.audio?.profileId ?? 'silêncio legado'}`,
       `Ambiente: ${stage.visualPresentation.environment
         ? `${stage.visualPresentation.environment.id}, luz ${stage.visualPresentation.environment.lightIntensity}, névoa ${stage.visualPresentation.environment.fog?.opacity ?? 0}`

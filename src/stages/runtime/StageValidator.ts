@@ -143,7 +143,23 @@ export class StageValidator {
     const visuals = new StageVisualRegistry();
     chapters.forEach(chapter => visuals.registerChapter(chapter));
     diagnostics.push(...visuals.diagnostics());
-    modules.forEach(module => diagnostics.push(...visuals.validateManifest(module.manifest, module.npcs ?? [])));
+    modules.forEach(module => {
+      diagnostics.push(...visuals.validateManifest(module.manifest, module.npcs ?? []));
+      Object.entries(module.manifest.presentationVariants ?? {}).forEach(([variantId, presentation]) => {
+        if (!isStableId(variantId)) diagnostics.push({
+          code: 'stage.visual.variant.id-invalid',
+          severity: 'error',
+          message: `Presentation variant id is invalid: ${variantId}.`,
+          path: ['stages', module.manifest.id, 'manifest', 'presentationVariants', variantId],
+          stageId: module.manifest.id,
+          referenceId: variantId,
+        });
+        diagnostics.push(...visuals.validateManifest(module.manifest, module.npcs ?? [], presentation).map(item => ({
+          ...item,
+          path: ['stages', module.manifest.id, 'manifest', 'presentationVariants', variantId, ...item.path],
+        })));
+      });
+    });
 
     for (const module of moduleById.values()) {
       if (!chapterById.has(module.manifest.chapterId)) {

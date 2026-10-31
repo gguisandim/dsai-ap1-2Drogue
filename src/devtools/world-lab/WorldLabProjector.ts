@@ -14,6 +14,7 @@ import type {
   WorldLabStageView,
 } from './contracts';
 import { fixturePresentation } from './fixtures/fixtureCatalog';
+import { PUNY_ASSET_ORIGINS, punyTextureByKey } from '../../presentation/assets/punyAssetCatalog';
 
 export interface WorldLabStageProjectionInput {
   readonly node: CampaignNode;
@@ -139,7 +140,79 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
           tile.textureKey, ...tile.variants.map(variant => variant.textureKey),
         ]),
         ...Object.values(presentation.decorations).map(decoration => decoration.textureKey),
+        ...Object.values(presentation.npcSprites).map(sprite => sprite.textureKey),
+        ...Object.values(presentation.enemySprites).map(sprite => sprite.textureKey),
       ])].sort(compare)
+    : [];
+  const tilePresentations = presentation
+    ? Object.entries(presentation.tiles)
+      .map(([logicalId, tile]) => Object.freeze({
+        logicalId,
+        textureId: tile.textureId,
+        textureKey: tile.textureKey,
+        ...(tile.frame !== undefined ? { frame: tile.frame } : {}),
+        ...(tile.tint !== undefined ? { tint: tile.tint } : {}),
+        ...(tile.alpha !== undefined ? { alpha: tile.alpha } : {}),
+        variants: Object.freeze(tile.variants.map(variant => Object.freeze({
+          textureId: variant.textureId,
+          textureKey: variant.textureKey,
+          ...(variant.frame !== undefined ? { frame: variant.frame } : {}),
+          ...(variant.tint !== undefined ? { tint: variant.tint } : {}),
+          ...(variant.alpha !== undefined ? { alpha: variant.alpha } : {}),
+        }))),
+      }))
+      .sort((left, right) => compare(left.logicalId, right.logicalId))
+    : [];
+  const allTexturePresentations = presentation
+    ? [
+        ...Object.values(presentation.tiles).flatMap(tile => [tile, ...tile.variants]),
+        ...Object.values(presentation.decorations),
+        ...Object.values(presentation.npcSprites),
+        ...Object.values(presentation.enemySprites),
+      ]
+    : [];
+  const spritesheets = presentation
+    ? [...new Map(
+      allTexturePresentations
+        .filter(tile => tile.frameWidth !== undefined || tile.frameHeight !== undefined ||
+          tile.frameCount !== undefined)
+        .map(tile => [tile.textureKey, Object.freeze({
+          textureKey: tile.textureKey,
+          ...(tile.frameWidth !== undefined ? { frameWidth: tile.frameWidth } : {}),
+          ...(tile.frameHeight !== undefined ? { frameHeight: tile.frameHeight } : {}),
+          ...(tile.frameCount !== undefined ? { frameCount: tile.frameCount } : {}),
+        })]),
+    ).values()].sort((left, right) => compare(left.textureKey, right.textureKey))
+    : [];
+  const assetOrigins = presentation
+    ? [...new Map(
+      allTexturePresentations
+        .map(tile => punyTextureByKey(tile.textureKey))
+        .filter((asset): asset is NonNullable<typeof asset> => asset !== undefined)
+        .map(asset => {
+          const origin = PUNY_ASSET_ORIGINS[asset.originId];
+          return [asset.textureKey, Object.freeze({
+            assetId: asset.id,
+            pack: origin.pack,
+            author: origin.author,
+            license: origin.license,
+            sourceUrl: origin.sourceUrl,
+            modifications: Object.freeze([...asset.modifications]),
+          })] as const;
+        }),
+    ).values()].sort((left, right) => compare(left.assetId, right.assetId))
+    : [];
+  const decorationPresentations = presentation
+    ? Object.values(presentation.decorations)
+      .map(decoration => Object.freeze({
+        id: decoration.id,
+        textureKey: decoration.textureKey,
+        ...(decoration.frame !== undefined ? { frame: decoration.frame } : {}),
+        layer: decoration.layer,
+        depth: decoration.depth,
+        scale: decoration.defaultScale,
+      }))
+      .sort((left, right) => compare(left.id, right.id))
     : [];
   return Object.freeze({
     nodeId: input.node.id,
@@ -154,17 +227,27 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
     ...(presentation ? { visualPresentation: Object.freeze({
       themeId: presentation.themeId,
       tilesetId: presentation.tilesetId,
+      ...(stage.presentationVariantId ? { variantId: stage.presentationVariantId } : {}),
       textureKeys: Object.freeze(textureKeys),
       decorationIds: Object.freeze(Object.keys(presentation.decorations).sort(compare)),
       missingResourceIds: Object.freeze([]),
       diagnostics: Object.freeze(stage.diagnostics
         .filter(item => item.code.startsWith('stage.visual.')).map(item => item.code).sort(compare)),
+      tiles: Object.freeze(tilePresentations),
+      spritesheets: Object.freeze(spritesheets),
+      assetOrigins: Object.freeze(assetOrigins),
+      decorations: Object.freeze(decorationPresentations),
+      ...(presentation.decorationOverrides
+        ? { decorationOverrides: Object.freeze({ ...presentation.decorationOverrides }) }
+        : {}),
       npcSprites: Object.freeze(Object.entries(presentation.npcSprites).map(([logicalId, sprite]) => Object.freeze({
         logicalId, spriteId: sprite.id, textureKey: sprite.textureKey,
+        ...(sprite.frame !== undefined ? { frame: sprite.frame } : {}),
         animations: Object.freeze(Object.values(sprite.animations).sort(compare)),
       })).sort((left, right) => compare(left.logicalId, right.logicalId))),
       enemySprites: Object.freeze(Object.entries(presentation.enemySprites).map(([logicalId, sprite]) => Object.freeze({
         logicalId, spriteId: sprite.id, textureKey: sprite.textureKey,
+        ...(sprite.frame !== undefined ? { frame: sprite.frame } : {}),
         animations: Object.freeze(Object.values(sprite.animations).sort(compare)),
       })).sort((left, right) => compare(left.logicalId, right.logicalId))),
       ...(presentation.audio ? { audio: Object.freeze({

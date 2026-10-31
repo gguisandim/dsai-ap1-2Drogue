@@ -187,6 +187,7 @@ npm run chapter -- validate ${slug}
 npm run chapter -- inspect ${slug}
 npm run chapter -- inspect ${slug} --json
 npm run chapter -- preview ${slug}
+npm run chapter -- preview ${slug} --visual
 \`\`\`
 
 ## Registro
@@ -203,8 +204,16 @@ O modo individual pode ser acionado com
 \`new GameSessionService({ registry }).startIndividualStage('${ids.stageId}')\`.
 O World Lab aceita o mesmo registry injetado.
 
-\`preview\` é headless: valida, carrega no modo individual e projeta no World Lab,
-mas não renderiza com Phaser.
+\`preview\` sem opções é headless: valida, carrega no modo individual e projeta no
+World Lab, mas não renderiza com Phaser.
+
+\`preview ${slug} --visual\` prepara o preview real. Ele exige que o capítulo
+esteja no diretório canônico \`src/examples/chapters/\`, imprime a URL
+\`http://localhost:5173/?chapterPreview=${slug}\` e explica o bootstrap. Inicie
+\`npm run dev\` e abra a URL. O bootstrap do Vite descobre capítulos por
+\`import.meta.glob\`, cria um \`StageRegistry\` isolado, valida o capítulo e inicia
+uma sessão individual na \`GameScene\`. O catálogo de produção e o save da
+campanha principal não são alterados.
 `;
 }
 

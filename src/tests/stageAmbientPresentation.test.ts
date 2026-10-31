@@ -117,9 +117,9 @@ describe('stage audio and environment presentation', () => {
     });
     expect(presentation.environment).toEqual({
       id: IGAPO_ENVIRONMENT_ID,
-      ambientColor: 0x153e39,
-      lightIntensity: 0.62,
-      fog: { color: 0x123d42, opacity: 0.16, depth: 4 },
+      ambientColor: 0x1d4a3f,
+      lightIntensity: 0.72,
+      fog: { color: 0x1b4f4a, opacity: 0.1, depth: 4 },
     });
   });
 
@@ -172,9 +172,10 @@ describe('stage audio and environment presentation', () => {
     const makeVisual = () => ({
       setTint() { return this; }, setAlpha() { return this; }, setDepth() { return this; },
       setScale() { return this; }, setRotation() { return this; }, refreshBody() { return this; },
+      setDisplaySize() { return this; },
     });
     const scene = {
-      textures: { exists: () => true }, anims: { exists: () => true },
+      textures: { exists: () => true, getFrame: () => ({}) }, anims: { exists: () => true },
       cameras: { main: { width: 1280, height: 720 } },
       add: {
         image: jest.fn(makeVisual),
@@ -195,8 +196,8 @@ describe('stage audio and environment presentation', () => {
     );
     expect(result.environmentObjects).toHaveLength(2);
     expect(rectangles).toEqual([
-      expect.objectContaining({ color: 0x153e39, depth: 3 }),
-      expect.objectContaining({ color: 0x123d42, alpha: 0.16, depth: 4 }),
+      expect.objectContaining({ color: 0x1d4a3f, depth: 3 }),
+      expect.objectContaining({ color: 0x1b4f4a, alpha: 0.1, depth: 4 }),
     ]);
     expect(rectangles.every(rectangle => (rectangle.depth ?? 0) < 5)).toBe(true);
   });

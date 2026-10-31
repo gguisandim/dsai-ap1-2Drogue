@@ -157,6 +157,14 @@ function validAlpha(value: unknown): value is number | undefined {
   return value === undefined || (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1);
 }
 
+function validFrame(value: unknown): value is number | undefined {
+  return value === undefined || (Number.isInteger(value) && Number(value) >= 0);
+}
+
+function validPositiveInteger(value: unknown): value is number | undefined {
+  return value === undefined || (Number.isInteger(value) && Number(value) > 0);
+}
+
 export class StageVisualRegistry {
   private readonly textures = new Map<string, Registered<StageVisualTextureDefinition>>();
   private readonly tilesets = new Map<string, Registered<StageTilesetDefinition>>();
@@ -193,32 +201,33 @@ export class StageVisualRegistry {
   public validateManifest(
     manifest: StageManifest,
     npcs: readonly NpcDefinition[] = [],
+    presentation: StageManifest['presentation'] = manifest.presentation,
   ): readonly StageDiagnostic[] {
-    if (!manifest.presentation) return Object.freeze([]);
+    if (!presentation) return Object.freeze([]);
     const diagnostics: StageDiagnostic[] = [];
-    const theme = this.themes.get(manifest.presentation.themeId)?.value;
+    const theme = this.themes.get(presentation.themeId)?.value;
     if (!theme) diagnostics.push(this.diagnostic(
-      'stage.visual.theme.unknown', `Visual theme is not registered: ${manifest.presentation.themeId}.`,
-      ['manifest', 'presentation', 'themeId'], manifest.id, manifest.presentation.themeId,
+      'stage.visual.theme.unknown', `Visual theme is not registered: ${presentation.themeId}.`,
+      ['manifest', 'presentation', 'themeId'], manifest.id, presentation.themeId,
     ));
-    const tilesetId = manifest.presentation.tilesetId ?? theme?.tilesetId;
+    const tilesetId = presentation.tilesetId ?? theme?.tilesetId;
     if (tilesetId && !this.tilesets.has(tilesetId)) diagnostics.push(this.diagnostic(
       'stage.visual.tileset.unknown', `Visual tileset is not registered: ${tilesetId}.`,
       ['manifest', 'presentation', 'tilesetId'], manifest.id, tilesetId,
     ));
-    Object.entries(manifest.presentation.npcSprites ?? {}).forEach(([presentationId, spriteId]) => {
+    Object.entries(presentation.npcSprites ?? {}).forEach(([presentationId, spriteId]) => {
       if (!STABLE_ID.test(presentationId) || !this.sprites.has(spriteId)) diagnostics.push(this.diagnostic(
         'stage.visual.sprite.unknown', `NPC sprite is not registered: ${spriteId}.`,
         ['manifest', 'presentation', 'npcSprites', presentationId], manifest.id, spriteId,
       ));
     });
     npcs.forEach((npc, index) => {
-      if (!manifest.presentation?.npcSprites?.[npc.presentationId]) diagnostics.push(this.diagnostic(
+      if (!presentation.npcSprites?.[npc.presentationId]) diagnostics.push(this.diagnostic(
         'stage.visual.npc-sprite.missing', `NPC presentation has no sprite mapping: ${npc.presentationId}.`,
         ['npcs', index, 'presentationId'], manifest.id, npc.presentationId,
       ));
     });
-    Object.entries(manifest.presentation.enemySprites ?? {}).forEach(([archetype, spriteId]) => {
+    Object.entries(presentation.enemySprites ?? {}).forEach(([archetype, spriteId]) => {
       if (!STAGE_ENEMY_ARCHETYPES.includes(archetype as StageEnemyArchetype) || !this.sprites.has(String(spriteId))) {
         diagnostics.push(this.diagnostic(
           'stage.visual.enemy-sprite.unknown', `Enemy sprite is not registered: ${String(spriteId)}.`,
@@ -233,16 +242,16 @@ export class StageVisualRegistry {
         ));
       }
     });
-    if (manifest.presentation.audioProfileId && !this.audioProfiles.has(manifest.presentation.audioProfileId)) {
+    if (presentation.audioProfileId && !this.audioProfiles.has(presentation.audioProfileId)) {
       diagnostics.push(this.diagnostic(
-        'stage.visual.audio-profile.unknown', `Audio profile is not registered: ${manifest.presentation.audioProfileId}.`,
-        ['manifest', 'presentation', 'audioProfileId'], manifest.id, manifest.presentation.audioProfileId,
+        'stage.visual.audio-profile.unknown', `Audio profile is not registered: ${presentation.audioProfileId}.`,
+        ['manifest', 'presentation', 'audioProfileId'], manifest.id, presentation.audioProfileId,
       ));
     }
-    if (manifest.presentation.environmentId && !this.environments.has(manifest.presentation.environmentId)) {
+    if (presentation.environmentId && !this.environments.has(presentation.environmentId)) {
       diagnostics.push(this.diagnostic(
-        'stage.visual.environment.unknown', `Environment is not registered: ${manifest.presentation.environmentId}.`,
-        ['manifest', 'presentation', 'environmentId'], manifest.id, manifest.presentation.environmentId,
+        'stage.visual.environment.unknown', `Environment is not registered: ${presentation.environmentId}.`,
+        ['manifest', 'presentation', 'environmentId'], manifest.id, presentation.environmentId,
       ));
     }
     return finish(diagnostics);
@@ -257,22 +266,34 @@ export class StageVisualRegistry {
       'stage.visual.texture.key-invalid', 'Texture key must be a stable renderer resource key.',
       [...path, 'textureKey'], undefined, value.id,
     ));
+    (['frameWidth', 'frameHeight', 'frameCount'] as const).forEach(field => {
+      if (!validPositiveInteger(value[field])) diagnostics.push(this.diagnostic(
+        'stage.visual.texture.frame-size-invalid',
+        `Texture ${field} must be a positive integer when present.`,
+        [...path, field], undefined, value.id,
+      ));
+    });
   }
 
   public resolve(
     manifest: StageManifest,
     level: LevelDefinition,
     npcs: readonly NpcDefinition[] = [],
+    presentationOverride?: StageManifest['presentation'],
   ): StageVisualResolution {
-    const diagnostics = [...this.diagnostics(), ...this.validateManifest(manifest, npcs)];
-    const explicit = manifest.presentation !== undefined;
-    const themeId = manifest.presentation?.themeId ?? 'theme.legacy.default';
+    const selectedPresentation = presentationOverride ?? manifest.presentation;
+    const diagnostics = [
+      ...this.diagnostics(),
+      ...this.validateManifest(manifest, npcs, selectedPresentation),
+    ];
+    const explicit = selectedPresentation !== undefined;
+    const themeId = selectedPresentation?.themeId ?? 'theme.legacy.default';
     const theme = this.themes.get(themeId)?.value;
     if (!theme) diagnostics.push(this.diagnostic(
       'stage.visual.theme.unknown', `Visual theme is not registered: ${themeId}.`,
       ['manifest', 'presentation', 'themeId'], manifest.id, themeId,
     ));
-    const tilesetId = manifest.presentation?.tilesetId ?? theme?.tilesetId ?? 'tileset.legacy.default';
+    const tilesetId = selectedPresentation?.tilesetId ?? theme?.tilesetId ?? 'tileset.legacy.default';
     const tileset = this.tilesets.get(tilesetId)?.value;
     if (!tileset) diagnostics.push(this.diagnostic(
       'stage.visual.tileset.unknown', `Visual tileset is not registered: ${tilesetId}.`,
@@ -321,10 +342,11 @@ export class StageVisualRegistry {
           'stage.visual.decoration.visibility-invalid', 'Decoration placement visibility must be boolean.',
           [...placementPath, 'visible'], manifest.id, placement.type,
         ));
-        const definition = this.decorations.get(placement.type)?.value;
-        if (!definition || !allowed.has(placement.type)) {
+        const resolvedId = theme.decorationOverrides?.[placement.type] ?? placement.type;
+        const definition = this.decorations.get(resolvedId)?.value;
+        if (!definition || !allowed.has(resolvedId)) {
           diagnostics.push(this.diagnostic(
-            'stage.visual.decoration.unknown', `Decoration is not available in theme ${theme.id}: ${placement.type}.`,
+            'stage.visual.decoration.unknown', `Decoration is not available in theme ${theme.id}: ${resolvedId}.`,
             [...placementPath, 'type'], manifest.id, placement.type,
           ));
           return;
@@ -338,6 +360,10 @@ export class StageVisualRegistry {
           layer: definition.layer,
           depth: definition.depth,
           defaultScale: definition.defaultScale ?? 1,
+          ...(definition.frame !== undefined ? { frame: definition.frame } : {}),
+          ...(texture.frameWidth !== undefined ? { frameWidth: texture.frameWidth } : {}),
+          ...(texture.frameHeight !== undefined ? { frameHeight: texture.frameHeight } : {}),
+          ...(texture.frameCount !== undefined ? { frameCount: texture.frameCount } : {}),
         });
       });
     }
@@ -345,7 +371,7 @@ export class StageVisualRegistry {
     const resolvedNpcSprites: Record<string, ResolvedStageSprite> = {};
     npcs.forEach((npc, index) => {
       const spriteId = explicit
-        ? manifest.presentation?.npcSprites?.[npc.presentationId]
+        ? selectedPresentation?.npcSprites?.[npc.presentationId]
         : 'sprite.legacy.npc-marker';
       if (!spriteId) {
         diagnostics.push(this.diagnostic(
@@ -360,7 +386,7 @@ export class StageVisualRegistry {
 
     const resolvedEnemySprites: Partial<Record<StageEnemyArchetype, ResolvedStageSprite>> = {};
     STAGE_ENEMY_ARCHETYPES.forEach(archetype => {
-      const spriteId = manifest.presentation?.enemySprites?.[archetype] ?? LEGACY_ENEMY_SPRITE_IDS[archetype];
+      const spriteId = selectedPresentation?.enemySprites?.[archetype] ?? LEGACY_ENEMY_SPRITE_IDS[archetype];
       const sprite = this.resolveSprite(
         spriteId, manifest.id, ['manifest', 'presentation', 'enemySprites', archetype], diagnostics,
       );
@@ -376,11 +402,11 @@ export class StageVisualRegistry {
       resolvedEnemySprites[archetype] = sprite;
     });
 
-    const audio = manifest.presentation?.audioProfileId
-      ? this.resolveAudioProfile(manifest.presentation.audioProfileId, manifest.id, diagnostics)
+    const audio = selectedPresentation?.audioProfileId
+      ? this.resolveAudioProfile(selectedPresentation.audioProfileId, manifest.id, diagnostics)
       : undefined;
-    const environment = manifest.presentation?.environmentId
-      ? this.resolveEnvironment(manifest.presentation.environmentId, manifest.id, diagnostics)
+    const environment = selectedPresentation?.environmentId
+      ? this.resolveEnvironment(selectedPresentation.environmentId, manifest.id, diagnostics)
       : undefined;
 
     const completed = finish(diagnostics);
@@ -400,6 +426,9 @@ export class StageVisualRegistry {
         tileSize: 32 as const,
         tiles: Object.freeze(resolvedTiles as Record<StageLogicalTileId, ResolvedStageTileVisual>),
         decorations: Object.freeze(resolvedDecorations),
+        ...(theme.decorationOverrides
+          ? { decorationOverrides: Object.freeze({ ...theme.decorationOverrides }) }
+          : {}),
         npcSprites: Object.freeze(resolvedNpcSprites),
         enemySprites: Object.freeze(
           resolvedEnemySprites as Record<StageEnemyArchetype, ResolvedStageSprite>,
@@ -481,6 +510,29 @@ export class StageVisualRegistry {
     if (!validAlpha(variant.alpha)) diagnostics.push(this.diagnostic(
       'stage.visual.alpha.invalid', 'Alpha must be between 0 and 1.', [...path, 'alpha'], undefined,
     ));
+    this.validateFrame(variant.frame, variant.textureId, diagnostics, [...path, 'frame']);
+  }
+
+  private validateFrame(
+    frame: number | undefined,
+    textureId: string,
+    diagnostics: StageDiagnostic[],
+    path: readonly (string | number)[],
+  ): void {
+    if (!validFrame(frame)) {
+      diagnostics.push(this.diagnostic(
+        'stage.visual.frame.invalid', 'Frame must be a non-negative integer.',
+        path, undefined, textureId,
+      ));
+      return;
+    }
+    if (frame === undefined) return;
+    const texture = this.textures.get(textureId)?.value;
+    if (texture?.frameCount !== undefined && frame >= texture.frameCount) diagnostics.push(this.diagnostic(
+      'stage.visual.frame.out-of-range',
+      `Frame ${frame} is outside the declared frameCount ${texture.frameCount} of ${textureId}.`,
+      path, undefined, textureId,
+    ));
   }
 
   private validateTheme(registered: Registered<StageVisualThemeDefinition>, diagnostics: StageDiagnostic[]): void {
@@ -497,6 +549,16 @@ export class StageVisualRegistry {
         'stage.visual.theme.decoration-missing', `Theme decoration is not registered: ${id}.`,
         [...path, 'decorationIds', index], undefined, id,
       ));
+    });
+    Object.entries(value.decorationOverrides ?? {}).forEach(([logicalId, decorationId]) => {
+      if (!STABLE_ID.test(logicalId) || !this.decorations.has(decorationId) ||
+        (value.decorationIds !== undefined && !value.decorationIds.includes(decorationId))) {
+        diagnostics.push(this.diagnostic(
+          'stage.visual.theme.decoration-override-invalid',
+          `Decoration override is not registered or allowed by the theme: ${logicalId} -> ${decorationId}.`,
+          [...path, 'decorationOverrides', logicalId], undefined, decorationId,
+        ));
+      }
     });
   }
 
@@ -521,6 +583,7 @@ export class StageVisualRegistry {
         [...path, 'defaultScale'], undefined, value.id,
       ));
     }
+    this.validateFrame(value.frame, value.textureId, diagnostics, [...path, 'frame']);
   }
 
   private validateSprite(registered: Registered<StageSpriteDefinition>, diagnostics: StageDiagnostic[]): void {
@@ -544,6 +607,7 @@ export class StageVisualRegistry {
     if (value.depth !== undefined && !Number.isFinite(value.depth)) diagnostics.push(this.diagnostic(
       'stage.visual.sprite.depth-invalid', 'Sprite depth must be finite.', [...path, 'depth'], undefined, value.id,
     ));
+    this.validateFrame(value.frame, value.textureId, diagnostics, [...path, 'frame']);
   }
 
   private validateSound(registered: Registered<StageSoundDefinition>, diagnostics: StageDiagnostic[]): void {
@@ -647,6 +711,10 @@ export class StageVisualRegistry {
       ...(sprite.tint !== undefined ? { tint: sprite.tint } : {}),
       scale: sprite.scale ?? 1,
       depth: sprite.depth ?? 5,
+      ...(sprite.frame !== undefined ? { frame: sprite.frame } : {}),
+      ...(texture.frameWidth !== undefined ? { frameWidth: texture.frameWidth } : {}),
+      ...(texture.frameHeight !== undefined ? { frameHeight: texture.frameHeight } : {}),
+      ...(texture.frameCount !== undefined ? { frameCount: texture.frameCount } : {}),
     });
   }
 
@@ -733,6 +801,10 @@ export class StageVisualRegistry {
       textureKey: texture.textureKey,
       ...(reference.tint !== undefined ? { tint: reference.tint } : {}),
       ...(reference.alpha !== undefined ? { alpha: reference.alpha } : {}),
+      ...(reference.frame !== undefined ? { frame: reference.frame } : {}),
+      ...(texture.frameWidth !== undefined ? { frameWidth: texture.frameWidth } : {}),
+      ...(texture.frameHeight !== undefined ? { frameHeight: texture.frameHeight } : {}),
+      ...(texture.frameCount !== undefined ? { frameCount: texture.frameCount } : {}),
     });
   }
 

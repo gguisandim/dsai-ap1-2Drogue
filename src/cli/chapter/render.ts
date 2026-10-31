@@ -58,6 +58,7 @@ export function printCreateResult(
   print(`  npm run chapter -- validate ${slug}`);
   print(`  npm run chapter -- inspect ${slug}`);
   print(`  npm run chapter -- preview ${slug}`);
+  print(`  npm run chapter -- preview ${slug} --visual`);
   print('The generated chapter is NOT registered in the production catalog.');
 }
 
@@ -87,7 +88,7 @@ export function printInspection(
       ? `${stage.encounter.id} (${stage.encounter.waveCount} waves, ${stage.encounter.enemyCount} enemies: ${list(stage.encounter.enemyTypes)})`
       : 'none'}`);
     print(`  Presentation: ${stage.presentation
-      ? `theme ${stage.presentation.themeId}, tileset ${stage.presentation.tilesetId ?? 'inherit'}, NPC ${list(stage.presentation.npcPresentationIds)}, enemies ${list(stage.presentation.enemyArchetypes)}, audio ${stage.presentation.audioProfileId ?? 'none'}, environment ${stage.presentation.environmentId ?? 'none'}`
+      ? `theme ${stage.presentation.themeId}, tileset ${stage.presentation.tilesetId ?? 'inherit'}, variants ${list(stage.presentation.presentationVariantIds)}, NPC ${list(stage.presentation.npcPresentationIds)}, enemies ${list(stage.presentation.enemyArchetypes)}, audio ${stage.presentation.audioProfileId ?? 'none'}, environment ${stage.presentation.environmentId ?? 'none'}`
       : 'none'}`);
     print(`  Catalog: ${stage.eligibility ?? 'unknown'} / ${stage.loadability ?? 'unknown'}`);
   });
@@ -132,6 +133,14 @@ export function printPreview(
     print('World Lab diagnostics:');
     printDiagnostics(preview.worldLab.diagnostics, print);
   }
-  print('Phaser rendering: not executed.');
-  print('Access: use GameSessionService or WorldLabDataService with the isolated registry described in the chapter README.');
+  if (preview.visual) {
+    print('Phaser rendering: prepared, not executed by the CLI.');
+    print(`Visual preview URL: ${preview.visual.url}`);
+    print(`Authoring root: ${preview.visual.authoringRoot} (static Vite discovery).`);
+    print(preview.visual.note);
+    print('The preview never writes the main campaign save or the production catalog.');
+  } else {
+    print('Phaser rendering: not executed.');
+    print('Access: use GameSessionService or WorldLabDataService with the isolated registry described in the chapter README.');
+  }
 }

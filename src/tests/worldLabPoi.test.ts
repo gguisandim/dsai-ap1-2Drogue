@@ -28,13 +28,13 @@ describe('World Lab POI projection', () => {
       diagnostics: [],
     });
     expect(igapo?.visualPresentation?.textureKeys).toEqual(expect.arrayContaining([
-      'tile_floor', 'tile_pillar', 'tile_water',
+      'puny_world', 'puny_mage', 'puny_warrior_128', 'puny_archer_128',
     ]));
     expect(igapo?.visualPresentation?.npcSprites).toContainEqual(expect.objectContaining({
       logicalId: 'environment.memory-vestige',
       spriteId: 'sprite.aguas.memory-vestige',
-      textureKey: 'enemy_ranged_anim',
-      animations: ['enemy_ranged_anim_walk'],
+      textureKey: 'puny_mage',
+      animations: ['puny_mage_idle'],
     }));
     expect(igapo?.visualPresentation?.enemySprites).toContainEqual(expect.objectContaining({
       logicalId: 'affinity', spriteId: 'sprite.aguas.affinity-forgotten',
@@ -46,9 +46,9 @@ describe('World Lab POI projection', () => {
     });
     expect(igapo?.visualPresentation?.environment).toEqual({
       id: 'environment.aguas.forgotten-waters',
-      ambientColor: 0x153e39,
-      lightIntensity: 0.62,
-      fog: { color: 0x123d42, opacity: 0.16, depth: 4 },
+      ambientColor: 0x1d4a3f,
+      lightIntensity: 0.72,
+      fog: { color: 0x1b4f4a, opacity: 0.1, depth: 4 },
     });
     expect(result.value.catalog.entries.find(item =>
       item.stageId === IGAPO_DAS_MEMORIAS_STAGE_ID)).toMatchObject({

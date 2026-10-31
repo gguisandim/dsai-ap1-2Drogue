@@ -32,6 +32,7 @@ npm run chapter -- validate exemplo-floresta
 npm run chapter -- inspect exemplo-floresta
 npm run chapter -- inspect exemplo-floresta --json
 npm run chapter -- preview exemplo-floresta
+npm run chapter -- preview exemplo-floresta --visual
 ```
 
 - `create` gera um capítulo independente a partir deste template em
@@ -43,7 +44,8 @@ npm run chapter -- preview exemplo-floresta
 - `inspect` mostra IDs, fases, encontros, apresentação, elegibilidade e
   diagnósticos; `--json` mantém os mesmos dados e códigos.
 - `preview` é headless: valida, carrega no modo individual e projeta no World
-  Lab, sem renderizar com Phaser.
+  Lab, sem renderizar com Phaser. Com `--visual`, prepara a URL do bootstrap
+  Phaser para o diretório canônico de autoria.
 - `--chapters-dir <path>` permite um diretório de autoria alternativo; ele
   precisa estar dentro de `src/`.
 - O catálogo de produção nunca é alterado. Capítulos gerados não são
@@ -196,10 +198,17 @@ Em `presentation.ts`:
 
 O template reutiliza chaves técnicas já carregadas (`tile_floor`, `tile_wall`,
 `item_chest`, `poi_vestige`, `enemy_melee_anim`, `enemy_ranged_anim`). Esses
-mapeamentos são **placeholders técnicos**: nenhum asset novo foi baixado ou
-adicionado. Para substituir por arte definitiva, adicione os novos `textureKey`
-ao pipeline de assets existente e troque apenas o `textureKey` no recurso local.
-Não há novo asset manager.
+mapeamentos são **placeholders técnicos**. Para substituir por arte definitiva,
+adicione os novos `textureKey` ao pipeline de assets existente e troque apenas o
+`textureKey` no recurso local. Não há novo asset manager.
+
+Spritesheets podem declarar metadados de validação em `textures`
+(`frameWidth`, `frameHeight`, `frameCount`) e selecionar um frame estático em
+tiles, decorações e sprites com `frame`. Tiles de 16×16 continuam lógicos em
+32×32 e são ampliados pelo renderer. Um frame fora do `frameCount` declarado, ou
+ausente no `TextureManager`, falha com diagnóstico tipado. O exemplo real está
+em `src/stages/chapters/aguas/igapoVisuals.ts` e em
+`src/presentation/assets/punyAssetCatalog.ts`.
 
 ## 9. Como declarar saídas
 
@@ -310,10 +319,25 @@ const started = service.startIndividualStage(chapter.ids.stageId);
 
 O `GameSessionService` lista a fase como `individual-only`, carrega o mapa e a
 apresentação e devolve `loadedStage`. O teste `starts the template in individual
-mode without campaign eligibility` cobre esse caminho. O entry point atual do
-jogo não importa `src/examples`; para jogar visualmente, um bootstrap de
-desenvolvimento precisa passar esse registry para a cena. A homologação visual
-depende de navegador e não é declarada executada neste ambiente.
+mode without campaign eligibility` cobre esse caminho.
+
+A partir da 9.7C existe um bootstrap real de desenvolvimento. Gere um capítulo
+com a CLI e execute:
+
+```sh
+npm run chapter -- preview meu-capitulo --visual
+npm run dev
+```
+
+O comando imprime `http://localhost:5173/?chapterPreview=meu-capitulo`. A
+`BootScene` usa `import.meta.glob` restrito a `src/examples/chapters/*/index.ts`,
+valida o capítulo, registra-o em um `StageRegistry` isolado e inicia uma sessão
+individual na `GameScene`. O catálogo de produção e o save da campanha principal
+não são alterados. A seleção visual só existe em host de desenvolvimento; o
+bundle de produção não importa os capítulos gerados.
+
+A homologação visual com captura no navegador deve ser registrada apenas quando
+executada de fato.
 
 ## 14. Como interpretar diagnósticos
 

@@ -76,7 +76,9 @@ function effectivePromptFrom(content) {
   if (!heading) return undefined;
   const sectionStart = heading.index + heading[0].length;
   const section = content.slice(sectionStart);
-  return /^\s*```(?:text)?[ \t]*\r?\n([\s\S]*?)\r?\n```/.exec(section)?.[1];
+  // Prompts may themselves contain fenced code. A standards-compliant longer
+  // fence (four or more backticks, or tildes) keeps the transcript intact.
+  return /^\s*(`{3,}|~{3,})(?:text)?[ \t]*\r?\n([\s\S]*?)\r?\n\1[ \t]*$/m.exec(section)?.[2];
 }
 
 function violation(file, rule, message) {

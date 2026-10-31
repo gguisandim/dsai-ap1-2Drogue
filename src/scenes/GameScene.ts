@@ -55,6 +55,7 @@ import type {
   StageEncounterEnemyPlacement,
 } from '../stages';
 import { StageMapRenderer } from '../presentation/stages/StageMapRenderer';
+import { resolveIndividualExitId } from './stageExitSelection';
 import { DialogueOverlay } from '../ui/DialogueOverlay';
 import {
   WorldInteractionPoint,
@@ -1652,7 +1653,10 @@ export class GameScene extends Phaser.Scene {
 
   public advanceToNextLevel(): void {
     if (this.isTransitioning) return;
-    const exitId = 'legacy.next';
+    const exitId = resolveIndividualExitId(
+      this.individualMode,
+      this.modularLoadedStage?.manifest,
+    );
     if (!this.requestNarrativeExit(
       exitId,
       `${this.narrativeOccurrenceScope()}.exit.${exitId}`,
@@ -1888,7 +1892,9 @@ export class GameScene extends Phaser.Scene {
     this.exitsRevealed = true;
     this.pendingExitTiles.forEach(({ x, y, physicalExitId, available = true }, index) => {
       const exitVisual = this.activeStagePresentation.tiles.exit;
-      const tunnel = this.stairTiles.create(x, y, exitVisual.textureKey) as Phaser.Physics.Arcade.Sprite;
+      const tunnel = (exitVisual.frame !== undefined
+        ? this.stairTiles.create(x, y, exitVisual.textureKey, exitVisual.frame)
+        : this.stairTiles.create(x, y, exitVisual.textureKey)) as Phaser.Physics.Arcade.Sprite;
       if (exitVisual.tint !== undefined) tunnel.setTint(exitVisual.tint);
       if (exitVisual.alpha !== undefined) tunnel.setAlpha(exitVisual.alpha);
       if (physicalExitId) {
@@ -1896,13 +1902,15 @@ export class GameScene extends Phaser.Scene {
         tunnel.setData('available', available);
         if (!available) tunnel.setTint(0x665c73);
       }
-      tunnel.setDepth(6).setAlpha(0).setScale(0.15);
+      const targetScaleX = 32 / (exitVisual.frameWidth ?? 32);
+      const targetScaleY = 32 / (exitVisual.frameHeight ?? 32);
+      tunnel.setDepth(6).setAlpha(0).setScale(targetScaleX * 0.15, targetScaleY * 0.15);
       tunnel.refreshBody();
       this.tweens.add({
         targets: tunnel,
         alpha: available ? 1 : 0.35,
-        scaleX: 1,
-        scaleY: 1,
+        scaleX: targetScaleX,
+        scaleY: targetScaleY,
         duration: 360,
         delay: index * 70,
         ease: 'Back.Out',

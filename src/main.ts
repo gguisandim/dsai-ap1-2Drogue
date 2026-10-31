@@ -33,3 +33,6 @@ const config: Phaser.Types.Core.GameConfig = {
 
 const game = new Phaser.Game(config);
 game.canvas.addEventListener('contextmenu', event => event.preventDefault());
+if (import.meta.env.DEV) {
+  (globalThis as typeof globalThis & { __UMBRA_GAME__?: Phaser.Game }).__UMBRA_GAME__ = game;
+}

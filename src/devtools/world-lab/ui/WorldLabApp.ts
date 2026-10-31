@@ -283,6 +283,7 @@ export class WorldLabApp {
     generate: HTMLButtonElement;
     regenerate: HTMLButtonElement;
     nodeSelect: HTMLSelectElement;
+    variant: HTMLSelectElement;
     grid: HTMLInputElement;
     overlays: HTMLInputElement;
     exportButton: HTMLButtonElement;
@@ -316,6 +317,7 @@ export class WorldLabApp {
           <button data-role="generate" class="is-primary">Generate</button>
           <button data-role="regenerate">Regenerate</button>
           <label>Node <select data-role="node-select"></select></label>
+          <label>Variant <select data-role="variant"></select></label>
           <label class="wl-check"><input type="checkbox" data-role="grid"> Grid</label>
           <label class="wl-check"><input type="checkbox" data-role="overlays"> Overlays</label>
           <button data-role="export">Export snapshot</button>
@@ -337,7 +339,7 @@ export class WorldLabApp {
     this.elements = {
       proceduralMode: query('mode-procedural'), macroMode: query('mode-macro'),
       seed: query('seed'), generate: query('generate'), regenerate: query('regenerate'),
-      nodeSelect: query('node-select'), grid: query('grid'), overlays: query('overlays'),
+      nodeSelect: query('node-select'), variant: query('variant'), grid: query('grid'), overlays: query('overlays'),
       exportButton: query('export'), importInput: query('import'), graph: query('graph'),
       stage: query('stage'), inspector: query('inspector'), diagnostics: query('diagnostics'),
       source: query('source'), stageTitle: query('stage-title'),
@@ -361,6 +363,10 @@ export class WorldLabApp {
     this.elements.nodeSelect.addEventListener('change', () => {
       if (this.mode === 'macro') this.selectMacroNode(this.elements.nodeSelect.value);
       else this.session.selectNode(this.elements.nodeSelect.value);
+    });
+    this.elements.variant.addEventListener('change', () => {
+      this.session.setPresentationVariant(this.elements.variant.value || undefined);
+      if (this.mode === 'macro') this.generateMacro();
     });
     this.elements.grid.addEventListener('change', () => this.session.setFilters({ showGrid: this.elements.grid.checked }));
     this.elements.overlays.addEventListener('change', () => this.session.setFilters({ showOverlays: this.elements.overlays.checked }));
@@ -437,6 +443,25 @@ export class WorldLabApp {
   private render(state: WorldLabSessionState): void {
     this.elements.graph.classList.remove('wl-empty');
     if (this.elements.seed.value !== state.seed) this.elements.seed.value = state.seed;
+    const variants = this.session.presentationVariants();
+    const selectedVariant = this.session.presentationVariantId() ?? '';
+    const variantSignature = variants.join('|');
+    if (this.elements.variant.dataset.signature !== variantSignature) {
+      this.elements.variant.replaceChildren();
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = 'default';
+      this.elements.variant.append(defaultOption);
+      variants.forEach(variantId => {
+        const option = document.createElement('option');
+        option.value = variantId;
+        option.textContent = variantId;
+        this.elements.variant.append(option);
+      });
+      this.elements.variant.dataset.signature = variantSignature;
+    }
+    this.elements.variant.value = selectedVariant;
+    this.elements.variant.disabled = variants.length === 0;
     this.elements.grid.checked = state.filters.showGrid;
     this.elements.overlays.checked = state.filters.showOverlays;
     const procedural = this.mode === 'procedural';

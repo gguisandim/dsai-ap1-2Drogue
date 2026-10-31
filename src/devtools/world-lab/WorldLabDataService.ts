@@ -46,6 +46,9 @@ export interface WorldLabDataServiceOptions {
   readonly resolver?: PhysicalExitResolver;
   readonly binder?: CampaignExitBinder;
   readonly projector?: WorldLabProjector;
+  readonly presentationVariantId?: string;
+  /** Development-only focus: projects this stage in one graph node. */
+  readonly focusStageId?: string;
 }
 
 function diagnosticFromStage(
@@ -86,6 +89,10 @@ export class WorldLabDataService {
   private readonly resolver: PhysicalExitResolver;
   private readonly binder: CampaignExitBinder;
   private readonly projector: WorldLabProjector;
+  private readonly registry: StageRegistry;
+  private readonly focusStageId?: string;
+  private currentPresentationVariantId?: string;
+  private lastFocusNodeId?: string;
 
   public constructor(options: WorldLabDataServiceOptions = {}) {
     this.templates = options.templates ?? WORLD_LAB_FIXTURE_CATALOG;
@@ -94,11 +101,31 @@ export class WorldLabDataService {
       registerLegacyStages(registry);
       registerCampaignChapters(registry);
     }
+    this.registry = registry;
+    this.focusStageId = options.focusStageId;
+    this.currentPresentationVariantId = options.presentationVariantId;
     this.loader = options.loader ?? new StageLoader(registry);
     this.generator = options.generator ?? new CampaignGraphGenerator();
     this.resolver = options.resolver ?? new PhysicalExitResolver();
     this.binder = options.binder ?? new CampaignExitBinder();
     this.projector = options.projector ?? new WorldLabProjector();
+  }
+
+  public presentationVariants(): readonly string[] {
+    return Object.freeze([...new Set(this.registry.listModules()
+      .flatMap(module => Object.keys(module.manifest.presentationVariants ?? {})))].sort());
+  }
+
+  public presentationVariantId(): string | undefined {
+    return this.currentPresentationVariantId;
+  }
+
+  public setPresentationVariant(id?: string): void {
+    this.currentPresentationVariantId = id?.trim() || undefined;
+  }
+
+  private presentationVariantIdForStage(): string | undefined {
+    return this.currentPresentationVariantId;
   }
 
   public generate(seedInput: string): WorldLabGenerationResult {
@@ -123,7 +150,33 @@ export class WorldLabDataService {
     });
     if (!generated.ok) return this.failure(diagnosticsFromGraphFailure(generated));
 
-    return this.generateGraph(seed, generated.value);
+    this.lastFocusNodeId = undefined;
+    let graph = generated.value;
+    if (this.focusStageId) {
+      if (!this.registry.get(this.focusStageId)) {
+        return this.failure([{
+          code: 'world-lab.focus-stage.unknown',
+          severity: 'error',
+          origin: 'integration',
+          message: `Focus stage is not registered: ${this.focusStageId}.`,
+          stageId: this.focusStageId,
+        }]);
+      }
+      const target = [...graph.nodes].sort((left, right) =>
+        right.depth - left.depth || (left.id < right.id ? -1 : 1))[0];
+      this.lastFocusNodeId = target.id;
+      graph = Object.freeze({
+        ...graph,
+        nodes: Object.freeze(graph.nodes.map(node => node.id === target.id
+          ? Object.freeze({ ...node, stageId: this.focusStageId as string })
+          : node)),
+      });
+    }
+    return this.generateGraph(seed, graph);
+  }
+
+  public focusNodeId(): string | undefined {
+    return this.lastFocusNodeId;
   }
 
   /** Projects an already-generated public campaign graph through the same real headless pipeline. */
@@ -152,11 +205,16 @@ export class WorldLabDataService {
     const nodes = [...graph.nodes].sort((left, right) =>
       left.id < right.id ? -1 : left.id > right.id ? 1 : 0);
 
+    const variantId = this.presentationVariantIdForStage();
     for (const node of nodes) {
+      const variantForNode = this.registry.get(node.stageId)?.manifest.presentationVariants?.[variantId ?? '']
+        ? variantId
+        : undefined;
       const loaded = this.loader.load({
         stageId: node.stageId,
         runId: graph.runId,
         runSeed: node.stageSeed,
+        ...(variantForNode ? { presentationVariantId: variantForNode } : {}),
       });
       if (!loaded.ok) {
         diagnostics.push(...loaded.error.diagnostics.map(diagnostic => diagnosticFromStage(

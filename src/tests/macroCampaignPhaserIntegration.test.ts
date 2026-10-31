@@ -279,9 +279,13 @@ describe('GameScene macro campaign vertical slice', () => {
       setScale: jest.fn().mockReturnThis(),
       setRotation: jest.fn().mockReturnThis(),
       setScrollFactor: jest.fn().mockReturnThis(),
+      setDisplaySize: jest.fn().mockReturnThis(),
       refreshBody: jest.fn().mockReturnThis(),
     });
-    state.textures = { exists: jest.fn(() => true) };
+    state.textures = {
+      exists: jest.fn(() => true),
+      getFrame: jest.fn(() => ({})),
+    };
     state.anims = { exists: jest.fn(() => true) };
     state.add = { image: jest.fn(() => visual()), rectangle: jest.fn(() => visual()) };
     state.cameras = { main: { width: 1280, height: 720 } };
@@ -292,7 +296,11 @@ describe('GameScene macro campaign vertical slice', () => {
     state.buildMapFromDefinition(loaded.value.level);
 
     const waterCount = loaded.value.level.tileMap.flat().filter(tile => tile === 3).length;
-    expect(state.wallTiles.create.mock.calls.filter((call: unknown[]) => call[2] === 'tile_water'))
-      .toHaveLength(waterCount);
+    const water = loaded.value.presentation?.tiles.water;
+    expect(water).toBeDefined();
+    const waterVisuals = new Set([water, ...(water?.variants ?? [])].map(visual =>
+      `${visual?.textureKey}#${visual?.frame}`));
+    expect(state.wallTiles.create.mock.calls.filter((call: unknown[]) =>
+      waterVisuals.has(`${call[2]}#${call[3]}`))).toHaveLength(waterCount);
   });
 });

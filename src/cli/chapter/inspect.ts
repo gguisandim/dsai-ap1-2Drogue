@@ -50,6 +50,9 @@ function presentationSummary(
       enemyArchetypes: Object.freeze(Object.keys(
         manifest?.enemySprites ?? loaded.presentation.enemySprites,
       ).sort()),
+      presentationVariantIds: Object.freeze(Object.keys(
+        stage.manifest.presentationVariants ?? {},
+      ).sort()),
       ...(manifest?.audioProfileId ? { audioProfileId: manifest.audioProfileId } : {}),
       ...(manifest?.environmentId ? { environmentId: manifest.environmentId } : {}),
     };
@@ -60,6 +63,9 @@ function presentationSummary(
     ...(manifest.tilesetId ? { tilesetId: manifest.tilesetId } : {}),
     npcPresentationIds: Object.freeze(Object.keys(manifest.npcSprites ?? {}).sort()),
     enemyArchetypes: Object.freeze(Object.keys(manifest.enemySprites ?? {}).sort()),
+    presentationVariantIds: Object.freeze(Object.keys(
+      stage.manifest.presentationVariants ?? {},
+    ).sort()),
     ...(manifest.audioProfileId ? { audioProfileId: manifest.audioProfileId } : {}),
     ...(manifest.environmentId ? { environmentId: manifest.environmentId } : {}),
   };

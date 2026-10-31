@@ -33,6 +33,8 @@ export interface StageLoadRequest {
   readonly runId: string;
   readonly runSeed: string | number;
   readonly resume?: StageResumeState;
+  /** Optional presentation variant; never part of save identity. */
+  readonly presentationVariantId?: string;
 }
 
 export interface LoadedStage {
@@ -47,6 +49,8 @@ export interface LoadedStage {
   readonly encounter?: ResolvedStageEncounter;
   /** Always resolved by StageLoader; optional only for pre-9.5B.1 compatible fixtures/adapters. */
   readonly presentation?: ResolvedStagePresentation;
+  /** Selected presentation variant, absent for the default presentation. */
+  readonly presentationVariantId?: string;
   readonly diagnostics: readonly StageDiagnostic[];
 }
 

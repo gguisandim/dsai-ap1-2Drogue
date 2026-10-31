@@ -41,6 +41,20 @@ function cloneCondition(condition: StageCondition): StageCondition {
   return Object.freeze({ ...condition });
 }
 
+function clonePresentation(
+  presentation: NonNullable<StageManifest['presentation']>,
+): NonNullable<StageManifest['presentation']> {
+  return Object.freeze({
+    ...presentation,
+    ...(presentation.npcSprites
+      ? { npcSprites: Object.freeze({ ...presentation.npcSprites }) }
+      : {}),
+    ...(presentation.enemySprites
+      ? { enemySprites: Object.freeze({ ...presentation.enemySprites }) }
+      : {}),
+  });
+}
+
 function cloneManifest(manifest: StageManifest): StageManifest {
   const layout = manifest.layout.kind === 'procedural'
     ? Object.freeze({
@@ -59,15 +73,10 @@ function cloneManifest(manifest: StageManifest): StageManifest {
     ...manifest,
     layout,
     exits,
-    ...(manifest.presentation ? { presentation: Object.freeze({
-      ...manifest.presentation,
-      ...(manifest.presentation.npcSprites
-        ? { npcSprites: Object.freeze({ ...manifest.presentation.npcSprites }) }
-        : {}),
-      ...(manifest.presentation.enemySprites
-        ? { enemySprites: Object.freeze({ ...manifest.presentation.enemySprites }) }
-        : {}),
-    }) } : {}),
+    ...(manifest.presentation ? { presentation: clonePresentation(manifest.presentation) } : {}),
+    ...(manifest.presentationVariants ? { presentationVariants: Object.freeze(Object.fromEntries(
+      Object.entries(manifest.presentationVariants).map(([id, presentation]) => [id, clonePresentation(presentation)]),
+    )) } : {}),
     ...(manifest.capabilities ? {
       capabilities: Object.freeze(manifest.capabilities.map(capability => Object.freeze({ ...capability }))),
     } : {}),
@@ -155,6 +164,9 @@ function cloneChapter(chapter: ChapterManifest): ChapterManifest {
         themes: Object.freeze(chapter.visualResources.themes.map(value => Object.freeze({
           ...value,
           ...(value.decorationIds ? { decorationIds: Object.freeze([...value.decorationIds]) } : {}),
+          ...(value.decorationOverrides
+            ? { decorationOverrides: Object.freeze({ ...value.decorationOverrides }) }
+            : {}),
         }))),
         ...(chapter.visualResources.decorations ? {
           decorations: Object.freeze(chapter.visualResources.decorations.map(value => Object.freeze({ ...value }))),

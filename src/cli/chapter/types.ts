@@ -18,6 +18,7 @@ export interface ChapterCliArguments {
   readonly namespace?: string;
   readonly revision?: number;
   readonly json: boolean;
+  readonly visual: boolean;
   readonly chaptersDir?: string;
 }
 
@@ -116,6 +117,7 @@ export interface InspectedStage {
     readonly tilesetId?: string;
     readonly npcPresentationIds: readonly string[];
     readonly enemyArchetypes: readonly string[];
+    readonly presentationVariantIds: readonly string[];
     readonly audioProfileId?: string;
     readonly environmentId?: string;
   } | null;
@@ -169,11 +171,19 @@ export interface WorldLabPreview {
   readonly error?: string;
 }
 
+export interface ChapterVisualPreview {
+  readonly url: string;
+  readonly authoringRoot: string;
+  readonly bootstrap: 'chapterPreview';
+  readonly note: string;
+}
+
 export interface ChapterPreview {
   readonly report: ChapterValidationReport;
   readonly individual: readonly IndividualPreview[];
   readonly worldLab: WorldLabPreview;
-  readonly rendering: 'not-executed';
+  readonly rendering: 'not-executed' | 'prepared';
+  readonly visual?: ChapterVisualPreview;
 }
 
 export interface CreatedChapter {

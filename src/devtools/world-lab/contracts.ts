@@ -95,10 +95,16 @@ export interface WorldLabStageView {
 export interface WorldLabStageVisualPresentation {
   readonly themeId: string;
   readonly tilesetId: string;
+  readonly variantId?: string;
   readonly textureKeys: readonly string[];
   readonly decorationIds: readonly string[];
   readonly missingResourceIds: readonly string[];
   readonly diagnostics: readonly string[];
+  readonly tiles?: readonly WorldLabTilePresentation[];
+  readonly spritesheets?: readonly WorldLabSpritesheetPresentation[];
+  readonly assetOrigins?: readonly WorldLabAssetOrigin[];
+  readonly decorations?: readonly WorldLabDecorationPresentation[];
+  readonly decorationOverrides?: Readonly<Record<string, string>>;
   readonly npcSprites?: readonly WorldLabSpritePresentation[];
   readonly enemySprites?: readonly WorldLabSpritePresentation[];
   readonly audio?: {
@@ -119,7 +125,46 @@ export interface WorldLabSpritePresentation {
   readonly logicalId: string;
   readonly spriteId: string;
   readonly textureKey: string;
+  readonly frame?: number;
   readonly animations: readonly string[];
+}
+
+export interface WorldLabTileVariantPresentation {
+  readonly textureId: string;
+  readonly textureKey: string;
+  readonly frame?: number;
+  readonly tint?: number;
+  readonly alpha?: number;
+}
+
+export interface WorldLabTilePresentation extends WorldLabTileVariantPresentation {
+  readonly logicalId: string;
+  readonly variants: readonly WorldLabTileVariantPresentation[];
+}
+
+export interface WorldLabSpritesheetPresentation {
+  readonly textureKey: string;
+  readonly frameWidth?: number;
+  readonly frameHeight?: number;
+  readonly frameCount?: number;
+}
+
+export interface WorldLabDecorationPresentation {
+  readonly id: string;
+  readonly textureKey: string;
+  readonly frame?: number;
+  readonly layer: string;
+  readonly depth: number;
+  readonly scale: number;
+}
+
+export interface WorldLabAssetOrigin {
+  readonly assetId: string;
+  readonly pack: string;
+  readonly author: string;
+  readonly license: string;
+  readonly sourceUrl: string;
+  readonly modifications: readonly string[];
 }
 
 export interface WorldLabThemePresentation {

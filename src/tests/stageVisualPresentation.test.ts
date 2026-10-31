@@ -30,12 +30,14 @@ class FakeImage {
     public readonly x: number,
     public readonly y: number,
     public readonly textureKey: string,
+    public readonly frame?: number,
   ) {}
 
   public setTint(value: number): this { this.tint = value; return this; }
   public setAlpha(value: number): this { this.alpha = value; return this; }
   public setDepth(value: number): this { this.depth = value; return this; }
   public setScale(value: number): this { this.scale = value; return this; }
+  public setDisplaySize(): this { return this; }
   public setRotation(value: number): this { this.rotation = value; return this; }
   public refreshBody(): this { this.refreshes += 1; return this; }
   public setScrollFactor(): this { return this; }
@@ -60,10 +62,13 @@ function fakeRenderingSurface(missingTexture?: string) {
   const obstacles: FakeImage[] = [];
   const rectangles: FakeImage[] = [];
   const scene = {
-    textures: { exists: (key: string) => key !== missingTexture },
+    textures: {
+      exists: (key: string) => key !== missingTexture,
+      getFrame: (key: string, frame: number) => key === missingTexture ? undefined : { key, frame },
+    },
     anims: { exists: () => true },
-    add: { image: (x: number, y: number, key: string) => {
-      const image = new FakeImage(x, y, key);
+    add: { image: (x: number, y: number, key: string, frame?: number) => {
+      const image = new FakeImage(x, y, key, frame);
       images.push(image);
       return image;
     }, rectangle: (x: number, y: number) => {
@@ -74,8 +79,8 @@ function fakeRenderingSurface(missingTexture?: string) {
     cameras: { main: { width: 1280, height: 720 } },
   } as unknown as Phaser.Scene;
   const group = {
-    create: (x: number, y: number, key: string) => {
-      const image = new FakeImage(x, y, key);
+    create: (x: number, y: number, key: string, frame?: number) => {
+      const image = new FakeImage(x, y, key, frame);
       obstacles.push(image);
       return image;
     },
@@ -109,7 +114,8 @@ describe('declarative stage visual presentation', () => {
     const renderer = new StageMapRenderer();
     renderer.render(customSurface.scene, loaded.level, loaded.presentation, customSurface.group, false);
     renderer.render(legacySurface.scene, loaded.level, LEGACY_RESOLVED_STAGE_PRESENTATION, legacySurface.group, false);
-    expect(customSurface.images[0].tint).not.toBe(legacySurface.images[0].tint);
+    expect([customSurface.images[0].textureKey, customSurface.images[0].frame])
+      .not.toEqual([legacySurface.images[0].textureKey, legacySurface.images[0].frame]);
     expect(customSurface.obstacles.map(item => [item.x, item.y])).toEqual(
       legacySurface.obstacles.map(item => [item.x, item.y]),
     );
@@ -210,11 +216,11 @@ describe('declarative stage visual presentation', () => {
 
   it('fails before partial rendering when a resolved texture is absent from Phaser', () => {
     const loaded = loadIgapo();
-    const surface = fakeRenderingSurface('tile_water');
+    const surface = fakeRenderingSurface('puny_world');
     expect(() => new StageMapRenderer().render(
       surface.scene, loaded.level, loaded.presentation, surface.group, true,
     )).toThrow(expect.objectContaining<Partial<StageMapRenderError>>({
-      code: 'stage.visual.texture.runtime-missing', referenceId: 'tile_water',
+      code: 'stage.visual.texture.runtime-missing', referenceId: 'puny_world',
     }));
     expect(surface.images).toHaveLength(0);
     expect(surface.obstacles).toHaveLength(0);
@@ -276,7 +282,8 @@ describe('declarative stage visual presentation', () => {
     const decorations = [
       ...(AGUAS_VISUAL_RESOURCES.decorations ?? []),
       ...proceduralDecorations.map(id => ({
-        id, textureId: 'texture.aguas.root', layer: 'foreground' as const, depth: 4,
+        id, textureId: 'texture.aguas.puny-world', frame: 197,
+        layer: 'foreground' as const, depth: 4,
       })),
     ];
     const chapter: ChapterManifest = {

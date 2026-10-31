@@ -126,6 +126,10 @@ export interface GameIndividualSession {
   readonly composition: GameStageCompositionRoot;
 }
 
+export interface GameIndividualStageOptions {
+  readonly presentationVariantId?: string;
+}
+
 export type GameSessionFailureCode =
   | 'catalog-invalid'
   | 'invalid-seed'
@@ -457,7 +461,10 @@ export class GameSessionService {
     return this.startComposedCampaign({ seed, selections });
   }
 
-  public startIndividualStage(stageId: string): GameSessionResult<GameIndividualSession> {
+  public startIndividualStage(
+    stageId: string,
+    options: GameIndividualStageOptions = {},
+  ): GameSessionResult<GameIndividualSession> {
     if (!this.catalog) return failure('catalog-invalid', 'Stage catalog is invalid.');
     const entry = this.catalog.get(stageId);
     if (!entry) return failure('stage-not-found', `Unknown stage: ${stageId}.`);
@@ -468,6 +475,9 @@ export class GameSessionService {
       stageId,
       runId: `individual.${stageId}`,
       runSeed: `individual.${stageId}`,
+      ...(options.presentationVariantId !== undefined
+        ? { presentationVariantId: options.presentationVariantId }
+        : {}),
     });
     if (!loaded.ok) return failure('stage-load-failed',
       `Stage could not be loaded: ${stageId}.`, { stage: loaded.error });

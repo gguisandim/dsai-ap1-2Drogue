@@ -95,14 +95,14 @@ describe('stage entity presentation', () => {
     const loaded = loadIgapo();
     expect(loaded.presentation.npcSprites['environment.memory-vestige']).toMatchObject({
       id: 'sprite.aguas.memory-vestige',
-      textureKey: 'enemy_ranged_anim',
-      animations: { idle: 'enemy_ranged_anim_walk' },
+      textureKey: 'puny_mage',
+      animations: { idle: 'puny_mage_idle' },
     });
     expect(loaded.presentation.enemySprites.affinity).toMatchObject({
-      id: 'sprite.aguas.affinity-forgotten', textureKey: 'enemy_melee_anim', tint: 0x57a878,
+      id: 'sprite.aguas.affinity-forgotten', textureKey: 'puny_warrior_128', tint: 0x9fe0b8,
     });
     expect(loaded.presentation.enemySprites.applaud).toMatchObject({
-      id: 'sprite.aguas.applaud-forgotten', textureKey: 'enemy_ranged_anim', tint: 0x59b8c0,
+      id: 'sprite.aguas.applaud-forgotten', textureKey: 'puny_archer_128', tint: 0x9fd8e8,
     });
     expect(loaded.encounter?.waves.flatMap(wave => wave.enemies.map(enemy => enemy.type)))
       .toEqual(['affinity', 'applaud', 'affinity', 'affinity', 'applaud']);
@@ -183,8 +183,8 @@ describe('stage entity presentation', () => {
       physics: { add: { existing: jest.fn() } },
     } as any;
     new StageMapRenderer().createNpcSprite(scene, 880, 534, sprite);
-    expect(scene.add.sprite).toHaveBeenCalledWith(880, 534, 'enemy_ranged_anim');
-    expect(marker.play).toHaveBeenCalledWith('enemy_ranged_anim_walk');
+    expect(scene.add.sprite).toHaveBeenCalledWith(880, 534, 'puny_mage');
+    expect(marker.play).toHaveBeenCalledWith('puny_mage_idle');
     expect(scene.physics.add.existing).not.toHaveBeenCalled();
     expect(poiInteractionPoints(loaded.npcs)).toContainEqual(expect.objectContaining({
       id: 'npc.aguas.igapo.memory-vestige', dialogueId: 'dialogue.aguas.igapo.eco-das-aguas',
@@ -198,7 +198,7 @@ describe('stage entity presentation', () => {
     } as any;
     expect(() => new StageMapRenderer().createNpcSprite(scene, 0, 0, sprite)).toThrow(
       expect.objectContaining<Partial<StageMapRenderError>>({
-        code: 'stage.visual.animation.runtime-missing', referenceId: 'enemy_ranged_anim_walk',
+        code: 'stage.visual.animation.runtime-missing', referenceId: 'puny_mage_idle',
       }),
     );
     expect(scene.add.sprite).not.toHaveBeenCalled();

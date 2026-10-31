@@ -1,3 +1,4 @@
+import path from 'node:path';
 import {
   CampaignGraphGenerator,
   StageRegistry,
@@ -5,6 +6,8 @@ import {
   registerLegacyStages,
   type CampaignChapterEntry,
 } from '../../stages';
+import { usageError } from './errors';
+import type { ChapterVisualPreview } from './types';
 import { GameSessionService } from '../../application/stages';
 import { WorldLabDataService } from '../../devtools/world-lab/WorldLabDataService';
 import { WORLD_LAB_FIXTURE_CATALOG } from '../../devtools/world-lab/fixtures/fixtureCatalog';
@@ -119,6 +122,33 @@ function worldLabPreview(entry: CampaignChapterEntry): WorldLabPreview {
  * Headless preview: real individual-mode load and real World Lab projection.
  * Rendering is explicitly not executed.
  */
+/**
+ * The Vite bootstrap only discovers the canonical authoring directory. A
+ * custom --chapters-dir is valid for headless commands but cannot be previewed
+ * visually without weakening that restriction.
+ */
+export function createVisualPreview(
+  slug: string,
+  repoRoot: string,
+  chaptersRoot: string,
+  port = 5173,
+): ChapterVisualPreview {
+  const canonicalRoot = path.resolve(repoRoot, 'src', 'examples', 'chapters');
+  if (path.resolve(chaptersRoot) !== canonicalRoot) {
+    throw usageError(
+      'preview.visual-canonical-root',
+      'Visual preview requires the canonical authoring root src/examples/chapters.',
+    );
+  }
+  return Object.freeze({
+    url: `http://localhost:${port}/?chapterPreview=${encodeURIComponent(slug)}`,
+    authoringRoot: 'src/examples/chapters',
+    bootstrap: 'chapterPreview' as const,
+    note: 'Run npm run dev and open the URL. The Vite bootstrap validates the chapter, '
+      + 'creates an isolated StageRegistry and starts an individual GameScene session.',
+  });
+}
+
 export function previewChapterEntry(entry: CampaignChapterEntry): ChapterPreview {
   const report = validateChapterEntry(entry);
   if (report.errors.length > 0) {
