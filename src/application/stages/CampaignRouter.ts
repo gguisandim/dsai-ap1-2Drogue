@@ -79,7 +79,10 @@ function uniqueAppend(values: readonly string[], value: string): readonly string
   return values.includes(value) ? values : [...values, value];
 }
 
-export function createCampaignRunState(graph: CampaignRunState['graph']): CampaignRunState {
+export function createCampaignRunState(
+  graph: CampaignRunState['graph'],
+  composition?: CampaignRunState['composition'],
+): CampaignRunState {
   const revealed = graph.edges
     .filter(edge => edge.sourceNodeId === graph.entryNodeId)
     .map(edge => edge.id)
@@ -97,6 +100,7 @@ export function createCampaignRunState(graph: CampaignRunState['graph']): Campai
     nodeResumes: {},
     confirmedTransitionIds: [],
     rewards: {},
+    ...(composition ? { composition } : {}),
   });
 }
 

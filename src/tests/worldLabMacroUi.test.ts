@@ -80,7 +80,7 @@ describe('Umbra World Lab macro campaign UI', () => {
     expect(macro.nodes.filter(node => node.kind === 'milestone')).toHaveLength(4);
   });
 
-  it('inspects the dynamic stage catalog without offering selection policy', () => {
+  it('inspects the dynamic stage catalog and the deterministic composition state', () => {
     mount();
     openMacro();
 
@@ -92,7 +92,12 @@ describe('Umbra World Lab macro campaign UI', () => {
     expect(document.body.textContent).toContain('Catálogo dinâmico');
     expect(document.body.textContent).toContain('chapter.aguas@1');
     expect(document.body.textContent).toContain('manifesto 1');
-    expect(document.body.textContent).not.toContain('selecionar 9');
+    expect(document.body.textContent).toContain('Composição determinística');
+    expect(document.body.textContent).toContain('umbra.fixed-nine.v1');
+    expect(document.body.textContent).toContain('solicitadas9');
+    expect(macro.composition.requestedStageCount).toBe(9);
+    expect(macro.composition.status).toBe('failed');
+    expect(macro.composition.diagnostics.length).toBeGreaterThan(0);
   });
 
   it('selects Igapó and opens its authored map without a legacy placeholder', () => {

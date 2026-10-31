@@ -2,6 +2,7 @@ export const WORLD_LAB_SNAPSHOT_SCHEMA = 'umbra-world-lab/v1' as const;
 
 export type WorldLabDiagnosticOrigin =
   | 'campaign-generator'
+  | 'campaign-composer'
   | 'stage-loader'
   | 'physical-exit-resolver'
   | 'campaign-exit-binder'
@@ -253,7 +254,43 @@ export interface WorldLabMacroRouteView {
   readonly progress: WorldLabMacroProgressView;
   readonly connections: readonly WorldLabMacroConnectionView[];
   readonly catalog: WorldLabStageCatalogView;
+  readonly composition: WorldLabCampaignCompositionView;
   readonly graph: WorldLabDocument;
+}
+
+export interface WorldLabCampaignCompositionAssignmentView {
+  readonly slotId: string;
+  readonly actId: string;
+  readonly depth: number;
+  readonly kind: 'intermediate' | 'milestone';
+  readonly stageId: string;
+  readonly stageInstanceId: string;
+  readonly chapterId: string;
+  readonly manifestRevision: number;
+  readonly chapterRevision: number;
+  readonly regionId: string;
+  readonly biomeId: string;
+  readonly maximumPhysicalExits: number;
+}
+
+export interface WorldLabCampaignCompositionView {
+  readonly status: 'composed' | 'failed';
+  readonly seed: string;
+  readonly policyId: string;
+  readonly requestedStageCount: number;
+  readonly selectedStageCount: number;
+  readonly availableStageIds: readonly string[];
+  readonly requiredMilestoneSlotIds: readonly string[];
+  readonly restrictionLabels: readonly string[];
+  readonly compositionId?: string;
+  readonly graphId?: string;
+  readonly assignments: readonly WorldLabCampaignCompositionAssignmentView[];
+  readonly connections: readonly {
+    readonly edgeId: string;
+    readonly sourceNodeId: string;
+    readonly targetNodeId: string;
+  }[];
+  readonly diagnostics: readonly WorldLabDiagnostic[];
 }
 
 export interface WorldLabStageCatalogEntryView {

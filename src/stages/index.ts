@@ -22,6 +22,19 @@ export type {
   CampaignGraphId,
   CampaignGraphRequest,
   CampaignGraphResult,
+  CampaignCompositionActRule,
+  CampaignCompositionAssignment,
+  CampaignCompositionCatalog,
+  CampaignCompositionDiagnostic,
+  CampaignCompositionDiagnosticCode,
+  CampaignCompositionFailureCode,
+  CampaignCompositionMilestoneRequirement,
+  CampaignCompositionPolicyId,
+  CampaignCompositionRepetitionPolicy,
+  CampaignCompositionRequest,
+  CampaignCompositionResult,
+  CampaignCompositionSnapshot,
+  CampaignCompositionValue,
   CampaignContentReference,
   CampaignCorruptedLayerDefinition,
   CampaignCorruptedProgress,
@@ -124,8 +137,13 @@ export type {
   StageCatalogDiagnostic,
   StageCatalogEligibility,
   StageCatalogEntry,
+  StageCatalogExitReference,
   StageCatalogLoadability,
   StageCatalogQuery,
+} from './contracts';
+export {
+  CAMPAIGN_COMPOSITION_SNAPSHOT_SCHEMA,
+  FIXED_NINE_COMPOSITION_POLICY_ID,
 } from './contracts';
 export { StageRegistry, StageRegistryError } from './runtime/StageRegistry';
 export type { StageRegistryErrorCode } from './runtime/StageRegistry';
@@ -133,6 +151,14 @@ export { StageValidator } from './runtime/StageValidator';
 export { DEFAULT_STAGE_RUNTIME_CAPABILITIES } from './runtime/StageRuntimeCapabilities';
 export { CampaignGraphValidator } from './runtime/CampaignGraphValidator';
 export { CampaignGraphGenerator } from './runtime/CampaignGraphGenerator';
+export { CampaignCompositionGraphAdapter } from './runtime/CampaignCompositionGraphAdapter';
+export {
+  CampaignCompositionService,
+  FIXED_NINE_COMPOSITION_SLOTS,
+  canonicalCampaignCompositionSnapshot,
+  createFixedNineCompositionRequest,
+  validateCampaignCompositionSnapshot,
+} from './runtime/CampaignCompositionService';
 export { PhysicalExitResolver } from './runtime/PhysicalExitResolver';
 export { CampaignExitBinder } from './runtime/CampaignExitBinder';
 export { createLegacyStageModule, registerLegacyStages } from './compatibility/LegacyStageAdapter';

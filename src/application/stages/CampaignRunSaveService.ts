@@ -1,4 +1,8 @@
-import { CampaignGraphValidator } from '../../stages';
+import {
+  CampaignGraphValidator,
+  canonicalCampaignCompositionSnapshot,
+  validateCampaignCompositionSnapshot,
+} from '../../stages';
 import type {
   CampaignEdge,
   CampaignGraph,
@@ -111,6 +115,9 @@ export function canonicalCampaignRunState(state: CampaignRunState): CampaignRunS
     nodeResumes: sortedRecord(state.nodeResumes),
     confirmedTransitionIds: [...state.confirmedTransitionIds],
     rewards: sortedRecord(state.rewards ?? {}),
+    ...(state.composition
+      ? { composition: canonicalCampaignCompositionSnapshot(state.composition) }
+      : {}),
     ...(state.macroProgress
       ? { macroProgress: canonicalCampaignMacroProgress(state.macroProgress) }
       : {}),
@@ -185,6 +192,27 @@ export function validateCampaignRunState(value: unknown): readonly CampaignRunDi
   if (diagnostics.length > 0) return diagnostics;
   const nodes = new Map(graph.nodes.map(node => [node.id, node]));
   const edges = new Map(graph.edges.map(edge => [edge.id, edge]));
+  if (value.composition !== undefined) {
+    const compositionIssues = validateCampaignCompositionSnapshot(value.composition);
+    compositionIssues.forEach(item => push(
+      diagnostics,
+      item.code,
+      item.message,
+      ['state', ...item.path],
+      item.referenceId,
+    ));
+    if (compositionIssues.length === 0) {
+      const composition = value.composition as CampaignRunState['composition'];
+      if (!composition || composition.campaignId !== graph.campaignId ||
+        composition.campaignRevision !== graph.campaignRevision || composition.runId !== graph.runId ||
+        composition.seed !== graph.runSeed || composition.assignments.length !== graph.nodes.length ||
+        composition.assignments.some(assignment => !graph.nodes.some(node =>
+          node.slotId === assignment.slotId && node.stageId === assignment.stageId))) {
+        push(diagnostics, 'run.composition.graph-mismatch',
+          'Persisted composition does not match the materialized graph.', ['state', 'composition']);
+      }
+    }
+  }
   if (value.status !== 'active' && value.status !== 'completed') {
     push(diagnostics, 'run.status.invalid', 'Run status is invalid.', ['state', 'status']);
   }

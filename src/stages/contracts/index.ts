@@ -6,5 +6,6 @@ export * from './StageModule';
 export * from './StageDiagnostic';
 export * from './StageLoad';
 export * from './CampaignGraph';
+export * from './CampaignComposition';
 export * from './CampaignExitBinding';
 export * from './CampaignMacro';

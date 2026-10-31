@@ -54,3 +54,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-30 | [Apresentação de entidades e ambientação por fase — Etapa 9.5B.2](./2026-10-30-etapa-9-5b2-entidades-ambientacao.md) |
 | 2026-10-31 | [Catálogo dinâmico de fases — Etapa 9.6A](./2026-10-31-etapa-9-6a-catalogo-dinamico-fases.md) |
 | 2026-10-31 | [Eficiência do desenvolvimento assistido por IA — Etapa 1](./2026-10-31-eficiencia-desenvolvimento-assistido-etapa-1.md) |
+| 2026-10-31 | [Composição determinística de campanhas — Etapa 9.6B](./2026-10-31-etapa-9-6b-composicao-deterministica-campanhas.md) |

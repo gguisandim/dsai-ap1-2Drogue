@@ -180,6 +180,43 @@ function renderMacroInspector(
   });
   container.append(catalog);
 
+  const compositionTitle = document.createElement('h3');
+  compositionTitle.textContent = 'Composição determinística';
+  container.append(compositionTitle);
+  const compositionFields = document.createElement('dl');
+  compositionFields.className = 'wl-fields wl-composition-summary';
+  appendField(compositionFields, 'estado', view.composition.status);
+  appendField(compositionFields, 'seed', view.composition.seed);
+  appendField(compositionFields, 'política', view.composition.policyId);
+  appendField(compositionFields, 'solicitadas', view.composition.requestedStageCount);
+  appendField(compositionFields, 'selecionadas', view.composition.selectedStageCount);
+  appendField(compositionFields, 'disponíveis', view.composition.availableStageIds.join(', ') || 'nenhuma');
+  appendField(compositionFields, 'marcos', view.composition.requiredMilestoneSlotIds.join(', '));
+  appendField(compositionFields, 'restrições', view.composition.restrictionLabels.join(', '));
+  appendField(compositionFields, 'compositionId', view.composition.compositionId);
+  appendField(compositionFields, 'graphId', view.composition.graphId);
+  container.append(compositionFields);
+  const assignments = document.createElement('ul');
+  assignments.className = 'wl-choice-list wl-composition-assignments';
+  view.composition.assignments.forEach(assignment => {
+    const item = document.createElement('li');
+    item.dataset.compositionSlot = assignment.slotId;
+    item.dataset.stageId = assignment.stageId;
+    const label = document.createElement('strong');
+    label.textContent = `${assignment.actId} · ${assignment.slotId} · ${assignment.stageId}`;
+    const detail = document.createElement('span');
+    detail.textContent = [
+      assignment.stageInstanceId,
+      `${assignment.chapterId}@${assignment.chapterRevision}`,
+      `manifesto ${assignment.manifestRevision}`,
+      `${assignment.regionId}/${assignment.biomeId}`,
+      `saídas ${assignment.maximumPhysicalExits}`,
+    ].join(' · ');
+    item.append(label, detail);
+    assignments.append(item);
+  });
+  container.append(assignments);
+
   const title = document.createElement('h3');
   title.textContent = 'Seleção';
   container.append(title);
@@ -370,7 +407,10 @@ export class WorldLabApp {
       return;
     }
     this.macroView = result.value;
-    this.macroDiagnostics = result.value.graph.diagnostics;
+    this.macroDiagnostics = Object.freeze([
+      ...result.value.graph.diagnostics,
+      ...result.value.composition.diagnostics,
+    ]);
     const current = result.value.nodes.find(node => node.id === result.value.progress.currentLocationId) ??
       result.value.nodes[0];
     this.macroSelection = current ? { nodeId: current.id } : {};

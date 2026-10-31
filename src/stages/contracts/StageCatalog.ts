@@ -52,6 +52,11 @@ export interface StageCatalogDiagnostic {
   readonly referenceId?: string;
 }
 
+export interface StageCatalogExitReference {
+  readonly id: string;
+  readonly targetStageId: string | 'campaign.complete';
+}
+
 export interface StageCatalogEntry {
   readonly stageId: string;
   readonly chapterId: string;
@@ -78,6 +83,7 @@ export interface StageCatalogEntry {
   readonly completionMissionId?: string;
   readonly exitIds: readonly string[];
   readonly targetStageIds: readonly string[];
+  readonly exits: readonly StageCatalogExitReference[];
   readonly loadability: StageCatalogLoadability;
   readonly eligibility: StageCatalogEligibility;
   readonly exclusionDiagnostics: readonly StageCatalogDiagnostic[];
@@ -99,6 +105,7 @@ export interface StageCatalogCandidate {
   readonly requiredEventIds: readonly string[];
   readonly requiredBeatIds: readonly string[];
   readonly providesBeatIds: readonly string[];
+  readonly exits: readonly StageCatalogExitReference[];
 }
 
 export interface StageCatalogQuery {

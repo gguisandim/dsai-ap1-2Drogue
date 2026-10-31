@@ -216,6 +216,9 @@ function catalogEntry(
     ...(manifest.completionMissionId ? { completionMissionId: manifest.completionMissionId } : {}),
     exitIds: sortedUnique(manifest.exits.map(value => value.id)),
     targetStageIds: sortedUnique(manifest.exits.map(value => value.targetStageId)),
+    exits: Object.freeze([...manifest.exits]
+      .sort((left, right) => compare(left.id, right.id))
+      .map(value => Object.freeze({ id: value.id, targetStageId: value.targetStageId }))),
     loadability,
     eligibility,
     exclusionDiagnostics,
@@ -351,6 +354,7 @@ export class StageCatalogService {
       requiredEventIds: entry.requiredEventIds,
       requiredBeatIds: entry.requiredBeatIds,
       providesBeatIds: entry.providesBeatIds,
+      exits: entry.exits,
     })));
   }
 }

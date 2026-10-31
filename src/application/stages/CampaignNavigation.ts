@@ -4,6 +4,7 @@ import type {
   CampaignExitBinding,
   CampaignExitBindingFailure,
   CampaignGraph,
+  CampaignCompositionSnapshot,
   CampaignNode,
   CampaignNodeId,
   LoadedStage,
@@ -41,6 +42,8 @@ export interface CampaignRunState {
    * canonicalized to an empty record.
    */
   readonly rewards: Readonly<Record<string, CampaignRewardRecord>>;
+  /** Optional 9.6B snapshot. Legacy run saves omit it. */
+  readonly composition?: CampaignCompositionSnapshot;
   /** Optional additive macro campaign progress. Legacy and pilot saves omit it. */
   readonly macroProgress?: CampaignMacroProgressState;
   /** Stable identity of the graph context materialized in the legacy fields above. */

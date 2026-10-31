@@ -5,16 +5,19 @@ import {
 } from '../../application/stages';
 import {
   StageLoader,
+  CampaignCompositionService,
   StageCatalogService,
   StageRegistry,
   registerCampaignChapters,
   registerLegacyStages,
   type StageCatalogDiagnostic,
+  createFixedNineCompositionRequest,
 } from '../../stages';
 import type {
   WorldLabDiagnostic,
   WorldLabMacroConnectionView,
   WorldLabMacroRouteResult,
+  WorldLabCampaignCompositionView,
 } from './contracts';
 import { WorldLabDataService } from './WorldLabDataService';
 import { WorldLabMacroProjector } from './WorldLabMacroProjector';
@@ -92,6 +95,63 @@ export class WorldLabMacroDataService {
       incompatibleStageIds: Object.freeze(discovered.value.incompatible().map(item => item.stageId)),
       diagnostics: catalogDiagnostics,
     });
+    const compositionRequest = createFixedNineCompositionRequest({
+      campaignId: UMBRA_CAMPAIGN_ROUTE_SLICE.id,
+      campaignRevision: UMBRA_CAMPAIGN_ROUTE_SLICE.revision,
+      runId: `${UMBRA_ROUTE_SLICE_RUN_ID}.composition`,
+      seed,
+    });
+    const composed = new CampaignCompositionService(discovered.value).compose(compositionRequest);
+    const compositionDiagnostics: readonly WorldLabDiagnostic[] = Object.freeze(
+      (composed.ok ? composed.value.diagnostics : composed.error.diagnostics).map(item => Object.freeze({
+        code: item.code,
+        severity: item.severity,
+        origin: 'campaign-composer' as const,
+        message: item.message,
+        ...(item.stageId ? { stageId: item.stageId } : {}),
+        path: item.path,
+      })),
+    );
+    const composition: WorldLabCampaignCompositionView = Object.freeze({
+      status: composed.ok ? 'composed' as const : 'failed' as const,
+      seed,
+      policyId: compositionRequest.policyId,
+      requestedStageCount: compositionRequest.desiredStageCount,
+      selectedStageCount: composed.ok ? composed.value.snapshot.assignments.length : 0,
+      availableStageIds: Object.freeze(discovered.value.list()
+        .filter(item => item.eligibility === 'campaign-eligible' || item.eligibility === 'narrative-reserved')
+        .map(item => item.stageId)),
+      requiredMilestoneSlotIds: Object.freeze(compositionRequest.mandatoryMilestones.map(item => item.slotId)),
+      restrictionLabels: Object.freeze([
+        `repetition:${compositionRequest.repetitionPolicy}`,
+        'topology:fixed-nine',
+        'acts:3x3',
+      ]),
+      ...(composed.ok ? {
+        compositionId: composed.value.snapshot.compositionId,
+        graphId: composed.value.graph.id,
+        assignments: Object.freeze(composed.value.snapshot.assignments.map(item => Object.freeze({
+          slotId: item.slotId,
+          actId: item.actId,
+          depth: item.depth,
+          kind: item.kind,
+          stageId: item.stageId,
+          stageInstanceId: item.stageInstanceId,
+          chapterId: item.chapterId,
+          manifestRevision: item.manifestRevision,
+          chapterRevision: item.chapterRevision,
+          regionId: item.regionId,
+          biomeId: item.biomeId,
+          maximumPhysicalExits: item.maximumPhysicalExits,
+        }))),
+        connections: Object.freeze(composed.value.graph.edges.map(edge => Object.freeze({
+          edgeId: edge.id,
+          sourceNodeId: edge.sourceNodeId,
+          targetNodeId: edge.targetNodeId,
+        }))),
+      } : { assignments: Object.freeze([]), connections: Object.freeze([]) }),
+      diagnostics: compositionDiagnostics,
+    });
     const loader = new StageLoader(registry);
     const created = new UmbraCampaignRouteSliceFactory(loader).create({
       runId: UMBRA_ROUTE_SLICE_RUN_ID,
@@ -145,6 +205,7 @@ export class WorldLabMacroDataService {
         progress: macro.progress,
         connections,
         catalog,
+        composition,
         graph: projected.value,
       }),
     });
