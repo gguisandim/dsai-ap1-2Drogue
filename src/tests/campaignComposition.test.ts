@@ -11,10 +11,14 @@ import {
   StageCatalogService,
   StageLoader,
   StageRegistry,
+  analyzeCampaignCompositionSnapshot,
+  campaignCompositionIdentityVersion,
+  computeCampaignCompositionId,
   createBranchingNineCompositionRequest,
   createFixedNineCompositionRequest,
   type CampaignCompositionCatalog,
   type CampaignCompositionRequest,
+  type CampaignCompositionSnapshot,
   type ChapterManifest,
   type StageCampaignCatalogMetadata,
   type StageExitDefinition,
@@ -232,6 +236,30 @@ function manualRequest(stageIds: readonly string[], seed = 'seed.manual') {
     ...request(seed),
     manualAssignments: manualSelection(stageIds),
   });
+}
+
+/** Rebuilds the same snapshot under the historical version 1 identity. */
+function legacySnapshot(value: CampaignCompositionSnapshot): CampaignCompositionSnapshot {
+  const compositionId = computeCampaignCompositionId(1, {
+    policyId: value.policyId,
+    policyVersion: value.policyVersion,
+    seed: value.seed,
+    campaignId: value.campaignId,
+    runId: value.runId,
+    desiredStageCount: value.desiredStageCount,
+    assignments: value.assignments.map(
+      ({ stageInstanceId: _ignored, ...assignment }) => assignment,
+    ),
+  });
+  const { identityVersion: _version, ...rest } = value;
+  return {
+    ...rest,
+    compositionId,
+    assignments: value.assignments.map(assignment => ({
+      ...assignment,
+      stageInstanceId: `instance.${compositionId}.${assignment.slotId}`,
+    })),
+  };
 }
 
 describe('CampaignCompositionService', () => {
@@ -725,6 +753,129 @@ describe('CampaignCompositionService', () => {
     }
     const legacy = createCampaignRunState(value.graph);
     expect(new CampaignRunSaveService({ storage: new MemorySaveStorage() }).serialize(legacy).ok).toBe(true);
+  });
+
+  it('keeps two instances of one definition and every revisit on distinct stable identities', () => {
+    const value = compose(new CampaignCompositionService(catalog(stages)), branchingRequest());
+    const repeatedStageId = value.snapshot.assignments
+      .map(item => item.stageId)
+      .find((id, index, all) => all.indexOf(id) !== index) as string;
+    const instances = value.snapshot.assignments.filter(item => item.stageId === repeatedStageId);
+    expect(instances).toHaveLength(2);
+    expect(instances[0].slotId).not.toBe(instances[1].slotId);
+    expect(instances[0].stageInstanceId).not.toBe(instances[1].stageInstanceId);
+    expect(instances.every(item =>
+      item.stageInstanceId === `instance.${value.snapshot.compositionId}.${item.slotId}`)).toBe(true);
+    const nodes = value.graph.nodes.filter(node => node.stageId === repeatedStageId);
+    expect(nodes).toHaveLength(2);
+    expect(nodes[0].id).not.toBe(nodes[1].id);
+  });
+
+  it('writes a versioned 64-bit identity independent of catalog order and policy', () => {
+    const service = new CampaignCompositionService(catalog(stages));
+    const first = compose(service);
+    const repeated = compose(service);
+    const reordered = compose(new CampaignCompositionService(catalog(stages, true)));
+
+    expect(first.snapshot.identityVersion).toBe(2);
+    expect(first.snapshot.compositionId).toMatch(/^composition\.v2\.[0-9a-f]{16}$/);
+    expect(campaignCompositionIdentityVersion(first.snapshot.compositionId)).toBe(2);
+    expect(campaignCompositionIdentityVersion('composition.00000000')).toBe(1);
+    expect(campaignCompositionIdentityVersion('composition.v2.zzzz')).toBeUndefined();
+    expect(first.snapshot.compositionId).not.toContain('run.composition');
+    expect(repeated.snapshot.compositionId).toBe(first.snapshot.compositionId);
+    expect(reordered.snapshot.compositionId).toBe(first.snapshot.compositionId);
+
+    const linearRequest = request();
+    const branched = compose(service, createBranchingNineCompositionRequest({
+      ...branchingRequest(),
+      campaignId: linearRequest.campaignId,
+      runId: linearRequest.runId,
+      seed: linearRequest.seed,
+    }));
+    expect(branched.snapshot.compositionId).not.toBe(first.snapshot.compositionId);
+  });
+
+  it('separates composition identity from run identity for the same seed', () => {
+    const service = new CampaignCompositionService(catalog(stages));
+    const base = request('seed.identity.same');
+    const first = compose(service, base);
+    const otherRun = compose(service, { ...base, runId: 'run.composition.other' });
+
+    expect(otherRun.snapshot.assignments.map(item => [item.slotId, item.stageId]))
+      .toEqual(first.snapshot.assignments.map(item => [item.slotId, item.stageId]));
+    expect(otherRun.snapshot.compositionId).not.toBe(first.snapshot.compositionId);
+    expect(otherRun.snapshot.runId).not.toBe(first.snapshot.runId);
+    expect(otherRun.graph.nodes.map(node => node.id)).not.toEqual(
+      first.graph.nodes.map(node => node.id),
+    );
+  });
+
+  it('restores a version 1 snapshot without recomputing its identifiers', () => {
+    const service = new CampaignCompositionService(catalog(stages));
+    const current = compose(service);
+    const legacy = legacySnapshot(current.snapshot);
+
+    const analysis = analyzeCampaignCompositionSnapshot(legacy);
+    expect(analysis.compatibility).toBe('legacy-compatible');
+    expect(analysis.identityVersion).toBe(1);
+    expect(analysis.snapshot?.compositionId).toBe(legacy.compositionId);
+    expect(analysis.diagnostics).toEqual([]);
+
+    const restored = service.restore(legacy);
+    expect(restored.ok).toBe(true);
+    if (!restored.ok) return;
+    expect(restored.value.snapshot.compositionId).toBe(legacy.compositionId);
+    expect(restored.value.snapshot.assignments.map(item => item.stageInstanceId))
+      .toEqual(legacy.assignments.map(item => item.stageInstanceId));
+  });
+
+  it('migrates only the additive discriminator of a version 2 snapshot', () => {
+    const service = new CampaignCompositionService(catalog(stages));
+    const current = compose(service);
+    const { identityVersion: _ignored, ...withoutVersion } = current.snapshot;
+
+    const analysis = analyzeCampaignCompositionSnapshot(withoutVersion);
+    expect(analysis.compatibility).toBe('migrated');
+    expect(analysis.snapshot?.identityVersion).toBe(2);
+    expect(analysis.snapshot?.compositionId).toBe(current.snapshot.compositionId);
+    expect(analysis.snapshot?.assignments.map(item => item.stageInstanceId))
+      .toEqual(current.snapshot.assignments.map(item => item.stageInstanceId));
+    expect(analysis.diagnostics.map(item => item.code)).toEqual(['composition.snapshot.migrated']);
+
+    const restored = service.restore(withoutVersion);
+    expect(restored.ok).toBe(true);
+    if (restored.ok) expect(restored.value.snapshot.identityVersion).toBe(2);
+  });
+
+  it('rejects unsupported, mismatched or reinterpreted composition identities', () => {
+    const service = new CampaignCompositionService(catalog(stages));
+    const current = compose(service);
+    const before = JSON.stringify(current.snapshot);
+
+    expect(analyzeCampaignCompositionSnapshot({ ...current.snapshot, identityVersion: 1 }))
+      .toMatchObject({
+        compatibility: 'incompatible',
+        diagnostics: expect.arrayContaining([
+          expect.objectContaining({ code: 'composition.identity.version-mismatch' }),
+        ]),
+      });
+    expect(service.restore({ ...current.snapshot, identityVersion: 1 })).toMatchObject({
+      ok: false, error: { code: 'persisted-composition-incompatible' },
+    });
+
+    expect(service.restore({ ...current.snapshot, compositionId: 'campaign.unknown' })).toMatchObject({
+      ok: false, error: { code: 'persisted-composition-incompatible' },
+    });
+
+    expect(analyzeCampaignCompositionSnapshot({ ...current.snapshot, seed: 'seed.tampered' }))
+      .toMatchObject({
+        compatibility: 'incompatible',
+        diagnostics: expect.arrayContaining([
+          expect.objectContaining({ code: 'composition.identity.mismatch' }),
+        ]),
+      });
+    expect(JSON.stringify(current.snapshot)).toBe(before);
   });
 
   it('is headless and has no Phaser, scene, DOM or storage dependency', () => {

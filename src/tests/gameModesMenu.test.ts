@@ -61,4 +61,16 @@ describe('Game mode menu wiring', () => {
     expect(game).toContain("data?.macroCampaign === true");
     expect(game).toContain('configureMacroCampaign()');
   });
+
+  it('selects linear or branching through the existing session API', () => {
+    expect(modes).toContain('FIXED_NINE_COMPOSITION_POLICY_ID');
+    expect(modes).toContain('BRANCHING_NINE_COMPOSITION_POLICY_ID');
+    expect(modes).toContain('POLICY_LABELS');
+    expect(modes).toContain('startBranchingCampaign');
+    expect(modes).toContain('startRandomCampaign');
+    expect(modes).toContain('startSelectedCampaign');
+    expect(modes).toContain('savedCampaign.policyId');
+    expect(modes).toContain('policyAvailable(FIXED_NINE_COMPOSITION_POLICY_ID)');
+    expect(modes).toContain('BRANCHING_CAMPAIGN_REQUIRED_INSTANCE_COUNT');
+  });
 });

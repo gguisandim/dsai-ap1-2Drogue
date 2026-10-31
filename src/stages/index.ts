@@ -28,6 +28,7 @@ export type {
   CampaignCompositionDiagnostic,
   CampaignCompositionDiagnosticCode,
   CampaignCompositionFailureCode,
+  CampaignCompositionIdentityVersion,
   CampaignCompositionMilestoneRequirement,
   CampaignCompositionPolicyId,
   CampaignCompositionRepetitionPolicy,
@@ -35,6 +36,8 @@ export type {
   CampaignCompositionResult,
   CampaignCompositionSlotSelection,
   CampaignCompositionSnapshot,
+  CampaignCompositionSnapshotAnalysis,
+  CampaignCompositionSnapshotCompatibility,
   CampaignCompositionValue,
   CampaignContentReference,
   CampaignCorruptedLayerDefinition,
@@ -153,7 +156,10 @@ export type {
 } from './contracts';
 export {
   BRANCHING_NINE_COMPOSITION_POLICY_ID,
+  CAMPAIGN_COMPOSITION_IDENTITY_VERSION,
+  CAMPAIGN_COMPOSITION_LEGACY_IDENTITY_VERSION,
   CAMPAIGN_COMPOSITION_SNAPSHOT_SCHEMA,
+  CAMPAIGN_COMPOSITION_V2_IDENTITY_PREFIX,
   FIXED_NINE_COMPOSITION_POLICY_ID,
 } from './contracts';
 export { StageRegistry, StageRegistryError } from './runtime/StageRegistry';
@@ -167,11 +173,15 @@ export {
   CampaignCompositionService,
   BRANCHING_NINE_COMPOSITION_SLOTS,
   FIXED_NINE_COMPOSITION_SLOTS,
+  analyzeCampaignCompositionSnapshot,
+  campaignCompositionIdentityVersion,
   canonicalCampaignCompositionSnapshot,
+  computeCampaignCompositionId,
   createBranchingNineCompositionRequest,
   createFixedNineCompositionRequest,
   validateCampaignCompositionSnapshot,
 } from './runtime/CampaignCompositionService';
+export type { CampaignCompositionIdentityParts } from './runtime/CampaignCompositionService';
 export { PhysicalExitResolver } from './runtime/PhysicalExitResolver';
 export { CampaignExitBinder } from './runtime/CampaignExitBinder';
 export { createLegacyStageModule, registerLegacyStages } from './compatibility/LegacyStageAdapter';

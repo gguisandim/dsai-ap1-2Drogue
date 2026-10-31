@@ -6,17 +6,23 @@ import type {
   CampaignCompositionDiagnostic,
   CampaignCompositionDiagnosticCode,
   CampaignCompositionFailureCode,
+  CampaignCompositionIdentityVersion,
   CampaignCompositionMilestoneRequirement,
+  CampaignCompositionPolicyId,
   CampaignCompositionRequest,
   CampaignCompositionResult,
   CampaignCompositionSnapshot,
+  CampaignCompositionSnapshotAnalysis,
   CampaignCompositionValue,
   CampaignNodeKind,
   StageCatalogEntry,
 } from '../contracts';
 import {
   BRANCHING_NINE_COMPOSITION_POLICY_ID,
+  CAMPAIGN_COMPOSITION_IDENTITY_VERSION,
+  CAMPAIGN_COMPOSITION_LEGACY_IDENTITY_VERSION,
   CAMPAIGN_COMPOSITION_SNAPSHOT_SCHEMA,
+  CAMPAIGN_COMPOSITION_V2_IDENTITY_PREFIX,
   FIXED_NINE_COMPOSITION_POLICY_ID,
 } from '../contracts';
 import { CampaignCompositionGraphAdapter } from './CampaignCompositionGraphAdapter';
@@ -187,6 +193,22 @@ function hashHex(...parts: readonly (string | number)[]): string {
   return hashParts(...parts).toString(16).padStart(8, '0');
 }
 
+/**
+ * Two independent 32-bit accumulators widen the persisted composition identity
+ * to 64 bits without introducing a cryptographic dependency.
+ */
+function hashHex64(...parts: readonly (string | number)[]): string {
+  const text = parts.map(part => `${String(part).length}:${String(part)}`).join('|');
+  let fnv = 2166136261;
+  let djb = 5381;
+  for (let index = 0; index < text.length; index += 1) {
+    const code = text.charCodeAt(index);
+    fnv = Math.imul(fnv ^ code, 16777619) >>> 0;
+    djb = (Math.imul(djb, 33) + code) >>> 0;
+  }
+  return `${fnv.toString(16).padStart(8, '0')}${djb.toString(16).padStart(8, '0')}`;
+}
+
 function canonicalJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
   if (isRecord(value)) return `{${Object.keys(value).sort(compare)
@@ -314,6 +336,83 @@ function assignmentIdentityInput(assignments: readonly Omit<CampaignCompositionA
     manifestRevision: value.manifestRevision,
     chapterRevision: value.chapterRevision,
   })));
+}
+
+/**
+ * Version 2 material binds the identity to the topology policy and to the
+ * structural position of every assignment. Assignments are ordered by slot id,
+ * so the identity never depends on catalog registration order.
+ */
+function assignmentIdentityInputV2(
+  assignments: readonly Omit<CampaignCompositionAssignment, 'stageInstanceId'>[],
+): string {
+  return canonicalJson([...assignments]
+    .sort((left, right) => compare(left.slotId, right.slotId))
+    .map(value => ({
+      slotId: value.slotId,
+      actId: value.actId,
+      depth: value.depth,
+      kind: value.kind,
+      stageId: value.stageId,
+      manifestRevision: value.manifestRevision,
+      chapterRevision: value.chapterRevision,
+    })));
+}
+
+export interface CampaignCompositionIdentityParts {
+  readonly policyId: CampaignCompositionPolicyId;
+  readonly policyVersion: number;
+  readonly seed: string;
+  readonly campaignId: string;
+  readonly runId: string;
+  readonly desiredStageCount: number;
+  readonly assignments: readonly Omit<CampaignCompositionAssignment, 'stageInstanceId'>[];
+}
+
+/** Recognises a persisted identity by its explicit version prefix. */
+export function campaignCompositionIdentityVersion(
+  compositionId: string,
+): CampaignCompositionIdentityVersion | undefined {
+  if (/^composition\.v2\.[0-9a-f]{16}$/.test(compositionId)) {
+    return CAMPAIGN_COMPOSITION_IDENTITY_VERSION;
+  }
+  if (/^composition\.[0-9a-f]{8}$/.test(compositionId)) {
+    return CAMPAIGN_COMPOSITION_LEGACY_IDENTITY_VERSION;
+  }
+  return undefined;
+}
+
+/**
+ * Deterministic identity for a composition. Version 1 is byte-for-byte the
+ * historical algorithm; version 2 widens the digest and binds topology.
+ */
+export function computeCampaignCompositionId(
+  version: CampaignCompositionIdentityVersion,
+  parts: CampaignCompositionIdentityParts,
+): string {
+  if (version === CAMPAIGN_COMPOSITION_LEGACY_IDENTITY_VERSION) {
+    return `composition.${hashHex(
+      parts.policyId,
+      parts.seed,
+      parts.campaignId,
+      parts.runId,
+      assignmentIdentityInput(parts.assignments),
+    )}`;
+  }
+  return `${CAMPAIGN_COMPOSITION_V2_IDENTITY_PREFIX}${hashHex64(
+    'composition.identity.v2',
+    parts.policyId,
+    parts.policyVersion,
+    parts.seed,
+    parts.campaignId,
+    parts.runId,
+    parts.desiredStageCount,
+    assignmentIdentityInputV2(parts.assignments),
+  )}`;
+}
+
+function stageInstanceIdFor(compositionId: string, slotId: string): string {
+  return `instance.${compositionId}.${slotId}`;
 }
 
 function graphMatches(snapshot: CampaignCompositionSnapshot, graph: CampaignCompositionValue['graph']): boolean {
@@ -506,6 +605,22 @@ export function validateCampaignCompositionSnapshot(
       'Composition snapshot header or assignment count is invalid.', ['composition']));
     return diagnostics(values);
   }
+  const identityVersion = campaignCompositionIdentityVersion(value.compositionId as string);
+  if (value.identityVersion !== undefined &&
+    value.identityVersion !== CAMPAIGN_COMPOSITION_LEGACY_IDENTITY_VERSION &&
+    value.identityVersion !== CAMPAIGN_COMPOSITION_IDENTITY_VERSION) {
+    values.push(issue('composition.snapshot.invalid',
+      'Composition identityVersion must be 1 or 2.', ['composition', 'identityVersion']));
+  }
+  if (identityVersion === undefined) {
+    values.push(issue('composition.identity.unsupported',
+      `Composition identity prefix is not supported: ${String(value.compositionId)}.`,
+      ['composition', 'compositionId'], { referenceId: String(value.compositionId) }));
+  } else if (value.identityVersion !== undefined && value.identityVersion !== identityVersion) {
+    values.push(issue('composition.identity.version-mismatch',
+      'Declared identityVersion contradicts the compositionId prefix.',
+      ['composition', 'identityVersion'], { referenceId: String(value.compositionId) }));
+  }
   if (!Array.isArray(value.acts) || value.acts.length !== 3 ||
     !Array.isArray(value.mandatoryMilestones) || value.mandatoryMilestones.length !== 3 ||
     !Array.isArray(value.requiredStageIds) || !Array.isArray(value.allowedRegionIds) ||
@@ -547,7 +662,7 @@ export function validateCampaignCompositionSnapshot(
     instanceIds.add(raw.stageInstanceId);
     const slot = expectedSlots.find(item => item.slotId === raw.slotId);
     if (!slot || raw.actId !== slot.actId || raw.depth !== slot.depth || raw.kind !== slot.kind ||
-      raw.stageInstanceId !== `instance.${value.compositionId}.${raw.slotId}`) values.push(issue(
+      raw.stageInstanceId !== stageInstanceIdFor(value.compositionId as string, raw.slotId)) values.push(issue(
       'composition.snapshot.invalid', 'Assignment does not match the persisted topology policy.',
       ['composition', 'assignments', index], { stageId: raw.stageId, slotId: raw.slotId },
     ));
@@ -576,19 +691,75 @@ export function validateCampaignCompositionSnapshot(
           ['composition', 'assignments']));
       }
     }
-    const expectedId = `composition.${hashHex(
-      value.policyId,
-      value.seed as string,
-      value.campaignId as string,
-      value.runId as string,
-      assignmentIdentityInput(persistedAssignments.map(({ stageInstanceId: _ignored, ...assignment }) => assignment)),
-    )}`;
-    if (value.compositionId !== expectedId) values.push(issue(
-      'composition.snapshot.invalid', 'Composition identity does not match its persisted assignments.',
-      ['composition', 'compositionId'], { referenceId: String(value.compositionId) },
-    ));
+    if (identityVersion !== undefined) {
+      const expectedId = computeCampaignCompositionId(identityVersion, {
+        policyId: value.policyId as CampaignCompositionPolicyId,
+        policyVersion: value.policyVersion as number,
+        seed: value.seed as string,
+        campaignId: value.campaignId as string,
+        runId: value.runId as string,
+        desiredStageCount: value.desiredStageCount as number,
+        assignments: persistedAssignments
+          .map(({ stageInstanceId: _ignored, ...assignment }) => assignment),
+      });
+      if (value.compositionId !== expectedId) values.push(issue(
+        'composition.identity.mismatch',
+        'Composition identity does not match its persisted material.',
+        ['composition', 'compositionId'], { referenceId: String(value.compositionId) },
+      ));
+    }
   }
   return diagnostics(values);
+}
+
+/**
+ * Classifies a persisted snapshot without rewriting identifiers. Only the
+ * additive `identityVersion` discriminator may be inferred in memory when a
+ * valid version 2 identity omits it. Version 1 identities are read directly;
+ * upgrading them to version 2 would change every persisted instance id and is
+ * deliberately rejected.
+ */
+export function analyzeCampaignCompositionSnapshot(
+  value: unknown,
+): CampaignCompositionSnapshotAnalysis {
+  const issues = validateCampaignCompositionSnapshot(value);
+  if (issues.length > 0) {
+    return Object.freeze({
+      compatibility: 'incompatible' as const,
+      diagnostics: issues,
+    });
+  }
+  const raw = value as CampaignCompositionSnapshot;
+  const identityVersion = campaignCompositionIdentityVersion(
+    raw.compositionId,
+  ) as CampaignCompositionIdentityVersion;
+  if (raw.identityVersion === identityVersion) {
+    return Object.freeze({
+      compatibility: identityVersion === CAMPAIGN_COMPOSITION_LEGACY_IDENTITY_VERSION
+        ? 'legacy-compatible' as const : 'current' as const,
+      identityVersion,
+      snapshot: canonicalCampaignCompositionSnapshot(raw),
+      diagnostics: diagnostics([]),
+    });
+  }
+  if (identityVersion === CAMPAIGN_COMPOSITION_LEGACY_IDENTITY_VERSION) {
+    return Object.freeze({
+      compatibility: 'legacy-compatible' as const,
+      identityVersion,
+      snapshot: canonicalCampaignCompositionSnapshot(raw),
+      diagnostics: diagnostics([]),
+    });
+  }
+  return Object.freeze({
+    compatibility: 'migrated' as const,
+    identityVersion,
+    snapshot: canonicalCampaignCompositionSnapshot({ ...raw, identityVersion }),
+    diagnostics: diagnostics([issue(
+      'composition.snapshot.migrated',
+      'Composition identity version was inferred from the compositionId prefix.',
+      ['composition', 'identityVersion'], { severity: 'info' },
+    )]),
+  });
 }
 
 export function canonicalCampaignCompositionSnapshot(
@@ -984,18 +1155,21 @@ export class CampaignCompositionService {
       })),
     }));
     const catalogDigest = candidateDigest(candidates);
-    const compositionId = `composition.${hashHex(
-      request.policyId,
-      String(request.seed),
-      request.campaignId,
-      request.runId,
-      assignmentIdentityInput(draftAssignments),
-    )}`;
+    const compositionId = computeCampaignCompositionId(CAMPAIGN_COMPOSITION_IDENTITY_VERSION, {
+      policyId: request.policyId,
+      policyVersion: 1,
+      seed: String(request.seed),
+      campaignId: request.campaignId,
+      runId: request.runId,
+      desiredStageCount: request.desiredStageCount,
+      assignments: draftAssignments,
+    });
     const assignments: readonly CampaignCompositionAssignment[] = Object.freeze(draftAssignments.map(value =>
-      Object.freeze({ ...value, stageInstanceId: `instance.${compositionId}.${value.slotId}` })));
+      Object.freeze({ ...value, stageInstanceId: stageInstanceIdFor(compositionId, value.slotId) })));
     const snapshot = canonicalCampaignCompositionSnapshot({
       schema: CAMPAIGN_COMPOSITION_SNAPSHOT_SCHEMA,
       version: 1,
+      identityVersion: CAMPAIGN_COMPOSITION_IDENTITY_VERSION,
       policyId: request.policyId,
       policyVersion: 1,
       compositionId,
@@ -1045,9 +1219,18 @@ export class CampaignCompositionService {
   }
 
   public restore(value: unknown): CampaignCompositionResult {
-    const invalid = validateCampaignCompositionSnapshot(value);
-    if (invalid.length > 0) return failure('persisted-composition-invalid', invalid);
-    const snapshot = canonicalCampaignCompositionSnapshot(value as CampaignCompositionSnapshot);
+    const analysis = analyzeCampaignCompositionSnapshot(value);
+    if (analysis.compatibility === 'incompatible' || !analysis.snapshot) {
+      const incompatibleIdentity = analysis.diagnostics.some(item =>
+        item.code === 'composition.identity.unsupported' ||
+        item.code === 'composition.identity.version-mismatch' ||
+        item.code === 'composition.identity.mismatch');
+      return failure(
+        incompatibleIdentity ? 'persisted-composition-incompatible' : 'persisted-composition-invalid',
+        analysis.diagnostics,
+      );
+    }
+    const snapshot = analysis.snapshot;
     const catalogById = new Map(this.catalog.list().map(entry => [entry.stageId, entry]));
     const restorationIssues: CampaignCompositionDiagnostic[] = [];
     for (const assignment of snapshot.assignments) {

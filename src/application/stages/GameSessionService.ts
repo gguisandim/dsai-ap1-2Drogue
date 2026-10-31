@@ -40,6 +40,8 @@ export const COMPOSED_CAMPAIGN_ID = 'campaign.umbra-trail.composed';
 export const COMPOSED_CAMPAIGN_REVISION = 1;
 export const COMPOSED_CAMPAIGN_RUN_STORAGE_KEY = 'umbra-trail-composed-run-v1';
 export const COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT = 9;
+/** The branching policy materializes nine definitions into ten instances. */
+export const BRANCHING_CAMPAIGN_REQUIRED_INSTANCE_COUNT = 10;
 
 export type GameModeId =
   | 'campaign-random'
@@ -77,6 +79,15 @@ export interface GameSavedCampaignView {
   readonly assignments: readonly CampaignCompositionSlotSelection[];
 }
 
+export interface GameCompositionPolicyView {
+  readonly policyId: CampaignCompositionPolicyId;
+  readonly enabled: boolean;
+  readonly requiredDefinitionCount: number;
+  readonly requiredInstanceCount: number;
+  readonly diagnostics: readonly CampaignCompositionDiagnostic[];
+  readonly reason?: string;
+}
+
 export interface GameSessionMenuState {
   readonly catalogReady: boolean;
   readonly catalogDiagnostics: readonly StageCatalogDiagnostic[];
@@ -84,7 +95,13 @@ export interface GameSessionMenuState {
   readonly candidateStageCount: number;
   readonly requiredStageCount: number;
   readonly modes: readonly GameModeAvailability[];
+  readonly compositionPolicyId: CampaignCompositionPolicyId;
   readonly compositionDiagnostics: readonly CampaignCompositionDiagnostic[];
+  readonly branchingCompositionDiagnostics: readonly CampaignCompositionDiagnostic[];
+  readonly branchingCampaignAvailable: boolean;
+  readonly branchingRequiredDefinitionCount: number;
+  readonly branchingRequiredInstanceCount: number;
+  readonly policies: readonly GameCompositionPolicyView[];
   readonly randomCampaignAvailable: boolean;
   readonly individualStages: readonly GameIndividualStageView[];
   readonly savedCampaign?: GameSavedCampaignView;
@@ -117,6 +134,7 @@ export type GameSessionFailureCode =
   | 'navigation-failed'
   | 'restore-failed'
   | 'run-completed'
+  | 'policy-mismatch'
   | 'stage-not-found'
   | 'stage-incompatible'
   | 'stage-load-failed';
@@ -221,6 +239,29 @@ function graphMatchesSnapshot(graph: CampaignGraph, snapshot: CampaignCompositio
     node.depth === assignment.depth));
 }
 
+type CampaignPreview = {
+  readonly snapshot: CampaignCompositionSnapshot;
+  readonly graph: CampaignGraph;
+  readonly diagnostics: readonly CampaignCompositionDiagnostic[];
+};
+
+function previewDiagnostics(
+  result: GameSessionResult<CampaignPreview>,
+): readonly CampaignCompositionDiagnostic[] {
+  if (result.ok) return result.value.diagnostics;
+  return result.error.composition?.diagnostics ?? [];
+}
+
+function previewAvailable(
+  result: GameSessionResult<CampaignPreview>,
+  definitionCount: number,
+  instanceCount: number,
+): boolean {
+  return result.ok &&
+    result.value.snapshot.assignments.length === instanceCount &&
+    new Set(result.value.snapshot.assignments.map(item => item.stageId)).size === definitionCount;
+}
+
 function success<T>(value: T): GameSessionResult<T> {
   return Object.freeze({ ok: true as const, value });
 }
@@ -273,18 +314,56 @@ export class GameSessionService {
       : undefined;
   }
 
-  public menuState(): GameSessionMenuState {
+  public menuState(
+    policyId: CampaignCompositionPolicyId = FIXED_NINE_COMPOSITION_POLICY_ID,
+  ): GameSessionMenuState {
     const eligible = this.catalog ? [...this.catalog.eligible()] : [];
     const candidateCount = this.catalog ? this.catalog.list().filter(entry =>
       entry.eligibility === 'campaign-eligible' || entry.eligibility === 'narrative-reserved').length : 0;
-    const preview = this.previewRandomCampaign('menu.preview.seed');
-    const compositionDiagnostics = preview.ok
-      ? preview.value.diagnostics
-      : preview.error.composition?.diagnostics ?? [];
-    const randomAvailable = preview.ok && preview.value.snapshot.assignments.length ===
-      COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT;
-    const reason = randomAvailable ? undefined
-      : compositionDiagnostics[0]?.message ?? 'Catálogo insuficiente para nove fases.';
+    const fixedPreview = this.previewRandomCampaign('menu.preview.seed');
+    const branchingPreview = this.previewBranchingCampaign('menu.preview.seed');
+    const fixedDiagnostics = previewDiagnostics(fixedPreview);
+    const branchingDiagnostics = previewDiagnostics(branchingPreview);
+    const fixedAvailable = previewAvailable(
+      fixedPreview,
+      COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT,
+      COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT,
+    );
+    const branchingAvailable = previewAvailable(
+      branchingPreview,
+      COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT,
+      BRANCHING_CAMPAIGN_REQUIRED_INSTANCE_COUNT,
+    );
+    const selectedDiagnostics = policyId === BRANCHING_NINE_COMPOSITION_POLICY_ID
+      ? branchingDiagnostics : fixedDiagnostics;
+    const selectedAvailable = policyId === BRANCHING_NINE_COMPOSITION_POLICY_ID
+      ? branchingAvailable : fixedAvailable;
+    const reasonFor = (
+      available: boolean,
+      diagnostics: readonly CampaignCompositionDiagnostic[],
+    ): string | undefined => available ? undefined
+      : diagnostics[0]?.message ?? 'Catálogo insuficiente para nove fases.';
+    const reason = reasonFor(selectedAvailable, selectedDiagnostics);
+    const fixedReason = reasonFor(fixedAvailable, fixedDiagnostics);
+    const branchingReason = reasonFor(branchingAvailable, branchingDiagnostics);
+    const policies: readonly GameCompositionPolicyView[] = Object.freeze([
+      Object.freeze({
+        policyId: FIXED_NINE_COMPOSITION_POLICY_ID,
+        enabled: fixedAvailable,
+        requiredDefinitionCount: COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT,
+        requiredInstanceCount: COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT,
+        diagnostics: Object.freeze([...fixedDiagnostics]),
+        ...(fixedReason ? { reason: fixedReason } : {}),
+      }),
+      Object.freeze({
+        policyId: BRANCHING_NINE_COMPOSITION_POLICY_ID,
+        enabled: branchingAvailable,
+        requiredDefinitionCount: COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT,
+        requiredInstanceCount: BRANCHING_CAMPAIGN_REQUIRED_INSTANCE_COUNT,
+        diagnostics: Object.freeze([...branchingDiagnostics]),
+        ...(branchingReason ? { reason: branchingReason } : {}),
+      }),
+    ]);
     const individualStages = this.individualStages();
     const saved = this.savedCampaign();
     return Object.freeze({
@@ -296,13 +375,13 @@ export class GameSessionService {
       modes: Object.freeze([
         Object.freeze({
           mode: 'campaign-random' as const,
-          enabled: randomAvailable,
+          enabled: selectedAvailable,
           ...(reason ? { reason } : {}),
         }),
         Object.freeze({
           mode: 'campaign-custom' as const,
-          enabled: randomAvailable,
-          ...(reason ? { reason } : {}),
+          enabled: fixedAvailable,
+          ...(fixedReason ? { reason: fixedReason } : {}),
         }),
         Object.freeze({ mode: 'campaign-classic' as const, enabled: true }),
         Object.freeze({
@@ -312,8 +391,14 @@ export class GameSessionService {
             ? {} : { reason: 'Nenhuma fase carregável disponível.' }),
         }),
       ]),
-      compositionDiagnostics: Object.freeze([...compositionDiagnostics]),
-      randomCampaignAvailable: randomAvailable,
+      compositionPolicyId: policyId,
+      compositionDiagnostics: Object.freeze([...selectedDiagnostics]),
+      branchingCompositionDiagnostics: Object.freeze([...branchingDiagnostics]),
+      branchingCampaignAvailable: branchingAvailable,
+      branchingRequiredDefinitionCount: COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT,
+      branchingRequiredInstanceCount: BRANCHING_CAMPAIGN_REQUIRED_INSTANCE_COUNT,
+      policies,
+      randomCampaignAvailable: selectedAvailable,
       individualStages,
       ...(saved.view ? { savedCampaign: saved.view } : {}),
       ...(saved.error ? { savedCampaignError: saved.error } : {}),
@@ -354,6 +439,15 @@ export class GameSessionService {
 
   public startBranchingCampaign(seed: string): GameSessionResult<GameComposedSession> {
     return this.startComposedCampaign({ seed, policyId: BRANCHING_NINE_COMPOSITION_POLICY_ID });
+  }
+
+  public startSelectedCampaign(
+    policyId: CampaignCompositionPolicyId,
+    seed: string,
+  ): GameSessionResult<GameComposedSession> {
+    return policyId === BRANCHING_NINE_COMPOSITION_POLICY_ID
+      ? this.startBranchingCampaign(seed)
+      : this.startRandomCampaign(seed);
   }
 
   public startCustomCampaign(
@@ -463,6 +557,15 @@ export class GameSessionService {
         );
         const legacyCompatible = requestValue.policyId === FIXED_NINE_COMPOSITION_POLICY_ID &&
           stored.graph.runId === legacyRunId;
+        if (persisted && stored.status === 'active' &&
+          persisted.campaignId === COMPOSED_CAMPAIGN_ID &&
+          persisted.seed === String(requestValue.seed) &&
+          persisted.policyId !== requestValue.policyId) {
+          return failure(
+            'policy-mismatch',
+            'A run salva usa outra política de composição. Gere uma nova seed para iniciar esta política.',
+          );
+        }
         if (persisted && persisted.policyId === requestValue.policyId &&
           (stored.graph.runId === requestValue.runId || legacyCompatible) &&
           persisted.campaignId === COMPOSED_CAMPAIGN_ID &&

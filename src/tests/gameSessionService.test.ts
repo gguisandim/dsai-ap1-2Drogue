@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
+  BRANCHING_CAMPAIGN_REQUIRED_INSTANCE_COUNT,
   CAMPAIGN_RUN_SAVE_STORAGE_KEY,
   COMPOSED_CAMPAIGN_ID,
   COMPOSED_CAMPAIGN_RUN_STORAGE_KEY,
@@ -13,12 +14,16 @@ import {
 } from '../application/stages';
 import {
   BRANCHING_NINE_COMPOSITION_POLICY_ID,
+  CampaignCompositionGraphAdapter,
   CampaignCompositionService,
+  FIXED_NINE_COMPOSITION_POLICY_ID,
   FIXED_NINE_COMPOSITION_SLOTS,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   StageCatalogService,
   StageRegistry,
+  computeCampaignCompositionId,
   createFixedNineCompositionRequest,
+  type CampaignCompositionSnapshot,
   type ChapterManifest,
   type StageCampaignCatalogMetadata,
   type StageExitDefinition,
@@ -182,6 +187,32 @@ function startFixture(service: GameSessionService, seed: string) {
   return result.value;
 }
 
+/** Rebuilds the same snapshot under the historical version 1 identity. */
+function legacyCompositionSnapshot(
+  value: CampaignCompositionSnapshot,
+): CampaignCompositionSnapshot {
+  const compositionId = computeCampaignCompositionId(1, {
+    policyId: value.policyId,
+    policyVersion: value.policyVersion,
+    seed: value.seed,
+    campaignId: value.campaignId,
+    runId: value.runId,
+    desiredStageCount: value.desiredStageCount,
+    assignments: value.assignments.map(
+      ({ stageInstanceId: _ignored, ...assignment }) => assignment,
+    ),
+  });
+  const { identityVersion: _version, ...rest } = value;
+  return {
+    ...rest,
+    compositionId,
+    assignments: value.assignments.map(assignment => ({
+      ...assignment,
+      stageInstanceId: `instance.${compositionId}.${assignment.slotId}`,
+    })),
+  };
+}
+
 describe('GameSessionService', () => {
   it('reports the real catalog as insufficient for random/custom while keeping classic and individual', () => {
     const service = new GameSessionService();
@@ -242,6 +273,116 @@ describe('GameSessionService', () => {
     expect(resumed.value.persistence).toBe('restored');
     expect(resumed.value.graph).toEqual(started.value.graph);
     expect(resumed.value.snapshot).toEqual(started.value.snapshot);
+  });
+
+  it('exposes both composition policies and keeps branching unavailable in the real catalog', () => {
+    const service = new GameSessionService();
+    const fixed = service.menuState();
+    expect(fixed.compositionPolicyId).toBe(FIXED_NINE_COMPOSITION_POLICY_ID);
+    expect(fixed.policies.map(item => item.policyId)).toEqual([
+      FIXED_NINE_COMPOSITION_POLICY_ID, BRANCHING_NINE_COMPOSITION_POLICY_ID,
+    ]);
+    expect(fixed.policies.every(item => item.enabled)).toBe(false);
+    expect(fixed.branchingCampaignAvailable).toBe(false);
+    expect(fixed.branchingRequiredDefinitionCount).toBe(9);
+    expect(fixed.branchingRequiredInstanceCount).toBe(10);
+    expect(fixed.branchingCompositionDiagnostics.length).toBeGreaterThan(0);
+    expect(fixed.policies[1].reason).toBeTruthy();
+
+    const branching = service.menuState(BRANCHING_NINE_COMPOSITION_POLICY_ID);
+    expect(branching.compositionPolicyId).toBe(BRANCHING_NINE_COMPOSITION_POLICY_ID);
+    expect(branching.modes.find(item => item.mode === 'campaign-random')?.enabled).toBe(false);
+    expect(branching.modes.find(item => item.mode === 'campaign-custom')?.enabled).toBe(false);
+    expect(branching.modes.find(item => item.mode === 'campaign-classic')?.enabled).toBe(true);
+    expect(branching.modes.find(item => item.mode === 'stage-individual')?.enabled).toBe(true);
+  });
+
+  it('enables both policies from a sufficient fixture and keeps their identities distinct', () => {
+    const service = new GameSessionService({ registry: registryFor(fanOutStages()) });
+    const fixed = service.menuState();
+    const branching = service.menuState(BRANCHING_NINE_COMPOSITION_POLICY_ID);
+    expect(fixed.policies.every(item => item.enabled)).toBe(true);
+    expect(branching.branchingCampaignAvailable).toBe(true);
+    expect(branching.modes.find(item => item.mode === 'campaign-random')?.enabled).toBe(true);
+
+    const linear = startFixture(service, 'seed.session.same-policy');
+    const branched = service.startBranchingCampaign('seed.session.same-policy');
+    expect(branched.ok).toBe(true);
+    if (!branched.ok) return;
+    expect(linear.snapshot.policyId).toBe(FIXED_NINE_COMPOSITION_POLICY_ID);
+    expect(branched.value.snapshot.policyId).toBe(BRANCHING_NINE_COMPOSITION_POLICY_ID);
+    expect(branched.value.snapshot.assignments)
+      .toHaveLength(BRANCHING_CAMPAIGN_REQUIRED_INSTANCE_COUNT);
+    expect(new Set(branched.value.snapshot.assignments.map(item => item.stageId)).size).toBe(9);
+    expect(branched.value.runId).not.toBe(linear.runId);
+    expect(branched.value.snapshot.compositionId).not.toBe(linear.snapshot.compositionId);
+  });
+
+  it('restores the persisted branching policy and its graph', () => {
+    const registry = registryFor(fanOutStages());
+    const storage = new MemorySaveStorage();
+    const seed = 'seed.session.branching-policy';
+    const created = new GameSessionService({ registry, storage }).startBranchingCampaign(seed);
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    const menu = new GameSessionService({ registry, storage }).menuState();
+    expect(menu.savedCampaign?.policyId).toBe(BRANCHING_NINE_COMPOSITION_POLICY_ID);
+    expect(menu.savedCampaign?.status).toBe('active');
+
+    const resumed = new GameSessionService({ registry, storage }).startBranchingCampaign(seed);
+    expect(resumed.ok).toBe(true);
+    if (!resumed.ok) return;
+    expect(resumed.value.persistence).toBe('restored');
+    expect(resumed.value.snapshot.policyId).toBe(BRANCHING_NINE_COMPOSITION_POLICY_ID);
+    expect(resumed.value.graph).toEqual(created.value.graph);
+  });
+
+  it('refuses another policy over an active saved run with the same seed', () => {
+    const registry = registryFor(fanOutStages());
+    const storage = new MemorySaveStorage();
+    const seed = 'seed.session.policy-guard';
+    startFixture(new GameSessionService({ registry, storage }), seed);
+    const bytes = storage.read(COMPOSED_CAMPAIGN_RUN_STORAGE_KEY);
+    expect(bytes).toBeDefined();
+
+    const mismatch = new GameSessionService({ registry, storage }).startBranchingCampaign(seed);
+    expect(mismatch).toMatchObject({ ok: false, error: { code: 'policy-mismatch' } });
+    expect(storage.read(COMPOSED_CAMPAIGN_RUN_STORAGE_KEY)).toBe(bytes);
+
+    const fresh = new GameSessionService({ registry, storage })
+      .startBranchingCampaign('seed.session.policy-guard.new');
+    expect(fresh.ok).toBe(true);
+    if (fresh.ok) expect(fresh.value.persistence).toBe('created');
+  });
+
+  it('restores a legacy version 1 composition snapshot without recomposition', () => {
+    const registry = registryFor(fanOutStages());
+    const storage = new MemorySaveStorage();
+    const seed = 'seed.session.legacy-identity';
+    const composed = new GameSessionService({ registry, storage }).startRandomCampaign(seed);
+    expect(composed.ok).toBe(true);
+    if (!composed.ok) return;
+
+    const legacyComposition = legacyCompositionSnapshot(composed.value.snapshot);
+    const generated = new CampaignCompositionGraphAdapter().generate(legacyComposition);
+    expect(generated.ok).toBe(true);
+    if (!generated.ok) return;
+    const legacyState = createCampaignRunState(generated.value, legacyComposition);
+    const saves = new CampaignRunSaveService({
+      storage,
+      storageKey: COMPOSED_CAMPAIGN_RUN_STORAGE_KEY,
+    });
+    expect(saves.save(legacyState, composed.value.router.state()).ok).toBe(true);
+
+    const resumed = new GameSessionService({ registry, storage }).startRandomCampaign(seed);
+    expect(resumed.ok).toBe(true);
+    if (!resumed.ok) return;
+    expect(resumed.value.persistence).toBe('restored');
+    expect(resumed.value.snapshot.compositionId).toBe(legacyComposition.compositionId);
+    expect(resumed.value.snapshot.assignments.map(item => item.stageInstanceId))
+      .toEqual(legacyComposition.assignments.map(item => item.stageInstanceId));
+    expect(resumed.value.graph).toEqual(generated.value);
   });
 
   it('persists the composed snapshot under its own key and restores it without recomposition', () => {

@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import {
+  BRANCHING_CAMPAIGN_REQUIRED_INSTANCE_COUNT,
+  COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT,
   GameSessionService,
   createBrowserCampaignSaveStorage,
   type GameComposedSession,
@@ -7,7 +9,12 @@ import {
   type GameSessionFailure,
   type GameSessionMenuState,
 } from '../application/stages';
-import { FIXED_NINE_COMPOSITION_SLOTS } from '../stages';
+import {
+  BRANCHING_NINE_COMPOSITION_POLICY_ID,
+  FIXED_NINE_COMPOSITION_POLICY_ID,
+  FIXED_NINE_COMPOSITION_SLOTS,
+  type CampaignCompositionPolicyId,
+} from '../stages';
 import { ProgressionService } from '../progression';
 import type { GameSceneCampaignRuntime } from './GameScene';
 
@@ -18,6 +25,11 @@ const MODE_LABELS: Readonly<Record<GameMode, string>> = Object.freeze({
   'campaign-custom': 'CAMPANHA PERSONALIZADA',
   'campaign-classic': 'CAMPANHA CLÁSSICA',
   'stage-individual': 'JOGAR FASE',
+});
+
+const POLICY_LABELS: Readonly<Record<CampaignCompositionPolicyId, string>> = Object.freeze({
+  [FIXED_NINE_COMPOSITION_POLICY_ID]: 'LINEAR',
+  [BRANCHING_NINE_COMPOSITION_POLICY_ID]: 'RAMIFICADA',
 });
 
 const PAGE_SIZE = 8;
@@ -42,6 +54,7 @@ export class GameModesScene extends Phaser.Scene {
   private service!: GameSessionService;
   private menuState!: GameSessionMenuState;
   private mode: GameMode = 'campaign-random';
+  private policy: CampaignCompositionPolicyId = FIXED_NINE_COMPOSITION_POLICY_ID;
   private content: Phaser.GameObjects.GameObject[] = [];
   private modeButtons: Array<{ readonly mode: GameMode; readonly background: Phaser.GameObjects.Rectangle;
     readonly label: Phaser.GameObjects.Text }> = [];
@@ -61,6 +74,10 @@ export class GameModesScene extends Phaser.Scene {
     this.service = new GameSessionService({ storage: createBrowserCampaignSaveStorage() });
     this.menuState = this.service.menuState();
     const savedCampaign = this.menuState.savedCampaign;
+    if (savedCampaign?.status === 'active') {
+      this.policy = savedCampaign.policyId;
+      this.menuState = this.service.menuState(this.policy);
+    }
     this.seed = savedCampaign?.status === 'active' ? savedCampaign.seed : generateSeed();
     this.customSelections.clear();
     savedCampaign?.assignments.forEach(assignment => {
@@ -124,7 +141,7 @@ export class GameModesScene extends Phaser.Scene {
       return;
     }
     if (event.key === 'Enter') {
-      this.startRandom();
+      this.startSelectedCampaign();
       return;
     }
     if (event.key.length === 1 && /[a-zA-Z0-9._-]/.test(event.key)) {
@@ -163,6 +180,22 @@ export class GameModesScene extends Phaser.Scene {
     return this.menuState.modes.find(item => item.mode === mode)?.reason;
   }
 
+  private policyAvailable(policyId: CampaignCompositionPolicyId): boolean {
+    return this.menuState.policies.find(item => item.policyId === policyId)?.enabled === true;
+  }
+
+  private policyReason(policyId: CampaignCompositionPolicyId): string | undefined {
+    return this.menuState.policies.find(item => item.policyId === policyId)?.reason;
+  }
+
+  private selectPolicy(policyId: CampaignCompositionPolicyId): void {
+    if (policyId === this.policy) return;
+    this.policy = policyId;
+    this.menuState = this.service.menuState(policyId);
+    this.syncModeButtons();
+    this.renderContent();
+  }
+
   private button(
     x: number, y: number, label: string, action: () => void, enabled = true,
   ): Phaser.GameObjects.Rectangle {
@@ -178,47 +211,73 @@ export class GameModesScene extends Phaser.Scene {
 
   private renderRandom(): void {
     this.panelTitle('CAMPANHA ALEATÓRIA');
-    const reason = this.availabilityReason('campaign-random');
-    this.track(this.add.text(760, 150, [
-      `Fases candidatas: ${this.menuState.candidateStageCount} / ${this.menuState.requiredStageCount}`,
+    const enabled = this.policyAvailable(this.policy);
+    const reason = this.policyReason(this.policy);
+    const instanceCount = this.policy === BRANCHING_NINE_COMPOSITION_POLICY_ID
+      ? BRANCHING_CAMPAIGN_REQUIRED_INSTANCE_COUNT
+      : COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT;
+
+    (Object.keys(POLICY_LABELS) as CampaignCompositionPolicyId[]).forEach((policyId, index) => {
+      const selected = policyId === this.policy;
+      const x = 675 + index * 170;
+      const background = this.track(this.add.rectangle(x, 144, 150, 30,
+        selected ? 0x9b3f68 : 0x2d2038, 1)
+        .setStrokeStyle(2, selected ? 0xf6d77a : 0x765683)
+        .setInteractive({ useHandCursor: true }));
+      this.track(this.add.text(x, 144, POLICY_LABELS[policyId], {
+        fontFamily: 'Courier New, monospace', fontSize: '14px',
+        color: selected ? '#fff1b8' : '#b89dc7', fontStyle: 'bold',
+      }).setOrigin(0.5));
+      background.on('pointerdown', () => this.selectPolicy(policyId));
+    });
+
+    this.track(this.add.text(760, 172, [
+      `Política: ${POLICY_LABELS[this.policy]}`,
+      `Fases candidatas: ${this.menuState.candidateStageCount} / ${COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT}`,
+      `Instâncias exigidas: ${instanceCount}`,
       reason ? `Indisponível: ${reason}` : 'Composição validada com o catálogo real.',
       this.menuState.savedCampaign?.status === 'completed'
         ? `Campanha anterior concluída em ${this.menuState.savedCampaign.currentStageId}.`
         : this.menuState.savedCampaign
-          ? `Retomada disponível: ${this.menuState.savedCampaign.currentStageId}`
+          ? `Retomada disponível (${POLICY_LABELS[this.menuState.savedCampaign.policyId]}): `
+            + `${this.menuState.savedCampaign.currentStageId}`
           : 'Nenhuma campanha composta salva.',
       ...(this.menuState.savedCampaignError
         ? [`Save composto inválido: ${this.menuState.savedCampaignError}`]
         : []),
     ].join('\n'), {
-      fontFamily: 'Courier New, monospace', fontSize: '14px', color: '#b89dc7',
-      wordWrap: { width: 420 }, lineSpacing: 4,
+      fontFamily: 'Courier New, monospace', fontSize: '13px', color: '#b89dc7',
+      wordWrap: { width: 440 }, lineSpacing: 4, align: 'center',
     }).setOrigin(0.5, 0));
 
-    this.track(this.add.text(760, 250, 'SEED', {
+    this.track(this.add.text(760, 284, 'SEED', {
       fontFamily: 'Courier New, monospace', fontSize: '14px', color: '#b89dc7',
     }).setOrigin(0.5));
-    this.seedText = this.track(this.add.text(760, 280, this.seed || '—', {
+    this.seedText = this.track(this.add.text(760, 312, this.seed || '—', {
       fontFamily: 'Courier New, monospace', fontSize: '18px', color: '#fff1b8',
       backgroundColor: '#241a30', padding: { x: 10, y: 6 },
     }).setOrigin(0.5));
-    this.track(this.add.text(760, 308, 'Digite para editar a seed; Enter inicia.', {
+    this.track(this.add.text(760, 340, 'Digite para editar a seed; Enter inicia.', {
       fontFamily: 'Courier New, monospace', fontSize: '12px', color: '#75667e',
     }).setOrigin(0.5));
 
-    this.button(760, 370, 'GERAR NOVA SEED', () => {
+    this.button(760, 388, 'GERAR NOVA SEED', () => {
       this.seed = generateSeed();
       this.seedText?.setText(this.seed);
     });
-    this.button(760, 432, 'INICIAR CAMPANHA', () => this.startRandom(),
-      this.menuState.randomCampaignAvailable);
+    this.button(760, 446, `INICIAR ${POLICY_LABELS[this.policy]}`,
+      () => this.startSelectedCampaign(), enabled);
     if (this.menuState.savedCampaign?.status === 'active') {
-      this.button(760, 494, 'RETOMAR CAMPANHA SALVA', () => {
-        this.seed = this.menuState.savedCampaign?.seed ?? this.seed;
-        this.startRandom();
-      }, this.menuState.randomCampaignAvailable);
+      this.button(760, 504, 'RETOMAR CAMPANHA SALVA', () => {
+        const saved = this.menuState.savedCampaign;
+        if (!saved) return;
+        this.policy = saved.policyId;
+        this.seed = saved.seed;
+        this.menuState = this.service.menuState(this.policy);
+        this.startSelectedCampaign();
+      });
     }
-    this.renderFeedback(760, 560);
+    this.renderFeedback(760, 554);
   }
 
   private renderFeedback(x: number, y: number): void {
@@ -228,8 +287,10 @@ export class GameModesScene extends Phaser.Scene {
     }).setOrigin(0.5, 0));
   }
 
-  private startRandom(): void {
-    const started = this.service.startRandomCampaign(this.seed);
+  private startSelectedCampaign(): void {
+    const started = this.policy === BRANCHING_NINE_COMPOSITION_POLICY_ID
+      ? this.service.startBranchingCampaign(this.seed)
+      : this.service.startRandomCampaign(this.seed);
     if (!started.ok) {
       this.feedback?.setText(failureMessage(started.error));
       return;
@@ -347,9 +408,10 @@ export class GameModesScene extends Phaser.Scene {
     }).setOrigin(0.5, 0));
     this.renderCustomCandidates();
     this.button(760, 620, 'VALIDAR SELEÇÃO', () => this.validateCustom(),
-      this.menuState.randomCampaignAvailable);
+      this.policyAvailable(FIXED_NINE_COMPOSITION_POLICY_ID));
     this.button(760, 676, 'INICIAR PERSONALIZADA', () => this.startCustom(),
-      this.menuState.randomCampaignAvailable && this.customSelections.size === FIXED_NINE_COMPOSITION_SLOTS.length);
+      this.policyAvailable(FIXED_NINE_COMPOSITION_POLICY_ID) &&
+      this.customSelections.size === FIXED_NINE_COMPOSITION_SLOTS.length);
     this.renderFeedback(1100, 560);
   }
 

@@ -14,6 +14,21 @@ export const CAMPAIGN_COMPOSITION_SNAPSHOT_SCHEMA = 'umbra-campaign-composition'
 export const FIXED_NINE_COMPOSITION_POLICY_ID = 'umbra.fixed-nine.v1' as const;
 export const BRANCHING_NINE_COMPOSITION_POLICY_ID = 'umbra.branching-nine.v1' as const;
 
+/**
+ * Composition identity versions. Version 1 is the historical 32-bit FNV-1a
+ * identifier kept only for reading persisted snapshots. Version 2 is written by
+ * new compositions and uses two independent 32-bit accumulators (64 bits).
+ * The version is encoded in the `compositionId` prefix so a persisted ID is
+ * never silently reinterpreted.
+ */
+export const CAMPAIGN_COMPOSITION_LEGACY_IDENTITY_VERSION = 1 as const;
+export const CAMPAIGN_COMPOSITION_IDENTITY_VERSION = 2 as const;
+export const CAMPAIGN_COMPOSITION_V2_IDENTITY_PREFIX = 'composition.v2.' as const;
+
+export type CampaignCompositionIdentityVersion =
+  | typeof CAMPAIGN_COMPOSITION_LEGACY_IDENTITY_VERSION
+  | typeof CAMPAIGN_COMPOSITION_IDENTITY_VERSION;
+
 export type CampaignCompositionPolicyId =
   | typeof FIXED_NINE_COMPOSITION_POLICY_ID
   | typeof BRANCHING_NINE_COMPOSITION_POLICY_ID;
@@ -95,6 +110,12 @@ export interface CampaignCompositionAssignment {
 export interface CampaignCompositionSnapshot {
   readonly schema: typeof CAMPAIGN_COMPOSITION_SNAPSHOT_SCHEMA;
   readonly version: 1;
+  /**
+   * Additive identity discriminator introduced by 9.6E.3. Historical snapshots
+   * omit it; their identity version is inferred from the `compositionId`
+   * prefix. New snapshots always declare version 2.
+   */
+  readonly identityVersion?: CampaignCompositionIdentityVersion;
   readonly policyId: CampaignCompositionPolicyId;
   readonly policyVersion: 1;
   readonly compositionId: string;
@@ -137,6 +158,10 @@ export type CampaignCompositionDiagnosticCode =
   | 'composition.graph.generation-failed'
   | 'composition.graph.incompatible'
   | 'composition.restore.failed'
+  | 'composition.identity.unsupported'
+  | 'composition.identity.version-mismatch'
+  | 'composition.identity.mismatch'
+  | 'composition.snapshot.migrated'
   | 'composition.candidate.not-selected';
 
 export interface CampaignCompositionDiagnostic {
@@ -165,6 +190,7 @@ export type CampaignCompositionFailureCode =
   | 'manual-selection-invalid'
   | 'composition-impossible'
   | 'persisted-composition-invalid'
+  | 'persisted-composition-incompatible'
   | 'stage-revision-incompatible'
   | 'graph-generation-failed'
   | 'restore-failed';
@@ -172,6 +198,25 @@ export type CampaignCompositionFailureCode =
 export interface CampaignCompositionValue {
   readonly snapshot: CampaignCompositionSnapshot;
   readonly graph: CampaignGraph;
+  readonly diagnostics: readonly CampaignCompositionDiagnostic[];
+}
+
+/**
+ * Persisted-snapshot classification. `legacy-compatible` snapshots are read
+ * without rewriting their identifiers; `migrated` snapshots receive only the
+ * additive identity discriminator in memory.
+ */
+export type CampaignCompositionSnapshotCompatibility =
+  | 'current'
+  | 'legacy-compatible'
+  | 'migrated'
+  | 'incompatible';
+
+export interface CampaignCompositionSnapshotAnalysis {
+  readonly compatibility: CampaignCompositionSnapshotCompatibility;
+  readonly identityVersion?: CampaignCompositionIdentityVersion;
+  /** Canonical snapshot ready for restoration; absent when incompatible. */
+  readonly snapshot?: CampaignCompositionSnapshot;
   readonly diagnostics: readonly CampaignCompositionDiagnostic[];
 }
 
