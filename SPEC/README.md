@@ -63,4 +63,5 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-31 | [Template de autoria de capítulos independentes — Etapa 9.7A](./2026-10-31-etapa-9-7a-template-autoria-capitulos.md) |
 | 2026-10-31 | [CLI de criação, validação e inspeção de capítulos — Etapa 9.7B](./2026-10-31-etapa-9-7b-cli-autoria-validacao-capitulos.md) |
 | 2026-10-31 | [Registro, execução visual e integração de assets reais — Etapa 9.7C](./2026-10-31-etapa-9-7c-registro-execucao-visual-assets.md) |
+| 2026-10-31 | [World Lab visual e padronização da direção de arte — Etapa 9.7D](./2026-10-31-etapa-9-7d-world-lab-visual-direcao-arte.md) |
 | 2026-10-31 | [Estética e efeitos do capítulo inicial “Raiz do Mundo” — Etapa 10.0](./2026-10-31-etapa-10-0-estetica-efeitos-capitulo-inicial.md) |
