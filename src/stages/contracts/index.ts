@@ -1,6 +1,7 @@
 export * from './StageManifest';
 export * from './StageCapabilities';
 export * from './StagePresentation';
+export * from './StageCatalog';
 export * from './StageModule';
 export * from './StageDiagnostic';
 export * from './StageLoad';

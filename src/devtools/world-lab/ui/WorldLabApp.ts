@@ -154,6 +154,32 @@ function renderMacroInspector(
   appendField(progress, 'escolhas atuais', view.connections.length);
   container.append(progress);
 
+  const catalogTitle = document.createElement('h3');
+  catalogTitle.textContent = `Catálogo dinâmico (${view.catalog.entries.length})`;
+  container.append(catalogTitle);
+  const catalog = document.createElement('ul');
+  catalog.className = 'wl-choice-list wl-stage-catalog';
+  view.catalog.entries.forEach(entry => {
+    const item = document.createElement('li');
+    item.dataset.stageId = entry.stageId;
+    item.dataset.eligibility = entry.eligibility;
+    const label = document.createElement('strong');
+    label.textContent = `${entry.title} · ${entry.stageId}`;
+    const status = document.createElement('span');
+    status.textContent = [
+      `${entry.chapterId}@${entry.chapterRevision}`,
+      `manifesto ${entry.manifestRevision}`,
+      entry.loadability,
+      entry.eligibility,
+      `capabilities: ${entry.capabilityIds.join(', ') || 'nenhuma'}`,
+      `dependências: ${entry.dependencyChapterIds.join(', ') || 'nenhuma'}`,
+      `diagnósticos: ${entry.diagnosticCodes.join(', ') || 'nenhum'}`,
+    ].join(' · ');
+    item.append(label, status);
+    catalog.append(item);
+  });
+  container.append(catalog);
+
   const title = document.createElement('h3');
   title.textContent = 'Seleção';
   container.append(title);

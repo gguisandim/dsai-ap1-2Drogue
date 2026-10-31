@@ -52,3 +52,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-30 | [Contratos de autoria independente, capabilities e compatibilidade — Etapa 9.5](./2026-10-30-etapa-9-5-contratos-autoria-capabilities.md) |
 | 2026-10-30 | [Apresentação visual extensível de fases e biomas — Etapa 9.5B.1](./2026-10-30-etapa-9-5b1-apresentacao-visual-biomas.md) |
 | 2026-10-30 | [Apresentação de entidades e ambientação por fase — Etapa 9.5B.2](./2026-10-30-etapa-9-5b2-entidades-ambientacao.md) |
+| 2026-10-31 | [Catálogo dinâmico de fases — Etapa 9.6A](./2026-10-31-etapa-9-6a-catalogo-dinamico-fases.md) |

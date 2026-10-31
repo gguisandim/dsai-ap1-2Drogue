@@ -115,6 +115,17 @@ export type {
   StageVisualLayer,
   StageVisualTextureDefinition,
   StageVisualThemeDefinition,
+  StageCampaignAvailability,
+  StageCampaignCatalogMetadata,
+  StageCampaignDifficultyRange,
+  StageCampaignParticipation,
+  StageCampaignRole,
+  StageCatalogCandidate,
+  StageCatalogDiagnostic,
+  StageCatalogEligibility,
+  StageCatalogEntry,
+  StageCatalogLoadability,
+  StageCatalogQuery,
 } from './contracts';
 export { StageRegistry, StageRegistryError } from './runtime/StageRegistry';
 export type { StageRegistryErrorCode } from './runtime/StageRegistry';
@@ -129,6 +140,12 @@ export { LegacyLevelAdapter } from './compatibility/LegacyLevelAdapter';
 export { ProceduralStageAdapter } from './compatibility/ProceduralStageAdapter';
 export { StageLoader } from './runtime/StageLoader';
 export type { StageLoaderOptions } from './runtime/StageLoader';
+export { StageCatalogService } from './runtime/StageCatalogService';
+export type {
+  StageCatalogFailure,
+  StageCatalogResult,
+  StageCatalogSource,
+} from './runtime/StageCatalogService';
 export {
   LEGACY_STAGE_VISUAL_RESOURCES,
   LEGACY_RESOLVED_STAGE_PRESENTATION,

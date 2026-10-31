@@ -1,6 +1,7 @@
 import type { GeneratorOptions, PresetId } from '../../procedural';
 import type { ChapterDependency, StageCapabilityRequirement } from './StageCapabilities';
 import type { ChapterVisualResources, StagePresentationDefinition } from './StagePresentation';
+import type { StageCampaignCatalogMetadata } from './StageCatalog';
 
 export type ChapterId = string;
 export type StageId = string;
@@ -70,5 +71,6 @@ export interface StageManifest {
   readonly completionMissionId?: MissionId;
   readonly capabilities?: readonly StageCapabilityRequirement[];
   readonly presentation?: StagePresentationDefinition;
+  readonly campaignCatalog?: StageCampaignCatalogMetadata;
   readonly tags?: readonly string[];
 }

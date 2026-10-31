@@ -80,6 +80,21 @@ describe('Umbra World Lab macro campaign UI', () => {
     expect(macro.nodes.filter(node => node.kind === 'milestone')).toHaveLength(4);
   });
 
+  it('inspects the dynamic stage catalog without offering selection policy', () => {
+    mount();
+    openMacro();
+
+    expect(document.querySelectorAll('.wl-stage-catalog [data-stage-id]')).toHaveLength(
+      macro.catalog.entries.length,
+    );
+    expect(document.querySelector(`[data-stage-id="${IGAPO_DAS_MEMORIAS_STAGE_ID}"]`)
+      ?.getAttribute('data-eligibility')).toBe('campaign-eligible');
+    expect(document.body.textContent).toContain('Catálogo dinâmico');
+    expect(document.body.textContent).toContain('chapter.aguas@1');
+    expect(document.body.textContent).toContain('manifesto 1');
+    expect(document.body.textContent).not.toContain('selecionar 9');
+  });
+
   it('selects Igapó and opens its authored map without a legacy placeholder', () => {
     mount();
     openMacro();

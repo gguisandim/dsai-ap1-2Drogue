@@ -1,5 +1,6 @@
 import {
   IGAPO_DAS_MEMORIAS_STAGE_ID,
+  StageCatalogService,
   StageLoader,
   StageRegistry,
   applyCampaignRegionBindings,
@@ -85,6 +86,12 @@ describe('campaign chapter catalog', () => {
       stageIds: ['stage.test.catalog'],
     });
     expect(reg.getChapter('chapter.aguas')).toBeDefined();
+    const discovered = StageCatalogService.create(reg);
+    expect(discovered.ok).toBe(true);
+    if (discovered.ok) expect(discovered.value.get('stage.test.catalog')).toMatchObject({
+      chapterId: 'chapter.test',
+      eligibility: 'individual-only',
+    });
   });
 
   it('still registers the real Igapó chapter through the same catalog function', () => {

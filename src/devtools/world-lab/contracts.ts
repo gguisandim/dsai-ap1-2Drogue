@@ -5,6 +5,7 @@ export type WorldLabDiagnosticOrigin =
   | 'stage-loader'
   | 'physical-exit-resolver'
   | 'campaign-exit-binder'
+  | 'stage-catalog'
   | 'integration'
   | 'snapshot';
 
@@ -251,7 +252,31 @@ export interface WorldLabMacroRouteView {
   readonly edges: readonly WorldLabMacroEdgeView[];
   readonly progress: WorldLabMacroProgressView;
   readonly connections: readonly WorldLabMacroConnectionView[];
+  readonly catalog: WorldLabStageCatalogView;
   readonly graph: WorldLabDocument;
+}
+
+export interface WorldLabStageCatalogEntryView {
+  readonly stageId: string;
+  readonly chapterId: string;
+  readonly manifestRevision: number;
+  readonly chapterRevision: number;
+  readonly title: string;
+  readonly role: 'standard' | 'milestone' | 'special';
+  readonly regionIds: readonly string[];
+  readonly biomeIds: readonly string[];
+  readonly loadability: string;
+  readonly eligibility: string;
+  readonly capabilityIds: readonly string[];
+  readonly dependencyChapterIds: readonly string[];
+  readonly diagnosticCodes: readonly string[];
+}
+
+export interface WorldLabStageCatalogView {
+  readonly entries: readonly WorldLabStageCatalogEntryView[];
+  readonly eligibleStageIds: readonly string[];
+  readonly incompatibleStageIds: readonly string[];
+  readonly diagnostics: readonly WorldLabDiagnostic[];
 }
 
 export type WorldLabMacroRouteResult =

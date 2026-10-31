@@ -28,6 +28,10 @@ const CONDITION_TYPES = new Set([
   'flag.equals', 'mission.status', 'progression.unlocked', 'all', 'any', 'not',
 ]);
 const MISSION_STATUSES = new Set(['locked', 'available', 'active', 'completed', 'failed']);
+const CATALOG_AVAILABILITY = new Set(['available', 'planned']);
+const CATALOG_PARTICIPATION = new Set(['candidate', 'individual-only', 'narrative-milestone']);
+const CATALOG_ROLES = new Set(['standard', 'milestone', 'special']);
+const CATALOG_REVISIT = new Set(['forbidden', 'checkpoint', 'repeatable']);
 
 function isStableId(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0 && value === value.trim() && STABLE_ID.test(value);
@@ -249,6 +253,7 @@ export class StageValidator {
     }
 
     this.validateCapabilities(manifest.capabilities, ['manifest', 'capabilities'], stageId, diagnostics);
+    this.validateCampaignCatalog(module, diagnostics);
 
     if (manifest.layout.kind === 'authored') {
       if (!module.authoredLevel) {
@@ -391,6 +396,109 @@ export class StageValidator {
         message: 'Stage completionMissionId is not declared by the module.',
         path: ['manifest', 'completionMissionId'], stageId, referenceId: manifest.completionMissionId,
       });
+    }
+  }
+
+  private validateCampaignCatalog(module: StageModule, diagnostics: StageDiagnostic[]): void {
+    const metadata = module.manifest.campaignCatalog;
+    if (metadata === undefined) return;
+    const stageId = module.manifest.id;
+    const base = ['manifest', 'campaignCatalog'] as const;
+    const add = (
+      code: string,
+      message: string,
+      suffix: readonly (string | number)[],
+      referenceId?: string,
+    ): void => {
+      diagnostics.push({
+        code, severity: 'error', message, path: [...base, ...suffix], stageId,
+        ...(referenceId ? { referenceId } : {}),
+      });
+    };
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+      add('stage.catalog.invalid', 'campaignCatalog must be an object.', []);
+      return;
+    }
+    if (!CATALOG_AVAILABILITY.has(metadata.availability)) add(
+      'stage.catalog.availability.invalid', 'Catalog availability is invalid.', ['availability'],
+      String(metadata.availability),
+    );
+    if (!CATALOG_PARTICIPATION.has(metadata.participation)) add(
+      'stage.catalog.participation.invalid', 'Catalog participation is invalid.', ['participation'],
+      String(metadata.participation),
+    );
+    if (!CATALOG_ROLES.has(metadata.role)) add(
+      'stage.catalog.role.invalid', 'Catalog role is invalid.', ['role'], String(metadata.role),
+    );
+    if (metadata.participation === 'narrative-milestone' && metadata.role !== 'milestone') add(
+      'stage.catalog.milestone-role.invalid',
+      'Narrative milestone participation requires the milestone role.', ['role'],
+    );
+    const validateIds = (value: readonly string[] | undefined, field: string): void => {
+      if (value === undefined) return;
+      if (!Array.isArray(value)) {
+        add('stage.catalog.ids.invalid', `${field} must be an array.`, [field]);
+        return;
+      }
+      const seen = new Set<string>();
+      value.forEach((id, index) => {
+        if (!isStableId(id)) add(
+          'stage.catalog.id.invalid', `${field} contains an invalid stable ID.`, [field, index], String(id),
+        );
+        else if (seen.has(id)) add(
+          'stage.catalog.id.duplicate', `${field} contains a duplicate ID.`, [field, index], id,
+        );
+        seen.add(id);
+      });
+    };
+    validateIds(metadata.regionIds, 'regionIds');
+    validateIds(metadata.biomeIds, 'biomeIds');
+    validateIds(metadata.allowedActIds, 'allowedActIds');
+    validateIds(metadata.requiredEventIds, 'requiredEventIds');
+    validateIds(metadata.requiredBeatIds, 'requiredBeatIds');
+    validateIds(metadata.providesBeatIds, 'providesBeatIds');
+    if (Array.isArray(metadata.biomeIds)) metadata.biomeIds.forEach((biomeId, index) => {
+      if (!isStableId(biomeId)) return;
+      const capabilityId = `biome.${biomeId}`;
+      const runtime = this.runtimeCapabilities.get(capabilityId);
+      if (!runtime) add(
+        'capability.unknown', `Runtime does not recognize catalog biome ${biomeId}.`,
+        ['biomeIds', index], capabilityId,
+      );
+      else if (runtime.status !== 'supported') add(
+        'capability.unavailable', `Catalog biome ${biomeId} is planned but not implemented.`,
+        ['biomeIds', index], capabilityId,
+      );
+    });
+    if (metadata.difficulty !== undefined &&
+      (!Number.isInteger(metadata.difficulty.minimum) || metadata.difficulty.minimum < 1 ||
+        !Number.isInteger(metadata.difficulty.maximum) ||
+        metadata.difficulty.maximum < metadata.difficulty.minimum)) add(
+      'stage.catalog.difficulty.invalid',
+      'Catalog difficulty must be a positive inclusive range.', ['difficulty'],
+    );
+    if (metadata.maximumPhysicalExits !== undefined &&
+      ![1, 2, 3].includes(metadata.maximumPhysicalExits)) add(
+      'stage.catalog.exit-capacity.invalid',
+      'maximumPhysicalExits must be 1, 2 or 3.', ['maximumPhysicalExits'],
+    );
+    if (metadata.revisit !== undefined && !CATALOG_REVISIT.has(metadata.revisit)) add(
+      'stage.catalog.revisit.invalid', 'Catalog revisit policy is invalid.', ['revisit'],
+      String(metadata.revisit),
+    );
+    if (metadata.participation === 'candidate') {
+      if (!metadata.difficulty) add(
+        'stage.catalog.candidate.difficulty-required',
+        'Campaign candidates require a difficulty range.', ['difficulty'],
+      );
+      if (!metadata.allowedActIds?.length) add(
+        'stage.catalog.candidate.acts-required',
+        'Campaign candidates require at least one allowed act.', ['allowedActIds'],
+      );
+      if (!metadata.maximumPhysicalExits) add(
+        'stage.catalog.candidate.exit-capacity-required',
+        'Campaign candidates require physical exit capacity.', ['maximumPhysicalExits'],
+      );
     }
   }
 

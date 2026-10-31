@@ -70,6 +70,25 @@ function cloneManifest(manifest: StageManifest): StageManifest {
     ...(manifest.capabilities ? {
       capabilities: Object.freeze(manifest.capabilities.map(capability => Object.freeze({ ...capability }))),
     } : {}),
+    ...(manifest.campaignCatalog ? {
+      campaignCatalog: Object.freeze({
+        ...manifest.campaignCatalog,
+        ...(manifest.campaignCatalog.regionIds
+          ? { regionIds: Object.freeze([...manifest.campaignCatalog.regionIds]) } : {}),
+        ...(manifest.campaignCatalog.biomeIds
+          ? { biomeIds: Object.freeze([...manifest.campaignCatalog.biomeIds]) } : {}),
+        ...(manifest.campaignCatalog.difficulty
+          ? { difficulty: Object.freeze({ ...manifest.campaignCatalog.difficulty }) } : {}),
+        ...(manifest.campaignCatalog.allowedActIds
+          ? { allowedActIds: Object.freeze([...manifest.campaignCatalog.allowedActIds]) } : {}),
+        ...(manifest.campaignCatalog.requiredEventIds
+          ? { requiredEventIds: Object.freeze([...manifest.campaignCatalog.requiredEventIds]) } : {}),
+        ...(manifest.campaignCatalog.requiredBeatIds
+          ? { requiredBeatIds: Object.freeze([...manifest.campaignCatalog.requiredBeatIds]) } : {}),
+        ...(manifest.campaignCatalog.providesBeatIds
+          ? { providesBeatIds: Object.freeze([...manifest.campaignCatalog.providesBeatIds]) } : {}),
+      }),
+    } : {}),
     ...(manifest.tags ? { tags: Object.freeze([...manifest.tags]) } : {}),
   });
 }

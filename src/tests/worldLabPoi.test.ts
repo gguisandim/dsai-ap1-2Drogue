@@ -50,5 +50,17 @@ describe('World Lab POI projection', () => {
       lightIntensity: 0.62,
       fog: { color: 0x123d42, opacity: 0.16, depth: 4 },
     });
+    expect(result.value.catalog.entries.find(item =>
+      item.stageId === IGAPO_DAS_MEMORIAS_STAGE_ID)).toMatchObject({
+      chapterId: 'chapter.aguas',
+      manifestRevision: 1,
+      chapterRevision: 1,
+      loadability: 'loadable',
+      eligibility: 'campaign-eligible',
+      regionIds: ['region.aguas.igapo'],
+    });
+    expect(result.value.catalog.eligibleStageIds).toContain(IGAPO_DAS_MEMORIAS_STAGE_ID);
+    expect(result.value.catalog.entries.find(item => item.stageId === 'verse_01_atrium')?.eligibility)
+      .toBe('individual-only');
   });
 });

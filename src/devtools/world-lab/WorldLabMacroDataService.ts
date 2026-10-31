@@ -5,9 +5,11 @@ import {
 } from '../../application/stages';
 import {
   StageLoader,
+  StageCatalogService,
   StageRegistry,
   registerCampaignChapters,
   registerLegacyStages,
+  type StageCatalogDiagnostic,
 } from '../../stages';
 import type {
   WorldLabDiagnostic,
@@ -30,6 +32,24 @@ function failure(code: string, message: string): WorldLabMacroRouteResult {
   });
 }
 
+function catalogFailure(
+  diagnostics: readonly StageCatalogDiagnostic[],
+): WorldLabMacroRouteResult {
+  return Object.freeze({
+    ok: false as const,
+    error: Object.freeze({
+      diagnostics: Object.freeze(diagnostics.map(item => Object.freeze({
+        code: item.code,
+        severity: item.severity,
+        origin: 'stage-catalog' as const,
+        message: item.message,
+        ...(item.stageId ? { stageId: item.stageId } : {}),
+        path: item.path,
+      }))),
+    }),
+  });
+}
+
 /** Public adapter for inspecting the same macro binding used by the headless runtime. */
 export class WorldLabMacroDataService {
   public constructor(private readonly projector = new WorldLabMacroProjector()) {}
@@ -40,6 +60,38 @@ export class WorldLabMacroDataService {
     const registry = new StageRegistry();
     registerLegacyStages(registry);
     registerCampaignChapters(registry);
+    const discovered = StageCatalogService.create(registry);
+    if (!discovered.ok) return catalogFailure(discovered.error.diagnostics);
+    const catalogDiagnostics: readonly WorldLabDiagnostic[] = Object.freeze(
+      discovered.value.diagnostics().map(item => Object.freeze({
+        code: item.code,
+        severity: item.severity,
+        origin: 'stage-catalog' as const,
+        message: item.message,
+        ...(item.stageId ? { stageId: item.stageId } : {}),
+        path: item.path,
+      })),
+    );
+    const catalog = Object.freeze({
+      entries: Object.freeze(discovered.value.list().map(item => Object.freeze({
+        stageId: item.stageId,
+        chapterId: item.chapterId,
+        manifestRevision: item.manifestRevision,
+        chapterRevision: item.chapterRevision,
+        title: item.title,
+        role: item.role,
+        regionIds: item.regionIds,
+        biomeIds: item.biomeIds,
+        loadability: item.loadability,
+        eligibility: item.eligibility,
+        capabilityIds: Object.freeze(item.capabilityRequirements.map(value => value.id)),
+        dependencyChapterIds: Object.freeze(item.chapterDependencies.map(value => value.chapterId)),
+        diagnosticCodes: Object.freeze(item.exclusionDiagnostics.map(value => value.code)),
+      }))),
+      eligibleStageIds: Object.freeze(discovered.value.eligible().map(item => item.stageId)),
+      incompatibleStageIds: Object.freeze(discovered.value.incompatible().map(item => item.stageId)),
+      diagnostics: catalogDiagnostics,
+    });
     const loader = new StageLoader(registry);
     const created = new UmbraCampaignRouteSliceFactory(loader).create({
       runId: UMBRA_ROUTE_SLICE_RUN_ID,
@@ -92,6 +144,7 @@ export class WorldLabMacroDataService {
         edges: macro.edges,
         progress: macro.progress,
         connections,
+        catalog,
         graph: projected.value,
       }),
     });
