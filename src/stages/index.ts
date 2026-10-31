@@ -33,6 +33,7 @@ export type {
   CampaignCompositionRepetitionPolicy,
   CampaignCompositionRequest,
   CampaignCompositionResult,
+  CampaignCompositionSlotSelection,
   CampaignCompositionSnapshot,
   CampaignCompositionValue,
   CampaignContentReference,

@@ -23,7 +23,7 @@ import { GameSimulationBridge } from '../simulation';
 import { PresetId, ProceduralLevelFactory } from '../procedural';
 import { DamageType, GameCombatBridge } from '../combat';
 import { NavigationService } from '../ai';
-import { EnemyDefeatProgress, ProgressionService } from '../progression';
+import { EnemyDefeatProgress, MemoryProgressionStorage, ProgressionService } from '../progression';
 import {
   BRANCHING_CAMPAIGN_DEFAULT_RUN_ID,
   BRANCHING_CAMPAIGN_DEFAULT_SEED,
@@ -64,6 +64,16 @@ export interface GameSceneCampaignRuntime {
   readonly onNarrativeSession?: (session: GameNarrativeSession) => void;
 }
 
+/**
+ * Isolated single-stage session. It never owns a campaign router or a campaign
+ * save; the scene runs the loaded definition with in-memory progression only.
+ */
+export interface GameSceneIndividualRuntime {
+  readonly stageId: string;
+  readonly loadedStage: LoadedStage;
+  readonly composition: GameStageCompositionRoot;
+}
+
 export interface GameSceneInitData {
   skipControls?: boolean;
   proceduralSeed?: string | number;
@@ -82,6 +92,7 @@ export interface GameSceneInitData {
   macroRunSeed?: string | number;
   macroRecoveryAttempt?: number;
   campaignRuntime?: GameSceneCampaignRuntime;
+  individualRuntime?: GameSceneIndividualRuntime;
 }
 
 interface PendingExitTile {
@@ -193,6 +204,8 @@ export class GameScene extends Phaser.Scene {
   private campaignPersistenceUncertain = false;
   private campaignRecoveryAttempt = 0;
   private injectedCampaignRuntime?: GameSceneCampaignRuntime;
+  private individualRuntime?: GameSceneIndividualRuntime;
+  private individualMode = false;
   private readonly campaignAccessBinder = new CampaignNarrativeAccessBinder();
   private macroLoadedStage?: LoadedStage;
   private stageNarrativeStage?: LoadedStage;
@@ -219,12 +232,14 @@ export class GameScene extends Phaser.Scene {
     this.modularPersistenceEnabled = Boolean(data?.modularRunId?.trim());
     const query = typeof window === 'undefined' ? undefined : new URLSearchParams(window.location.search);
     this.injectedCampaignRuntime = data?.campaignRuntime;
-    this.macroCampaign = !this.injectedCampaignRuntime &&
+    this.individualRuntime = data?.individualRuntime;
+    this.individualMode = !this.injectedCampaignRuntime && this.individualRuntime !== undefined;
+    this.macroCampaign = !this.injectedCampaignRuntime && !this.individualMode &&
       (data?.macroCampaign === true || query?.get('macroCampaign') === '1');
     this.macroRunId = data?.macroRunId?.trim() ||
       query?.get('macroRun')?.trim() || UMBRA_ROUTE_SLICE_RUN_ID;
     this.macroRunSeed = data?.macroRunSeed ?? query?.get('macroSeed') ?? UMBRA_ROUTE_SLICE_SEED;
-    this.branchingCampaign = !this.injectedCampaignRuntime && !this.macroCampaign &&
+    this.branchingCampaign = !this.injectedCampaignRuntime && !this.individualMode && !this.macroCampaign &&
       (data?.branchingCampaign === true || query?.get('branchingCampaign') === '1');
     this.branchingRunId = data?.branchingRunId?.trim() ||
       query?.get('branchingRun')?.trim() || BRANCHING_CAMPAIGN_DEFAULT_RUN_ID;
@@ -241,9 +256,12 @@ export class GameScene extends Phaser.Scene {
     this.macroCampaignAdapter = undefined;
     this.macroLoadedStage = undefined;
     if (this.injectedCampaignRuntime) this.configureInjectedCampaign(this.injectedCampaignRuntime);
-    else if (this.macroCampaign) this.configureMacroCampaign();
+    else if (this.individualMode && this.individualRuntime) {
+      this.configureIndividualStage(this.individualRuntime);
+    } else if (this.macroCampaign) this.configureMacroCampaign();
     else this.configureBranchingCampaign();
-    if (!this.injectedCampaignRuntime && !this.macroCampaign && !this.branchingCampaign) {
+    if (!this.injectedCampaignRuntime && !this.individualMode &&
+      !this.macroCampaign && !this.branchingCampaign) {
       this.configureModularStage();
     }
     this.startingHalos = Math.max(0, Math.floor(data?.halos ?? 5000));
@@ -282,6 +300,23 @@ export class GameScene extends Phaser.Scene {
     }
     this.currentLevelIndex = levelIndex;
     this.currentLevel = runtime.navigation.loadedStage.level;
+  }
+
+  private configureIndividualStage(runtime: GameSceneIndividualRuntime): void {
+    this.campaignRouter = undefined;
+    this.campaignNavigation = undefined;
+    this.macroCampaignAdapter = undefined;
+    this.macroLoadedStage = undefined;
+    this.campaignPersistenceUncertain = false;
+    this.modularPersistenceEnabled = false;
+    this.modularStageSource = 'modular';
+    this.modularComposition = runtime.composition;
+    this.modularLoadedStage = runtime.loadedStage;
+    this.modularRunId = `individual.${runtime.stageId}`;
+    this.modularRunSeed = `individual.${runtime.stageId}.${runtime.loadedStage.manifest.revision}`;
+    this.allLevels = [runtime.loadedStage.level];
+    this.currentLevelIndex = 0;
+    this.currentLevel = runtime.loadedStage.level;
   }
 
   private configureMacroCampaign(): void {
@@ -423,7 +458,10 @@ export class GameScene extends Phaser.Scene {
     this.buildMapFromDefinition(this.currentLevel);
     this.queueCampaignExitTiles();
     this.navigation = new NavigationService(this.currentLevel.tileMap, { tileSize: 32 });
-    this.progression = this.injectedCampaignRuntime?.progression ?? new ProgressionService();
+    this.progression = this.injectedCampaignRuntime?.progression ??
+      (this.individualMode
+        ? new ProgressionService({ storage: new MemoryProgressionStorage() })
+        : new ProgressionService());
     this.narrativeReady = true;
     this.initializeModularNarrative();
 

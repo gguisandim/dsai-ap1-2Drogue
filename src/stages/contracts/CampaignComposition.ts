@@ -38,6 +38,12 @@ export interface CampaignCompositionMilestoneRequirement {
   readonly requiredBeatIds: readonly string[];
 }
 
+/** Explicit manual selection: one stable definition per canonical slot. */
+export interface CampaignCompositionSlotSelection {
+  readonly slotId: string;
+  readonly stageId: string;
+}
+
 export interface CampaignCompositionRequest {
   readonly policyId: CampaignCompositionPolicyId;
   readonly campaignId: string;
@@ -55,6 +61,8 @@ export interface CampaignCompositionRequest {
   readonly allowedBiomeIds?: readonly string[];
   readonly minimumPhysicalExitsBySlot?: Readonly<Record<string, 1 | 2 | 3>>;
   readonly repetitionPolicy: CampaignCompositionRepetitionPolicy;
+  /** Optional explicit selection; when present the same search validates it. */
+  readonly manualAssignments?: readonly CampaignCompositionSlotSelection[];
   readonly context: CampaignGraphGenerationContext;
 }
 
@@ -118,6 +126,7 @@ export type CampaignCompositionDiagnosticCode =
   | 'composition.narrative-dependency.impossible'
   | 'composition.exit-capacity.insufficient'
   | 'composition.destination.incompatible'
+  | 'composition.manual-selection.invalid'
   | 'composition.assignment.impossible'
   | 'composition.snapshot.invalid'
   | 'composition.stage.missing'
@@ -150,6 +159,7 @@ export type CampaignCompositionFailureCode =
   | 'narrative-dependency-impossible'
   | 'exit-capacity-insufficient'
   | 'destination-incompatible'
+  | 'manual-selection-invalid'
   | 'composition-impossible'
   | 'persisted-composition-invalid'
   | 'stage-revision-incompatible'

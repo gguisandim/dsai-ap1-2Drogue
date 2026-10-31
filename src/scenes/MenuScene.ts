@@ -36,7 +36,7 @@ export class MenuScene extends Phaser.Scene {
       fontFamily: 'Courier New, monospace', fontSize: '14px', color: '#f6d77a', align: 'center', lineSpacing: 5,
     }).setOrigin(0.5);
 
-    this.createButton(780, 275, 'JOGAR', () => this.scene.start('GameScene'), true);
+    this.createButton(780, 275, 'JOGAR', () => this.scene.start('GameModesScene'), true);
     this.createButton(780, 345, 'EDITAR PERSONAGEM', () => this.scene.start('CharacterCreatorScene'));
     this.createButton(780, 415, 'FORJA DE FASES', () => this.scene.start('EditorScene'));
     this.createButton(780, 485, 'AJUSTES', () => this.scene.start('SettingsScene'));

@@ -30,6 +30,69 @@ interface CompositionSlot {
   readonly requiredBeatId?: string;
 }
 
+type FitFailure =
+  | 'destination' | 'manual' | 'entry' | 'milestone' | 'act'
+  | 'difficulty' | 'place' | 'capacity' | 'narrative' | 'repeat';
+
+interface FitFailureMapping {
+  readonly code: CampaignCompositionFailureCode;
+  readonly diagnosticCode: CampaignCompositionDiagnosticCode;
+  readonly message: string;
+}
+
+const FIT_FAILURE_MAPPING: Readonly<Record<FitFailure, FitFailureMapping>> = Object.freeze({
+  destination: {
+    code: 'destination-incompatible',
+    diagnosticCode: 'composition.destination.incompatible',
+    message: 'Declared stage exits contradict the composed successor.',
+  },
+  manual: {
+    code: 'composition-impossible',
+    diagnosticCode: 'composition.assignment.impossible',
+    message: 'Manual selection does not satisfy the slot constraints.',
+  },
+  entry: {
+    code: 'composition-impossible',
+    diagnosticCode: 'composition.assignment.impossible',
+    message: 'Entry stage does not match the requested entry.',
+  },
+  milestone: {
+    code: 'milestone-unavailable',
+    diagnosticCode: 'composition.milestone.unavailable',
+    message: 'Stage cannot occupy this milestone slot.',
+  },
+  act: {
+    code: 'act-incompatible',
+    diagnosticCode: 'composition.act.incompatible',
+    message: 'Stage does not allow the slot act.',
+  },
+  difficulty: {
+    code: 'difficulty-incompatible',
+    diagnosticCode: 'composition.difficulty.incompatible',
+    message: 'Stage does not support the slot difficulty.',
+  },
+  place: {
+    code: 'composition-impossible',
+    diagnosticCode: 'composition.assignment.impossible',
+    message: 'Stage does not satisfy the region or biome restriction.',
+  },
+  capacity: {
+    code: 'exit-capacity-insufficient',
+    diagnosticCode: 'composition.exit-capacity.insufficient',
+    message: 'Stage does not provide the required physical exit capacity.',
+  },
+  narrative: {
+    code: 'narrative-dependency-impossible',
+    diagnosticCode: 'composition.narrative-dependency.impossible',
+    message: 'Stage narrative dependencies are not satisfied at this position.',
+  },
+  repeat: {
+    code: 'composition-impossible',
+    diagnosticCode: 'composition.assignment.impossible',
+    message: 'Stage repetition is not allowed by the current policy.',
+  },
+});
+
 export const FIXED_NINE_COMPOSITION_SLOTS: readonly CompositionSlot[] = Object.freeze([
   Object.freeze({ slotId: 'act-1.entry', actId: 'act-1', depth: 0, kind: 'intermediate' }),
   Object.freeze({ slotId: 'act-1.intermediate', actId: 'act-1', depth: 1, kind: 'intermediate' }),
@@ -299,6 +362,51 @@ function requestDiagnostics(request: CampaignCompositionRequest): readonly Campa
   validateIds(request.requiredStageIds, 'requiredStageIds');
   validateIds(request.allowedRegionIds, 'allowedRegionIds');
   validateIds(request.allowedBiomeIds, 'allowedBiomeIds');
+  if (request.manualAssignments !== undefined) {
+    if (!Array.isArray(request.manualAssignments)) values.push(issue(
+      'composition.manual-selection.invalid', 'manualAssignments must be an array.', ['manualAssignments'],
+    ));
+    else {
+      const slotIds = new Set<string>();
+      const stageIds = new Set<string>();
+      let entriesValid = true;
+      request.manualAssignments.forEach((selection, index) => {
+        if (!isRecord(selection) || !stableId(selection.slotId) || !stableId(selection.stageId)) {
+          entriesValid = false;
+          values.push(issue('composition.manual-selection.invalid',
+            'Manual selection needs a stable slotId and stageId.', ['manualAssignments', index]));
+          return;
+        }
+        if (!FIXED_NINE_COMPOSITION_SLOTS.some(slot => slot.slotId === selection.slotId)) {
+          entriesValid = false;
+          values.push(issue('composition.manual-selection.invalid',
+            `Unknown composition slot: ${selection.slotId}.`, ['manualAssignments', index, 'slotId'],
+            { slotId: selection.slotId, stageId: selection.stageId }));
+        } else if (slotIds.has(selection.slotId)) {
+          entriesValid = false;
+          values.push(issue('composition.manual-selection.invalid',
+            `Manual selection repeats slot ${selection.slotId}.`, ['manualAssignments', index, 'slotId'],
+            { slotId: selection.slotId, stageId: selection.stageId }));
+        }
+        if (request.repetitionPolicy === 'forbid' && stageIds.has(selection.stageId)) {
+          entriesValid = false;
+          values.push(issue('composition.manual-selection.invalid',
+            `Manual selection repeats stage ${selection.stageId} while repetition is forbidden.`,
+            ['manualAssignments', index, 'stageId'],
+            { slotId: selection.slotId, stageId: selection.stageId }));
+        }
+        slotIds.add(selection.slotId);
+        stageIds.add(selection.stageId);
+      });
+      const missing = FIXED_NINE_COMPOSITION_SLOTS.filter(slot => !slotIds.has(slot.slotId));
+      if (entriesValid && (missing.length > 0 ||
+        request.manualAssignments.length !== FIXED_NINE_COMPOSITION_SLOTS.length)) values.push(issue(
+        'composition.manual-selection.invalid',
+        'Manual selection must fill exactly the nine canonical slots.', ['manualAssignments'],
+        { referenceId: missing[0]?.slotId },
+      ));
+    }
+  }
   if (!isRecord(request.context) || !isRecord(request.context.flags) ||
     !Array.isArray(request.context.completedEventIds) || !Array.isArray(request.context.revealedBeatIds)) {
     values.push(issue('composition.request.invalid', 'context is invalid.', ['context']));
@@ -461,7 +569,8 @@ export class CampaignCompositionService {
         ? 'unsupported-policy'
         : first === 'composition.quantity.invalid' ? 'invalid-quantity'
           : first === 'composition.topology.incompatible' ? 'topology-incompatible'
-            : 'invalid-request';
+            : first === 'composition.manual-selection.invalid' ? 'manual-selection-invalid'
+              : 'invalid-request';
       return failure(code, requestIssues);
     }
 
@@ -480,11 +589,34 @@ export class CampaignCompositionService {
     const candidates = all.filter(entry =>
       (allowList.size === 0 || allowList.has(entry.stageId)) &&
       (entry.eligibility === 'campaign-eligible' ||
-        (entry.eligibility === 'narrative-reserved' && milestoneStageIds.has(entry.stageId))));
+        (entry.eligibility === 'narrative-reserved' && (
+          milestoneStageIds.has(entry.stageId) ||
+          request.mandatoryMilestones.some(requirement => requirement.requiredBeatIds.some(
+            beat => entry.providesBeatIds.includes(beat)))))));
+    const manualById = new Map<string, string>((request.manualAssignments ?? [])
+      .map(selection => [selection.slotId, selection.stageId]));
+    for (const selection of request.manualAssignments ?? []) {
+      const entry = byId.get(selection.stageId);
+      if (!entry) return failure('stage-reference-missing', [issue(
+        'composition.candidate.reference-missing',
+        `Manual stage is absent from the catalog: ${selection.stageId}.`,
+        ['manualAssignments', selection.slotId],
+        { stageId: selection.stageId, slotId: selection.slotId, referenceId: selection.stageId },
+      )]);
+      if (!candidates.some(candidate => candidate.stageId === selection.stageId)) return failure(
+        entry.eligibility === 'narrative-reserved' ? 'milestone-unavailable' : 'stage-reference-missing',
+        [issue(entry.eligibility === 'narrative-reserved'
+          ? 'composition.milestone.unavailable' : 'composition.candidate.ineligible',
+          `Manual stage is unavailable or ineligible: ${selection.stageId}.`,
+          ['manualAssignments', selection.slotId],
+          { stageId: selection.stageId, slotId: selection.slotId, referenceId: selection.stageId })],
+      );
+    }
     const requiredStageIds = sortedUnique([
       ...(request.requiredStageIds ?? []),
       ...(request.entryStageId ? [request.entryStageId] : []),
       ...milestoneStageIds,
+      ...(request.manualAssignments ?? []).map(selection => selection.stageId),
     ]);
     const missingRequired = requiredStageIds.filter(id => !candidates.some(entry => entry.stageId === id));
     if (missingRequired.length > 0) return failure(
@@ -507,9 +639,13 @@ export class CampaignCompositionService {
       const rule = actRule(request, slot.actId);
       const milestoneRule = milestone(request, slot.slotId);
       const positioned = candidates.filter(entry =>
+        (!manualById.has(slot.slotId) || entry.stageId === manualById.get(slot.slotId)) &&
         (!request.entryStageId || slot.slotId !== 'act-1.entry' || entry.stageId === request.entryStageId) &&
         (!milestoneRule?.stageId || entry.stageId === milestoneRule.stageId) &&
-        (entry.eligibility !== 'narrative-reserved' || milestoneRule?.stageId === entry.stageId) &&
+        (entry.eligibility !== 'narrative-reserved' ||
+          (slot.kind === 'milestone' && !!milestoneRule &&
+            milestoneRule.requiredBeatIds.every(id => entry.providesBeatIds.includes(id)) &&
+            (!milestoneRule.stageId || milestoneRule.stageId === entry.stageId))) &&
         (entry.role !== 'milestone' || slot.kind === 'milestone'));
       if (positioned.length === 0) return failure(
         slot.kind === 'milestone' ? 'milestone-unavailable' : 'composition-impossible',
@@ -570,39 +706,48 @@ export class CampaignCompositionService {
     const initialBeats = new Set(request.context.revealedBeatIds);
     const completedEvents = new Set(request.context.completedEventIds);
     let destinationRejected = false;
+    let manualFailure: { readonly slot: CompositionSlot; readonly entry: StageCatalogEntry;
+      readonly reason: FitFailure } | undefined;
 
-    const fits = (
+    const fitFailure = (
       entry: StageCatalogEntry,
       slot: CompositionSlot,
       availableBeats: ReadonlySet<string>,
-    ): boolean => {
+    ): FitFailure | undefined => {
       const rule = actRule(request, slot.actId);
       const milestoneRule = milestone(request, slot.slotId);
+      const manualStageId = manualById.get(slot.slotId);
+      if (manualStageId && entry.stageId !== manualStageId) return 'manual';
       const previous = selected[selected.length - 1]?.entry;
       if (previous && !destinationCompatible(previous, entry.stageId)) {
         destinationRejected = true;
-        return false;
+        return 'destination';
       }
-      if (request.entryStageId && slot.slotId === 'act-1.entry' && entry.stageId !== request.entryStageId) return false;
-      if (milestoneRule?.stageId && entry.stageId !== milestoneRule.stageId) return false;
-      if (entry.eligibility === 'narrative-reserved' && milestoneRule?.stageId !== entry.stageId) return false;
-      if (entry.role === 'milestone' && slot.kind !== 'milestone') return false;
-      if (entry.allowedActIds.length > 0 && !entry.allowedActIds.includes(slot.actId)) return false;
+      if (request.entryStageId && slot.slotId === 'act-1.entry' &&
+        entry.stageId !== request.entryStageId) return 'entry';
+      if (milestoneRule?.stageId && entry.stageId !== milestoneRule.stageId) return 'milestone';
+      if (entry.role === 'milestone' && slot.kind !== 'milestone') return 'milestone';
+      if (entry.eligibility === 'narrative-reserved' &&
+        (slot.kind !== 'milestone' || !milestoneRule ||
+          !milestoneRule.requiredBeatIds.every(id => entry.providesBeatIds.includes(id)))) return 'milestone';
+      if (entry.allowedActIds.length > 0 && !entry.allowedActIds.includes(slot.actId)) return 'act';
       const difficulty = slot.depth + 1;
       if (difficulty < rule.difficulty.minimum || difficulty > rule.difficulty.maximum ||
-        !entry.difficulty || difficulty < entry.difficulty.minimum || difficulty > entry.difficulty.maximum) return false;
+        !entry.difficulty || difficulty < entry.difficulty.minimum ||
+        difficulty > entry.difficulty.maximum) return 'difficulty';
       const regions = combinedAllowed(request.allowedRegionIds, rule.allowedRegionIds);
       const biomes = combinedAllowed(request.allowedBiomeIds, rule.allowedBiomeIds);
-      if (!intersects(entry.regionIds, regions) || !intersects(entry.biomeIds, biomes)) return false;
+      if (!intersects(entry.regionIds, regions) || !intersects(entry.biomeIds, biomes)) return 'place';
       const minimumExits = request.minimumPhysicalExitsBySlot?.[slot.slotId] ?? 1;
-      if (entry.maximumPhysicalExits < minimumExits) return false;
-      if (!entry.requiredEventIds.every(id => completedEvents.has(id))) return false;
-      if (!entry.requiredBeatIds.every(id => availableBeats.has(id))) return false;
-      if (slot.requiredBeatId && !entry.providesBeatIds.includes(slot.requiredBeatId)) return false;
-      if (milestoneRule && !milestoneRule.requiredBeatIds.every(id => entry.providesBeatIds.includes(id))) return false;
+      if (entry.maximumPhysicalExits < minimumExits) return 'capacity';
+      if (!entry.requiredEventIds.every(id => completedEvents.has(id))) return 'narrative';
+      if (!entry.requiredBeatIds.every(id => availableBeats.has(id))) return 'narrative';
+      if (slot.requiredBeatId && !entry.providesBeatIds.includes(slot.requiredBeatId)) return 'milestone';
+      if (milestoneRule && !milestoneRule.requiredBeatIds.every(id =>
+        entry.providesBeatIds.includes(id))) return 'milestone';
       if (used.has(entry.stageId) &&
-        (request.repetitionPolicy === 'forbid' || entry.revisit !== 'repeatable')) return false;
-      return true;
+        (request.repetitionPolicy === 'forbid' || entry.revisit !== 'repeatable')) return 'repeat';
+      return undefined;
     };
 
     const search = (index: number, availableBeats: ReadonlySet<string>): boolean => {
@@ -617,15 +762,20 @@ export class CampaignCompositionService {
       const slot = FIXED_NINE_COMPOSITION_SLOTS[index];
       const missing = requiredStageIds.filter(id => !selected.some(item => item.entry.stageId === id));
       if (missing.length > FIXED_NINE_COMPOSITION_SLOTS.length - index) return false;
-      const ordered = candidates.filter(entry => fits(entry, slot, availableBeats))
-        .sort((left, right) => {
-          const leftRequired = missing.includes(left.stageId) ? 0 : 1;
-          const rightRequired = missing.includes(right.stageId) ? 0 : 1;
-          if (leftRequired !== rightRequired) return leftRequired - rightRequired;
-          const leftScore = hashParts(String(request.seed), request.policyId, slot.slotId, left.stageId);
-          const rightScore = hashParts(String(request.seed), request.policyId, slot.slotId, right.stageId);
-          return leftScore - rightScore || compare(left.stageId, right.stageId);
-        });
+      const ordered = candidates.filter(entry => {
+        const failure = fitFailure(entry, slot, availableBeats);
+        if (failure && entry.stageId === manualById.get(slot.slotId)) {
+          manualFailure = { slot, entry, reason: failure };
+        }
+        return failure === undefined;
+      }).sort((left, right) => {
+        const leftRequired = missing.includes(left.stageId) ? 0 : 1;
+        const rightRequired = missing.includes(right.stageId) ? 0 : 1;
+        if (leftRequired !== rightRequired) return leftRequired - rightRequired;
+        const leftScore = hashParts(String(request.seed), request.policyId, slot.slotId, left.stageId);
+        const rightScore = hashParts(String(request.seed), request.policyId, slot.slotId, right.stageId);
+        return leftScore - rightScore || compare(left.stageId, right.stageId);
+      });
       for (const entry of ordered) {
         const rule = actRule(request, slot.actId);
         const regions = combinedAllowed(request.allowedRegionIds, rule.allowedRegionIds);
@@ -646,6 +796,13 @@ export class CampaignCompositionService {
     };
 
     if (!search(0, initialBeats)) {
+      if (manualFailure) {
+        const mapped = FIT_FAILURE_MAPPING[manualFailure.reason];
+        return failure(mapped.code, [issue(mapped.diagnosticCode,
+          `${mapped.message} Slot ${manualFailure.slot.slotId}; stage ${manualFailure.entry.stageId}.`,
+          ['manualAssignments', manualFailure.slot.slotId],
+          { slotId: manualFailure.slot.slotId, stageId: manualFailure.entry.stageId })]);
+      }
       // Structural per-slot impossibilities (milestone, capacity, act,
       // difficulty, narrative) already fail before the search. A failure here
       // is either an explicit-destination contradiction or an interaction

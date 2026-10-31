@@ -4,6 +4,7 @@ import {
   CampaignCompositionService,
   CampaignExitBinder,
   CampaignGraphValidator,
+  FIXED_NINE_COMPOSITION_SLOTS,
   PhysicalExitResolver,
   StageCatalogService,
   StageLoader,
@@ -194,6 +195,20 @@ function compose(service: CampaignCompositionService, value = request()) {
   return result.value;
 }
 
+function manualSelection(stageIds: readonly string[]) {
+  return Object.freeze(FIXED_NINE_COMPOSITION_SLOTS.map((slot, index) => Object.freeze({
+    slotId: slot.slotId,
+    stageId: stageIds[index],
+  })));
+}
+
+function manualRequest(stageIds: readonly string[], seed = 'seed.manual') {
+  return createFixedNineCompositionRequest({
+    ...request(seed),
+    manualAssignments: manualSelection(stageIds),
+  });
+}
+
 describe('CampaignCompositionService', () => {
   const stages = composableStages();
 
@@ -365,6 +380,50 @@ describe('CampaignCompositionService', () => {
     const entry = value.snapshot.assignments[0];
     expect(entry.stageId).toBe(stageId(1));
     expect(entry.declaredExits.map(exit => exit.targetStageId)).toEqual([stageId(2), stageId(9)]);
+  });
+
+  it('validates manual nine-slot selections through the same composer', () => {
+    const chain = explicitChainStages();
+    const ids = Array.from({ length: 9 }, (_, index) => stageId(index + 1));
+    const value = compose(
+      new CampaignCompositionService(catalog(chain)),
+      manualRequest(ids),
+    );
+    expect(value.snapshot.assignments.map(item => item.stageId)).toEqual(ids);
+    expect(value.snapshot.assignments.map(item => item.slotId))
+      .toEqual(FIXED_NINE_COMPOSITION_SLOTS.map(slot => slot.slotId));
+  });
+
+  it('rejects incomplete, duplicated, ineligible and misplaced manual selections', () => {
+    const chain = explicitChainStages();
+    const service = new CampaignCompositionService(catalog(chain));
+    const ids = Array.from({ length: 9 }, (_, index) => stageId(index + 1));
+
+    expect(service.compose(createFixedNineCompositionRequest({
+      ...request(), manualAssignments: manualSelection(ids).slice(0, 8),
+    }))).toMatchObject({ ok: false, error: { code: 'manual-selection-invalid' } });
+
+    const duplicated = [...ids.slice(0, 8), ids[0]];
+    expect(service.compose(manualRequest(duplicated)))
+      .toMatchObject({ ok: false, error: { code: 'manual-selection-invalid' } });
+
+    const missing = [...ids.slice(0, 8), 'stage.missing'];
+    expect(service.compose(manualRequest(missing)))
+      .toMatchObject({ ok: false, error: { code: 'stage-reference-missing' } });
+
+    const misplaced = [...ids];
+    [misplaced[1], misplaced[4]] = [misplaced[4], misplaced[1]];
+    expect(service.compose(manualRequest(misplaced)))
+      .toMatchObject({ ok: false, error: { code: expect.stringMatching(
+        /milestone-unavailable|act-incompatible|difficulty-incompatible/,
+      ) } });
+  });
+
+  it('rejects a manual chain whose explicit destination contradicts its successor', () => {
+    const ids = Array.from({ length: 9 }, (_, index) => stageId(index + 1));
+    expect(new CampaignCompositionService(catalog(explicitChainStages(true)))
+      .compose(manualRequest(ids)))
+      .toMatchObject({ ok: false, error: { code: 'destination-incompatible' } });
   });
 
   it('treats definitions without declared exits as synthetic-slot compatible', () => {
