@@ -300,8 +300,15 @@ export class CampaignGraphGenerator {
       }
     };
 
-    const canFork = (slot: SlotPlan, previous: readonly string[]): boolean =>
-      candidatesFor(slot, previous, 1).length >= 2;
+    const canFork = (
+      firstSlot: SlotPlan,
+      secondSlot: SlotPlan,
+      previous: readonly string[],
+    ): boolean => {
+      const first = candidatesFor(firstSlot, previous, 1);
+      const secondIds = new Set(candidatesFor(secondSlot, previous, 1).map(item => item.id));
+      return first.some(item => [...secondIds].some(id => id !== item.id));
+    };
 
     const selectIntermediateLayer = (
       actId: CampaignActId,
@@ -395,7 +402,7 @@ export class CampaignGraphGenerator {
       requiredBeatIds: [],
     });
 
-    const wantForkAct1 = canFork(act1Alternative('route-a'), []);
+    const wantForkAct1 = canFork(act1Alternative('route-a'), act1Alternative('route-b'), []);
     let entryTemplate = wantForkAct1 ? pickTemplate(entrySlot, [], 2) : undefined;
     if (!entryTemplate) entryTemplate = pickTemplate(entrySlot, [], 1);
     if (!entryTemplate) {
@@ -405,7 +412,7 @@ export class CampaignGraphGenerator {
     }
     const entryNode = addNode(entryTemplate, entrySlot);
     const forkAct1 = entryTemplate.maximumPhysicalExits >= 2 &&
-      canFork(act1Alternative('route-a'), previousTemplates(0));
+      canFork(act1Alternative('route-a'), act1Alternative('route-b'), previousTemplates(0));
     if (!selectIntermediateLayer('act-1', 1, forkAct1, 0)) {
       return failure(failureCode ?? 'insufficient-eligible-regions', diagnostics);
     }
@@ -428,13 +435,15 @@ export class CampaignGraphGenerator {
       requiredBeatIds: ['beat.act-1'],
     };
 
-    const wantForkAct2 = canFork(act2Alternative('route-a'), previousTemplates(1));
+    const wantForkAct2 = canFork(
+      act2Alternative('route-a'), act2Alternative('route-b'), previousTemplates(1),
+    );
     const milestone1 = selectMilestone(milestoneAct1, 1, wantForkAct2);
     if (!milestone1) return failure(failureCode ?? 'milestone-unavailable', diagnostics);
     link(1, 2);
 
     const forkAct2 = milestone1.maximumPhysicalExits >= 2 &&
-      canFork(act2Alternative('route-a'), previousTemplates(2));
+      canFork(act2Alternative('route-a'), act2Alternative('route-b'), previousTemplates(2));
     if (!selectIntermediateLayer('act-2', 3, forkAct2, 2)) {
       return failure(failureCode ?? 'insufficient-eligible-regions', diagnostics);
     }
@@ -474,13 +483,15 @@ export class CampaignGraphGenerator {
       requiredBeatIds: ['beat.act-2'],
     };
 
-    const wantForkAct3 = canFork(act3Alternative('route-a'), previousTemplates(4));
+    const wantForkAct3 = canFork(
+      act3Alternative('route-a'), act3Alternative('route-b'), previousTemplates(4),
+    );
     const milestone2 = selectMilestone(milestoneAct2, 4, wantForkAct3);
     if (!milestone2) return failure(failureCode ?? 'milestone-unavailable', diagnostics);
     link(4, 5);
 
     const forkAct3 = milestone2.maximumPhysicalExits >= 2 &&
-      canFork(act3Alternative('route-a'), previousTemplates(5));
+      canFork(act3Alternative('route-a'), act3Alternative('route-b'), previousTemplates(5));
     if (!selectIntermediateLayer('act-3', 6, forkAct3, 5)) {
       return failure(failureCode ?? 'insufficient-eligible-regions', diagnostics);
     }

@@ -152,6 +152,7 @@ export type {
   StageCatalogQuery,
 } from './contracts';
 export {
+  BRANCHING_NINE_COMPOSITION_POLICY_ID,
   CAMPAIGN_COMPOSITION_SNAPSHOT_SCHEMA,
   FIXED_NINE_COMPOSITION_POLICY_ID,
 } from './contracts';
@@ -164,8 +165,10 @@ export { CampaignGraphGenerator } from './runtime/CampaignGraphGenerator';
 export { CampaignCompositionGraphAdapter } from './runtime/CampaignCompositionGraphAdapter';
 export {
   CampaignCompositionService,
+  BRANCHING_NINE_COMPOSITION_SLOTS,
   FIXED_NINE_COMPOSITION_SLOTS,
   canonicalCampaignCompositionSnapshot,
+  createBranchingNineCompositionRequest,
   createFixedNineCompositionRequest,
   validateCampaignCompositionSnapshot,
 } from './runtime/CampaignCompositionService';

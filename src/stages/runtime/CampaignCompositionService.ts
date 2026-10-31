@@ -15,6 +15,7 @@ import type {
   StageCatalogEntry,
 } from '../contracts';
 import {
+  BRANCHING_NINE_COMPOSITION_POLICY_ID,
   CAMPAIGN_COMPOSITION_SNAPSHOT_SCHEMA,
   FIXED_NINE_COMPOSITION_POLICY_ID,
 } from '../contracts';
@@ -113,6 +114,42 @@ export const FIXED_NINE_COMPOSITION_SLOTS: readonly CompositionSlot[] = Object.f
     requiredBeatId: 'beat.act-3',
   }),
 ]);
+
+export const BRANCHING_NINE_COMPOSITION_SLOTS: readonly CompositionSlot[] = Object.freeze([
+  Object.freeze({ slotId: 'act-1.entry', actId: 'act-1', depth: 0, kind: 'intermediate' }),
+  Object.freeze({ slotId: 'act-1.intermediate-a', actId: 'act-1', depth: 1, kind: 'intermediate' }),
+  Object.freeze({ slotId: 'act-1.intermediate-b', actId: 'act-1', depth: 1, kind: 'intermediate' }),
+  Object.freeze({
+    slotId: 'act-1.milestone', actId: 'act-1', depth: 2, kind: 'milestone',
+    requiredBeatId: 'beat.act-1',
+  }),
+  Object.freeze({ slotId: 'act-2.intermediate', actId: 'act-2', depth: 3, kind: 'intermediate' }),
+  Object.freeze({ slotId: 'act-2.rejoin', actId: 'act-2', depth: 4, kind: 'intermediate' }),
+  Object.freeze({
+    slotId: 'act-2.milestone', actId: 'act-2', depth: 5, kind: 'milestone',
+    requiredBeatId: 'beat.act-2',
+  }),
+  Object.freeze({ slotId: 'act-3.intermediate', actId: 'act-3', depth: 6, kind: 'intermediate' }),
+  Object.freeze({ slotId: 'act-3.rejoin', actId: 'act-3', depth: 7, kind: 'intermediate' }),
+  Object.freeze({
+    slotId: 'act-3.milestone', actId: 'act-3', depth: 8, kind: 'milestone',
+    requiredBeatId: 'beat.act-3',
+  }),
+]);
+
+function slotsFor(policyId: CampaignCompositionRequest['policyId']): readonly CompositionSlot[] {
+  return policyId === BRANCHING_NINE_COMPOSITION_POLICY_ID
+    ? BRANCHING_NINE_COMPOSITION_SLOTS
+    : FIXED_NINE_COMPOSITION_SLOTS;
+}
+
+function isSupportedPolicy(value: unknown): value is CampaignCompositionRequest['policyId'] {
+  return value === FIXED_NINE_COMPOSITION_POLICY_ID || value === BRANCHING_NINE_COMPOSITION_POLICY_ID;
+}
+
+function assignmentCountFor(policyId: CampaignCompositionRequest['policyId']): number {
+  return slotsFor(policyId).length;
+}
 
 const STABLE_ID = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 
@@ -288,12 +325,44 @@ function graphMatches(snapshot: CampaignCompositionSnapshot, graph: CampaignComp
     node.depth === assignment.depth));
 }
 
+function graphDestinationDiagnostics(
+  snapshot: CampaignCompositionSnapshot,
+  graph: CampaignCompositionValue['graph'],
+): readonly CampaignCompositionDiagnostic[] {
+  const bySlot = new Map(snapshot.assignments.map(item => [item.slotId, item]));
+  const byNode = new Map(graph.nodes.map(node => [node.id, node]));
+  const values: CampaignCompositionDiagnostic[] = [];
+  for (const node of graph.nodes) {
+    const assignment = bySlot.get(node.slotId);
+    if (!assignment) continue;
+    const outgoing = graph.edges.filter(edge => edge.sourceNodeId === node.id);
+    const targets = outgoing.map(edge => edge.targetNodeId === CAMPAIGN_COMPLETE
+      ? CAMPAIGN_COMPLETE
+      : byNode.get(edge.targetNodeId)?.stageId).filter((value): value is string => !!value);
+    if (new Set(targets).size !== targets.length) values.push(issue(
+      'composition.destination.incompatible',
+      'One source cannot identify two graph edges by the same targetStageId.',
+      ['graph', 'edges'], { stageId: node.stageId, slotId: node.slotId },
+    ));
+    if (assignment.declaredExits.length === 0) continue;
+    for (const target of targets) {
+      if (!assignment.declaredExits.some(exit => exit.targetStageId === target)) values.push(issue(
+        'composition.destination.incompatible',
+        `Stage ${assignment.stageId} does not declare an exit to ${target}.`,
+        ['assignments', assignment.slotId, 'declaredExits'],
+        { stageId: assignment.stageId, slotId: assignment.slotId, referenceId: target },
+      ));
+    }
+  }
+  return diagnostics(values);
+}
+
 function requestDiagnostics(request: CampaignCompositionRequest): readonly CampaignCompositionDiagnostic[] {
   const values: CampaignCompositionDiagnostic[] = [];
   if (!isRecord(request)) return [issue(
     'composition.request.invalid', 'Composition request must be an object.', [],
   )];
-  if (request.policyId !== FIXED_NINE_COMPOSITION_POLICY_ID) values.push(issue(
+  if (!isSupportedPolicy(request.policyId)) values.push(issue(
     'composition.policy.unsupported', `Unsupported composition policy: ${String(request.policyId)}.`,
     ['policyId'], { referenceId: String(request.policyId) },
   ));
@@ -313,9 +382,9 @@ function requestDiagnostics(request: CampaignCompositionRequest): readonly Campa
   if (!positiveInteger(request.desiredStageCount)) values.push(issue(
     'composition.quantity.invalid', 'desiredStageCount must be a positive integer.', ['desiredStageCount'],
   ));
-  if (request.desiredStageCount !== FIXED_NINE_COMPOSITION_SLOTS.length) values.push(issue(
+  if (request.desiredStageCount !== 9) values.push(issue(
     'composition.topology.incompatible',
-    `Policy ${FIXED_NINE_COMPOSITION_POLICY_ID} supports exactly nine selected definitions.`,
+    `Policy ${String(request.policyId)} supports exactly nine selected definitions.`,
     ['desiredStageCount'],
   ));
   if (request.repetitionPolicy !== 'forbid' && request.repetitionPolicy !== 'allow-repeatable') {
@@ -332,8 +401,11 @@ function requestDiagnostics(request: CampaignCompositionRequest): readonly Campa
         'Fixed-nine policy requires exactly act-1, act-2 and act-3.', ['acts']));
     }
     request.acts.forEach((value, index) => {
-      if (value.stageCount !== 3) values.push(issue(
-        'composition.topology.incompatible', 'Each fixed-nine act must contain three definitions.',
+      const expectedStageCount = request.policyId === BRANCHING_NINE_COMPOSITION_POLICY_ID &&
+        value.actId === 'act-1' ? 4 : 3;
+      if (value.stageCount !== expectedStageCount) values.push(issue(
+        'composition.topology.incompatible',
+        `Act ${value.actId} must contain ${expectedStageCount} stage instances for this policy.`,
         ['acts', index, 'stageCount'], { referenceId: value.actId },
       ));
       if (!isRecord(value.difficulty) || !Number.isFinite(value.difficulty.minimum) ||
@@ -343,7 +415,8 @@ function requestDiagnostics(request: CampaignCompositionRequest): readonly Campa
       ));
     });
   }
-  const milestoneSlots = FIXED_NINE_COMPOSITION_SLOTS.filter(slot => slot.kind === 'milestone');
+  const slots = isSupportedPolicy(request.policyId) ? slotsFor(request.policyId) : FIXED_NINE_COMPOSITION_SLOTS;
+  const milestoneSlots = slots.filter(slot => slot.kind === 'milestone');
   if (!Array.isArray(request.mandatoryMilestones) || request.mandatoryMilestones.length !== 3 ||
     new Set(request.mandatoryMilestones.map(value => value.slotId)).size !== 3 ||
     !milestoneSlots.every(slot => request.mandatoryMilestones.some(value =>
@@ -377,7 +450,7 @@ function requestDiagnostics(request: CampaignCompositionRequest): readonly Campa
             'Manual selection needs a stable slotId and stageId.', ['manualAssignments', index]));
           return;
         }
-        if (!FIXED_NINE_COMPOSITION_SLOTS.some(slot => slot.slotId === selection.slotId)) {
+        if (!slots.some(slot => slot.slotId === selection.slotId)) {
           entriesValid = false;
           values.push(issue('composition.manual-selection.invalid',
             `Unknown composition slot: ${selection.slotId}.`, ['manualAssignments', index, 'slotId'],
@@ -398,11 +471,12 @@ function requestDiagnostics(request: CampaignCompositionRequest): readonly Campa
         slotIds.add(selection.slotId);
         stageIds.add(selection.stageId);
       });
-      const missing = FIXED_NINE_COMPOSITION_SLOTS.filter(slot => !slotIds.has(slot.slotId));
+      const missing = slots.filter(slot => !slotIds.has(slot.slotId));
       if (entriesValid && (missing.length > 0 ||
-        request.manualAssignments.length !== FIXED_NINE_COMPOSITION_SLOTS.length)) values.push(issue(
+        request.manualAssignments.length !== slots.length)) values.push(issue(
         'composition.manual-selection.invalid',
-        'Manual selection must fill exactly the nine canonical slots.', ['manualAssignments'],
+        `Manual selection must fill exactly the ${slots.length} canonical instance slots.`,
+        ['manualAssignments'],
         { referenceId: missing[0]?.slotId },
       ));
     }
@@ -422,11 +496,12 @@ export function validateCampaignCompositionSnapshot(
     return diagnostics([issue('composition.snapshot.invalid',
       'Composition snapshot must use the supported schema and version.', ['composition'])]);
   }
-  if (value.policyId !== FIXED_NINE_COMPOSITION_POLICY_ID || value.policyVersion !== 1 ||
+  if (!isSupportedPolicy(value.policyId) || value.policyVersion !== 1 ||
     !stableId(value.compositionId) || !stableId(value.catalogDigest) ||
     !stableId(value.campaignId) || !stableId(value.runId) || !positiveInteger(value.campaignRevision) ||
     typeof value.seed !== 'string' || value.seed.length === 0 || value.desiredStageCount !== 9 ||
-    !Array.isArray(value.assignments) || value.assignments.length !== 9) {
+    !Array.isArray(value.assignments) ||
+    value.assignments.length !== assignmentCountFor(value.policyId)) {
     values.push(issue('composition.snapshot.invalid',
       'Composition snapshot header or assignment count is invalid.', ['composition']));
     return diagnostics(values);
@@ -444,6 +519,7 @@ export function validateCampaignCompositionSnapshot(
   }
   const slotIds = new Set<string>();
   const instanceIds = new Set<string>();
+  const expectedSlots = slotsFor(value.policyId);
   value.assignments.forEach((raw, index) => {
     if (!isRecord(raw) || !stableId(raw.slotId) || !stableId(raw.stageId) ||
       !stableId(raw.chapterId) || !stableId(raw.stageInstanceId) ||
@@ -469,17 +545,39 @@ export function validateCampaignCompositionSnapshot(
     ));
     slotIds.add(raw.slotId);
     instanceIds.add(raw.stageInstanceId);
-    const slot = FIXED_NINE_COMPOSITION_SLOTS.find(item => item.slotId === raw.slotId);
+    const slot = expectedSlots.find(item => item.slotId === raw.slotId);
     if (!slot || raw.actId !== slot.actId || raw.depth !== slot.depth || raw.kind !== slot.kind ||
       raw.stageInstanceId !== `instance.${value.compositionId}.${raw.slotId}`) values.push(issue(
-      'composition.snapshot.invalid', 'Assignment does not match the fixed topology.',
+      'composition.snapshot.invalid', 'Assignment does not match the persisted topology policy.',
       ['composition', 'assignments', index], { stageId: raw.stageId, slotId: raw.slotId },
     ));
   });
   if (values.length === 0) {
     const persistedAssignments = value.assignments as unknown as readonly CampaignCompositionAssignment[];
+    const distinctDefinitions = new Set(persistedAssignments.map(item => item.stageId));
+    if (distinctDefinitions.size !== 9 ||
+      (value.policyId === FIXED_NINE_COMPOSITION_POLICY_ID && persistedAssignments.length !== 9)) {
+      values.push(issue('composition.snapshot.invalid',
+        'Composition must preserve exactly nine selected stage definitions.',
+        ['composition', 'assignments']));
+    }
+    if (value.policyId === BRANCHING_NINE_COMPOSITION_POLICY_ID) {
+      const repeated = persistedAssignments.filter((assignment, index, all) =>
+        all.findIndex(item => item.stageId === assignment.stageId) !== index);
+      if (repeated.length !== 1 || repeated[0].revisit !== 'repeatable') values.push(issue(
+        'composition.snapshot.invalid',
+        'Branching policy requires exactly one repeated, repeatable stage definition.',
+        ['composition', 'assignments'], { stageId: repeated[0]?.stageId },
+      ));
+      const alternatives = persistedAssignments.filter(item => item.depth === 1);
+      if (alternatives.length !== 2 || alternatives.every(item => item.revisit === 'forbidden')) {
+        values.push(issue('composition.snapshot.invalid',
+          'Branching policy requires at least one revisitable act-1 alternative.',
+          ['composition', 'assignments']));
+      }
+    }
     const expectedId = `composition.${hashHex(
-      FIXED_NINE_COMPOSITION_POLICY_ID,
+      value.policyId,
       value.seed as string,
       value.campaignId as string,
       value.runId as string,
@@ -554,6 +652,38 @@ export function createFixedNineCompositionRequest(
   } as CampaignCompositionRequest);
 }
 
+export function createBranchingNineCompositionRequest(
+  values: Pick<CampaignCompositionRequest, 'campaignId' | 'campaignRevision' | 'runId' | 'seed'> &
+    Partial<Omit<CampaignCompositionRequest, 'campaignId' | 'campaignRevision' | 'runId' | 'seed'>>,
+): CampaignCompositionRequest {
+  const { campaignId, campaignRevision, runId, seed, ...overrides } = values;
+  return freezeDeep({
+    desiredStageCount: 9,
+    acts: [
+      { actId: 'act-1', stageCount: 4, difficulty: { minimum: 1, maximum: 3 } },
+      { actId: 'act-2', stageCount: 3, difficulty: { minimum: 4, maximum: 6 } },
+      { actId: 'act-3', stageCount: 3, difficulty: { minimum: 7, maximum: 9 } },
+    ],
+    mandatoryMilestones: [
+      { slotId: 'act-1.milestone', requiredBeatIds: ['beat.act-1'] },
+      { slotId: 'act-2.milestone', requiredBeatIds: ['beat.act-2'] },
+      { slotId: 'act-3.milestone', requiredBeatIds: ['beat.act-3'] },
+    ],
+    minimumPhysicalExitsBySlot: {
+      'act-1.entry': 2,
+      'act-1.milestone': 2,
+    },
+    repetitionPolicy: 'allow-repeatable',
+    context: { flags: {}, completedEventIds: [], revealedBeatIds: [] },
+    ...overrides,
+    policyId: BRANCHING_NINE_COMPOSITION_POLICY_ID,
+    campaignId,
+    campaignRevision,
+    runId,
+    seed,
+  } as CampaignCompositionRequest);
+}
+
 /** Deterministic selector over the immutable StageCatalogService projection. */
 export class CampaignCompositionService {
   public constructor(
@@ -574,6 +704,7 @@ export class CampaignCompositionService {
       return failure(code, requestIssues);
     }
 
+    const slots = slotsFor(request.policyId);
     const all = [...this.catalog.list()].sort((left, right) => compare(left.stageId, right.stageId));
     const byId = new Map(all.map(entry => [entry.stageId, entry]));
     const requestedIds = sortedUnique(request.candidateStageIds);
@@ -627,7 +758,7 @@ export class CampaignCompositionService {
         { stageId: id, referenceId: id },
       )),
     );
-    if (request.repetitionPolicy === 'forbid' && candidates.length < request.desiredStageCount) {
+    if (candidates.length < request.desiredStageCount) {
       return failure('candidates-insufficient', [issue(
         'composition.candidates.insufficient',
         `Composition needs ${request.desiredStageCount} distinct definitions but only ${candidates.length} are eligible.`,
@@ -635,7 +766,7 @@ export class CampaignCompositionService {
       )]);
     }
 
-    for (const slot of FIXED_NINE_COMPOSITION_SLOTS) {
+    for (const slot of slots) {
       const rule = actRule(request, slot.actId);
       const milestoneRule = milestone(request, slot.slotId);
       const positioned = candidates.filter(entry =>
@@ -719,7 +850,8 @@ export class CampaignCompositionService {
       const manualStageId = manualById.get(slot.slotId);
       if (manualStageId && entry.stageId !== manualStageId) return 'manual';
       const previous = selected[selected.length - 1]?.entry;
-      if (previous && !destinationCompatible(previous, entry.stageId)) {
+      if (request.policyId === FIXED_NINE_COMPOSITION_POLICY_ID &&
+        previous && !destinationCompatible(previous, entry.stageId)) {
         destinationRejected = true;
         return 'destination';
       }
@@ -745,23 +877,33 @@ export class CampaignCompositionService {
       if (slot.requiredBeatId && !entry.providesBeatIds.includes(slot.requiredBeatId)) return 'milestone';
       if (milestoneRule && !milestoneRule.requiredBeatIds.every(id =>
         entry.providesBeatIds.includes(id))) return 'milestone';
-      if (used.has(entry.stageId) &&
+      if (request.policyId === BRANCHING_NINE_COMPOSITION_POLICY_ID &&
+        slot.slotId === 'act-1.intermediate-a' && entry.revisit === 'forbidden') return 'repeat';
+      const alreadyUsed = used.has(entry.stageId);
+      if (request.policyId === BRANCHING_NINE_COMPOSITION_POLICY_ID) {
+        const repeatSlot = slot.slotId === 'act-3.rejoin';
+        if (repeatSlot && (!alreadyUsed || entry.revisit !== 'repeatable' ||
+          previous?.stageId === entry.stageId)) return 'repeat';
+        if (!repeatSlot && alreadyUsed) return 'repeat';
+      } else if (alreadyUsed &&
         (request.repetitionPolicy === 'forbid' || entry.revisit !== 'repeatable')) return 'repeat';
       return undefined;
     };
 
     const search = (index: number, availableBeats: ReadonlySet<string>): boolean => {
-      if (index === FIXED_NINE_COMPOSITION_SLOTS.length) {
+      if (index === slots.length) {
         const last = selected[selected.length - 1]?.entry;
-        if (last && !destinationCompatible(last, CAMPAIGN_COMPLETE)) {
+        if (request.policyId === FIXED_NINE_COMPOSITION_POLICY_ID &&
+          last && !destinationCompatible(last, CAMPAIGN_COMPLETE)) {
           destinationRejected = true;
           return false;
         }
-        return requiredStageIds.every(id => selected.some(item => item.entry.stageId === id));
+        return new Set(selected.map(item => item.entry.stageId)).size === request.desiredStageCount &&
+          requiredStageIds.every(id => selected.some(item => item.entry.stageId === id));
       }
-      const slot = FIXED_NINE_COMPOSITION_SLOTS[index];
+      const slot = slots[index];
       const missing = requiredStageIds.filter(id => !selected.some(item => item.entry.stageId === id));
-      if (missing.length > FIXED_NINE_COMPOSITION_SLOTS.length - index) return false;
+      if (missing.length > slots.length - index) return false;
       const ordered = candidates.filter(entry => {
         const failure = fitFailure(entry, slot, availableBeats);
         if (failure && entry.stageId === manualById.get(slot.slotId)) {
@@ -814,7 +956,7 @@ export class CampaignCompositionService {
       return failure(code, [issue(diagnosticCode,
         destinationRejected
           ? 'Declared stage exits contradict the composed successor.'
-          : 'No complete assignment satisfies all fixed-nine composition constraints.',
+          : 'No complete assignment satisfies all composition constraints.',
         ['assignments'])]);
     }
 
@@ -843,7 +985,7 @@ export class CampaignCompositionService {
     }));
     const catalogDigest = candidateDigest(candidates);
     const compositionId = `composition.${hashHex(
-      FIXED_NINE_COMPOSITION_POLICY_ID,
+      request.policyId,
       String(request.seed),
       request.campaignId,
       request.runId,
@@ -854,7 +996,7 @@ export class CampaignCompositionService {
     const snapshot = canonicalCampaignCompositionSnapshot({
       schema: CAMPAIGN_COMPOSITION_SNAPSHOT_SCHEMA,
       version: 1,
-      policyId: FIXED_NINE_COMPOSITION_POLICY_ID,
+      policyId: request.policyId,
       policyVersion: 1,
       compositionId,
       catalogDigest,
@@ -881,6 +1023,8 @@ export class CampaignCompositionService {
     if (!graphMatches(snapshot, generated.value)) return failure('graph-generation-failed', [issue(
       'composition.graph.incompatible', 'Generated graph does not preserve composition assignments.', ['graph'],
     )]);
+    const destinationIssues = graphDestinationDiagnostics(snapshot, generated.value);
+    if (destinationIssues.length > 0) return failure('destination-incompatible', destinationIssues);
     const selectedIds = new Set(assignments.map(value => value.stageId));
     const informational = [
       ...candidates.filter(entry => !selectedIds.has(entry.stageId)).map(entry => issue(
@@ -922,7 +1066,7 @@ export class CampaignCompositionService {
         ));
       }
     }
-    if (restorationIssues.length === 0) {
+    if (restorationIssues.length === 0 && snapshot.policyId === FIXED_NINE_COMPOSITION_POLICY_ID) {
       snapshot.assignments.forEach((assignment, index) => {
         const entry = catalogById.get(assignment.stageId);
         const target = snapshot.assignments[index + 1]?.stageId ?? CAMPAIGN_COMPLETE;
@@ -946,6 +1090,8 @@ export class CampaignCompositionService {
     if (!generated.ok || !graphMatches(snapshot, generated.value)) return failure('restore-failed', [issue(
       'composition.restore.failed', 'Persisted composition could not reproduce a compatible graph.', ['graph'],
     )]);
+    const destinationIssues = graphDestinationDiagnostics(snapshot, generated.value);
+    if (destinationIssues.length > 0) return failure('destination-incompatible', destinationIssues);
     return Object.freeze({
       ok: true as const,
       value: Object.freeze({ snapshot, graph: generated.value, diagnostics: Object.freeze([]) }),

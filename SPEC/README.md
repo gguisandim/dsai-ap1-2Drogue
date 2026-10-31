@@ -58,3 +58,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-31 | [Menu de campanhas e modos de jogo — Etapa 9.6C](./2026-10-31-etapa-9-6c-menu-modos-jogo.md) |
 | 2026-10-31 | [Estabilização, persistência e transições — Etapa 9.6D](./2026-10-31-etapa-9-6d-estabilizacao-persistencia-transicoes.md) |
 | 2026-10-31 | [Desacoplamento do motor e encontros declarativos — Etapa 9.6E.1](./2026-10-31-etapa-9-6e1-desacoplamento-motor-encontros.md) |
+| 2026-10-31 | [Topologias flexíveis, bifurcações e revisitas — Etapa 9.6E.2](./2026-10-31-etapa-9-6e2-topologias-flexiveis-revisitas.md) |

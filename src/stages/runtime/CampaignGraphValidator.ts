@@ -703,6 +703,12 @@ export class CampaignGraphValidator {
         { referenceId: graph.entryNodeId });
     }
 
+    const allOutgoing = new Map<string, CampaignEdge[]>();
+    for (const edge of edges) {
+      const list = allOutgoing.get(edge.sourceNodeId) ?? [];
+      list.push(edge);
+      allOutgoing.set(edge.sourceNodeId, list);
+    }
     const forwardEdges = edges.filter(edge => edge.kind !== 'return');
     const outgoing = new Map<string, CampaignEdge[]>();
     for (const edge of forwardEdges) {
@@ -728,7 +734,8 @@ export class CampaignGraphValidator {
 
     for (const node of nodes) {
       const outs = outgoing.get(node.id) ?? [];
-      if (outs.length > node.maximumPhysicalExits) {
+      const physicalOuts = allOutgoing.get(node.id) ?? [];
+      if (physicalOuts.length > node.maximumPhysicalExits) {
         add(diagnostics, 'campaign.graph.topology-invalid',
           `Node ${node.id} exceeds its ${node.maximumPhysicalExits} physical exit capacity.`,
           ['nodes'], { nodeId: node.id });

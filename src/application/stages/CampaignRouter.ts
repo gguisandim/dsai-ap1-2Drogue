@@ -8,6 +8,7 @@ import type {
   StageLoadRequest,
   StageLoadResult,
 } from '../../stages';
+import { BRANCHING_NINE_COMPOSITION_POLICY_ID } from '../../stages';
 import type {
   CampaignConfirmedTransition,
   CampaignNavigationResult,
@@ -548,6 +549,12 @@ export class CampaignRouter {
     if (!state.revealedEdgeIds.includes(edge.id)) blockedReason = 'edge-not-revealed';
     else if (transitionCount(state, edge.id) >= edge.traversalLimit) {
       blockedReason = 'traversal-limit-reached';
+    } else if (edge.kind === 'return' &&
+      state.composition?.policyId === BRANCHING_NINE_COMPOSITION_POLICY_ID) {
+      const continuationAvailable = state.graph.edges
+        .filter(candidate => candidate.sourceNodeId === edge.targetNodeId && candidate.kind !== 'return')
+        .some(candidate => transitionCount(state, candidate.id) < candidate.traversalLimit);
+      if (!continuationAvailable) blockedReason = 'traversal-limit-reached';
     } else if (edge.condition && !this.access.eligibleEdgeIds.includes(edge.id)) {
       blockedReason = 'edge-condition-unmet';
     } else if (binding.manifestExit?.condition &&

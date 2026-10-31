@@ -26,8 +26,13 @@ import type {
 import { WORLD_LAB_FIXTURE_CATALOG } from './fixtures/fixtureCatalog';
 import {
   WorldLabProjector,
+  type WorldLabProjectionInput,
   type WorldLabStageProjectionInput,
 } from './WorldLabProjector';
+
+export type WorldLabGraphInspection = Pick<WorldLabProjectionInput,
+  'topologyPolicyId' | 'currentNodeId' | 'stageInstanceIdsByNodeId' |
+  'revisitCounts' | 'edgeTraversalCounts'>;
 
 export interface WorldLabStageLoaderPort {
   load(request: StageLoadRequest): StageLoadResult;
@@ -122,7 +127,11 @@ export class WorldLabDataService {
   }
 
   /** Projects an already-generated public campaign graph through the same real headless pipeline. */
-  public generateGraph(seedInput: string, graph: CampaignGraph): WorldLabGenerationResult {
+  public generateGraph(
+    seedInput: string,
+    graph: CampaignGraph,
+    inspection: WorldLabGraphInspection = {},
+  ): WorldLabGenerationResult {
     const seed = seedInput.trim();
     if (!seed) {
       return this.failure([{
@@ -215,6 +224,7 @@ export class WorldLabDataService {
         graph,
         stages: stageInputs,
         diagnostics,
+        ...inspection,
       }),
     });
   }

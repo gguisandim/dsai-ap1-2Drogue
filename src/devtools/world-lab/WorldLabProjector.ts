@@ -27,6 +27,11 @@ export interface WorldLabProjectionInput {
   readonly graph: CampaignGraph;
   readonly stages: readonly WorldLabStageProjectionInput[];
   readonly diagnostics: readonly WorldLabDiagnostic[];
+  readonly topologyPolicyId?: string;
+  readonly currentNodeId?: string;
+  readonly stageInstanceIdsByNodeId?: Readonly<Record<string, string>>;
+  readonly revisitCounts?: Readonly<Record<string, number>>;
+  readonly edgeTraversalCounts?: Readonly<Record<string, number>>;
 }
 
 function compare(left: string, right: string): number {
@@ -179,7 +184,11 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
   });
 }
 
-function projectNodes(graph: CampaignGraph): readonly WorldLabGraphNodeView[] {
+function projectNodes(
+  graph: CampaignGraph,
+  input: Pick<WorldLabProjectionInput,
+    'currentNodeId' | 'stageInstanceIdsByNodeId' | 'revisitCounts'>,
+): readonly WorldLabGraphNodeView[] {
   return Object.freeze([...graph.nodes]
     .sort((left, right) => left.depth - right.depth ||
       compare(left.branchId, right.branchId) || compare(left.id, right.id))
@@ -199,6 +208,11 @@ function projectNodes(graph: CampaignGraph): readonly WorldLabGraphNodeView[] {
         incomingCount: graph.edges.filter(edge => edge.targetNodeId === node.id).length,
         outgoingCount: graph.edges.filter(edge => edge.sourceNodeId === node.id).length,
         entry: graph.entryNodeId === node.id,
+        ...(input.stageInstanceIdsByNodeId?.[node.id]
+          ? { stageInstanceId: input.stageInstanceIdsByNodeId[node.id] } : {}),
+        ...(input.revisitCounts?.[node.id] !== undefined
+          ? { visitCount: input.revisitCounts[node.id] } : {}),
+        ...(input.currentNodeId ? { current: input.currentNodeId === node.id } : {}),
         ...(presentation ? { presentation: Object.freeze({ ...presentation }) } : {}),
       });
     }));
@@ -207,6 +221,7 @@ function projectNodes(graph: CampaignGraph): readonly WorldLabGraphNodeView[] {
 function projectEdges(
   graph: CampaignGraph,
   stages: readonly WorldLabStageProjectionInput[],
+  edgeTraversalCounts?: Readonly<Record<string, number>>,
 ): readonly WorldLabGraphEdgeView[] {
   const bindings = new Map<string, {
     readonly stageExitId: string;
@@ -239,6 +254,9 @@ function projectEdges(
         physicalExitId: edge.physicalExitId,
         bindingStatus: binding ? 'bound' as const
           : failedSources.has(edge.sourceNodeId) ? 'failed' as const : 'unavailable' as const,
+        traversalLimit: edge.traversalLimit,
+        ...(edgeTraversalCounts?.[edge.id] !== undefined
+          ? { traversalCount: edgeTraversalCounts[edge.id] } : {}),
         ...(binding ? {
           stageExitId: binding.stageExitId,
           association: binding.association,
@@ -264,8 +282,9 @@ export class WorldLabProjector {
       seed: input.seed,
       source: 'fixture-real-headless-pipeline' as const,
       graphId: input.graph.id,
-      nodes: projectNodes(input.graph),
-      edges: projectEdges(input.graph, input.stages),
+      ...(input.topologyPolicyId ? { topologyPolicyId: input.topologyPolicyId } : {}),
+      nodes: projectNodes(input.graph, input),
+      edges: projectEdges(input.graph, input.stages, input.edgeTraversalCounts),
       stages: Object.freeze([...input.stages]
         .sort((left, right) => compare(left.node.id, right.node.id))
         .map(projectStage)),

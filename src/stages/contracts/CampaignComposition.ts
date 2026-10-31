@@ -12,8 +12,11 @@ import type {
 
 export const CAMPAIGN_COMPOSITION_SNAPSHOT_SCHEMA = 'umbra-campaign-composition' as const;
 export const FIXED_NINE_COMPOSITION_POLICY_ID = 'umbra.fixed-nine.v1' as const;
+export const BRANCHING_NINE_COMPOSITION_POLICY_ID = 'umbra.branching-nine.v1' as const;
 
-export type CampaignCompositionPolicyId = typeof FIXED_NINE_COMPOSITION_POLICY_ID;
+export type CampaignCompositionPolicyId =
+  | typeof FIXED_NINE_COMPOSITION_POLICY_ID
+  | typeof BRANCHING_NINE_COMPOSITION_POLICY_ID;
 export type CampaignCompositionRepetitionPolicy = 'forbid' | 'allow-repeatable';
 
 /**

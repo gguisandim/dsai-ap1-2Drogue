@@ -35,6 +35,9 @@ export interface WorldLabGraphNodeView {
   readonly incomingCount: number;
   readonly outgoingCount: number;
   readonly entry: boolean;
+  readonly stageInstanceId?: string;
+  readonly visitCount?: number;
+  readonly current?: boolean;
   readonly presentation?: WorldLabThemePresentation;
 }
 
@@ -48,6 +51,8 @@ export interface WorldLabGraphEdgeView {
   readonly exitSlotId: string;
   readonly physicalExitId: string;
   readonly bindingStatus: WorldLabBindingStatus;
+  readonly traversalLimit: 1 | 2;
+  readonly traversalCount?: number;
   readonly stageExitId?: string;
   readonly association?: 'manifest-exit' | 'synthetic-slot';
   readonly tile?: { readonly x: number; readonly y: number };
@@ -128,6 +133,7 @@ export interface WorldLabDocument {
   readonly seed: string;
   readonly source: 'fixture-real-headless-pipeline' | 'snapshot';
   readonly graphId: string;
+  readonly topologyPolicyId?: string;
   readonly nodes: readonly WorldLabGraphNodeView[];
   readonly edges: readonly WorldLabGraphEdgeView[];
   readonly stages: readonly WorldLabStageView[];

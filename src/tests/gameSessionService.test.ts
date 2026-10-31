@@ -12,6 +12,7 @@ import {
   legacyComposedCampaignRunId,
 } from '../application/stages';
 import {
+  BRANCHING_NINE_COMPOSITION_POLICY_ID,
   CampaignCompositionService,
   FIXED_NINE_COMPOSITION_SLOTS,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
@@ -43,7 +44,7 @@ function sessionMetadata(index: number): StageCampaignCatalogMetadata {
     difficulty: Object.freeze({ minimum: 1, maximum: 9 }),
     allowedActIds: Object.freeze(act ? [act] : ['act-1', 'act-2', 'act-3']),
     maximumPhysicalExits: index % 5 === 0 ? 3 as const : 2 as const,
-    revisit: 'checkpoint' as const,
+    revisit: index % 2 === 0 ? 'repeatable' as const : 'checkpoint' as const,
     providesBeatIds: Object.freeze(act ? [`beat.${act}`] : []),
   });
 }
@@ -215,6 +216,32 @@ describe('GameSessionService', () => {
     expect(repeated.snapshot).toEqual(first.snapshot);
     expect(other.snapshot.assignments.map(item => item.stageId))
       .not.toEqual(first.snapshot.assignments.map(item => item.stageId));
+  });
+
+  it('exposes the branching policy through the same session API and restores its graph', () => {
+    const stages = fanOutStages();
+    const registry = registryFor(stages);
+    const storage = new MemorySaveStorage();
+    const service = new GameSessionService({ registry, storage });
+    const preview = service.previewBranchingCampaign('seed.session.branching');
+    if (!preview.ok) throw new Error(JSON.stringify(preview.error));
+    expect(preview.value.snapshot.policyId).toBe(BRANCHING_NINE_COMPOSITION_POLICY_ID);
+    expect(preview.value.snapshot.assignments).toHaveLength(10);
+    expect(new Set(preview.value.snapshot.assignments.map(item => item.stageId)).size).toBe(9);
+    expect(preview.value.graph.edges.some(edge => edge.kind === 'branch')).toBe(true);
+    expect(preview.value.graph.edges.some(edge => edge.kind === 'return')).toBe(true);
+
+    const started = service.startBranchingCampaign('seed.session.branching');
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    expect(started.value.persistence).toBe('created');
+    const resumed = new GameSessionService({ registry, storage })
+      .startBranchingCampaign('seed.session.branching');
+    expect(resumed.ok).toBe(true);
+    if (!resumed.ok) return;
+    expect(resumed.value.persistence).toBe('restored');
+    expect(resumed.value.graph).toEqual(started.value.graph);
+    expect(resumed.value.snapshot).toEqual(started.value.snapshot);
   });
 
   it('persists the composed snapshot under its own key and restores it without recomposition', () => {

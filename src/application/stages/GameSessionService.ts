@@ -1,11 +1,14 @@
 import type { SaveStoragePort } from '../../narrative';
 import {
+  BRANCHING_NINE_COMPOSITION_POLICY_ID,
+  FIXED_NINE_COMPOSITION_POLICY_ID,
   CampaignCompositionService,
   CampaignExitBinder,
   PhysicalExitResolver,
   StageCatalogService,
   StageLoader,
   StageRegistry,
+  createBranchingNineCompositionRequest,
   createFixedNineCompositionRequest,
   registerCampaignChapters,
   registerLegacyStages,
@@ -13,6 +16,7 @@ import {
 import type {
   CampaignCompositionDiagnostic,
   CampaignCompositionFailureCode,
+  CampaignCompositionPolicyId,
   CampaignCompositionRequest,
   CampaignCompositionSlotSelection,
   CampaignCompositionSnapshot,
@@ -63,6 +67,7 @@ export interface GameIndividualStageView {
 }
 
 export interface GameSavedCampaignView {
+  readonly policyId: CampaignCompositionPolicyId;
   readonly seed: string;
   readonly runId: string;
   readonly compositionId: string;
@@ -141,6 +146,7 @@ export interface GameSessionServiceOptions {
 interface ComposedRequestInput {
   readonly seed: string;
   readonly selections?: readonly CampaignCompositionSlotSelection[];
+  readonly policyId?: CampaignCompositionPolicyId;
 }
 
 function compare(left: string, right: string): number {
@@ -182,9 +188,11 @@ function canonicalSelections(
 export function composedCampaignRunId(
   seed: string,
   selections?: readonly CampaignCompositionSlotSelection[],
+  policyId?: CampaignCompositionPolicyId,
 ): string {
   const material = selectionMaterial(selections);
-  return `run.composed.${hashHex64('composed', seed, material)}`;
+  const policyMaterial = policyId === BRANCHING_NINE_COMPOSITION_POLICY_ID ? policyId : undefined;
+  return `run.composed.${hashHex64('composed', seed, material, ...(policyMaterial ? [policyMaterial] : []))}`;
 }
 
 /**
@@ -336,8 +344,16 @@ export class GameSessionService {
     return this.previewComposition({ seed, selections });
   }
 
+  public previewBranchingCampaign(seed: string): ReturnType<GameSessionService['previewRandomCampaign']> {
+    return this.previewComposition({ seed, policyId: BRANCHING_NINE_COMPOSITION_POLICY_ID });
+  }
+
   public startRandomCampaign(seed: string): GameSessionResult<GameComposedSession> {
     return this.startComposedCampaign({ seed });
+  }
+
+  public startBranchingCampaign(seed: string): GameSessionResult<GameComposedSession> {
+    return this.startComposedCampaign({ seed, policyId: BRANCHING_NINE_COMPOSITION_POLICY_ID });
   }
 
   public startCustomCampaign(
@@ -394,10 +410,14 @@ export class GameSessionService {
     const seed = input.seed.trim();
     if (seed.length === 0) return failure('invalid-seed', 'A seed não pode ser vazia.');
     const selections = input.selections ? canonicalSelections(input.selections) : undefined;
-    return success(createFixedNineCompositionRequest({
+    const policyId = input.policyId ?? FIXED_NINE_COMPOSITION_POLICY_ID;
+    const factory = policyId === BRANCHING_NINE_COMPOSITION_POLICY_ID
+      ? createBranchingNineCompositionRequest
+      : createFixedNineCompositionRequest;
+    return success(factory({
       campaignId: COMPOSED_CAMPAIGN_ID,
       campaignRevision: COMPOSED_CAMPAIGN_REVISION,
-      runId: composedCampaignRunId(seed, selections),
+      runId: composedCampaignRunId(seed, selections, policyId),
       seed,
       ...(selections ? { manualAssignments: selections } : {}),
     }));
@@ -441,8 +461,10 @@ export class GameSessionService {
           String(requestValue.seed),
           input.selections ? canonicalSelections(input.selections) : undefined,
         );
-        if (persisted && (stored.graph.runId === requestValue.runId ||
-          stored.graph.runId === legacyRunId) &&
+        const legacyCompatible = requestValue.policyId === FIXED_NINE_COMPOSITION_POLICY_ID &&
+          stored.graph.runId === legacyRunId;
+        if (persisted && persisted.policyId === requestValue.policyId &&
+          (stored.graph.runId === requestValue.runId || legacyCompatible) &&
           persisted.campaignId === COMPOSED_CAMPAIGN_ID &&
           persisted.seed === String(requestValue.seed)) {
           if (stored.status === 'completed') return failure(
@@ -540,6 +562,7 @@ export class GameSessionService {
     const node = state.graph.nodes.find(item => item.id === state.currentNodeId);
     return {
       view: Object.freeze({
+        policyId: snapshot.policyId,
         seed: snapshot.seed,
         runId: state.graph.runId,
         compositionId: snapshot.compositionId,

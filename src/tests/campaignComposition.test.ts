@@ -1,6 +1,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
+  BRANCHING_NINE_COMPOSITION_POLICY_ID,
+  BRANCHING_NINE_COMPOSITION_SLOTS,
   CampaignCompositionService,
   CampaignExitBinder,
   CampaignGraphValidator,
@@ -9,6 +11,7 @@ import {
   StageCatalogService,
   StageLoader,
   StageRegistry,
+  createBranchingNineCompositionRequest,
   createFixedNineCompositionRequest,
   type CampaignCompositionCatalog,
   type CampaignCompositionRequest,
@@ -23,6 +26,7 @@ import {
   createCampaignRunState,
 } from '../application/stages';
 import { MemorySaveStorage } from '../narrative';
+import { WorldLabDataService } from '../devtools/world-lab';
 
 const CAMPAIGN_COMPLETE = 'campaign.complete' as const;
 const stageId = (index: number): string => `stage.composition.${String(index).padStart(2, '0')}`;
@@ -160,6 +164,27 @@ function request(seed = 'seed.composition.35-to-9'): CampaignCompositionRequest 
   });
 }
 
+function branchingRequest(seed = 'seed.composition.branching'): CampaignCompositionRequest {
+  return createBranchingNineCompositionRequest({
+    campaignId: 'campaign.composition.fixture',
+    campaignRevision: 1,
+    runId: 'run.composition.branching',
+    seed,
+    entryStageId: stageId(1),
+    mandatoryMilestones: Object.freeze([
+      Object.freeze({
+        slotId: 'act-1.milestone', stageId: stageId(3), requiredBeatIds: Object.freeze(['beat.act-1']),
+      }),
+      Object.freeze({
+        slotId: 'act-2.milestone', stageId: stageId(6), requiredBeatIds: Object.freeze(['beat.act-2']),
+      }),
+      Object.freeze({
+        slotId: 'act-3.milestone', stageId: stageId(9), requiredBeatIds: Object.freeze(['beat.act-3']),
+      }),
+    ]),
+  });
+}
+
 /**
  * A placeable explicit anchor (relative to the spawned tile) that is free in
  * the fixture level, so the physical resolver binds the declared manifest exit
@@ -229,6 +254,169 @@ describe('CampaignCompositionService', () => {
     expect(value.snapshot.assignments.every(assignment =>
       assignment.declaredExits.every((exit, index, values) =>
         index === 0 || values[index - 1].id <= exit.id))).toBe(true);
+  });
+
+  it('composes nine definitions into a deterministic fork, rejoin and controlled return', () => {
+    const service = new CampaignCompositionService(catalog(stages));
+    const first = compose(service, branchingRequest());
+    const repeated = compose(service, branchingRequest());
+    const other = compose(service, branchingRequest('seed.composition.branching.other'));
+
+    expect(first.snapshot.policyId).toBe(BRANCHING_NINE_COMPOSITION_POLICY_ID);
+    expect(first.snapshot.assignments).toHaveLength(BRANCHING_NINE_COMPOSITION_SLOTS.length);
+    expect(new Set(first.snapshot.assignments.map(item => item.stageId)).size).toBe(9);
+    expect(first.graph.nodes).toHaveLength(10);
+    expect(first.graph.edges.filter(edge => edge.kind === 'branch')).toHaveLength(2);
+    expect(first.graph.edges.filter(edge => edge.kind === 'rejoin')).toHaveLength(2);
+    expect(first.graph.edges.filter(edge => edge.kind === 'return')).toHaveLength(1);
+    expect(first.graph.edges.find(edge => edge.kind === 'return')?.traversalLimit).toBe(2);
+    expect(first.graph).toEqual(repeated.graph);
+    expect(first.snapshot).toEqual(repeated.snapshot);
+    expect(other.snapshot.assignments.map(item => item.stageId))
+      .not.toEqual(first.snapshot.assignments.map(item => item.stageId));
+    expect(new CampaignGraphValidator().validate(first.graph)).toEqual([]);
+  });
+
+  it('rejects a branching composition without a repeatable definition or revisitable branch', () => {
+    const forbidden = stages.map(item => Object.freeze({
+      ...item,
+      manifest: Object.freeze({
+        ...item.manifest,
+        campaignCatalog: Object.freeze({
+          ...(item.manifest.campaignCatalog as StageCampaignCatalogMetadata),
+          revisit: 'forbidden' as const,
+        }),
+      }),
+    }));
+    const result = new CampaignCompositionService(catalog(forbidden)).compose(branchingRequest());
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        code: 'composition-impossible',
+        diagnostics: [{ code: 'composition.assignment.impossible' }],
+      },
+    });
+  });
+
+  it('traverses a physical branch, converges, revisits the same node once and restores it', () => {
+    const sourceValue = source(stages);
+    const registry = new StageRegistry();
+    registry.registerChapter(sourceValue.listChapters()[0], sourceValue.listModules());
+    const value = compose(new CampaignCompositionService(catalog(stages)), branchingRequest());
+    const storage = new MemorySaveStorage();
+    const saves = new CampaignRunSaveService({ storage });
+    const router = new CampaignRouter(createCampaignRunState(value.graph, value.snapshot), {
+      loader: new StageLoader(registry),
+      resolver: new PhysicalExitResolver(),
+      binder: new CampaignExitBinder(),
+      saves,
+    });
+    expect(saves.save(router.state()).ok).toBe(true);
+    const expectReload = () => {
+      const loadedState = saves.load();
+      expect(loadedState.ok).toBe(true);
+      if (loadedState.ok && loadedState.value.status === 'loaded') {
+        expect(loadedState.value.envelope.state).toEqual(router.state());
+      }
+    };
+    expectReload(); // before the fork
+
+    const move = (kind: 'branch' | 'rejoin' | 'return' | 'forward') => {
+      const inspected = router.inspect();
+      if (!inspected.ok) throw new Error(JSON.stringify(inspected.error));
+      const destination = inspected.value.snapshot.destinations.find(item =>
+        value.graph.edges.find(edge => edge.id === item.edgeId)?.kind === kind && item.available);
+      if (!destination) throw new Error(`No available ${kind} destination.`);
+      const prepared = router.prepare(destination.physicalExitId);
+      if (!prepared.ok) throw new Error(JSON.stringify(prepared.error));
+      const confirmed = router.confirm(prepared.value.preparationId);
+      if (!confirmed.ok) throw new Error(JSON.stringify(confirmed.error));
+      return confirmed.value;
+    };
+
+    move('branch');
+    const branchNodeId = router.state().currentNodeId;
+    expectReload(); // selected and inside an alternative
+    const branchInstance = value.snapshot.assignments.find(item =>
+      value.graph.nodes.find(node => node.id === branchNodeId)?.slotId === item.slotId)?.stageInstanceId;
+    move('rejoin');
+    expectReload(); // after convergence
+    move('return');
+    expect(router.state().currentNodeId).toBe(branchNodeId);
+    expect(router.state().revisitCounts[branchNodeId]).toBe(2);
+    expectReload(); // after revisit
+    expect(value.snapshot.assignments.find(item =>
+      value.graph.nodes.find(node => node.id === branchNodeId)?.slotId === item.slotId)?.stageInstanceId)
+      .toBe(branchInstance);
+    move('rejoin');
+
+    const afterRevisit = router.inspect();
+    expect(afterRevisit.ok).toBe(true);
+    if (afterRevisit.ok) {
+      const returnDestination = afterRevisit.value.snapshot.destinations.find(item =>
+        value.graph.edges.find(edge => edge.id === item.edgeId)?.kind === 'return');
+      expect(returnDestination?.available).toBe(false);
+      expect(returnDestination?.blockedReason).toBe('traversal-limit-reached');
+    }
+
+    const loaded = saves.load();
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok || loaded.value.status !== 'loaded') return;
+    expect(loaded.value.envelope.state.graph).toEqual(value.graph);
+    expect(loaded.value.envelope.state.currentNodeId).toBe(router.state().currentNodeId);
+    expect(loaded.value.envelope.state.revisitCounts[branchNodeId]).toBe(2);
+    expect(new CampaignCompositionService(catalog(stages)).restore(value.snapshot).ok).toBe(true);
+
+    const state = router.state();
+    const worldLab = new WorldLabDataService({ registry }).generateGraph(
+      value.snapshot.seed,
+      value.graph,
+      {
+        topologyPolicyId: value.snapshot.policyId,
+        currentNodeId: state.currentNodeId,
+        revisitCounts: state.revisitCounts,
+        edgeTraversalCounts: Object.freeze(Object.fromEntries(value.graph.edges.map(edge => [
+          edge.id, state.traversedEdgeIds.filter(id => id === edge.id).length,
+        ]))),
+        stageInstanceIdsByNodeId: Object.freeze(Object.fromEntries(value.graph.nodes.map(node => [
+          node.id,
+          value.snapshot.assignments.find(item => item.slotId === node.slotId)?.stageInstanceId ?? node.id,
+        ]))),
+      },
+    );
+    expect(worldLab.ok).toBe(true);
+    if (worldLab.ok) {
+      expect(worldLab.value.topologyPolicyId).toBe(BRANCHING_NINE_COMPOSITION_POLICY_ID);
+      expect(worldLab.value.nodes.find(node => node.id === branchNodeId)?.visitCount).toBe(2);
+      expect(worldLab.value.nodes.find(node => node.current)?.id).toBe(state.currentNodeId);
+      expect(worldLab.value.edges.find(edge => edge.kind === 'return')).toMatchObject({
+        traversalLimit: 2,
+        traversalCount: 1,
+      });
+      expect(worldLab.value.edges.every(edge => edge.bindingStatus === 'bound')).toBe(true);
+    }
+
+    let guard = 0;
+    while (router.state().status === 'active' && guard < 10) {
+      move('forward');
+      guard += 1;
+      const current = value.graph.nodes.find(node => node.id === router.state().currentNodeId);
+      if (current?.depth === 8) expectReload(); // immediately before completion
+    }
+    expect(router.state().status).toBe('completed');
+    expect(guard).toBeLessThan(10);
+    const reward = router.rewards()[0];
+    expect(reward).toBeDefined();
+    if (reward) {
+      expect(router.claimReward(reward.transitionId).ok).toBe(true);
+      expect(router.acknowledgeReward(reward.transitionId).ok).toBe(true);
+      expect(router.acknowledgeReward(reward.transitionId)).toMatchObject({
+        ok: true, value: { persistence: 'skipped' },
+      });
+      expect(router.claimReward(reward.transitionId)).toMatchObject({
+        ok: false, error: { code: 'reward-already-applied' },
+      });
+    }
   });
 
   it('is deterministic, independent of catalog order and varies across viable seeds', () => {
