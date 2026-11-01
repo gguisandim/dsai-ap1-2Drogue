@@ -54,6 +54,7 @@ import { StageMapRenderError, StageMapRenderer } from '../presentation/stages/St
 import {
   AGUAS_CHAPTER_MANIFEST,
   AGUAS_VISUAL_RESOURCES,
+  CORACAO_CORROMPIDO_STAGE,
   IGAPO_DAS_MEMORIAS_STAGE,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   LEGACY_RESOLVED_NPC_SPRITE,
@@ -236,7 +237,10 @@ describe('stage entity presentation', () => {
       },
     };
     const registry = new StageRegistry();
-    registry.registerChapter({ ...AGUAS_CHAPTER_MANIFEST, dependencies: [] }, [invalidModule]);
+    registry.registerChapter(
+      { ...AGUAS_CHAPTER_MANIFEST, dependencies: [] },
+      [invalidModule, CORACAO_CORROMPIDO_STAGE],
+    );
     const result = new StageLoader(registry).load({
       stageId: invalidModule.manifest.id, runId: 'run.invalid-entity', runSeed: 'seed.invalid-entity',
     });

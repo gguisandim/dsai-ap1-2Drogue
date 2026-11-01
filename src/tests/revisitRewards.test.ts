@@ -31,16 +31,32 @@ function navigate(binder: ReturnType<typeof create>['binder'], connectionId: str
   return confirmed.value;
 }
 
+function navigateInternal(binder: ReturnType<typeof create>['binder']) {
+  const inspected = binder.inspect();
+  if (!inspected.ok) throw inspected.error;
+  const macroEdgeIds = new Set(inspected.value.choices.flatMap(choice =>
+    choice.edgeId ? [choice.edgeId] : []));
+  const destination = inspected.value.navigation.snapshot.destinations.find(item =>
+    item.available && !macroEdgeIds.has(item.edgeId));
+  if (!destination) throw new Error('Internal route destination is unavailable.');
+  const prepared = binder.prepareInternal(destination.physicalExitId);
+  if (!prepared.ok) throw prepared.error;
+  const confirmed = binder.confirmInternal(prepared.value.preparationId);
+  if (!confirmed.ok) throw confirmed.error;
+  return confirmed.value;
+}
+
 describe('revisit reward characterization', () => {
   it('grants one distinct reward operation per confirmed transition occurrence', () => {
     const { binder } = create();
     navigate(binder, HUB_TO_WATERS);
+    navigateInternal(binder);
     navigate(binder, IGAPO_TO_HUB);
     navigate(binder, HUB_TO_WATERS);
 
     const rewards = binder.rewards();
-    expect(rewards).toHaveLength(3);
-    expect(new Set(rewards.map(reward => reward.transitionId)).size).toBe(3);
+    expect(rewards).toHaveLength(4);
+    expect(new Set(rewards.map(reward => reward.transitionId)).size).toBe(4);
     expect(rewards.every(reward => reward.status === 'pending')).toBe(true);
 
     // Distinct transition occurrences map to distinct progression completions.
@@ -55,7 +71,7 @@ describe('revisit reward characterization', () => {
       });
       expect(applied.ok).toBe(true);
     }
-    expect(progression.snapshot().counters.stagesCompleted).toBe(before + 3);
+    expect(progression.snapshot().counters.stagesCompleted).toBe(before + 4);
 
     // The same transition operation is never applied twice.
     const repeat = progression.recordStageCompletedIdempotent({
@@ -65,13 +81,16 @@ describe('revisit reward characterization', () => {
       operationId: rewards[0].transitionId,
     });
     expect(repeat.ok && repeat.value.status).toBe('deduplicated');
-    expect(progression.snapshot().counters.stagesCompleted).toBe(before + 3);
+    expect(progression.snapshot().counters.stagesCompleted).toBe(before + 4);
   });
 
   it('stops offering the edge once its traversal limit is reached', () => {
     const { binder } = create();
     navigate(binder, HUB_TO_WATERS);
+    navigateInternal(binder);
     navigate(binder, IGAPO_TO_HUB);
+    // Re-entering the waters context resumes at the Coração Corrompido, so the
+    // return edge is available without another internal transition.
     navigate(binder, HUB_TO_WATERS);
     navigate(binder, IGAPO_TO_HUB);
     // Hub -> Igapó was traversed twice already (limit 2), so it is now blocked.

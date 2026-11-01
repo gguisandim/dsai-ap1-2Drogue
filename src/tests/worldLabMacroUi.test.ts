@@ -90,7 +90,7 @@ describe('Umbra World Lab macro campaign UI', () => {
     expect(document.querySelector(`[data-stage-id="${IGAPO_DAS_MEMORIAS_STAGE_ID}"]`)
       ?.getAttribute('data-eligibility')).toBe('campaign-eligible');
     expect(document.body.textContent).toContain('Catálogo dinâmico');
-    expect(document.body.textContent).toContain('chapter.aguas@1');
+    expect(document.body.textContent).toContain('chapter.aguas@2');
     expect(document.body.textContent).toContain('manifesto 1');
     expect(document.body.textContent).toContain('Composição determinística');
     expect(document.body.textContent).toContain('umbra.fixed-nine.v1');

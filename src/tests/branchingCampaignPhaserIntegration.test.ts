@@ -157,7 +157,10 @@ describe('GameScene branching campaign pilot', () => {
         error: { code: 'persistence-failed', recovery: 'rolled-back' },
       })),
       acknowledgeReward: jest.fn(),
-      inspect: jest.fn(() => ({ ok: true, value: { snapshot: { destinations: [] } } })),
+      inspect: jest.fn(() => ({
+        ok: true,
+        value: { snapshot: { destinations: [] }, loadedStage: { level: target } },
+      })),
     };
 
     state.navigateCampaignExit('physical.test');

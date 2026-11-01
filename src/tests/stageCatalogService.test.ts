@@ -266,7 +266,7 @@ describe('StageCatalogService', () => {
     const value = catalog(registry);
     expect(value.get(IGAPO_DAS_MEMORIAS_STAGE_ID)).toMatchObject({
       chapterId: 'chapter.aguas',
-      manifestRevision: 1,
+      manifestRevision: 2,
       eligibility: 'campaign-eligible',
     });
     expect(value.get('verse_01_atrium')?.eligibility).toBe('individual-only');

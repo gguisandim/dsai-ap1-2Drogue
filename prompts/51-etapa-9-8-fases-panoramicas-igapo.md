@@ -8,11 +8,34 @@
 - Esforço: `desconhecido`
 - SPEC: `SPEC/2026-11-01-etapa-9-8-fases-panoramicas-igapo.md`
 - Commit: `pendente`
-- Execução: `pendente`
+- Execução: `npm run check:gates OK; npm run build OK (typecheck incluído); homologação visual em navegador real registrada na sessão anterior, incluindo as duas fases; suíte completa pendente na interrupção, concluída na continuação registrada em prompts/52.`
 
 ## Arquivos modificados
 
-- `pendente`
+- `SPEC/2026-11-01-etapa-9-8-fases-panoramicas-igapo.md`
+- `SPEC/README.md`
+- `src/application/stages/CampaignMacroRouteBinder.ts`
+- `src/application/stages/GameMacroCampaignAdapter.ts`
+- `src/application/stages/UmbraCampaignRouteSlice.ts`
+- `src/scenes/GameScene.ts`
+- `src/stages/chapters/aguas/coracaoCorrompido.ts`
+- `src/stages/chapters/aguas/igapoDasMemorias.ts`
+- `src/stages/chapters/aguas/igapoVisuals.ts`
+- `src/stages/chapters/aguas/index.ts`
+- `src/stages/index.ts`
+- `src/devtools/world-lab/WorldLabPreviewBridge.ts`
+- `src/devtools/world-lab/ui/PhaserPreviewView.ts`
+- `src/devtools/world-lab/ui/WorldLabApp.ts`
+- `src/devtools/world-lab/ui/WorldLabPtBr.ts`
+- `src/devtools/world-lab/world-lab.css`
+- `src/main.ts`
+- `src/tests/igapoDasMemorias.test.ts`
+- `src/tests/macroCampaignPhaserAdapter.test.ts`
+- `src/tests/macroCampaignPhaserIntegration.test.ts`
+- `src/tests/panoramicStageSupport.test.ts`
+- `src/tests/worldLabPreviewBridge.test.ts`
+- `src/tests/worldLabVisualPreview.test.ts`
+- `prompts/52-etapa-9-8-continuacao-fases-panoramicas-igapo.md`
 
 ## Prompt efetivamente recebido
 

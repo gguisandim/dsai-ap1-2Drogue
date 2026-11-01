@@ -3,6 +3,7 @@ import { StageMapRenderError, StageMapRenderer } from '../presentation/stages/St
 import {
   AGUAS_CHAPTER_MANIFEST,
   AGUAS_VISUAL_RESOURCES,
+  CORACAO_CORROMPIDO_STAGE,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   IGAPO_DAS_MEMORIAS_STAGE,
   IGAPO_AUDIO_PROFILE_ID,
@@ -180,7 +181,7 @@ describe('declarative stage visual presentation', () => {
     badRegistry.registerChapter({
       ...AGUAS_CHAPTER_MANIFEST,
       dependencies: [],
-    }, [badModule]);
+    }, [badModule, CORACAO_CORROMPIDO_STAGE]);
     const badLoad = new StageLoader(badRegistry).load({
       stageId: badModule.manifest.id, runId: 'run.bad-visual', runSeed: 'seed.bad-visual',
     });
@@ -207,11 +208,12 @@ describe('declarative stage visual presentation', () => {
       .toEqual(second.images.map(image => [image.textureKey, (image as unknown as FakeImage).tint]));
     const collisionCount = loaded.level.tileMap.flat().filter(tile => tile === 1 || tile === 2 || tile === 3).length;
     expect(first.obstacles).toHaveLength(collisionCount);
-    expect(firstResult.decorationImages).toHaveLength(3);
+    expect(firstResult.decorationImages).toHaveLength(6);
     expect(firstResult.pendingExitTiles).toHaveLength(1);
     expect(firstResult.decorationImages.every(image =>
       !first.obstacles.includes(image as unknown as FakeImage))).toBe(true);
-    expect(firstResult.decorationImages.map(image => (image as unknown as FakeImage).depth)).toEqual([5, 2, 4]);
+    expect(firstResult.decorationImages.map(image => (image as unknown as FakeImage).depth))
+      .toEqual([5, 2, 4, 5, 2, 4]);
   });
 
   it('fails before partial rendering when a resolved texture is absent from Phaser', () => {

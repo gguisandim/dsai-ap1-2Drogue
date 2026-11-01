@@ -17,10 +17,10 @@ describe('World Lab POI projection', () => {
       kind: 'npc',
       id: ECO_DAS_AGUAS_NPC_ID,
       label: 'Vestígio Submerso',
-      x: 27,
-      y: 17,
+      x: 28,
+      y: 16,
     }));
-    expect(igapo?.markers.filter(marker => marker.kind === 'decoration')).toHaveLength(3);
+    expect(igapo?.markers.filter(marker => marker.kind === 'decoration')).toHaveLength(6);
     expect(igapo?.visualPresentation).toMatchObject({
       themeId: 'theme.aguas.igapo',
       tilesetId: 'tileset.aguas.igapo-technical',
@@ -53,8 +53,8 @@ describe('World Lab POI projection', () => {
     expect(result.value.catalog.entries.find(item =>
       item.stageId === IGAPO_DAS_MEMORIAS_STAGE_ID)).toMatchObject({
       chapterId: 'chapter.aguas',
-      manifestRevision: 1,
-      chapterRevision: 1,
+      manifestRevision: 2,
+      chapterRevision: 2,
       loadability: 'loadable',
       eligibility: 'campaign-eligible',
       regionIds: ['region.aguas.igapo'],

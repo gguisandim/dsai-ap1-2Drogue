@@ -91,7 +91,7 @@ describe('World Lab visual presentation inspection', () => {
     expect(visual?.variantId).toBe(IGAPO_SOMBRIO_VARIANT_ID);
     expect(visual?.themeId).toBe('theme.aguas.igapo-sombrio');
     expect(visual?.tiles?.find(tile => tile.logicalId === 'water')?.frame).toBe(295);
-    expect(visual?.environment?.fog?.opacity).toBe(0.18);
+    expect(visual?.environment?.fog?.opacity).toBe(0.12);
     expect(visual?.decorations?.map(decoration => decoration.id).sort())
       .toEqual(['igapo_sombrio_dead_tree', 'igapo_sombrio_reeds', 'igapo_sombrio_roots']);
     expect(document.stages.some(item => item.stageId === IGAPO_DAS_MEMORIAS_STAGE_ID)).toBe(true);

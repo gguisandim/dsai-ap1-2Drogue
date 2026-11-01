@@ -9,6 +9,7 @@ import {
 import { WorldLabMacroDataService } from '../devtools/world-lab';
 import { MemorySaveStorage, type SaveStoragePort } from '../narrative';
 import {
+  CORACAO_CORROMPIDO_STAGE_ID,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   StageLoader,
   StageRegistry,
@@ -46,6 +47,21 @@ function navigate(
   return confirmed.value;
 }
 
+function navigateInternal(binder: ReturnType<typeof create>['binder']) {
+  const inspected = binder.inspect();
+  if (!inspected.ok) throw inspected.error;
+  const macroEdgeIds = new Set(inspected.value.choices.flatMap(choice =>
+    choice.edgeId ? [choice.edgeId] : []));
+  const destination = inspected.value.navigation.snapshot.destinations.find(item =>
+    item.available && !macroEdgeIds.has(item.edgeId));
+  if (!destination) throw new Error('Internal route destination is unavailable.');
+  const prepared = binder.prepareInternal(destination.physicalExitId);
+  if (!prepared.ok) throw prepared.error;
+  const confirmed = binder.confirmInternal(prepared.value.preparationId);
+  if (!confirmed.ok) throw confirmed.error;
+  return confirmed.value;
+}
+
 class ToggleStorage implements SaveStoragePort {
   public failWrites = false;
   public readonly memory = new MemorySaveStorage();
@@ -62,7 +78,7 @@ class ToggleStorage implements SaveStoragePort {
 
 describe('CampaignMacroRouteBinder vertical slice', () => {
   it('keeps the legacy hub placeholder and declares Igapó as authored content', () => {
-    expect(UMBRA_CAMPAIGN_ROUTE_SLICE.revision).toBe(3);
+    expect(UMBRA_CAMPAIGN_ROUTE_SLICE.revision).toBe(4);
     expect(UMBRA_CAMPAIGN_ROUTE_SLICE.hub.content).toMatchObject({
       kind: 'stage', stageId: 'verse_01_atrium', placeholder: { kind: 'legacy-map' },
     });
@@ -85,6 +101,8 @@ describe('CampaignMacroRouteBinder vertical slice', () => {
     expect(first.value.nodes.find(node => node.depth === 0)?.stageId).toBe('verse_01_atrium');
     expect(first.value.nodes.find(node => node.depth === 1)?.stageId)
       .toBe(IGAPO_DAS_MEMORIAS_STAGE_ID);
+    expect(first.value.nodes.find(node => node.depth === 2)?.stageId)
+      .toBe(CORACAO_CORROMPIDO_STAGE_ID);
     expect(first.bindings.map(binding => binding.connectionId)).toEqual([
       HUB_TO_WATERS, IGAPO_TO_HUB,
     ]);
@@ -117,21 +135,25 @@ describe('CampaignMacroRouteBinder vertical slice', () => {
       id: entered.state.graph.id,
     };
 
+    const corrupted = navigateInternal(session.binder);
+    expect(corrupted.state.graph.nodes.find(node => node.id === corrupted.state.currentNodeId)?.stageId)
+      .toBe(CORACAO_CORROMPIDO_STAGE_ID);
+
     const returned = navigate(session.binder, IGAPO_TO_HUB);
     expect(returned.state.activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_HUB_CONTEXT);
     expect(returned.state.macroProgress?.currentLocation.kind).toBe('hub');
     expect(returned.state.parkedGraphContexts?.[UMBRA_ROUTE_SLICE_WATERS_CONTEXT]?.currentNodeId)
-      .toBe(entered.state.currentNodeId);
+      .toBe(corrupted.state.currentNodeId);
 
     const restored = create(storage);
     expect(restored.persistence).toBe('restored');
     expect(restored.binder.state().activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_HUB_CONTEXT);
     const resumed = navigate(restored.binder, HUB_TO_WATERS);
     expect(resumed.state.activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_WATERS_CONTEXT);
-    expect(resumed.state.currentNodeId).toBe(entered.state.currentNodeId);
+    expect(resumed.state.currentNodeId).toBe(corrupted.state.currentNodeId);
     expect(resumed.state.graph).toMatchObject(runIdentity);
-    expect(resumed.state.confirmedTransitionIds).toHaveLength(3);
-    expect(Object.keys(resumed.state.rewards)).toHaveLength(3);
+    expect(resumed.state.confirmedTransitionIds).toHaveLength(4);
+    expect(Object.keys(resumed.state.rewards)).toHaveLength(4);
     expect(resumed.state.parkedGraphContexts?.[UMBRA_ROUTE_SLICE_HUB_CONTEXT]).toBeDefined();
   });
 
