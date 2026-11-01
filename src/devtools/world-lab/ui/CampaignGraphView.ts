@@ -1,5 +1,6 @@
 import type { WorldLabDocument, WorldLabSelection } from '../contracts';
 import { installSvgPanZoom, svgElement } from './svgInteraction';
+import { WORLD_LAB_PT_BR, localizeStatus } from './WorldLabPtBr';
 
 export interface CampaignGraphCallbacks {
   readonly selectNode: (nodeId: string) => void;
@@ -39,7 +40,7 @@ export function renderCampaignGraph(
 ): void {
   container.replaceChildren();
   const svg = svgElement('svg', {
-    class: 'wl-graph-svg', role: 'img', 'aria-label': 'Campaign graph',
+    class: 'wl-graph-svg', role: 'img', 'aria-label': WORLD_LAB_PT_BR.panels.graph,
   });
   const nodePositions = new Map(document.nodes.map(node => [node.id, position(node.depth, node.branchId)]));
   const complete = { x: 76 + 9 * 150, y: 180 };
@@ -66,7 +67,7 @@ export function renderCampaignGraph(
       if (event.key === 'Enter' || event.key === ' ') callbacks.selectEdge(edge.id);
     });
     const title = svgElement('title');
-    title.textContent = `${edge.id}\n${edge.sourceNodeId} → ${edge.targetNodeId}\n${edge.bindingStatus}`;
+    title.textContent = `${edge.id}\n${edge.sourceNodeId} → ${edge.targetNodeId}\n${localizeStatus(edge.bindingStatus)}`;
     line.append(title);
     svg.append(line);
   });
@@ -110,7 +111,7 @@ export function renderCampaignGraph(
   const completion = svgElement('g', { transform: `translate(${complete.x - 32} ${complete.y - 22})` });
   completion.append(svgElement('rect', { width: 64, height: 44, rx: 22, class: 'wl-completion' }));
   const completionLabel = svgElement('text', { x: 32, y: 27, 'text-anchor': 'middle', class: 'wl-completion-label' });
-  completionLabel.textContent = 'END';
+  completionLabel.textContent = 'FIM';
   completion.append(completionLabel);
   svg.append(completion);
   installSvgPanZoom(svg, { x: 0, y: 0, width: 1500, height: 360 });

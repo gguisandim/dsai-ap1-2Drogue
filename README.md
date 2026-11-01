@@ -113,7 +113,7 @@ um catálogo marcado como Fixture e os geradores, loaders e validadores reais;
 ele não faz parte da entrada de produção. As variantes visuais do Igapó podem ser
 inspecionadas com
 `?stage=stage.aguas.igapo-das-memorias&presentationVariant=variant.aguas.igapo-sombrio`
-ou pelo seletor **Variant** do World Lab.
+ou pelo seletor **Variante** na área **Fases** do World Lab.
 
 ### Autoria independente e preview visual
 

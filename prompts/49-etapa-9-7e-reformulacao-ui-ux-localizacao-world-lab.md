@@ -8,13 +8,29 @@
 - Esforço: `desconhecido`
 - SPEC: `SPEC/2026-10-31-etapa-9-7e-reformulacao-ui-ux-localizacao-world-lab.md`
 - Commit: `pendente`
-- Execução: `pendente`
+- Execução: `Testes dirigidos do World Lab 38/38; npm run check:gates OK; npm run build OK (typecheck incluído); npm test -- --runInBand com 85 suítes e 1085 testes aprovados; git diff --check OK; homologação visual por CDP em 1280×720, 1440×900 e 1920×1080 (Campanha, Fases/Visual, Fases/Estrutural em 1280 e Comparação).`
 
 ## Arquivos modificados
 
 - `SPEC/2026-10-31-etapa-9-7e-reformulacao-ui-ux-localizacao-world-lab.md`
 - `SPEC/README.md`
+- `README.md`
+- `docs/autoria-capitulos-e-assets.md`
+- `src/devtools/world-lab/WorldLabProjector.ts`
+- `src/devtools/world-lab/WorldLabSnapshot.ts`
+- `src/devtools/world-lab/contracts.ts`
+- `src/devtools/world-lab/ui/CampaignGraphView.ts`
+- `src/devtools/world-lab/ui/MacroCampaignGraphView.ts`
+- `src/devtools/world-lab/ui/PhaserPreviewView.ts`
+- `src/devtools/world-lab/ui/StageInspectorView.ts`
+- `src/devtools/world-lab/ui/WorldLabApp.ts`
+- `src/devtools/world-lab/ui/WorldLabPtBr.ts`
+- `src/devtools/world-lab/world-lab.css`
+- `src/tests/worldLabLocalization.test.ts`
+- `src/tests/worldLabMacroUi.test.ts`
+- `src/tests/worldLabUi.test.ts`
 - `prompts/49-etapa-9-7e-reformulacao-ui-ux-localizacao-world-lab.md`
+- `prompts/50-etapa-9-7e-continuacao-ui-ux-localizacao-world-lab.md`
 
 ## Prompt efetivamente recebido
 

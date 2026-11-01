@@ -1,19 +1,17 @@
 import type {
+  WorldLabArtAssetPresentation,
   WorldLabDiagnostic,
   WorldLabDocument,
-  WorldLabMacroNodeView,
   WorldLabMacroRouteResult,
   WorldLabMacroRouteView,
   WorldLabSessionState,
   WorldLabStageMarker,
+  WorldLabStageView,
 } from '../contracts';
 import { WorldLabSession } from '../WorldLabSession';
 import { WorldLabMacroDataService } from '../WorldLabMacroDataService';
 import { renderCampaignGraph } from './CampaignGraphView';
-import {
-  renderMacroCampaignGraph,
-  type MacroCampaignSelection,
-} from './MacroCampaignGraphView';
+import { renderMacroCampaignGraph, type MacroCampaignSelection } from './MacroCampaignGraphView';
 import { renderStageInspector } from './StageInspectorView';
 import {
   createWorldLabCaptureDescriptor,
@@ -21,25 +19,60 @@ import {
   renderPhaserPreview,
   type WorldLabStageMode,
 } from './PhaserPreviewView';
+import {
+  WORLD_LAB_PT_BR as T,
+  localizeDiagnosticMessage,
+  localizeDiagnosticOrigin,
+  localizeMarker,
+  localizeStatus,
+} from './WorldLabPtBr';
+
+type Workspace = 'campaign' | 'stages' | 'comparison';
+type CampaignMode = 'procedural' | 'macro';
 
 function appendField(container: HTMLElement, label: string, value: unknown): void {
   const term = document.createElement('dt');
   term.textContent = label;
   const detail = document.createElement('dd');
-  detail.textContent = value === undefined ? 'unavailable' : String(value);
+  detail.textContent = value === undefined || value === '' ? T.labels.unavailable : String(value);
   container.append(term, detail);
 }
 
+function detailsSection(
+  container: HTMLElement,
+  title: string,
+  render: (content: HTMLElement) => void,
+  open = false,
+): void {
+  const details = document.createElement('details');
+  details.className = 'wl-inspector-section';
+  details.open = open;
+  const summary = document.createElement('summary');
+  summary.textContent = title;
+  const content = document.createElement('div');
+  content.className = 'wl-inspector-section-content';
+  render(content);
+  details.append(summary, content);
+  container.append(details);
+}
+
+function fieldsSection(container: HTMLElement, values: readonly (readonly [string, unknown])[]): void {
+  const fields = document.createElement('dl');
+  fields.className = 'wl-fields';
+  values.forEach(([label, value]) => appendField(fields, label, value));
+  container.append(fields);
+}
+
 function tileLabel(tile: number): string {
-  return ['floor', 'wall', 'pillar', 'water / pit', 'lava / hazard', 'exit',
-    'locked door', 'chest', 'spawn', 'boss'][tile] ?? `unknown (${tile})`;
+  return ['piso', 'parede', 'pilar', 'água / abismo', 'lava / perigo', 'saída',
+    'porta trancada', 'baú', 'spawn', 'chefe'][tile] ?? `desconhecido (${tile})`;
 }
 
 function tileWalkable(tile: number): boolean {
-  return tile === 0 || tile === 5 || tile === 6 || tile === 7 || tile === 8 || tile === 9;
+  return [0, 5, 6, 7, 8, 9].includes(tile);
 }
 
-function selectedStage(state: WorldLabSessionState) {
+function selectedStage(state: WorldLabSessionState): WorldLabStageView | undefined {
   return state.document?.stages.find(stage => stage.nodeId === state.selection.nodeId);
 }
 
@@ -53,103 +86,84 @@ function tileMarkers(
     .filter(marker => marker.x === x && marker.y === y) ?? [];
 }
 
-function renderInspector(container: HTMLElement, state: WorldLabSessionState): void {
+function dimensions(value?: { readonly width: number; readonly height: number }): string | undefined {
+  return value ? `${Math.round(value.width)}×${Math.round(value.height)}` : undefined;
+}
+
+function renderCampaignInspector(container: HTMLElement, state: WorldLabSessionState): void {
   container.replaceChildren();
-  const title = document.createElement('h3');
-  title.textContent = 'Selection';
-  container.append(title);
-  const fields = document.createElement('dl');
-  fields.className = 'wl-fields';
   const node = state.document?.nodes.find(candidate => candidate.id === state.selection.nodeId);
   const edge = state.document?.edges.find(candidate => candidate.id === state.selection.edgeId);
-  if (edge) {
-    appendField(fields, 'edgeId', edge.id);
-    appendField(fields, 'origin', edge.sourceNodeId);
-    appendField(fields, 'destination', edge.targetNodeId);
-    appendField(fields, 'kind', edge.kind);
-    appendField(fields, 'exitSlotId', edge.exitSlotId);
-    appendField(fields, 'stageExitId', edge.stageExitId);
-    appendField(fields, 'physicalExitId', edge.physicalExitId);
-    appendField(fields, 'binding', edge.bindingStatus);
-    appendField(fields, 'association', edge.association);
-  } else if (node) {
-    appendField(fields, 'nodeId', node.id);
-    appendField(fields, 'type', node.kind);
-    appendField(fields, 'stageId', node.stageId);
-    appendField(fields, 'templateId', node.templateId);
-    appendField(fields, 'act / depth', `${node.actId} / ${node.depth}`);
-    appendField(fields, 'branch', node.branchId);
-    appendField(fields, 'incoming / outgoing', `${node.incomingCount} / ${node.outgoingCount}`);
-    appendField(fields, 'physical capacity', node.maximumPhysicalExits);
-    appendField(fields, 'biome contract', node.biomeId);
-    appendField(fields, 'presentation', node.presentation?.label);
-  } else {
-    appendField(fields, 'selection', 'none');
-  }
+  detailsSection(container, T.sections.general, content => {
+    if (edge) fieldsSection(content, [
+      ['edgeId', edge.id], [T.fields.origin, edge.sourceNodeId], [T.fields.destination, edge.targetNodeId],
+      [T.fields.kind, edge.kind], ['exitSlotId', edge.exitSlotId], ['stageExitId', edge.stageExitId],
+      ['physicalExitId', edge.physicalExitId], [T.fields.binding, localizeStatus(edge.bindingStatus)],
+      [T.fields.association, edge.association],
+    ]);
+    else if (node) fieldsSection(content, [
+      ['nodeId', node.id], [T.fields.type, node.kind], [T.fields.stage, node.stageId],
+      [T.fields.template, node.templateId], [T.fields.actDepth, `${node.actId} / ${node.depth}`],
+      [T.fields.branch, node.branchId], [T.fields.connections, `${node.incomingCount} / ${node.outgoingCount}`],
+      [T.fields.capacity, node.maximumPhysicalExits], [T.fields.biome, node.biomeId],
+    ]);
+    else fieldsSection(content, [[T.labels.selection, T.labels.noSelection]]);
+  }, true);
   if (state.selection.tile) {
     const stage = selectedStage(state);
     const { x, y } = state.selection.tile;
     const tile = stage?.tiles[y]?.[x];
     const markers = tileMarkers(state.document, state.selection.nodeId, x, y);
-    appendField(fields, 'tile', `${x}, ${y}`);
-    appendField(fields, 'tile type', tile === undefined ? undefined : tileLabel(tile));
-    appendField(fields, 'walkable', tile === undefined ? undefined : tileWalkable(tile));
-    appendField(fields, 'entities', markers.map(marker => `${marker.kind}:${marker.label}`).join(', ') || 'none');
+    detailsSection(container, T.sections.visual, content => fieldsSection(content, [
+      [T.fields.tile, `${x}, ${y}`],
+      [T.fields.tileType, tile === undefined ? undefined : tileLabel(tile)],
+      [T.fields.walkable, tile === undefined ? undefined : tileWalkable(tile) ? T.labels.yes : T.labels.no],
+      [T.fields.entities, markers.map(marker => `${localizeMarker(marker.kind)}:${marker.label}`).join(', ') || T.labels.none],
+    ]), true);
   }
-  const stage = selectedStage(state);
-  stage?.visualPresentation?.artAssets?.forEach(asset => {
-    const rendered = asset.renderedDimensions
-      ? `${Math.round(asset.renderedDimensions.width)}×${Math.round(asset.renderedDimensions.height)}`
-      : 'unavailable';
-    appendField(fields, `${asset.category}:${asset.id}`, [
-      asset.textureKey + (asset.frame !== undefined ? `#${asset.frame}` : ''),
-      `world ${rendered}`,
-      `scale ${asset.scale}`,
-      `anchor ${asset.anchor ? `${asset.anchor.x},${asset.anchor.y}` : 'default'}`,
-      asset.layer,
-      asset.compatibility,
-      asset.warnings.join(', '),
-    ].filter(Boolean).join(' · '));
-  });
-  container.append(fields);
 }
 
-function renderDiagnostics(
+function renderAssetInspector(
   container: HTMLElement,
-  diagnostics: readonly WorldLabDiagnostic[],
-  select: (diagnostic: WorldLabDiagnostic) => void,
+  stage: WorldLabStageView | undefined,
+  asset: WorldLabArtAssetPresentation | undefined,
+  marker: WorldLabStageMarker | undefined,
+  variantId: string | undefined,
+  diagnosticCode: string | undefined,
 ): void {
   container.replaceChildren();
-  if (diagnostics.length === 0) {
-    const empty = document.createElement('p');
-    empty.className = 'wl-empty-inline';
-    empty.textContent = 'No diagnostics.';
-    container.append(empty);
-    return;
-  }
-  diagnostics.forEach(diagnostic => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = `wl-diagnostic wl-diagnostic--${diagnostic.severity}`;
-    button.dataset.diagnosticCode = diagnostic.code;
-    const heading = document.createElement('span');
-    heading.className = 'wl-diagnostic-code';
-    heading.textContent = `${diagnostic.origin} · ${diagnostic.code}`;
-    const message = document.createElement('span');
-    message.textContent = diagnostic.message;
-    const reference = document.createElement('span');
-    reference.className = 'wl-diagnostic-ref';
-    reference.textContent = [diagnostic.nodeId, diagnostic.edgeId, diagnostic.stageId]
-      .filter(Boolean).join(' · ') || 'global';
-    button.append(heading, message, reference);
-    button.addEventListener('click', () => select(diagnostic));
-    container.append(button);
-  });
-}
-
-function macroLayerLabel(node: WorldLabMacroNodeView): string {
-  return ['Hub', 'Histórias independentes', 'Regiões corrompidas', 'Final'][node.layer] ??
-    `Camada ${node.layer}`;
+  detailsSection(container, T.sections.general, content => fieldsSection(content, [
+    [T.labels.viewedStage, stage ? `${stage.title} · ${stage.stageId}` : undefined],
+    [T.labels.activeVariant, variantId || T.labels.defaultVariant],
+    [T.labels.inspectedItem, asset ? `${asset.category}:${asset.id}` : marker ? `${localizeMarker(marker.kind)}:${marker.id}` : T.labels.noSelection],
+    ...(asset ? [[T.fields.type, T.categories[asset.category]], [T.fields.id, asset.id]] as const : []),
+    ...(marker ? [[T.fields.type, localizeMarker(marker.kind)], [T.fields.id, marker.id]] as const : []),
+  ]), true);
+  detailsSection(container, T.sections.visual, content => fieldsSection(content, asset ? [
+    [T.fields.texture, asset.textureKey], [T.fields.frame, asset.frame],
+    [T.fields.sourceSize, dimensions(asset.sourceDimensions)], [T.fields.frameSize, dimensions(asset.frameDimensions)],
+    [T.fields.visibleSize, dimensions(asset.visibleDimensions)], [T.fields.worldSize, dimensions(asset.renderedDimensions)],
+    [T.fields.layer, asset.layer], [T.fields.compatibility, localizeStatus(asset.compatibility)],
+  ] : [[T.fields.layer, marker ? localizeMarker(marker.kind) : undefined]]), Boolean(asset));
+  detailsSection(container, T.sections.transformation, content => fieldsSection(content, [
+    [T.fields.scale, asset?.scale],
+    [T.fields.anchor, asset?.anchor ? `${asset.anchor.x}, ${asset.anchor.y}` : undefined],
+    ['Classe de escala', asset?.scaleClass],
+  ]));
+  detailsSection(container, T.sections.collision, content => fieldsSection(content, [
+    [T.fields.collision, asset?.collision
+      ? `${asset.collision.width}×${asset.collision.height} @ ${asset.collision.offsetX},${asset.collision.offsetY}`
+      : 'Metadado indisponível; a física permanece no runtime.'],
+  ]));
+  const origin = asset && stage?.visualPresentation?.assetOrigins?.find(item => item.textureKey === asset.textureKey);
+  detailsSection(container, T.sections.origin, content => fieldsSection(content, [
+    ['originId', asset?.originId], [T.fields.package, origin?.pack], [T.fields.author, origin?.author],
+    [T.fields.license, origin?.license], ['URL', origin?.sourceUrl],
+  ]));
+  detailsSection(container, T.sections.diagnostics, content => fieldsSection(content, [
+    [T.fields.warnings, asset?.warnings.join(', ') || T.labels.none],
+    ['Código selecionado', diagnosticCode],
+  ]), Boolean(asset?.warnings.length || diagnosticCode));
 }
 
 function renderMacroInspector(
@@ -160,581 +174,463 @@ function renderMacroInspector(
   container.replaceChildren();
   const fixture = document.createElement('div');
   fixture.className = 'wl-fixture-notice';
-  fixture.textContent = 'Fixture de inspeção · não representa um save real';
+  fixture.textContent = T.help.fixture;
   container.append(fixture);
-
-  const progressTitle = document.createElement('h3');
-  progressTitle.textContent = 'Progresso macro';
-  container.append(progressTitle);
-  const progress = document.createElement('dl');
-  progress.className = 'wl-fields';
-  appendField(progress, 'local atual', view.progress.currentLocationId);
-  view.progress.routes.forEach(route => appendField(progress, route.title, route.status));
-  appendField(progress, 'camada corrompida', view.progress.corruptedStatus);
-  appendField(progress, 'final', view.progress.finalStatus);
-  appendField(progress, 'escolhas atuais', view.connections.length);
-  container.append(progress);
-
-  const catalogTitle = document.createElement('h3');
-  catalogTitle.textContent = `Catálogo dinâmico (${view.catalog.entries.length})`;
-  container.append(catalogTitle);
-  const catalog = document.createElement('ul');
-  catalog.className = 'wl-choice-list wl-stage-catalog';
-  view.catalog.entries.forEach(entry => {
-    const item = document.createElement('li');
-    item.dataset.stageId = entry.stageId;
-    item.dataset.eligibility = entry.eligibility;
-    const label = document.createElement('strong');
-    label.textContent = `${entry.title} · ${entry.stageId}`;
-    const status = document.createElement('span');
-    status.textContent = [
-      `${entry.chapterId}@${entry.chapterRevision}`,
-      `manifesto ${entry.manifestRevision}`,
-      entry.loadability,
-      entry.eligibility,
-      `capabilities: ${entry.capabilityIds.join(', ') || 'nenhuma'}`,
-      `dependências: ${entry.dependencyChapterIds.join(', ') || 'nenhuma'}`,
-      `diagnósticos: ${entry.diagnosticCodes.join(', ') || 'nenhum'}`,
-    ].join(' · ');
-    item.append(label, status);
-    catalog.append(item);
-  });
-  container.append(catalog);
-
-  const compositionTitle = document.createElement('h3');
-  compositionTitle.textContent = 'Composição determinística';
-  container.append(compositionTitle);
-  const compositionFields = document.createElement('dl');
-  compositionFields.className = 'wl-fields wl-composition-summary';
-  appendField(compositionFields, 'estado', view.composition.status);
-  appendField(compositionFields, 'seed', view.composition.seed);
-  appendField(compositionFields, 'política', view.composition.policyId);
-  appendField(compositionFields, 'solicitadas', view.composition.requestedStageCount);
-  appendField(compositionFields, 'selecionadas', view.composition.selectedStageCount);
-  appendField(compositionFields, 'disponíveis', view.composition.availableStageIds.join(', ') || 'nenhuma');
-  appendField(compositionFields, 'marcos', view.composition.requiredMilestoneSlotIds.join(', '));
-  appendField(compositionFields, 'restrições', view.composition.restrictionLabels.join(', '));
-  appendField(compositionFields, 'compositionId', view.composition.compositionId);
-  appendField(compositionFields, 'graphId', view.composition.graphId);
-  container.append(compositionFields);
-  const assignments = document.createElement('ul');
-  assignments.className = 'wl-choice-list wl-composition-assignments';
-  view.composition.assignments.forEach(assignment => {
-    const item = document.createElement('li');
-    item.dataset.compositionSlot = assignment.slotId;
-    item.dataset.stageId = assignment.stageId;
-    const label = document.createElement('strong');
-    label.textContent = `${assignment.actId} · ${assignment.slotId} · ${assignment.stageId}`;
-    const detail = document.createElement('span');
-    detail.textContent = [
-      assignment.stageInstanceId,
-      `${assignment.chapterId}@${assignment.chapterRevision}`,
-      `manifesto ${assignment.manifestRevision}`,
-      `${assignment.regionId}/${assignment.biomeId}`,
-      `saídas ${assignment.maximumPhysicalExits}`,
-    ].join(' · ');
-    item.append(label, detail);
-    assignments.append(item);
-  });
-  container.append(assignments);
-
-  const title = document.createElement('h3');
-  title.textContent = 'Seleção';
-  container.append(title);
-  const fields = document.createElement('dl');
-  fields.className = 'wl-fields';
   const edge = view.edges.find(item => item.id === selection.edgeId);
   const node = view.nodes.find(item => item.id === selection.nodeId);
-  if (edge) {
-    appendField(fields, 'connectionId', edge.connectionId);
-    appendField(fields, 'origem', edge.sourceNodeId);
-    appendField(fields, 'destino', edge.targetNodeId);
-    appendField(fields, 'tipo', edge.kind);
-    appendField(fields, 'estado', edge.state);
-    appendField(fields, 'navegação', edge.navigationStatus);
-  } else if (node) {
-    appendField(fields, 'id', node.id);
-    appendField(fields, 'nome', node.title);
-    appendField(fields, 'tipo', node.kind);
-    appendField(fields, 'rota', node.routeTitle ?? 'campanha principal');
-    appendField(fields, 'camada', macroLayerLabel(node));
-    appendField(fields, 'progresso', node.progressState);
-    appendField(fields, 'conteúdo', node.contentState);
-    appendField(fields, 'navegação', node.navigationStatus);
-    appendField(fields, 'stageId', node.stageId);
-    appendField(fields, 'templateId', node.templateId);
-    appendField(fields, 'placeholder legado', node.legacyPlaceholder ? 'sim' : 'não');
-    appendField(fields, 'condições de acesso', node.accessRequirementIds.join(', ') || 'nenhuma');
-    appendField(fields, 'entradas', node.incomingConnectionIds.join(', ') || 'nenhuma');
-    appendField(fields, 'saídas', node.outgoingConnectionIds.join(', ') || 'nenhuma');
-    if (node.mapMessage) appendField(fields, 'mapa', node.mapMessage);
-  } else appendField(fields, 'seleção', 'nenhuma');
-  container.append(fields);
-
-  const choicesTitle = document.createElement('h3');
-  choicesTitle.textContent = 'Escolhas fornecidas pelo runtime';
-  container.append(choicesTitle);
-  const choices = document.createElement('ul');
-  choices.className = 'wl-choice-list';
-  view.connections.forEach(connection => {
-    const item = document.createElement('li');
-    item.dataset.connectionStatus = connection.status;
-    const label = document.createElement('strong');
-    label.textContent = connection.connectionId;
-    const status = document.createElement('span');
-    status.textContent = `${connection.status}${connection.blockedReason ? ` · ${connection.blockedReason}` : ''}`;
-    item.append(label, status);
-    choices.append(item);
+  detailsSection(container, T.sections.general, content => fieldsSection(content, edge ? [
+    ['connectionId', edge.connectionId], [T.fields.origin, edge.sourceNodeId],
+    [T.fields.destination, edge.targetNodeId], [T.fields.type, edge.kind],
+    [T.fields.status, localizeStatus(edge.state)], ['Navegação', localizeStatus(edge.navigationStatus)],
+  ] : node ? [
+    [T.fields.id, node.id], ['Nome', node.title], [T.fields.type, node.kind],
+    [T.fields.branch, node.routeTitle ?? 'campanha principal'], [T.fields.layer, `Camada ${node.layer}`],
+    ['Progresso', localizeStatus(node.progressState)], ['Conteúdo', localizeStatus(node.contentState)],
+    [T.fields.stage, node.stageId], [T.fields.template, node.templateId],
+    ['Placeholder legado', node.legacyPlaceholder ? T.labels.yes : T.labels.no],
+    ['Condições de acesso', node.accessRequirementIds.join(', ') || T.labels.none],
+    ['Mapa', node.mapMessage],
+  ] : [[T.labels.selection, T.labels.none]]), true);
+  detailsSection(container, T.sections.progress, content => fieldsSection(content, [
+    [T.fields.currentLocation, view.progress.currentLocationId],
+    ...view.progress.routes.map(route => [route.title, localizeStatus(route.status)] as const),
+    ['Camada corrompida', localizeStatus(view.progress.corruptedStatus)],
+    ['Final', localizeStatus(view.progress.finalStatus)],
+  ]));
+  detailsSection(container, `${T.sections.catalog} (${view.catalog.entries.length})`, content => {
+    const list = document.createElement('ul');
+    list.className = 'wl-choice-list wl-stage-catalog';
+    view.catalog.entries.forEach(entry => {
+      const item = document.createElement('li');
+      item.dataset.stageId = entry.stageId;
+      item.dataset.eligibility = entry.eligibility;
+      const label = document.createElement('strong');
+      label.textContent = `${entry.title} · ${entry.stageId}`;
+      const status = document.createElement('span');
+      status.textContent = `${entry.chapterId}@${entry.chapterRevision} · manifesto ${entry.manifestRevision} · ${localizeStatus(entry.loadability)} · ${localizeStatus(entry.eligibility)}`;
+      item.append(label, status);
+      list.append(item);
+    });
+    content.append(list);
   });
-  container.append(choices);
+  detailsSection(container, T.sections.composition, content => {
+    fieldsSection(content, [
+      [T.fields.status, localizeStatus(view.composition.status)], [T.labels.seed, view.composition.seed],
+      ['Política', view.composition.policyId], ['Solicitadas', view.composition.requestedStageCount],
+      ['Selecionadas', view.composition.selectedStageCount],
+    ]);
+    const list = document.createElement('ul');
+    list.className = 'wl-choice-list wl-composition-assignments';
+    view.composition.assignments.forEach(assignment => {
+      const item = document.createElement('li');
+      item.dataset.compositionSlot = assignment.slotId;
+      item.dataset.stageId = assignment.stageId;
+      item.textContent = `${assignment.actId} · ${assignment.slotId} · ${assignment.stageId}`;
+      list.append(item);
+    });
+    content.append(list);
+  });
 }
 
 export class WorldLabApp {
-  private mode: 'procedural' | 'macro' = 'procedural';
+  private workspace: Workspace = 'campaign';
+  private campaignMode: CampaignMode = 'procedural';
   private macroView?: WorldLabMacroRouteView;
   private macroDiagnostics: readonly WorldLabDiagnostic[] = Object.freeze([]);
   private macroSelection: MacroCampaignSelection = {};
-  private macroTile?: { readonly x: number; readonly y: number };
   private macroGeneration = 0;
-  private stageMode: WorldLabStageMode = 'structural';
+  private stageMode: Exclude<WorldLabStageMode, 'compare'> = 'visual';
   private previewZoom = 1;
   private comparisonVariantId?: string;
+  private explorerOpen = true;
+  private inspectorOpen = true;
+  private diagnosticsOpen = false;
+  private maximized = false;
+  private inspectedAssetId?: string;
+  private inspectedMarkerId?: string;
+  private readonly diagnosticFilters = new Set<WorldLabDiagnostic['severity']>(['error', 'warning', 'info']);
 
-  private readonly elements: {
-    proceduralMode: HTMLButtonElement;
-    macroMode: HTMLButtonElement;
-    seed: HTMLInputElement;
-    generate: HTMLButtonElement;
-    regenerate: HTMLButtonElement;
-    nodeSelect: HTMLSelectElement;
-    stageSelect: HTMLSelectElement;
-    variant: HTMLSelectElement;
-    comparisonVariant: HTMLSelectElement;
-    stageMode: HTMLSelectElement;
-    zoom: HTMLSelectElement;
-    grid: HTMLInputElement;
-    overlays: HTMLInputElement;
-    entities: HTMLInputElement;
-    decorations: HTMLInputElement;
-    exits: HTMLInputElement;
-    capture: HTMLButtonElement;
-    exportButton: HTMLButtonElement;
+  private readonly elements: Record<string, HTMLElement> & {
+    seed: HTMLInputElement; nodeSelect: HTMLSelectElement; stageSelect: HTMLSelectElement;
+    variant: HTMLSelectElement; comparisonVariant: HTMLSelectElement; stageMode: HTMLSelectElement;
+    zoom: HTMLSelectElement; grid: HTMLInputElement; overlays: HTMLInputElement;
+    entities: HTMLInputElement; decorations: HTMLInputElement; exits: HTMLInputElement;
     importInput: HTMLInputElement;
-    graph: HTMLElement;
-    stage: HTMLElement;
-    inspector: HTMLElement;
-    diagnostics: HTMLElement;
-    source: HTMLElement;
-    stageTitle: HTMLElement;
-    graphTitle: HTMLElement;
-    graphHelp: HTMLElement;
   };
 
   public constructor(
     private readonly root: HTMLElement,
     private readonly session = new WorldLabSession(),
-    private readonly macroSource: { generate(seed: string): WorldLabMacroRouteResult } =
-      new WorldLabMacroDataService(),
+    private readonly macroSource: { generate(seed: string): WorldLabMacroRouteResult } = new WorldLabMacroDataService(),
     private readonly previewEnabled = ['localhost', '127.0.0.1', '0.0.0.0', '[::1]']
       .includes(globalThis.location?.hostname ?? ''),
   ) {
-    const urlParameters = new URLSearchParams(globalThis.location?.search ?? '');
-    const requestedView = urlParameters.get('view');
-    if (requestedView === 'visual' || requestedView === 'compare') this.stageMode = requestedView;
-    const requestedZoom = Number(urlParameters.get('zoom'));
+    const queryParameters = new URLSearchParams(globalThis.location?.search ?? '');
+    const requestedView = queryParameters.get('view');
+    if (requestedView === 'visual') this.workspace = 'stages';
+    if (requestedView === 'compare') this.workspace = 'comparison';
+    const requestedZoom = Number(queryParameters.get('zoom'));
     if ([0.5, 0.75, 1, 1.25].includes(requestedZoom)) this.previewZoom = requestedZoom;
-    this.comparisonVariantId = urlParameters.get('comparisonVariant')?.trim() || undefined;
+    this.comparisonVariantId = queryParameters.get('comparisonVariant')?.trim() || undefined;
     root.className = 'world-lab';
-    root.innerHTML = `
-      <header class="wl-header">
-        <div class="wl-brand"><span class="wl-brand-mark">UT</span><div><strong>Umbra World Lab</strong><small>Campaign & Stage Visualizer</small></div></div>
-        <div class="wl-controls">
-          <div class="wl-mode-switch" role="tablist" aria-label="Visualização">
-            <button type="button" data-role="mode-procedural" class="is-active" role="tab" aria-selected="true">Procedural</button>
-            <button type="button" data-role="mode-macro" role="tab" aria-selected="false">Campanha</button>
-          </div>
-          <label>Seed <input data-role="seed" spellcheck="false"></label>
-          <button data-role="generate" class="is-primary">Generate</button>
-          <button data-role="regenerate">Regenerate</button>
-          <label>Node <select data-role="node-select"></select></label>
-          <label>Stage <select data-role="stage-select"></select></label>
-          <label>Variant <select data-role="variant"></select></label>
-          <label>View <select data-role="stage-mode"><option value="structural">Structural</option><option value="visual">Visual</option><option value="compare">Compare</option></select></label>
-          <label>Compare <select data-role="comparison-variant"></select></label>
-          <label>Zoom <select data-role="zoom"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.25">125%</option></select></label>
-          <label class="wl-check"><input type="checkbox" data-role="grid"> Grid</label>
-          <label class="wl-check"><input type="checkbox" data-role="overlays"> Overlays</label>
-          <label class="wl-check"><input type="checkbox" data-role="entities"> Entities</label>
-          <label class="wl-check"><input type="checkbox" data-role="decorations"> Decorations</label>
-          <label class="wl-check"><input type="checkbox" data-role="exits"> Exits</label>
-          <button data-role="capture">Capture</button>
-          <button data-role="export">Export snapshot</button>
-          <label class="wl-file">Import snapshot<input type="file" accept="application/json,.json" data-role="import"></label>
-        </div>
-        <div class="wl-source" data-role="source"></div>
-      </header>
-      <main class="wl-layout">
-        <section class="wl-panel wl-panel--graph"><div class="wl-panel-title"><span data-role="graph-title">Campaign Graph</span><small data-role="graph-help">Wheel to zoom · drag to pan</small></div><div class="wl-canvas" data-role="graph"></div></section>
-        <section class="wl-panel wl-panel--stage"><div class="wl-panel-title"><span data-role="stage-title">Stage Inspector</span><small>Contract tiles + resolved overlays</small></div><div class="wl-canvas" data-role="stage"></div></section>
-        <aside class="wl-panel wl-panel--inspector"><div class="wl-panel-title"><span>Inspector</span></div><div class="wl-scroll" data-role="inspector"></div></aside>
-        <section class="wl-panel wl-panel--diagnostics"><div class="wl-panel-title"><span>Diagnostics</span><small>Typed pipeline output</small></div><div class="wl-diagnostics" data-role="diagnostics"></div></section>
-      </main>`;
-    const query = <T extends Element>(role: string): T => {
-      const element = root.querySelector<T>(`[data-role="${role}"]`);
-      if (!element) throw new Error(`World Lab element missing: ${role}`);
-      return element;
+    root.innerHTML = this.template();
+    const element = <E extends HTMLElement>(role: string): E => {
+      const value = root.querySelector<E>(`[data-role="${role}"]`);
+      if (!value) throw new Error(`Elemento do World Lab ausente: ${role}`);
+      return value;
     };
     this.elements = {
-      proceduralMode: query('mode-procedural'), macroMode: query('mode-macro'),
-      seed: query('seed'), generate: query('generate'), regenerate: query('regenerate'),
-      nodeSelect: query('node-select'), stageSelect: query('stage-select'), variant: query('variant'),
-      comparisonVariant: query('comparison-variant'), stageMode: query('stage-mode'), zoom: query('zoom'),
-      grid: query('grid'), overlays: query('overlays'), entities: query('entities'),
-      decorations: query('decorations'), exits: query('exits'), capture: query('capture'),
-      exportButton: query('export'), importInput: query('import'), graph: query('graph'),
-      stage: query('stage'), inspector: query('inspector'), diagnostics: query('diagnostics'),
-      source: query('source'), stageTitle: query('stage-title'),
-      graphTitle: query('graph-title'), graphHelp: query('graph-help'),
+      workspaceCampaign: element('workspace-campaign'), workspaceStages: element('workspace-stages'),
+      workspaceComparison: element('workspace-comparison'), proceduralMode: element('mode-procedural'),
+      macroMode: element('mode-macro'), seed: element('seed'), generate: element('generate'),
+      regenerate: element('regenerate'), nodeSelect: element('node-select'), stageSelect: element('stage-select'),
+      variant: element('variant'), comparisonVariant: element('comparison-variant'), stageMode: element('stage-mode'),
+      zoom: element('zoom'), grid: element('grid'), overlays: element('overlays'), entities: element('entities'),
+      decorations: element('decorations'), exits: element('exits'), capture: element('capture'),
+      exportButton: element('export'), importInput: element('import'), campaignTools: element('campaign-tools'),
+      stageTools: element('stage-tools'), graphPanel: element('graph-panel'), graph: element('graph'),
+      stagePanel: element('stage-panel'), stage: element('stage'), explorerPanel: element('explorer-panel'),
+      inspectorPanel: element('inspector-panel'), inspector: element('inspector'),
+      diagnosticsPanel: element('diagnostics-panel'), diagnosticsSummary: element('diagnostics-summary'),
+      stageHelp: element('stage-help'),
+      diagnostics: element('diagnostics'), source: element('source'), primaryTitle: element('primary-title'),
+      primaryHelp: element('primary-help'), toggleExplorer: element('toggle-explorer'),
+      toggleInspector: element('toggle-inspector'), maximize: element('maximize'),
+      toggleDiagnostics: element('toggle-diagnostics'), fit: element('fit'), explorer: element('explorer'),
+      filterError: element('filter-error'), filterWarning: element('filter-warning'), filterInfo: element('filter-info'),
     };
     this.bindControls();
     this.session.subscribe(state => this.render(state));
     this.render(this.session.state());
   }
 
-  public start(): void {
-    this.session.generate();
+  public start(): void { this.session.generate(); }
+
+  private template(): string {
+    return `
+      <header class="wl-topbar">
+        <div class="wl-brand"><span class="wl-brand-mark">UT</span><div><strong>${T.product}</strong><small>${T.productSubtitle}</small></div></div>
+        <nav class="wl-workspace-nav" aria-label="Áreas de trabalho">
+          <button type="button" data-role="workspace-campaign">${T.workspaces.campaign}</button>
+          <button type="button" data-role="workspace-stages">${T.workspaces.stages}</button>
+          <button type="button" data-role="workspace-comparison">${T.workspaces.comparison}</button>
+        </nav>
+        <div class="wl-source" data-role="source"></div>
+      </header>
+      <section class="wl-contextbar">
+        <div class="wl-toolgroup" data-role="campaign-tools">
+          <div class="wl-mode-switch" role="tablist" aria-label="Tipo de campanha">
+            <button type="button" data-role="mode-procedural">${T.campaignModes.procedural}</button>
+            <button type="button" data-role="mode-macro">${T.campaignModes.macro}</button>
+          </div>
+          <label>${T.labels.seed}<input data-role="seed" spellcheck="false"></label>
+          <button data-role="generate" class="is-primary">${T.actions.generate}</button>
+          <button data-role="regenerate">${T.actions.regenerate}</button>
+          <label>${T.labels.node}<select data-role="node-select"></select></label>
+          <button data-role="fit">${T.actions.fit}</button>
+          <button data-role="export">${T.actions.export}</button>
+          <label class="wl-file">${T.actions.import}<input type="file" accept="application/json,.json" data-role="import"></label>
+        </div>
+        <div class="wl-toolgroup" data-role="stage-tools">
+          <label>${T.labels.stage}<select data-role="stage-select"></select></label>
+          <label>${T.labels.variant}<select data-role="variant"></select></label>
+          <label>${T.labels.view}<select data-role="stage-mode"><option value="structural">${T.labels.structural}</option><option value="visual">${T.labels.visual}</option></select></label>
+          <label>${T.labels.compareWith}<select data-role="comparison-variant"></select></label>
+          <label>${T.labels.zoom}<select data-role="zoom"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option></select></label>
+          <button data-role="capture">${T.actions.capture}</button>
+        </div>
+        <div class="wl-view-actions">
+          <button data-role="toggle-explorer"></button><button data-role="toggle-inspector"></button><button data-role="maximize"></button>
+        </div>
+      </section>
+      <main class="wl-workspace">
+        <aside class="wl-panel wl-panel--explorer" data-role="explorer-panel">
+          <div class="wl-panel-title">${T.panels.explorer}</div><div class="wl-scroll" data-role="explorer">
+            <section class="wl-layer-list"><h3>${T.sections.layers}</h3>
+              <label><input type="checkbox" data-role="grid">${T.labels.grid}</label>
+              <label><input type="checkbox" data-role="overlays">${T.labels.overlays}</label>
+              <label><input type="checkbox" data-role="entities">${T.labels.entities}</label>
+              <label><input type="checkbox" data-role="decorations">${T.labels.decorations}</label>
+              <label><input type="checkbox" data-role="exits">${T.labels.exits}</label>
+            </section><div data-role="explorer-content"></div>
+          </div>
+        </aside>
+        <section class="wl-panel wl-panel--primary" data-role="graph-panel">
+          <div class="wl-panel-title"><span data-role="primary-title"></span><small data-role="primary-help"></small></div><div class="wl-canvas" data-role="graph"></div>
+        </section>
+        <section class="wl-panel wl-panel--primary" data-role="stage-panel">
+          <div class="wl-panel-title"><span>${T.panels.stage}</span><small data-role="stage-help">${T.help.stage}</small></div><div class="wl-canvas" data-role="stage"></div>
+        </section>
+        <aside class="wl-panel wl-panel--inspector" data-role="inspector-panel">
+          <div class="wl-panel-title">${T.panels.inspector}</div><div class="wl-scroll" data-role="inspector"></div>
+        </aside>
+      </main>
+      <section class="wl-diagnostics-drawer" data-role="diagnostics-panel">
+        <header><button data-role="toggle-diagnostics"><strong>${T.panels.diagnostics}</strong><span data-role="diagnostics-summary"></span></button>
+          <div class="wl-diagnostic-filters"><button data-role="filter-error"></button><button data-role="filter-warning"></button><button data-role="filter-info"></button></div>
+        </header><div class="wl-diagnostics" data-role="diagnostics"></div>
+      </section>`;
   }
 
   private bindControls(): void {
-    this.elements.proceduralMode.addEventListener('click', () => this.setMode('procedural'));
-    this.elements.macroMode.addEventListener('click', () => this.setMode('macro'));
+    this.elements.workspaceCampaign.addEventListener('click', () => this.setWorkspace('campaign'));
+    this.elements.workspaceStages.addEventListener('click', () => this.setWorkspace('stages'));
+    this.elements.workspaceComparison.addEventListener('click', () => this.setWorkspace('comparison'));
+    this.elements.proceduralMode.addEventListener('click', () => this.setCampaignMode('procedural'));
+    this.elements.macroMode.addEventListener('click', () => this.setCampaignMode('macro'));
     this.elements.seed.addEventListener('input', () => this.session.setSeed(this.elements.seed.value));
     this.elements.generate.addEventListener('click', () => this.generateCurrent());
     this.elements.regenerate.addEventListener('click', () => this.generateCurrent());
+    this.elements.fit.addEventListener('click', () => this.render(this.session.state()));
     this.elements.nodeSelect.addEventListener('change', () => {
-      if (this.mode === 'macro') this.selectMacroNode(this.elements.nodeSelect.value);
+      if (this.campaignMode === 'macro') this.selectMacroNode(this.elements.nodeSelect.value);
       else this.session.selectNode(this.elements.nodeSelect.value);
     });
     this.elements.stageSelect.addEventListener('change', () => {
-      this.comparisonVariantId = undefined;
+      this.inspectedAssetId = undefined; this.inspectedMarkerId = undefined; this.comparisonVariantId = undefined;
       this.session.setFocusStageId(this.elements.stageSelect.value || undefined);
     });
-    this.elements.variant.addEventListener('change', () => {
-      this.session.setPresentationVariant(this.elements.variant.value || undefined);
-      if (this.mode === 'macro') this.generateMacro();
-    });
+    this.elements.variant.addEventListener('change', () => this.session.setPresentationVariant(this.elements.variant.value || undefined));
+    this.elements.stageMode.addEventListener('change', () => { this.stageMode = this.elements.stageMode.value as Exclude<WorldLabStageMode, 'compare'>; this.render(this.session.state()); });
+    this.elements.zoom.addEventListener('change', () => { this.previewZoom = Number(this.elements.zoom.value); this.render(this.session.state()); });
+    this.elements.comparisonVariant.addEventListener('change', () => { this.comparisonVariantId = this.elements.comparisonVariant.value || undefined; this.render(this.session.state()); });
     this.elements.grid.addEventListener('change', () => this.session.setFilters({ showGrid: this.elements.grid.checked }));
     this.elements.overlays.addEventListener('change', () => this.session.setFilters({ showOverlays: this.elements.overlays.checked }));
     this.elements.entities.addEventListener('change', () => this.session.setFilters({ showEntities: this.elements.entities.checked }));
     this.elements.decorations.addEventListener('change', () => this.session.setFilters({ showDecorations: this.elements.decorations.checked }));
     this.elements.exits.addEventListener('change', () => this.session.setFilters({ showExits: this.elements.exits.checked }));
-    this.elements.stageMode.addEventListener('change', () => {
-      this.stageMode = this.elements.stageMode.value as WorldLabStageMode;
-      this.render(this.session.state());
+    this.elements.toggleExplorer.addEventListener('click', () => { this.explorerOpen = !this.explorerOpen; this.render(this.session.state()); });
+    this.elements.toggleInspector.addEventListener('click', () => { this.inspectorOpen = !this.inspectorOpen; this.render(this.session.state()); });
+    this.elements.maximize.addEventListener('click', () => { this.maximized = !this.maximized; this.render(this.session.state()); });
+    this.elements.toggleDiagnostics.addEventListener('click', () => { this.diagnosticsOpen = !this.diagnosticsOpen; this.render(this.session.state()); });
+    (['error', 'warning', 'info'] as const).forEach(severity => {
+      this.elements[`filter${severity[0].toUpperCase()}${severity.slice(1)}`].addEventListener('click', () => {
+        if (this.diagnosticFilters.has(severity)) this.diagnosticFilters.delete(severity); else this.diagnosticFilters.add(severity);
+        this.render(this.session.state());
+      });
     });
-    this.elements.zoom.addEventListener('change', () => {
-      this.previewZoom = Number(this.elements.zoom.value);
-      this.render(this.session.state());
-    });
-    this.elements.comparisonVariant.addEventListener('change', () => {
-      this.comparisonVariantId = this.elements.comparisonVariant.value || undefined;
-      this.render(this.session.state());
-    });
-    this.elements.capture.addEventListener('click', () => {
-      const stage = selectedStage(this.session.state());
-      if (!stage || this.stageMode === 'structural') return;
-      const primary = this.session.presentationVariantId();
-      const variants = this.stageMode === 'compare'
-        ? [primary, this.comparisonVariantId]
-        : [primary];
-      const descriptor = createWorldLabCaptureDescriptor(stage, variants, this.previewZoom);
-      if (!downloadWorldLabCapture(this.elements.stage, descriptor)) {
-        this.elements.source.textContent = 'Preview ainda não carregou; aguarde antes de capturar.';
-      }
-    });
-    this.elements.exportButton.addEventListener('click', () => {
-      if (this.mode === 'macro') return;
-      const serialized = this.session.exportSnapshot();
-      if (!serialized) return;
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(new Blob([serialized], { type: 'application/json' }));
-      link.download = `umbra-world-lab-${this.session.state().seed}.json`;
-      link.click();
-      URL.revokeObjectURL(link.href);
-    });
-    this.elements.importInput.addEventListener('change', () => {
-      if (this.mode === 'macro') return;
-      const file = this.elements.importInput.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.addEventListener('load', () => this.session.importSnapshot(String(reader.result ?? '')));
-      reader.readAsText(file);
-    });
+    this.elements.capture.addEventListener('click', () => this.capture());
+    this.elements.exportButton.addEventListener('click', () => this.exportSnapshot());
+    this.elements.importInput.addEventListener('change', () => this.importSnapshot());
   }
 
-  private setMode(mode: 'procedural' | 'macro'): void {
-    if (this.mode === mode) return;
-    this.mode = mode;
-    if (mode === 'macro' && !this.macroView) this.generateMacro();
-    else this.render(this.session.state());
+  private setSource(text: string): void {
+    this.elements.source.textContent = text;
+    this.elements.source.title = text;
   }
 
-  private generateCurrent(): void {
-    if (this.mode === 'macro') this.generateMacro();
-    else this.session.generate();
+  private setWorkspace(workspace: Workspace): void { this.workspace = workspace; this.maximized = false; this.render(this.session.state()); }
+  private setCampaignMode(mode: CampaignMode): void {
+    this.campaignMode = mode;
+    if (mode === 'macro' && !this.macroView) this.generateMacro(); else this.render(this.session.state());
   }
+  private generateCurrent(): void { if (this.campaignMode === 'macro') this.generateMacro(); else this.session.generate(); }
 
   private generateMacro(): void {
     const result = this.macroSource.generate(this.session.state().seed);
     this.macroGeneration += 1;
     if (!result.ok) {
-      this.macroView = undefined;
-      this.macroDiagnostics = result.error.diagnostics;
-      this.macroSelection = {};
-      this.render(this.session.state());
-      return;
+      this.macroView = undefined; this.macroDiagnostics = result.error.diagnostics; this.macroSelection = {};
+      this.render(this.session.state()); return;
     }
     this.macroView = result.value;
-    this.macroDiagnostics = Object.freeze([
-      ...result.value.graph.diagnostics,
-      ...result.value.composition.diagnostics,
-    ]);
-    const current = result.value.nodes.find(node => node.id === result.value.progress.currentLocationId) ??
-      result.value.nodes[0];
+    this.macroDiagnostics = Object.freeze([...result.value.graph.diagnostics, ...result.value.composition.diagnostics]);
+    const current = result.value.nodes.find(node => node.id === result.value.progress.currentLocationId) ?? result.value.nodes[0];
     this.macroSelection = current ? { nodeId: current.id } : {};
-    this.macroTile = undefined;
     this.render(this.session.state());
   }
 
   private selectMacroNode(nodeId: string): boolean {
     if (!this.macroView?.nodes.some(node => node.id === nodeId)) return false;
-    this.macroSelection = { nodeId };
-    this.macroTile = undefined;
-    this.render(this.session.state());
-    return true;
+    this.macroSelection = { nodeId }; this.render(this.session.state()); return true;
   }
-
   private selectMacroEdge(edgeId: string): boolean {
     const edge = this.macroView?.edges.find(item => item.id === edgeId);
     if (!edge) return false;
-    this.macroSelection = { nodeId: edge.sourceNodeId, edgeId };
-    this.render(this.session.state());
-    return true;
+    this.macroSelection = { nodeId: edge.sourceNodeId, edgeId }; this.render(this.session.state()); return true;
+  }
+
+  private capture(): void {
+    const stage = selectedStage(this.session.state());
+    if (!stage || (this.workspace === 'stages' && this.stageMode === 'structural')) return;
+    const primary = this.session.presentationVariantId();
+    const variants = this.workspace === 'comparison' ? [primary, this.comparisonVariantId] : [primary];
+    if (!downloadWorldLabCapture(this.elements.stage, createWorldLabCaptureDescriptor(stage, variants, this.previewZoom))) {
+      this.setSource(T.empty.previewLoading);
+    }
+  }
+
+  private exportSnapshot(): void {
+    if (this.campaignMode === 'macro') return;
+    const serialized = this.session.exportSnapshot();
+    if (!serialized) return;
+    const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([serialized], { type: 'application/json' }));
+    link.download = `umbra-world-lab-${this.session.state().seed}.json`; link.click(); URL.revokeObjectURL(link.href);
+  }
+  private importSnapshot(): void {
+    if (this.campaignMode === 'macro') return;
+    const file = this.elements.importInput.files?.[0]; if (!file) return;
+    const reader = new FileReader(); reader.addEventListener('load', () => this.session.importSnapshot(String(reader.result ?? ''))); reader.readAsText(file);
+  }
+
+  private syncControls(state: WorldLabSessionState): readonly string[] {
+    if (this.elements.seed.value !== state.seed) this.elements.seed.value = state.seed;
+    const variants = this.session.presentationVariants();
+    this.elements.variant.replaceChildren();
+    const defaultOption = document.createElement('option'); defaultOption.value = ''; defaultOption.textContent = T.labels.defaultVariant; this.elements.variant.append(defaultOption);
+    variants.forEach(id => { const option = document.createElement('option'); option.value = id; option.textContent = id; this.elements.variant.append(option); });
+    const selectedVariant = this.session.presentationVariantId() ?? '';
+    this.elements.variant.value = selectedVariant; this.elements.variant.disabled = variants.length === 0;
+    this.elements.comparisonVariant.replaceChildren();
+    variants.forEach(id => { const option = document.createElement('option'); option.value = id; option.textContent = id; this.elements.comparisonVariant.append(option); });
+    const primary = selectedVariant || variants[0];
+    if (!this.comparisonVariantId || !variants.includes(this.comparisonVariantId)) this.comparisonVariantId = variants.find(id => id !== primary) ?? variants[0];
+    this.elements.comparisonVariant.value = this.comparisonVariantId ?? '';
+    this.elements.stageSelect.replaceChildren();
+    const campaign = document.createElement('option'); campaign.value = ''; campaign.textContent = T.labels.campaignNode; this.elements.stageSelect.append(campaign);
+    this.session.stageOptions().forEach(stage => { const option = document.createElement('option'); option.value = stage.id; option.textContent = `${stage.title} · ${stage.id}`; this.elements.stageSelect.append(option); });
+    this.elements.stageSelect.value = this.session.focusStageId() ?? '';
+    this.elements.stageMode.value = this.stageMode; this.elements.zoom.value = String(this.previewZoom);
+    this.elements.grid.checked = state.filters.showGrid; this.elements.overlays.checked = state.filters.showOverlays;
+    this.elements.entities.checked = state.filters.showEntities; this.elements.decorations.checked = state.filters.showDecorations; this.elements.exits.checked = state.filters.showExits;
+    return variants;
   }
 
   private render(state: WorldLabSessionState): void {
-    this.elements.graph.classList.remove('wl-empty');
-    if (this.elements.seed.value !== state.seed) this.elements.seed.value = state.seed;
-    const variants = this.session.presentationVariants();
-    const selectedVariant = this.session.presentationVariantId() ?? '';
-    const variantSignature = variants.join('|');
-    if (this.elements.variant.dataset.signature !== variantSignature) {
-      this.elements.variant.replaceChildren();
-      const defaultOption = document.createElement('option');
-      defaultOption.value = '';
-      defaultOption.textContent = 'default';
-      this.elements.variant.append(defaultOption);
-      variants.forEach(variantId => {
-        const option = document.createElement('option');
-        option.value = variantId;
-        option.textContent = variantId;
-        this.elements.variant.append(option);
-      });
-      this.elements.variant.dataset.signature = variantSignature;
-    }
-    this.elements.variant.value = selectedVariant;
-    this.elements.variant.disabled = variants.length === 0;
-    const stageOptions = this.session.stageOptions();
-    const stageSignature = stageOptions.map(option => `${option.id}@${option.manifestRevision}`).join('|');
-    if (this.elements.stageSelect.dataset.signature !== stageSignature) {
-      this.elements.stageSelect.replaceChildren();
-      const campaign = document.createElement('option');
-      campaign.value = '';
-      campaign.textContent = 'campaign node';
-      this.elements.stageSelect.append(campaign);
-      stageOptions.forEach(stageOption => {
-        const option = document.createElement('option');
-        option.value = stageOption.id;
-        option.textContent = `${stageOption.title} · ${stageOption.id}`;
-        this.elements.stageSelect.append(option);
-      });
-      this.elements.stageSelect.dataset.signature = stageSignature;
-    }
-    this.elements.stageSelect.value = this.session.focusStageId() ?? '';
-    this.elements.comparisonVariant.replaceChildren();
-    variants.forEach(variantId => {
-      const option = document.createElement('option');
-      option.value = variantId;
-      option.textContent = variantId;
-      this.elements.comparisonVariant.append(option);
+    const variants = this.syncControls(state);
+    this.root.dataset.workspace = this.workspace;
+    this.root.classList.toggle('is-maximized', this.maximized);
+    this.root.classList.toggle('is-explorer-collapsed', !this.explorerOpen);
+    this.root.classList.toggle('is-inspector-collapsed', !this.inspectorOpen);
+    this.root.classList.toggle('is-diagnostics-open', this.diagnosticsOpen);
+    (['campaign', 'stages', 'comparison'] as const).forEach(workspace => {
+      const button = this.elements[`workspace${workspace[0].toUpperCase()}${workspace.slice(1)}`];
+      button.classList.toggle('is-active', this.workspace === workspace);
+      button.setAttribute('aria-current', this.workspace === workspace ? 'page' : 'false');
     });
-    const primaryComparisonVariant = selectedVariant || variants[0];
-    const fallbackComparison = variants.find(variant => variant !== primaryComparisonVariant) ?? variants[0];
-    if (!this.comparisonVariantId || !variants.includes(this.comparisonVariantId)) {
-      this.comparisonVariantId = fallbackComparison;
+    const campaign = this.workspace === 'campaign';
+    this.elements.campaignTools.hidden = !campaign; this.elements.stageTools.hidden = campaign;
+    this.elements.graphPanel.hidden = !campaign; this.elements.stagePanel.hidden = campaign;
+    this.elements.stageHelp.textContent = this.workspace === 'comparison'
+      ? T.help.comparison
+      : this.stageMode === 'structural' ? T.help.structural : T.help.stage;
+    this.elements.explorerPanel.hidden = campaign || !this.explorerOpen || this.maximized;
+    this.elements.inspectorPanel.hidden = !this.inspectorOpen || this.maximized;
+    this.elements.diagnosticsPanel.classList.toggle('is-open', this.diagnosticsOpen);
+    this.elements.toggleExplorer.hidden = campaign;
+    this.elements.toggleExplorer.textContent = this.explorerOpen ? T.actions.hideExplorer : T.actions.showExplorer;
+    this.elements.toggleInspector.textContent = this.inspectorOpen ? T.actions.hideInspector : T.actions.showInspector;
+    this.elements.maximize.textContent = this.maximized ? T.actions.restore : T.actions.maximize;
+    this.elements.comparisonVariant.parentElement!.hidden = this.workspace !== 'comparison';
+    this.elements.stageMode.parentElement!.hidden = this.workspace === 'comparison';
+    this.elements.capture.toggleAttribute('disabled', this.workspace === 'stages' && this.stageMode === 'structural');
+    const procedural = this.campaignMode === 'procedural';
+    this.elements.proceduralMode.classList.toggle('is-active', procedural); this.elements.macroMode.classList.toggle('is-active', !procedural);
+    if (campaign) {
+      this.elements.stage.replaceChildren();
+      if (procedural) this.renderProceduralCampaign(state); else this.renderMacroCampaign(state);
+    } else {
+      this.elements.graph.replaceChildren(); this.renderStageWorkspace(state, variants);
     }
-    this.elements.comparisonVariant.value = this.comparisonVariantId ?? '';
-    this.elements.comparisonVariant.disabled = this.stageMode !== 'compare' || variants.length === 0;
-    this.elements.stageMode.value = this.stageMode;
-    this.elements.zoom.value = String(this.previewZoom);
-    this.elements.grid.checked = state.filters.showGrid;
-    this.elements.overlays.checked = state.filters.showOverlays;
-    this.elements.entities.checked = state.filters.showEntities;
-    this.elements.decorations.checked = state.filters.showDecorations;
-    this.elements.exits.checked = state.filters.showExits;
-    const procedural = this.mode === 'procedural';
-    this.elements.proceduralMode.classList.toggle('is-active', procedural);
-    this.elements.macroMode.classList.toggle('is-active', !procedural);
-    this.elements.proceduralMode.setAttribute('aria-selected', String(procedural));
-    this.elements.macroMode.setAttribute('aria-selected', String(!procedural));
-    this.elements.exportButton.disabled = !procedural;
-    this.elements.importInput.disabled = !procedural;
-    this.elements.stageSelect.disabled = !procedural;
-    this.elements.stageMode.disabled = !procedural;
-    this.elements.capture.disabled = !procedural || this.stageMode === 'structural';
-    if (!procedural) {
-      this.renderMacro(state);
-      return;
-    }
-    this.elements.graphTitle.textContent = 'Campaign Graph';
-    this.elements.graphHelp.textContent = 'Wheel to zoom · drag to pan';
-    this.elements.source.textContent = state.document
-      ? `Fixture · real headless pipeline · generation ${state.generation}`
-      : 'Awaiting generation';
+    const diagnostics = campaign && !procedural ? this.macroDiagnostics : state.diagnostics;
+    this.renderDiagnostics(diagnostics, diagnostic => { if (procedural) this.session.selectDiagnostic(diagnostic); this.diagnosticsOpen = true; });
+  }
+
+  private renderProceduralCampaign(state: WorldLabSessionState): void {
+    this.elements.primaryTitle.textContent = T.panels.graph; this.elements.primaryHelp.textContent = T.help.graph;
+    this.setSource(state.document ? `Fixture · pipeline real · geração ${state.generation}` : 'Aguardando geração');
     this.elements.nodeSelect.replaceChildren();
     state.document?.nodes.forEach(node => {
-      const option = document.createElement('option');
-      option.value = node.id;
+      const option = document.createElement('option'); option.value = node.id;
       option.textContent = `D${node.depth} · ${node.presentation?.label ?? node.stageId} · ${node.branchId}`;
-      option.selected = node.id === state.selection.nodeId;
-      this.elements.nodeSelect.append(option);
+      option.selected = node.id === state.selection.nodeId; this.elements.nodeSelect.append(option);
     });
-    if (state.document) {
-      renderCampaignGraph(this.elements.graph, state.document, state.selection, {
-        selectNode: nodeId => this.session.selectNode(nodeId),
-        selectEdge: edgeId => this.session.selectEdge(edgeId),
-      });
-    } else {
-      this.elements.graph.textContent = 'Generate a campaign to inspect its graph.';
-      this.elements.graph.classList.add('wl-empty');
-    }
-    const stage = selectedStage(state);
-    this.elements.stageTitle.textContent = stage ? `Stage Inspector · ${stage.title}` : 'Stage Inspector';
-    if (this.stageMode === 'structural') {
-      renderStageInspector(
-        this.elements.stage,
-        stage,
-        state.selection,
-        state.filters.showGrid,
-        state.filters.showOverlays,
-        {
-          selectTile: (x, y) => this.session.selectTile(x, y),
-          selectPhysicalExit: physicalExitId => this.session.selectPhysicalExit(physicalExitId),
-        },
-        {
-          entities: state.filters.showEntities,
-          decorations: state.filters.showDecorations,
-          exits: state.filters.showExits,
-        },
-      );
-    } else if (stage) {
-      renderPhaserPreview(this.elements.stage, {
-        stage,
-        variantId: selectedVariant || undefined,
-        comparisonVariantId: this.comparisonVariantId,
-        mode: this.stageMode,
-        zoom: this.previewZoom,
-        showGrid: state.filters.showGrid,
-        enabled: this.previewEnabled,
-      });
-    } else renderStageInspector(this.elements.stage, undefined, state.selection, true, true, {
-      selectTile: () => undefined,
-      selectPhysicalExit: () => undefined,
-    });
-    renderInspector(this.elements.inspector, state);
-    renderDiagnostics(this.elements.diagnostics, state.diagnostics,
-      diagnostic => this.session.selectDiagnostic(diagnostic));
+    if (state.document) renderCampaignGraph(this.elements.graph, state.document, state.selection, { selectNode: id => this.session.selectNode(id), selectEdge: id => this.session.selectEdge(id) });
+    else { this.elements.graph.textContent = T.empty.graph; this.elements.graph.classList.add('wl-empty'); }
+    renderCampaignInspector(this.elements.inspector, state);
   }
 
-  private renderMacro(state: WorldLabSessionState): void {
+  private renderMacroCampaign(state: WorldLabSessionState): void {
     const view = this.macroView;
-    this.elements.graphTitle.textContent = 'Campanha Macro';
-    this.elements.graphHelp.textContent = 'Hub · rotas · marcos · unlocks';
-    this.elements.source.textContent = view
-      ? `Fixture macro · seed ${view.graph.seed} · geração ${this.macroGeneration}`
-      : 'Campanha macro indisponível';
+    this.elements.primaryTitle.textContent = 'Campanha completa'; this.elements.primaryHelp.textContent = 'Hub · rotas · marcos · desbloqueios';
+    this.setSource(view ? `Fixture macro · seed ${view.graph.seed} · geração ${this.macroGeneration}` : 'Campanha completa indisponível');
     this.elements.nodeSelect.replaceChildren();
-    view?.nodes.forEach(node => {
-      const option = document.createElement('option');
-      option.value = node.id;
-      option.textContent = `L${node.layer} · ${node.title} · ${node.progressState}`;
-      option.selected = node.id === this.macroSelection.nodeId;
-      this.elements.nodeSelect.append(option);
-    });
+    view?.nodes.forEach(node => { const option = document.createElement('option'); option.value = node.id; option.textContent = `L${node.layer} · ${node.title} · ${localizeStatus(node.progressState)}`; option.selected = node.id === this.macroSelection.nodeId; this.elements.nodeSelect.append(option); });
     if (view) {
-      renderMacroCampaignGraph(this.elements.graph, view, this.macroSelection, {
-        selectNode: nodeId => { this.selectMacroNode(nodeId); },
-        selectEdge: edgeId => { this.selectMacroEdge(edgeId); },
-      });
+      renderMacroCampaignGraph(this.elements.graph, view, this.macroSelection, { selectNode: id => { this.selectMacroNode(id); }, selectEdge: id => { this.selectMacroEdge(id); } });
+      renderMacroInspector(this.elements.inspector, view, this.macroSelection);
     } else {
-      this.elements.graph.replaceChildren();
-      const empty = document.createElement('div');
-      empty.className = 'wl-empty';
-      empty.textContent = 'Não foi possível projetar a campanha macro.';
-      this.elements.graph.append(empty);
+      this.elements.graph.replaceChildren(); const empty = document.createElement('div'); empty.className = 'wl-empty'; empty.textContent = T.empty.macro; this.elements.graph.append(empty);
+      this.elements.inspector.textContent = T.empty.inspector;
     }
-    const node = view?.nodes.find(item => item.id === this.macroSelection.nodeId);
-    const stage = node?.stageNodeId
-      ? view?.graph.stages.find(item => item.nodeId === node.stageNodeId)
-      : undefined;
-    this.elements.stageTitle.textContent = node
-      ? `Stage Inspector · ${node.title}` : 'Stage Inspector';
-    if (node?.contentState === 'planned') {
-      this.elements.stage.replaceChildren();
-      const empty = document.createElement('div');
-      empty.className = 'wl-empty wl-planned-map';
-      const title = document.createElement('strong');
-      title.textContent = 'Mapa ainda não implementado';
-      const detail = document.createElement('span');
-      detail.textContent = `${node.title} mantém somente sua identidade e contratos declarativos.`;
-      empty.append(title, detail);
-      this.elements.stage.append(empty);
-    } else {
-      renderStageInspector(
-        this.elements.stage,
-        stage,
-        {
-          ...(node?.stageNodeId ? { nodeId: node.stageNodeId } : {}),
-          ...(this.macroTile ? { tile: this.macroTile } : {}),
-        },
-        state.filters.showGrid,
-        state.filters.showOverlays,
-        {
-          selectTile: (x, y) => {
-            this.macroTile = { x, y };
-            this.render(this.session.state());
-          },
-          selectPhysicalExit: physicalExitId => {
-            const graphEdge = view?.graph.edges.find(item => item.physicalExitId === physicalExitId);
-            const macroEdge = graphEdge
-              ? view?.edges.find(item => item.connectionId &&
-                  view.connections.find(connection => connection.connectionId === item.connectionId)
-                    ?.edgeId === graphEdge.id)
-              : undefined;
-            if (macroEdge) this.selectMacroEdge(macroEdge.id);
-          },
-        },
-      );
-    }
-    if (view) renderMacroInspector(this.elements.inspector, view, this.macroSelection);
-    else {
-      this.elements.inspector.replaceChildren();
-      const empty = document.createElement('p');
-      empty.className = 'wl-empty-inline';
-      empty.textContent = 'Sem dados macro para inspecionar.';
-      this.elements.inspector.append(empty);
-    }
-    renderDiagnostics(this.elements.diagnostics, this.macroDiagnostics, () => undefined);
+    void state;
+  }
+
+  private renderStageWorkspace(state: WorldLabSessionState, variants: readonly string[]): void {
+    const stage = selectedStage(state); const selectedVariant = this.session.presentationVariantId();
+    this.setSource(stage ? `${T.help.registered} · ${stage.stageId}` : T.empty.stage);
+    this.renderExplorer(stage, state);
+    if (this.workspace === 'comparison' && stage) renderPhaserPreview(this.elements.stage, {
+      stage, variantId: selectedVariant, comparisonVariantId: this.comparisonVariantId,
+      mode: 'compare', zoom: this.previewZoom, showGrid: state.filters.showGrid, enabled: this.previewEnabled,
+    });
+    else if (this.stageMode === 'structural') renderStageInspector(this.elements.stage, stage, state.selection, state.filters.showGrid, state.filters.showOverlays, {
+      selectTile: (x, y) => this.session.selectTile(x, y), selectPhysicalExit: id => this.session.selectPhysicalExit(id),
+    }, { entities: state.filters.showEntities, decorations: state.filters.showDecorations, exits: state.filters.showExits });
+    else if (stage) renderPhaserPreview(this.elements.stage, {
+      stage, variantId: selectedVariant, mode: 'visual', zoom: this.previewZoom, showGrid: state.filters.showGrid, enabled: this.previewEnabled,
+    });
+    else renderStageInspector(this.elements.stage, undefined, state.selection, true, true, { selectTile: () => undefined, selectPhysicalExit: () => undefined });
+    const asset = stage?.visualPresentation?.artAssets?.find(item => item.id === this.inspectedAssetId);
+    const marker = stage?.markers.find(item => item.id === this.inspectedMarkerId);
+    renderAssetInspector(this.elements.inspector, stage, asset, marker, selectedVariant, state.selection.diagnosticCode);
+    this.elements.comparisonVariant.disabled = this.workspace !== 'comparison' || variants.length === 0;
+  }
+
+  private renderExplorer(stage: WorldLabStageView | undefined, state: WorldLabSessionState): void {
+    const content = this.root.querySelector<HTMLElement>('[data-role="explorer-content"]') as HTMLElement;
+    content.replaceChildren();
+    if (!stage) { content.textContent = T.empty.stage; return; }
+    const entityTitle = document.createElement('h3'); entityTitle.textContent = T.sections.entities;
+    const entities = document.createElement('div'); entities.className = 'wl-explorer-list';
+    stage.markers.forEach(marker => {
+      const button = document.createElement('button'); button.type = 'button'; button.dataset.inspectorMarker = marker.id;
+      button.classList.toggle('is-selected', marker.id === this.inspectedMarkerId); button.textContent = `${localizeMarker(marker.kind)} · ${marker.label}`; button.title = button.textContent;
+      button.addEventListener('click', () => { this.inspectedMarkerId = marker.id; this.inspectedAssetId = undefined; this.session.selectTile(marker.x, marker.y); }); entities.append(button);
+    });
+    const assetTitle = document.createElement('h3'); assetTitle.textContent = T.sections.assets;
+    const assets = document.createElement('div'); assets.className = 'wl-explorer-list';
+    stage.visualPresentation?.artAssets?.forEach(asset => {
+      const button = document.createElement('button'); button.type = 'button'; button.dataset.inspectorAsset = asset.id;
+      button.classList.toggle('is-selected', asset.id === this.inspectedAssetId); button.textContent = `${T.categories[asset.category]} · ${asset.id}`; button.title = button.textContent;
+      button.addEventListener('click', () => { this.inspectedAssetId = asset.id; this.inspectedMarkerId = undefined; this.render(state); }); assets.append(button);
+    });
+    content.append(entityTitle, entities, assetTitle, assets);
+  }
+
+  private renderDiagnostics(diagnostics: readonly WorldLabDiagnostic[], select: (diagnostic: WorldLabDiagnostic) => void): void {
+    const counts = { error: 0, warning: 0, info: 0 };
+    diagnostics.forEach(item => { counts[item.severity] += 1; });
+    this.elements.diagnosticsSummary.textContent = `${counts.error} erros · ${counts.warning} avisos · ${counts.info} informações`;
+    (['error', 'warning', 'info'] as const).forEach(severity => {
+      const button = this.elements[`filter${severity[0].toUpperCase()}${severity.slice(1)}`];
+      button.textContent = `${T.severities[severity]} ${counts[severity]}`; button.classList.toggle('is-active', this.diagnosticFilters.has(severity));
+    });
+    this.elements.diagnostics.replaceChildren();
+    const filtered = diagnostics.filter(item => this.diagnosticFilters.has(item.severity));
+    if (filtered.length === 0) { this.elements.diagnostics.textContent = T.empty.diagnostics; return; }
+    filtered.forEach(diagnostic => {
+      const details = document.createElement('details'); details.className = `wl-diagnostic wl-diagnostic--${diagnostic.severity}`; details.dataset.diagnosticCode = diagnostic.code;
+      const summary = document.createElement('summary');
+      const message = document.createElement('span'); message.textContent = localizeDiagnosticMessage(diagnostic);
+      const context = document.createElement('small'); context.textContent = diagnostic.code.startsWith('world-lab.fixture') ? T.help.fixture : diagnostic.origin === 'stage-catalog' ? T.help.registered : T.help.runtime;
+      summary.append(message, context);
+      const technical = document.createElement('dl'); technical.className = 'wl-fields';
+      appendField(technical, 'Código', diagnostic.code); appendField(technical, 'Origem', localizeDiagnosticOrigin(diagnostic.origin));
+      appendField(technical, 'Mensagem original', diagnostic.message); appendField(technical, 'Referências', [diagnostic.nodeId, diagnostic.edgeId, diagnostic.stageId].filter(Boolean).join(' · '));
+      appendField(technical, 'Caminho', diagnostic.path?.join('.'));
+      summary.addEventListener('click', () => select(diagnostic));
+      details.append(summary, technical); this.elements.diagnostics.append(details);
+    });
   }
 }
-

@@ -1,5 +1,11 @@
 import type { WorldLabSelection, WorldLabStageMarker, WorldLabStageView } from '../contracts';
 import { installSvgPanZoom, svgElement } from './svgInteraction';
+import {
+  WORLD_LAB_PT_BR,
+  localizeArtWarning,
+  localizeMarker,
+  localizeStatus,
+} from './WorldLabPtBr';
 
 export interface StageInspectorCallbacks {
   readonly selectTile: (x: number, y: number) => void;
@@ -39,7 +45,7 @@ export function renderStageInspector(
   if (!stage) {
     const empty = document.createElement('div');
     empty.className = 'wl-empty';
-    empty.textContent = 'Stage data unavailable for the selected node.';
+    empty.textContent = WORLD_LAB_PT_BR.empty.stage;
     container.append(empty);
     return;
   }
@@ -54,17 +60,17 @@ export function renderStageInspector(
     const artAssets = stage.visualPresentation.artAssets ?? [];
     visual.textContent = [
       `Tema: ${stage.visualPresentation.themeId}`,
-      `Variante: ${stage.visualPresentation.variantId ?? 'default'}`,
+      `Variante: ${stage.visualPresentation.variantId ?? WORLD_LAB_PT_BR.labels.defaultVariant}`,
       `Tileset: ${stage.visualPresentation.tilesetId}`,
       `Recursos: ${stage.visualPresentation.textureKeys.join(', ') || 'nenhum'}`,
-      `Tiles: ${tiles.map(tile => `${tile.logicalId}→${tile.textureKey}`
+      `Tiles lógicos: ${tiles.map(tile => `${tile.logicalId}→${tile.textureKey}`
         + `${tile.frame !== undefined ? `#${tile.frame}` : ''}`).join(', ') || 'nenhum'}`,
-      `Spritesheets: ${spritesheets.map(sheet => `${sheet.textureKey}`
+      `Folhas de sprites: ${spritesheets.map(sheet => `${sheet.textureKey}`
         + `${sheet.frameWidth && sheet.frameHeight ? ` ${sheet.frameWidth}x${sheet.frameHeight}` : ''}`
         + `${sheet.frameCount !== undefined ? ` (${sheet.frameCount} frames)` : ''}`).join(', ') || 'nenhum'}`,
       `Decorações: ${decorations.map(decoration => `${decoration.id}→${decoration.textureKey}`
         + `${decoration.frame !== undefined ? `#${decoration.frame}` : ''}`).join(', ') || 'nenhuma'}`,
-      `Overrides: ${Object.entries(stage.visualPresentation.decorationOverrides ?? {})
+      `Substituições: ${Object.entries(stage.visualPresentation.decorationOverrides ?? {})
         .map(([from, to]) => `${from}→${to}`).join(', ') || 'nenhum'}`,
       `Origem: ${origins.map(origin => `${origin.assetId} (${origin.pack}, ${origin.license})`).join(', ') || 'legado'}`,
       `Escala artística: ${artAssets.map(asset => {
@@ -72,17 +78,17 @@ export function renderStageInspector(
         const frame = asset.frameDimensions ? `${asset.frameDimensions.width}×${asset.frameDimensions.height}` : '?';
         const rendered = asset.renderedDimensions
           ? `${Math.round(asset.renderedDimensions.width)}×${Math.round(asset.renderedDimensions.height)}` : '?';
-        const anchor = asset.anchor ? `${asset.anchor.x},${asset.anchor.y}` : 'default';
-        return `${asset.category}:${asset.id} ${asset.textureKey}${asset.frame !== undefined ? `#${asset.frame}` : ''}`
+        const anchor = asset.anchor ? `${asset.anchor.x},${asset.anchor.y}` : WORLD_LAB_PT_BR.labels.defaultVariant;
+        return `${WORLD_LAB_PT_BR.categories[asset.category]}:${asset.id} ${asset.textureKey}${asset.frame !== undefined ? `#${asset.frame}` : ''}`
           + ` fonte ${source} frame ${frame} mundo ${rendered} escala ${asset.scale} âncora ${anchor}`
-          + ` camada ${asset.layer} [${asset.compatibility}]${asset.warnings.length ? ` ⚠ ${asset.warnings.join(',')}` : ''}`;
+          + ` camada ${asset.layer} [${localizeStatus(asset.compatibility)}]${asset.warnings.length ? ` ⚠ ${asset.warnings.map(localizeArtWarning).join(',')}` : ''}`;
       }).join(' · ') || 'metadados indisponíveis'}`,
       `Ausentes: ${stage.visualPresentation.missingResourceIds.join(', ') || 'nenhum'}`,
       `Diagnósticos: ${stage.visualPresentation.diagnostics.join(', ') || 'nenhum'}`,
       `NPCs: ${stage.visualPresentation.npcSprites?.map(item => `${item.logicalId}→${item.spriteId}`
-        + `${item.frame !== undefined ? `#${item.frame}` : ''}`).join(', ') || 'fallback'}`,
+        + `${item.frame !== undefined ? `#${item.frame}` : ''}`).join(', ') || WORLD_LAB_PT_BR.labels.fallback}`,
       `Inimigos: ${stage.visualPresentation.enemySprites?.map(item => `${item.logicalId}→${item.spriteId}`
-        + `${item.frame !== undefined ? `#${item.frame}` : ''}`).join(', ') || 'fallback'}`,
+        + `${item.frame !== undefined ? `#${item.frame}` : ''}`).join(', ') || WORLD_LAB_PT_BR.labels.fallback}`,
       `Animações NPC/inimigos: ${[
         ...(stage.visualPresentation.npcSprites ?? []),
         ...(stage.visualPresentation.enemySprites ?? []),
@@ -97,7 +103,7 @@ export function renderStageInspector(
     container.append(visual);
   }
   const svg = svgElement('svg', {
-    class: 'wl-stage-svg', role: 'img', 'aria-label': `Stage map ${stage.stageId}`,
+    class: 'wl-stage-svg', role: 'img', 'aria-label': `Mapa da fase ${stage.stageId}`,
   });
   stage.tiles.forEach((row, y) => row.forEach((tile, x) => {
     const rect = svgElement('rect', {
@@ -135,7 +141,7 @@ export function renderStageInspector(
     const label = svgElement('text', { 'text-anchor': 'middle', y: 3.5 });
     label.textContent = MARKER_LABEL[marker.kind];
     const title = svgElement('title');
-    title.textContent = `${marker.kind}: ${marker.label} (${marker.x}, ${marker.y})`;
+    title.textContent = `${localizeMarker(marker.kind)}: ${marker.label} (${marker.x}, ${marker.y})`;
     group.append(label, title);
     if (marker.physicalExitId) {
       group.setAttribute('tabindex', '0');

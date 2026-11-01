@@ -4,6 +4,7 @@ import type {
   WorldLabMacroRouteView,
 } from '../contracts';
 import { installSvgPanZoom, svgElement } from './svgInteraction';
+import { localizeRelation, localizeStatus } from './WorldLabPtBr';
 
 export interface MacroCampaignSelection {
   readonly nodeId?: string;
@@ -54,8 +55,8 @@ function pathFor(edge: WorldLabMacroEdgeView, source: Point, target: Point): str
 function nodeSubtitle(node: WorldLabMacroNodeView): string {
   if (node.contentState === 'planned') return 'MAPA PLANEJADO';
   if (node.kind === 'milestone') return 'MARCO NARRATIVO';
-  if (node.legacyPlaceholder) return 'STAGE LEGADO · PLACEHOLDER';
-  return node.stageId ? `STAGE · ${node.stageId}` : node.kind.toUpperCase();
+  if (node.legacyPlaceholder) return 'FASE LEGADA · SUBSTITUTO';
+  return node.stageId ? `FASE · ${node.stageId}` : node.kind.toUpperCase();
 }
 
 function layerLabel(svg: SVGSVGElement, text: string, x: number, y: number): void {
@@ -94,7 +95,7 @@ export function renderMacroCampaignGraph(
       tabindex: '0',
     });
     const title = svgElement('title');
-    title.textContent = `${edge.sourceNodeId} → ${edge.targetNodeId}\n${edge.kind} · ${edge.state}`;
+    title.textContent = `${edge.sourceNodeId} → ${edge.targetNodeId}\n${localizeRelation(edge.kind)} · ${localizeStatus(edge.state)}`;
     line.append(title);
     const select = (): void => callbacks.selectEdge(edge.id);
     line.addEventListener('click', event => { event.stopPropagation(); select(); });
@@ -118,14 +119,14 @@ export function renderMacroCampaignGraph(
     });
     group.append(svgElement('rect', { width: WIDTH, height: HEIGHT, rx: node.kind === 'milestone' ? 20 : 7 }));
     const status = svgElement('text', { x: 11, y: 17, class: 'wl-macro-node-status' });
-    status.textContent = `${node.progressState.toUpperCase()} · L${node.layer}`;
+    status.textContent = `${localizeStatus(node.progressState).toUpperCase()} · L${node.layer}`;
     const title = svgElement('text', { x: 11, y: 38, class: 'wl-macro-node-title' });
     title.textContent = node.title;
     const subtitle = svgElement('text', { x: 11, y: 56, class: 'wl-macro-node-subtitle' });
     subtitle.textContent = nodeSubtitle(node);
     group.append(status, title, subtitle);
     const tooltip = svgElement('title');
-    tooltip.textContent = `${node.title}\n${node.id}\n${node.progressState} · ${node.contentState}`;
+    tooltip.textContent = `${node.title}\n${node.id}\n${localizeStatus(node.progressState)} · ${localizeStatus(node.contentState)}`;
     group.append(tooltip);
     const select = (): void => callbacks.selectNode(node.id);
     group.addEventListener('click', event => { event.stopPropagation(); select(); });

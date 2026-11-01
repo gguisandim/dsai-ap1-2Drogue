@@ -128,7 +128,9 @@ function validArtAsset(value: unknown): boolean {
     (value.frameDimensions === undefined || validDimensions(value.frameDimensions)) &&
     (value.visibleDimensions === undefined || validDimensions(value.visibleDimensions)) &&
     (value.renderedDimensions === undefined || validDimensions(value.renderedDimensions)) &&
-    (value.anchor === undefined || (isRecord(value.anchor) && finite(value.anchor.x) && finite(value.anchor.y)));
+    (value.anchor === undefined || (isRecord(value.anchor) && finite(value.anchor.x) && finite(value.anchor.y))) &&
+    (value.collision === undefined || (isRecord(value.collision) && finite(value.collision.width) &&
+      finite(value.collision.height) && finite(value.collision.offsetX) && finite(value.collision.offsetY)));
 }
 
 function validSprite(value: unknown): boolean {
@@ -212,6 +214,7 @@ function cloneStage(stage: WorldLabStageView): WorldLabStageView {
           ...(item.visibleDimensions ? { visibleDimensions: Object.freeze({ ...item.visibleDimensions }) } : {}),
           ...(item.renderedDimensions ? { renderedDimensions: Object.freeze({ ...item.renderedDimensions }) } : {}),
           ...(item.anchor ? { anchor: Object.freeze({ ...item.anchor }) } : {}),
+          ...(item.collision ? { collision: Object.freeze({ ...item.collision }) } : {}),
           warnings: Object.freeze([...item.warnings]),
         }))),
       } : {}),

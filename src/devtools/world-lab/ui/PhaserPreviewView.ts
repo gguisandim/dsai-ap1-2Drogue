@@ -1,4 +1,5 @@
 import type { WorldLabStageView } from '../contracts';
+import { WORLD_LAB_PT_BR } from './WorldLabPtBr';
 
 export type WorldLabStageMode = 'structural' | 'visual' | 'compare';
 
@@ -30,7 +31,7 @@ export function createWorldLabPreviewUrl(
   variantId?: string,
 ): string {
   const base = new URL('/', origin);
-  if (base.origin !== new URL(origin).origin) throw new Error('World Lab preview must use the current origin.');
+  if (base.origin !== new URL(origin).origin) throw new Error('A prévia do World Lab deve usar a origem atual.');
   base.searchParams.set('stagePreview', stageId);
   if (variantId) base.searchParams.set('presentationVariant', variantId);
   base.searchParams.set('worldLabEmbed', '1');
@@ -61,14 +62,15 @@ function previewFrame(stageId: string, variantId: string | undefined, zoom: numb
   shell.dataset.variant = variantId ?? 'default';
   const frame = document.createElement('iframe');
   frame.className = 'wl-phaser-frame';
-  frame.title = `${stageId} · ${variantId ?? 'default'}`;
+  frame.title = `${stageId} · ${variantId ?? WORLD_LAB_PT_BR.labels.defaultVariant}`;
   frame.src = createWorldLabPreviewUrl(origin, stageId, variantId);
   frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
   frame.referrerPolicy = 'no-referrer';
   frame.style.transform = `scale(${zoom})`;
   const label = document.createElement('span');
   label.className = 'wl-phaser-label';
-  label.textContent = variantId ?? 'default';
+  label.textContent = variantId ?? WORLD_LAB_PT_BR.labels.defaultVariant;
+  label.title = label.textContent;
   shell.append(frame, label);
   return shell;
 }
@@ -78,7 +80,7 @@ export function renderPhaserPreview(container: HTMLElement, options: PhaserPrevi
   if (!options.enabled) {
     const message = document.createElement('div');
     message.className = 'wl-empty';
-    message.textContent = 'A prévia Phaser incorporada está disponível apenas no ambiente local de desenvolvimento.';
+    message.textContent = WORLD_LAB_PT_BR.empty.previewLocal;
     container.append(message);
     return;
   }

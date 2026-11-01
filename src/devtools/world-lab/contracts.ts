@@ -140,6 +140,12 @@ export interface WorldLabArtAssetPresentation {
   readonly layer: string;
   readonly originId?: string;
   readonly perspective?: string;
+  readonly collision?: {
+    readonly width: number;
+    readonly height: number;
+    readonly offsetX: number;
+    readonly offsetY: number;
+  };
   readonly compatibility: 'compatible' | 'review' | 'incomplete';
   readonly warnings: readonly string[];
 }
@@ -192,6 +198,7 @@ export interface WorldLabDecorationPresentation {
 
 export interface WorldLabAssetOrigin {
   readonly assetId: string;
+  readonly textureKey: string;
   readonly pack: string;
   readonly author: string;
   readonly license: string;

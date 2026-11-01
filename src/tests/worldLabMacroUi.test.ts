@@ -59,7 +59,7 @@ describe('Umbra World Lab macro campaign UI', () => {
     expect(document.body.textContent).toContain('Rota das Águas');
     expect(document.body.textContent).toContain('REGIÕES CORROMPIDAS');
     expect(document.body.textContent).toContain('Palácio do Credor');
-    expect(document.body.textContent).toContain('Fixture de inspeção');
+    expect(document.body.textContent).toContain('Dados de demonstração');
 
     document.querySelector<HTMLButtonElement>('[data-role="mode-procedural"]')?.click();
     expect(document.querySelectorAll('[data-node-id]')).toHaveLength(procedural.nodes.length);
@@ -94,22 +94,22 @@ describe('Umbra World Lab macro campaign UI', () => {
     expect(document.body.textContent).toContain('manifesto 1');
     expect(document.body.textContent).toContain('Composição determinística');
     expect(document.body.textContent).toContain('umbra.fixed-nine.v1');
-    expect(document.body.textContent).toContain('solicitadas9');
+    expect(document.body.textContent).toContain('Solicitadas9');
     expect(macro.composition.requestedStageCount).toBe(9);
     expect(macro.composition.status).toBe('failed');
     expect(macro.composition.diagnostics.length).toBeGreaterThan(0);
   });
 
-  it('selects Igapó and opens its authored map without a legacy placeholder', () => {
+  it('selects Igapó and separates campaign inspection from the stage workspace', () => {
     mount();
     openMacro();
     const igapo = document.querySelector<SVGGElement>('[data-macro-node-id="region.aguas.igapo"]');
     igapo?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 
     expect(document.body.textContent).toContain(IGAPO_DAS_MEMORIAS_STAGE_ID);
-    expect(document.body.textContent).toContain('placeholder legadonão');
-    expect(document.querySelectorAll('[data-tile]').length).toBeGreaterThan(0);
-    expect(document.querySelector('[data-role="stage-title"]')?.textContent).toContain('Igapó');
+    expect(document.body.textContent).toContain('Placeholder legadonão');
+    expect(document.querySelectorAll('[data-tile]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-macro-node-id]')).toHaveLength(macro.nodes.length);
   });
 
   it('never fabricates a map for planned regions and exposes their requirements', () => {

@@ -63,6 +63,7 @@ type ArtSource = {
   readonly visibleBounds?: { readonly width: number; readonly height: number };
   readonly perspective?: string;
   readonly originId?: string;
+  readonly collision?: { readonly width: number; readonly height: number; readonly offsetX: number; readonly offsetY: number };
 };
 
 function artAsset(
@@ -108,6 +109,7 @@ function artAsset(
     layer,
     ...(source.originId ? { originId: source.originId } : {}),
     ...(source.perspective ? { perspective: source.perspective } : {}),
+    ...(source.collision ? { collision: Object.freeze({ ...source.collision }) } : {}),
     compatibility,
     warnings: Object.freeze(warnings),
   });
@@ -256,7 +258,7 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
     if (puny) {
       const origin = PUNY_ASSET_ORIGINS[puny.originId];
       assetOriginEntries.push([puny.textureKey, Object.freeze({
-        assetId: puny.id, pack: origin.pack, author: origin.author,
+        assetId: puny.id, textureKey: puny.textureKey, pack: origin.pack, author: origin.author,
         license: origin.license, sourceUrl: origin.sourceUrl,
         modifications: Object.freeze([...puny.modifications]),
       })]);
@@ -265,6 +267,7 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
     const original = worldRootTextureByKey(tile.textureKey);
     if (original) assetOriginEntries.push([original.textureKey, Object.freeze({
       assetId: original.id,
+      textureKey: original.textureKey,
       pack: WORLD_ROOT_ASSET_ORIGIN.pack,
       author: WORLD_ROOT_ASSET_ORIGIN.author,
       license: WORLD_ROOT_ASSET_ORIGIN.license,
