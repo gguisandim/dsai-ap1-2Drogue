@@ -1,5 +1,6 @@
 import type { WorldLabStageView } from '../contracts';
-import { WORLD_LAB_PT_BR } from './WorldLabPtBr';
+import type { WorldLabPreviewBridge, WorldLabPreviewCommand } from '../WorldLabPreviewBridge';
+import { WORLD_LAB_PT_BR, localizeMarker } from './WorldLabPtBr';
 
 export type WorldLabStageMode = 'structural' | 'visual' | 'compare';
 
@@ -21,6 +22,7 @@ export interface PhaserPreviewOptions {
   readonly mode: Exclude<WorldLabStageMode, 'structural'>;
   readonly zoom: number;
   readonly showGrid: boolean;
+  readonly showHud: boolean;
   readonly enabled: boolean;
   readonly origin?: string;
 }
@@ -56,7 +58,15 @@ export function createWorldLabCaptureDescriptor(
   });
 }
 
-function previewFrame(stageId: string, variantId: string | undefined, zoom: number, origin: string) {
+type PreviewWindow = Window & { __UMBRA_WORLD_LAB_PREVIEW__?: WorldLabPreviewBridge };
+
+function previewFrame(
+  stageId: string,
+  variantId: string | undefined,
+  zoom: number,
+  showHud: boolean,
+  origin: string,
+) {
   const shell = document.createElement('div');
   shell.className = 'wl-phaser-frame-shell';
   shell.dataset.variant = variantId ?? 'default';
@@ -66,13 +76,96 @@ function previewFrame(stageId: string, variantId: string | undefined, zoom: numb
   frame.src = createWorldLabPreviewUrl(origin, stageId, variantId);
   frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
   frame.referrerPolicy = 'no-referrer';
-  frame.style.transform = `scale(${zoom})`;
+  frame.addEventListener('load', () => {
+    let attempts = 0;
+    const applyWhenReady = (): void => {
+      try {
+        const bridge = (frame.contentWindow as PreviewWindow | null)?.__UMBRA_WORLD_LAB_PREVIEW__;
+        const applied = bridge?.apply({ type: 'gameplay', zoom, hud: showHud });
+        if (applied) return;
+      } catch {
+        // Same-origin access is intentionally best-effort until the preview bridge loads.
+      }
+      attempts += 1;
+      if (attempts < 50 && frame.isConnected) globalThis.setTimeout(applyWhenReady, 100);
+    };
+    applyWhenReady();
+  });
   const label = document.createElement('span');
   label.className = 'wl-phaser-label';
   label.textContent = variantId ?? WORLD_LAB_PT_BR.labels.defaultVariant;
   label.title = label.textContent;
   shell.append(frame, label);
   return shell;
+}
+
+function applyCommand(container: HTMLElement, command: WorldLabPreviewCommand): boolean {
+  let applied = false;
+  container.querySelectorAll<HTMLIFrameElement>('iframe.wl-phaser-frame').forEach(frame => {
+    try {
+      const bridge = (frame.contentWindow as PreviewWindow | null)?.__UMBRA_WORLD_LAB_PREVIEW__;
+      applied = bridge?.apply(command) === true || applied;
+    } catch {
+      // Sandboxed previews without same-origin access remain visible but uncontrollable.
+    }
+  });
+  return applied;
+}
+
+function previewControls(
+  container: HTMLElement,
+  options: PhaserPreviewOptions,
+): HTMLElement {
+  const controls = document.createElement('div');
+  controls.className = 'wl-phaser-controls';
+  const button = (label: string, command: WorldLabPreviewCommand, role: string): HTMLButtonElement => {
+    const value = document.createElement('button');
+    value.type = 'button';
+    value.textContent = label;
+    value.dataset.previewCommand = role;
+    value.addEventListener('click', () => applyCommand(container, command));
+    return value;
+  };
+  controls.append(
+    button('Ajustar mapa', { type: 'fit-map', hud: options.showHud }, 'fit-map'),
+    button('Jogador', {
+      type: 'gameplay', zoom: options.zoom, hud: options.showHud,
+    }, 'gameplay'),
+    button('←', { type: 'pan', x: -192, y: 0, hud: options.showHud }, 'pan-left'),
+    button('→', { type: 'pan', x: 192, y: 0, hud: options.showHud }, 'pan-right'),
+    button('↑', { type: 'pan', x: 0, y: -144, hud: options.showHud }, 'pan-up'),
+    button('↓', { type: 'pan', x: 0, y: 144, hud: options.showHud }, 'pan-down'),
+  );
+
+  const focus = document.createElement('select');
+  focus.dataset.previewFocus = 'marker';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Centralizar em…';
+  focus.append(placeholder);
+  options.stage.markers
+    .filter(marker => ['spawn', 'npc', 'anchor', 'physical-exit', 'section-exit'].includes(marker.kind))
+    .forEach(marker => {
+      const item = document.createElement('option');
+      item.value = marker.id;
+      item.textContent = `${localizeMarker(marker.kind)} · ${marker.label}`;
+      item.dataset.x = String(marker.x);
+      item.dataset.y = String(marker.y);
+      focus.append(item);
+    });
+  focus.addEventListener('change', () => {
+    const selected = focus.selectedOptions[0];
+    if (!selected?.value) return;
+    applyCommand(container, {
+      type: 'focus-tile',
+      x: Number(selected.dataset.x),
+      y: Number(selected.dataset.y),
+      zoom: options.zoom,
+      hud: options.showHud,
+    });
+  });
+  controls.append(focus);
+  return controls;
 }
 
 export function renderPhaserPreview(container: HTMLElement, options: PhaserPreviewOptions): void {
@@ -89,15 +182,19 @@ export function renderPhaserPreview(container: HTMLElement, options: PhaserPrevi
   preview.className = `wl-phaser-preview wl-phaser-preview--${options.mode}`;
   preview.dataset.stageId = options.stage.stageId;
   preview.dataset.zoom = String(options.zoom);
-  preview.append(previewFrame(options.stage.stageId, options.variantId, options.zoom, origin));
+  preview.append(previewFrame(
+    options.stage.stageId, options.variantId, options.zoom, options.showHud, origin,
+  ));
   if (options.mode === 'compare') {
     preview.append(previewFrame(
       options.stage.stageId,
       options.comparisonVariantId,
       options.zoom,
+      options.showHud,
       origin,
     ));
   }
+  preview.append(previewControls(preview, options));
   if (options.showGrid) {
     const grid = document.createElement('div');
     grid.className = 'wl-phaser-grid';

@@ -241,6 +241,7 @@ export class WorldLabApp {
   private macroGeneration = 0;
   private stageMode: Exclude<WorldLabStageMode, 'compare'> = 'visual';
   private previewZoom = 1;
+  private previewHud = true;
   private comparisonVariantId?: string;
   private explorerOpen = true;
   private inspectorOpen = true;
@@ -253,7 +254,7 @@ export class WorldLabApp {
   private readonly elements: Record<string, HTMLElement> & {
     seed: HTMLInputElement; nodeSelect: HTMLSelectElement; stageSelect: HTMLSelectElement;
     variant: HTMLSelectElement; comparisonVariant: HTMLSelectElement; stageMode: HTMLSelectElement;
-    zoom: HTMLSelectElement; grid: HTMLInputElement; overlays: HTMLInputElement;
+    zoom: HTMLSelectElement; grid: HTMLInputElement; hud: HTMLInputElement; overlays: HTMLInputElement;
     entities: HTMLInputElement; decorations: HTMLInputElement; exits: HTMLInputElement;
     importInput: HTMLInputElement;
   };
@@ -271,6 +272,10 @@ export class WorldLabApp {
     if (requestedView === 'compare') this.workspace = 'comparison';
     const requestedZoom = Number(queryParameters.get('zoom'));
     if ([0.5, 0.75, 1, 1.25].includes(requestedZoom)) this.previewZoom = requestedZoom;
+    const requestedStage = queryParameters.get('stage')?.trim();
+    if (requestedStage) this.session.setFocusStageId(requestedStage);
+    const requestedVariant = queryParameters.get('variant')?.trim();
+    if (requestedVariant) this.session.setPresentationVariant(requestedVariant);
     this.comparisonVariantId = queryParameters.get('comparisonVariant')?.trim() || undefined;
     root.className = 'world-lab';
     root.innerHTML = this.template();
@@ -285,7 +290,7 @@ export class WorldLabApp {
       macroMode: element('mode-macro'), seed: element('seed'), generate: element('generate'),
       regenerate: element('regenerate'), nodeSelect: element('node-select'), stageSelect: element('stage-select'),
       variant: element('variant'), comparisonVariant: element('comparison-variant'), stageMode: element('stage-mode'),
-      zoom: element('zoom'), grid: element('grid'), overlays: element('overlays'), entities: element('entities'),
+      zoom: element('zoom'), grid: element('grid'), hud: element('hud'), overlays: element('overlays'), entities: element('entities'),
       decorations: element('decorations'), exits: element('exits'), capture: element('capture'),
       exportButton: element('export'), importInput: element('import'), campaignTools: element('campaign-tools'),
       stageTools: element('stage-tools'), graphPanel: element('graph-panel'), graph: element('graph'),
@@ -348,6 +353,7 @@ export class WorldLabApp {
           <div class="wl-panel-title">${T.panels.explorer}</div><div class="wl-scroll" data-role="explorer">
             <section class="wl-layer-list"><h3>${T.sections.layers}</h3>
               <label><input type="checkbox" data-role="grid">${T.labels.grid}</label>
+              <label><input type="checkbox" data-role="hud" checked>${T.labels.hud}</label>
               <label><input type="checkbox" data-role="overlays">${T.labels.overlays}</label>
               <label><input type="checkbox" data-role="entities">${T.labels.entities}</label>
               <label><input type="checkbox" data-role="decorations">${T.labels.decorations}</label>
@@ -395,6 +401,7 @@ export class WorldLabApp {
     this.elements.zoom.addEventListener('change', () => { this.previewZoom = Number(this.elements.zoom.value); this.render(this.session.state()); });
     this.elements.comparisonVariant.addEventListener('change', () => { this.comparisonVariantId = this.elements.comparisonVariant.value || undefined; this.render(this.session.state()); });
     this.elements.grid.addEventListener('change', () => this.session.setFilters({ showGrid: this.elements.grid.checked }));
+    this.elements.hud.addEventListener('change', () => { this.previewHud = this.elements.hud.checked; this.render(this.session.state()); });
     this.elements.overlays.addEventListener('change', () => this.session.setFilters({ showOverlays: this.elements.overlays.checked }));
     this.elements.entities.addEventListener('change', () => this.session.setFilters({ showEntities: this.elements.entities.checked }));
     this.elements.decorations.addEventListener('change', () => this.session.setFilters({ showDecorations: this.elements.decorations.checked }));
@@ -491,7 +498,7 @@ export class WorldLabApp {
     this.session.stageOptions().forEach(stage => { const option = document.createElement('option'); option.value = stage.id; option.textContent = `${stage.title} · ${stage.id}`; this.elements.stageSelect.append(option); });
     this.elements.stageSelect.value = this.session.focusStageId() ?? '';
     this.elements.stageMode.value = this.stageMode; this.elements.zoom.value = String(this.previewZoom);
-    this.elements.grid.checked = state.filters.showGrid; this.elements.overlays.checked = state.filters.showOverlays;
+    this.elements.grid.checked = state.filters.showGrid; this.elements.hud.checked = this.previewHud; this.elements.overlays.checked = state.filters.showOverlays;
     this.elements.entities.checked = state.filters.showEntities; this.elements.decorations.checked = state.filters.showDecorations; this.elements.exits.checked = state.filters.showExits;
     return variants;
   }
@@ -572,13 +579,13 @@ export class WorldLabApp {
     this.renderExplorer(stage, state);
     if (this.workspace === 'comparison' && stage) renderPhaserPreview(this.elements.stage, {
       stage, variantId: selectedVariant, comparisonVariantId: this.comparisonVariantId,
-      mode: 'compare', zoom: this.previewZoom, showGrid: state.filters.showGrid, enabled: this.previewEnabled,
+      mode: 'compare', zoom: this.previewZoom, showGrid: state.filters.showGrid, showHud: this.previewHud, enabled: this.previewEnabled,
     });
     else if (this.stageMode === 'structural') renderStageInspector(this.elements.stage, stage, state.selection, state.filters.showGrid, state.filters.showOverlays, {
       selectTile: (x, y) => this.session.selectTile(x, y), selectPhysicalExit: id => this.session.selectPhysicalExit(id),
     }, { entities: state.filters.showEntities, decorations: state.filters.showDecorations, exits: state.filters.showExits });
     else if (stage) renderPhaserPreview(this.elements.stage, {
-      stage, variantId: selectedVariant, mode: 'visual', zoom: this.previewZoom, showGrid: state.filters.showGrid, enabled: this.previewEnabled,
+      stage, variantId: selectedVariant, mode: 'visual', zoom: this.previewZoom, showGrid: state.filters.showGrid, showHud: this.previewHud, enabled: this.previewEnabled,
     });
     else renderStageInspector(this.elements.stage, undefined, state.selection, true, true, { selectTile: () => undefined, selectPhysicalExit: () => undefined });
     const asset = stage?.visualPresentation?.artAssets?.find(item => item.id === this.inspectedAssetId);

@@ -15,7 +15,7 @@ export const WORLD_LAB_PT_BR = Object.freeze({
   }),
   labels: Object.freeze({
     seed: 'Seed', node: 'Nó', stage: 'Fase', variant: 'Variante', compareWith: 'Comparar com',
-    view: 'Visualização', zoom: 'Zoom', grid: 'Grade', overlays: 'Sobreposições',
+    view: 'Visualização', zoom: 'Zoom', grid: 'Grade', hud: 'HUD', overlays: 'Sobreposições',
     entities: 'Entidades', decorations: 'Decorações', exits: 'Saídas', campaignNode: 'Nó da campanha',
     defaultVariant: 'Padrão', structural: 'Estrutural', visual: 'Visual', selection: 'Seleção',
     selectedNode: 'Nó selecionado', viewedStage: 'Fase visualizada', activeVariant: 'Variante ativa',
