@@ -66,3 +66,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-31 | [World Lab visual e padronização da direção de arte — Etapa 9.7D](./2026-10-31-etapa-9-7d-world-lab-visual-direcao-arte.md) |
 | 2026-10-31 | [Reformulação UI/UX e localização do World Lab — Etapa 9.7E](./2026-10-31-etapa-9-7e-reformulacao-ui-ux-localizacao-world-lab.md) |
 | 2026-10-31 | [Estética e efeitos do capítulo inicial “Raiz do Mundo” — Etapa 10.0](./2026-10-31-etapa-10-0-estetica-efeitos-capitulo-inicial.md) |
+| 2026-11-01 | [Fases panorâmicas e progressão narrativa do Igapó — Etapa 9.8](./2026-11-01-etapa-9-8-fases-panoramicas-igapo.md) |
