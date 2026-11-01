@@ -21,7 +21,7 @@ import {
 import { VERSE_SECTIONS } from '../data/VerseLevelData';
 import { MemorySaveStorage } from '../narrative';
 import { GameScene } from '../scenes/GameScene';
-import { IGAPO_DAS_MEMORIAS_STAGE_ID } from '../stages';
+import { CORACAO_CORROMPIDO_STAGE_ID, IGAPO_DAS_MEMORIAS_STAGE_ID } from '../stages';
 
 type SceneState = Record<string, any>;
 
@@ -117,7 +117,7 @@ describe('GameScene macro campaign vertical slice', () => {
     expect(state.levelClearedBannerShowing).toBe(true);
   });
 
-  it('plays hub to Igapó, return and route resumption through the shared portal flow', () => {
+  it('plays hub, Igapó, corrupted heart, return and resumption through the shared portal flow', () => {
     const { scene, state } = sceneShell();
     scene.init({
       macroCampaign: true,
@@ -139,20 +139,27 @@ describe('GameScene macro campaign vertical slice', () => {
     expect(state.campaignRouter.state().activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_WATERS_CONTEXT);
     expect(state.spawnEnemiesAndItems).toHaveBeenCalledWith(state.currentLevel);
 
+    const corruptedExit = state.campaignNavigation.snapshot.destinations[0];
+    state.handleCampaignExitProximity(corruptedExit.physicalExitId, true, true);
+    const corruptedNodeId = state.campaignRouter.state().currentNodeId;
+    expect(state.currentLevel.id).toBe(CORACAO_CORROMPIDO_STAGE_ID);
+    expect(state.campaignRouter.state().activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_WATERS_CONTEXT);
+
     const returnExit = state.campaignNavigation.snapshot.destinations[0];
     state.handleCampaignExitProximity(returnExit.physicalExitId, true, true);
     expect(state.currentLevel.id).toBe('verse_01_atrium');
     expect(state.campaignRouter.state().activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_HUB_CONTEXT);
     expect(state.campaignRouter.state().parkedGraphContexts[UMBRA_ROUTE_SLICE_WATERS_CONTEXT].currentNodeId)
-      .toBe(igapoNodeId);
+      .toBe(corruptedNodeId);
 
     const resumeExit = state.campaignNavigation.snapshot.destinations[0];
     state.handleCampaignExitProximity(resumeExit.physicalExitId, true, true);
-    expect(state.currentLevel.id).toBe(IGAPO_DAS_MEMORIAS_STAGE_ID);
-    expect(state.campaignRouter.state().currentNodeId).toBe(igapoNodeId);
+    expect(state.currentLevel.id).toBe(CORACAO_CORROMPIDO_STAGE_ID);
+    expect(state.campaignRouter.state().currentNodeId).toBe(corruptedNodeId);
+    expect(state.campaignRouter.state().currentNodeId).not.toBe(igapoNodeId);
     expect(state.campaignRouter.state().graph.id).toBe(initialGraphId);
-    expect(state.campaignRouter.state().confirmedTransitionIds).toHaveLength(3);
-    expect(state.progression.recordStageCompletedIdempotent).toHaveBeenCalledTimes(3);
+    expect(state.campaignRouter.state().confirmedTransitionIds).toHaveLength(4);
+    expect(state.progression.recordStageCompletedIdempotent).toHaveBeenCalledTimes(4);
   });
 
   it('does not advance or leave the input guard set when macro persistence fails', () => {

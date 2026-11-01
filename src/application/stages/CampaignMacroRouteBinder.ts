@@ -92,12 +92,21 @@ export interface CampaignMacroRouteBinderDependencies
   readonly saves?: CampaignRunSavePort;
 }
 
-interface PendingNavigation {
+interface PendingMacroNavigation {
+  readonly kind: 'macro';
   readonly router: CampaignRouter;
   readonly binding: CampaignMacroRouteBinding;
   readonly choice: CampaignMacroChoice;
   readonly prepared: CampaignPreparedTransition;
 }
+
+interface PendingInternalNavigation {
+  readonly kind: 'internal';
+  readonly router: CampaignRouter;
+  readonly prepared: CampaignPreparedTransition;
+}
+
+type PendingNavigation = PendingMacroNavigation | PendingInternalNavigation;
 
 function compare(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
@@ -322,7 +331,13 @@ export class CampaignMacroRouteBinder {
     if (!prepared.ok) return this.failure('router-failed', 'Campaign router preparation failed.', connectionId, {
       routerFailure: prepared.error,
     });
-    this.pending = Object.freeze({ router, binding, choice: bound.choice, prepared: prepared.value });
+    this.pending = Object.freeze({
+      kind: 'macro' as const,
+      router,
+      binding,
+      choice: bound.choice,
+      prepared: prepared.value,
+    });
     return Object.freeze({
       ok: true as const,
       value: Object.freeze({
@@ -338,6 +353,9 @@ export class CampaignMacroRouteBinder {
     const pending = this.pending;
     if (!pending || pending.prepared.preparationId !== preparationId) return this.failure(
       'transition-not-prepared', 'Preparation does not match the pending macro transition.', preparationId,
+    );
+    if (pending.kind !== 'macro') return this.failure(
+      'transition-not-prepared', 'Preparation belongs to an internal graph transition.', preparationId,
     );
     if (this.stateValue.activeGraphContextId !== pending.binding.sourceContextId) return this.failure(
       'context-mismatch', 'Active graph context changed before confirmation.', pending.binding.sourceContextId,
@@ -395,6 +413,87 @@ export class CampaignMacroRouteBinder {
     const cancelled = this.pending.router.cancel(preparationId);
     if (cancelled) this.pending = undefined;
     return cancelled;
+  }
+
+  /**
+   * Prepares an edge that advances inside the active graph context without
+   * changing macro location. Macro-bound exits keep using prepare().
+   */
+  public prepareInternal(
+    physicalExitId: string,
+  ): CampaignMacroRouteBindingResult<CampaignPreparedTransition> {
+    if (this.pending) return this.failure(
+      'transition-in-progress', 'Another macro transition is already prepared.', physicalExitId,
+    );
+    const inspection = this.inspect();
+    if (!inspection.ok) return inspection;
+    const destination = inspection.value.navigation.snapshot.destinations
+      .find(item => item.physicalExitId === physicalExitId);
+    if (!destination) return this.failure(
+      'choice-not-found', 'Internal graph destination was not found.', physicalExitId,
+    );
+    const macroEdgeIds = new Set(inspection.value.choices
+      .map(choice => choice.edgeId).filter((id): id is string => id !== undefined));
+    if (macroEdgeIds.has(destination.edgeId)) return this.failure(
+      'choice-blocked', 'Macro-bound destinations must use their macro choice.', physicalExitId,
+    );
+    const router = this.router();
+    const prepared = router.prepare(physicalExitId);
+    if (!prepared.ok) return this.failure(
+      'router-failed', 'Campaign router preparation failed.', physicalExitId,
+      { routerFailure: prepared.error },
+    );
+    this.pending = Object.freeze({
+      kind: 'internal' as const,
+      router,
+      prepared: prepared.value,
+    });
+    return Object.freeze({ ok: true as const, value: prepared.value });
+  }
+
+  /** Confirms a same-context graph transition and persists it atomically. */
+  public confirmInternal(
+    preparationId: string,
+  ): CampaignMacroRouteBindingResult<CampaignMacroConfirmedNavigation> {
+    const pending = this.pending;
+    if (!pending || pending.kind !== 'internal' ||
+      pending.prepared.preparationId !== preparationId) return this.failure(
+      'transition-not-prepared', 'Preparation does not match an internal graph transition.',
+      preparationId,
+    );
+    const previous = this.stateValue;
+    const confirmed = pending.router.confirm(preparationId);
+    this.pending = undefined;
+    if (!confirmed.ok) return this.failure(
+      'router-failed', 'Campaign router confirmation failed.', preparationId,
+      { routerFailure: confirmed.error },
+    );
+    const candidate = confirmed.value.state;
+    let persistence: CampaignMacroConfirmedNavigation['persistence'] = 'skipped';
+    if (this.dependencies.saves) {
+      const saved = this.dependencies.saves.save(candidate, previous);
+      if (!saved.ok) return this.failure(
+        'persistence-failed', 'Internal graph transition was rolled back after persistence failed.',
+        confirmed.value.transition.transitionId,
+        {
+          persistenceFailure: saved.error,
+          recovery: saved.error.recovery === 'storage-state-unknown'
+            ? 'storage-state-unknown' : 'rolled-back',
+        },
+      );
+      persistence = saved.value.persistence === 'verified-after-error'
+        ? 'verified-after-error' : 'saved';
+    }
+    this.stateValue = candidate;
+    return Object.freeze({
+      ok: true as const,
+      value: Object.freeze({
+        state: candidate,
+        connectionId: `internal.${confirmed.value.transition.edgeId}`,
+        transitionId: confirmed.value.transition.transitionId,
+        persistence,
+      }),
+    });
   }
 
   private switchContext(

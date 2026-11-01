@@ -4,7 +4,11 @@ import {
   UMBRA_ROUTE_SLICE_WATERS_CONTEXT,
 } from '../application/stages';
 import { MemorySaveStorage, type SaveStoragePort } from '../narrative';
-import { IGAPO_DAS_MEMORIAS_STAGE_ID, IGAPO_RETURN_ANCHOR } from '../stages';
+import {
+  CORACAO_CORROMPIDO_STAGE_ID,
+  IGAPO_DAS_MEMORIAS_STAGE_ID,
+  IGAPO_RETURN_ANCHOR,
+} from '../stages';
 
 const RUN_ID = 'run.macro-phaser-adapter';
 const RUN_SEED = 'seed.macro-phaser-adapter';
@@ -96,26 +100,31 @@ describe('GameMacroCampaignAdapter', () => {
     expect(retried.ok).toBe(true);
   });
 
-  it('persists hub, Igapó, hub and route resumption without losing context', () => {
+  it('persists hub, both water phases, hub and route resumption without losing context', () => {
     const storage = new MemorySaveStorage();
     const first = create(storage);
     const entered = navigate(first, inspect(first).snapshot.destinations[0].physicalExitId);
     const igapoNodeId = entered.confirmed.state.currentNodeId;
     expect(entered.confirmed.state.activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_WATERS_CONTEXT);
 
+    const corrupted = navigate(first, inspect(first).snapshot.destinations[0].physicalExitId);
+    const corruptedNodeId = corrupted.confirmed.state.currentNodeId;
+    expect(inspect(first).currentNode.stageId).toBe(CORACAO_CORROMPIDO_STAGE_ID);
+
     navigate(first, inspect(first).snapshot.destinations[0].physicalExitId);
     expect(first.adapter.state().activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_HUB_CONTEXT);
     expect(first.adapter.state().parkedGraphContexts?.[UMBRA_ROUTE_SLICE_WATERS_CONTEXT]?.currentNodeId)
-      .toBe(igapoNodeId);
+      .toBe(corruptedNodeId);
 
     const restored = create(storage);
     expect(restored.persistence).toBe('restored');
     expect(restored.adapter.state().activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_HUB_CONTEXT);
     navigate(restored, inspect(restored).snapshot.destinations[0].physicalExitId);
-    expect(restored.adapter.state().currentNodeId).toBe(igapoNodeId);
+    expect(restored.adapter.state().currentNodeId).toBe(corruptedNodeId);
+    expect(restored.adapter.state().currentNodeId).not.toBe(igapoNodeId);
     expect(restored.adapter.state().graph.runId).toBe(RUN_ID);
     expect(restored.adapter.state().graph.runSeed).toBe(RUN_SEED);
-    expect(restored.adapter.state().confirmedTransitionIds).toHaveLength(3);
+    expect(restored.adapter.state().confirmedTransitionIds).toHaveLength(4);
   });
 
   it('keeps planned destinations out of the Phaser projection', () => {
@@ -131,7 +140,7 @@ describe('GameMacroCampaignAdapter', () => {
     });
   });
 
-  it('binds the authored return to the declared reachable anchor', () => {
+  it('binds the authored Igapó transition to the declared reachable anchor', () => {
     const session = create();
     navigate(session, inspect(session).snapshot.destinations[0].physicalExitId);
     const igapo = inspect(session);
@@ -141,13 +150,13 @@ describe('GameMacroCampaignAdapter', () => {
     expect(igapo.physicalExits.exits[0].tile).toEqual(IGAPO_RETURN_ANCHOR);
     expect(igapo.bindings[0]).toMatchObject({
       association: 'manifest-exit',
-      targetStageId: 'verse_01_atrium',
+      targetStageId: CORACAO_CORROMPIDO_STAGE_ID,
     });
   });
 
   it('enforces the existing traversal limit instead of enabling unlimited revisits', () => {
     const session = create();
-    for (let index = 0; index < 4; index++) {
+    for (let index = 0; index < 5; index++) {
       const destination = inspect(session).snapshot.destinations[0];
       expect(destination.available).toBe(true);
       navigate(session, destination.physicalExitId);

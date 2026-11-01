@@ -4,17 +4,25 @@ import {
   IGAPO_DAS_MEMORIAS_STAGE,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
 } from './igapoDasMemorias';
+import {
+  CORACAO_CORROMPIDO_STAGE,
+  CORACAO_CORROMPIDO_STAGE_ID,
+} from './coracaoCorrompido';
 import { AGUAS_VISUAL_RESOURCES } from './igapoVisuals';
 
 export * from './igapoDasMemorias';
+export * from './coracaoCorrompido';
 export * from './igapoVisuals';
 
 export const AGUAS_CHAPTER_MANIFEST: ChapterManifest = Object.freeze({
   schemaVersion: 1 as const,
   id: IGAPO_DAS_MEMORIAS_CHAPTER_ID,
-  revision: 1,
+  revision: 2,
   title: 'Rota das Águas',
-  stageIds: Object.freeze([IGAPO_DAS_MEMORIAS_STAGE_ID]),
+  stageIds: Object.freeze([
+    IGAPO_DAS_MEMORIAS_STAGE_ID,
+    CORACAO_CORROMPIDO_STAGE_ID,
+  ]),
   entryStageId: IGAPO_DAS_MEMORIAS_STAGE_ID,
   visualResources: AGUAS_VISUAL_RESOURCES,
   dependencies: Object.freeze([Object.freeze({
@@ -34,5 +42,8 @@ export const AGUAS_CHAPTER_MANIFEST: ChapterManifest = Object.freeze({
   tags: Object.freeze(['campaign', 'aguas', 'amazon']),
 });
 
-export const AGUAS_CHAPTER_STAGES = Object.freeze([IGAPO_DAS_MEMORIAS_STAGE]);
+export const AGUAS_CHAPTER_STAGES = Object.freeze([
+  IGAPO_DAS_MEMORIAS_STAGE,
+  CORACAO_CORROMPIDO_STAGE,
+]);
 

@@ -8,16 +8,19 @@ import {
 
 export const IGAPO_DAS_MEMORIAS_STAGE_ID = 'stage.aguas.igapo-das-memorias';
 export const IGAPO_DAS_MEMORIAS_CHAPTER_ID = 'chapter.aguas';
-export const IGAPO_RETURN_EXIT_ID = 'exit.aguas.igapo.return-hub';
+export const CORACAO_CORROMPIDO_STAGE_ID = 'stage.aguas.coracao-corrompido';
+export const IGAPO_RETURN_EXIT_ID = 'exit.aguas.igapo.enter-corrupted-heart';
 export const ECO_DAS_AGUAS_EVENT_ID = 'event.aguas.igapo.eco-das-aguas';
 export const ECO_DAS_AGUAS_DIALOGUE_ID = 'dialogue.aguas.igapo.eco-das-aguas';
 export const ECO_DAS_AGUAS_NPC_ID = 'npc.aguas.igapo.memory-vestige';
 export const ECO_DAS_AGUAS_FLAG = 'flag.aguas.igapo.eco-das-aguas-seen';
-export const ECO_DAS_AGUAS_INTEREST = Object.freeze({ x: 27, y: 17 });
-export const IGAPO_RETURN_ANCHOR = Object.freeze({ x: 36, y: 20 });
+export const IGAPO_DISCOVERY_MISSION_ID = 'mission.aguas.igapo.trace-corruption';
+export const IGAPO_CORRUPTION_FOUND_FLAG = 'flag.aguas.igapo.corruption-found';
+export const ECO_DAS_AGUAS_INTEREST = Object.freeze({ x: 28, y: 16 });
+export const IGAPO_RETURN_ANCHOR = Object.freeze({ x: 91, y: 16 });
 
-const WIDTH = 40;
-const HEIGHT = 25;
+export const IGAPO_MAP_WIDTH = 96;
+export const IGAPO_MAP_HEIGHT = 30;
 const FLOOR = 0;
 const WALL = 1;
 const ROOT = 2;
@@ -27,49 +30,52 @@ const CHEST = 7;
 const SPAWN = 8;
 
 /**
- * Dark water is the negative space. Dry islands, root bridges and two branches
- * are carved into it, keeping the authored topology legible beside the data.
+ * Water is the negative space. Islands and roots form a west-to-east route
+ * with optional northern and southern loops that always reconnect.
  */
 function createIgapoMap(): number[][] {
-  const map: number[][] = Array.from({ length: HEIGHT }, (_, y) =>
-    Array.from({ length: WIDTH }, (_, x) =>
-      x === 0 || y === 0 || x === WIDTH - 1 || y === HEIGHT - 1 ? WALL : WATER));
+  const map: number[][] = Array.from({ length: IGAPO_MAP_HEIGHT }, (_, y) =>
+    Array.from({ length: IGAPO_MAP_WIDTH }, (_, x) =>
+      x === 0 || y === 0 || x === IGAPO_MAP_WIDTH - 1 || y === IGAPO_MAP_HEIGHT - 1
+        ? WALL : WATER));
   const fill = (x1: number, y1: number, x2: number, y2: number, tile = FLOOR): void => {
     for (let y = y1; y <= y2; y += 1) {
       for (let x = x1; x <= x2; x += 1) map[y][x] = tile;
     }
   };
 
-  // Safe western island and the fork.
-  fill(2, 17, 10, 22);
-  fill(8, 18, 14, 20);
+  // Introduction: a broad safe bank narrows into the first flooded passage.
+  fill(2, 13, 16, 21);
+  fill(14, 15, 30, 18);
 
-  // Northern root path into the first combat clearing.
-  fill(12, 10, 14, 19);
-  fill(10, 7, 20, 12);
-  fill(19, 9, 27, 10);
-  fill(26, 5, 37, 13);
+  // Exploration: northern canopy and southern reed bed form optional loops.
+  fill(26, 9, 30, 16);
+  fill(24, 6, 44, 11);
+  fill(42, 9, 47, 16);
+  fill(31, 17, 35, 23);
+  fill(32, 21, 48, 25);
+  fill(46, 17, 51, 23);
 
-  // Southern island path, memory island and the return bank.
-  fill(13, 18, 17, 21);
-  fill(16, 19, 26, 20);
-  fill(24, 15, 32, 22);
-  fill(29, 11, 31, 17);
-  fill(31, 18, 37, 22);
+  // The paths merge at the memory island and open into a corrupted estuary.
+  fill(44, 13, 60, 20);
+  fill(56, 8, 70, 17);
+  fill(58, 17, 68, 22);
+  fill(67, 14, 84, 18);
 
-  // Eastern connector closes the loop between both branches.
-  fill(34, 12, 36, 19);
+  // Transition: the final bank remains spacious while vegetation closes in.
+  fill(80, 10, 93, 22);
+  fill(76, 17, 83, 21);
 
   // Emergent trees and exposed roots shape narrow passages without closing them.
   [
-    [5, 18], [8, 21],
-    [11, 8], [18, 8], [11, 11], [18, 11],
-    [27, 6], [32, 6], [36, 7], [28, 12], [33, 11], [36, 12],
-    [25, 16], [31, 16], [25, 21], [31, 21],
-    [33, 19], [33, 22],
+    [7, 14], [11, 20], [18, 16], [22, 17],
+    [25, 7], [31, 7], [38, 10], [43, 7], [28, 12], [43, 12],
+    [33, 22], [39, 24], [47, 22], [49, 18],
+    [52, 15], [58, 9], [64, 12], [68, 16], [61, 20],
+    [73, 15], [78, 18], [82, 12], [86, 21], [90, 11],
   ].forEach(([x, y]) => { map[y][x] = ROOT; });
 
-  map[20][4] = SPAWN;
+  map[17][4] = SPAWN;
   map[ECO_DAS_AGUAS_INTEREST.y][ECO_DAS_AGUAS_INTEREST.x] = CHEST;
   map[IGAPO_RETURN_ANCHOR.y][IGAPO_RETURN_ANCHOR.x] = EXIT;
   return map;
@@ -79,11 +85,11 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
   manifest: Object.freeze({
     schemaVersion: 1 as const,
     id: IGAPO_DAS_MEMORIAS_STAGE_ID,
-    revision: 1,
+    revision: 2,
     chapterId: IGAPO_DAS_MEMORIAS_CHAPTER_ID,
     order: 0,
     title: 'Igapó das Memórias',
-    summary: 'Ilhas de terra e raízes atravessam águas escuras onde lembranças estão desaparecendo.',
+    summary: 'Uma travessia inundada acompanha memórias perdidas até a nascente da corrupção.',
     layout: Object.freeze({ kind: 'authored' as const }),
     presentation: AGUAS_RIBEIRINHO_PRESENTATION,
     presentationVariants: AGUAS_PRESENTATION_VARIANTS,
@@ -104,9 +110,10 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
     exits: Object.freeze([Object.freeze({
       id: IGAPO_RETURN_EXIT_ID,
       anchor: Object.freeze({ kind: 'tile' as const, ...IGAPO_RETURN_ANCHOR }),
-      targetStageId: 'verse_01_atrium',
+      targetStageId: CORACAO_CORROMPIDO_STAGE_ID,
     })]),
     entryDialogueId: ECO_DAS_AGUAS_DIALOGUE_ID,
+    completionMissionId: IGAPO_DISCOVERY_MISSION_ID,
     capabilities: Object.freeze([
       Object.freeze({
         id: 'navigation.authored-map', category: 'navigation' as const,
@@ -170,7 +177,7 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
   authoredLevel: Object.freeze({
     id: IGAPO_DAS_MEMORIAS_STAGE_ID,
     name: 'Igapó das Memórias',
-    description: 'Uma floresta sazonalmente inundada, silenciosa e alterada por memórias ausentes.',
+    description: 'Uma floresta inundada se estende para leste, onde a água perde cor e memória.',
     theme: 'witches_crypt' as const,
     music: 'ost_vestibule',
     ambientColor: 0x173b35,
@@ -180,16 +187,19 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
     tileMap: createIgapoMap(),
     enemies: [],
     items: [
-      { type: 'health_herb', x: 7, y: 19, quantity: 1 },
-      { type: 'key', x: 28, y: 17, quantity: 1 },
-      { type: 'mana_shard', x: 35, y: 15, quantity: 1 },
+      { type: 'health_herb', x: 10, y: 18, quantity: 1 },
+      { type: 'key', x: 59, y: 12, quantity: 1 },
+      { type: 'mana_shard', x: 83, y: 19, quantity: 1 },
     ],
     decorations: [
-      { type: 'igapo_emergent_tree', x: 11, y: 8, scale: 1.2, tint: 0x315c42 },
-      { type: 'igapo_fallen_trunk', x: 20, y: 10, rotation: 0.08, tint: 0x594735 },
-      { type: 'igapo_memory_reeds', x: 27, y: 17, scale: 0.9, tint: 0x78b9a5 },
+      { type: 'igapo_emergent_tree', x: 25, y: 7, scale: 1.2, tint: 0x315c42 },
+      { type: 'igapo_fallen_trunk', x: 42, y: 10, rotation: 0.08, tint: 0x594735 },
+      { type: 'igapo_memory_reeds', x: 28, y: 16, scale: 0.9, tint: 0x78b9a5 },
+      { type: 'igapo_emergent_tree', x: 64, y: 12, scale: 1.25, tint: 0x315c42 },
+      { type: 'igapo_fallen_trunk', x: 78, y: 18, rotation: -0.06, tint: 0x4f4033 },
+      { type: 'igapo_memory_reeds', x: 86, y: 21, scale: 1, tint: 0x5e8f7f },
     ],
-    parTime: 210,
+    parTime: 420,
     difficulty: 3,
   }),
   encounter: Object.freeze({
@@ -206,26 +216,29 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
           delayBeforeMs: 0,
           enemies: Object.freeze([
             Object.freeze({
-              type: 'affinity' as const, x: 29, y: 8, level: 2,
-              patrol: Object.freeze([{ x: 29, y: 8 }, { x: 33, y: 8 }]),
+              type: 'affinity' as const, x: 49, y: 16, level: 2,
+              patrol: Object.freeze([{ x: 49, y: 16 }, { x: 56, y: 16 }]),
             }),
-            Object.freeze({ type: 'applaud' as const, x: 35, y: 10, level: 2 }),
+            Object.freeze({ type: 'applaud' as const, x: 58, y: 12, level: 2 }),
           ]),
         }),
         Object.freeze({
           id: 'wave.2',
           delayBeforeMs: 1200,
           enemies: Object.freeze([
-            Object.freeze({ type: 'affinity' as const, x: 16, y: 9, level: 3 }),
-            Object.freeze({ type: 'affinity' as const, x: 26, y: 19, level: 3 }),
-            Object.freeze({ type: 'applaud' as const, x: 30, y: 18, level: 3 }),
+            Object.freeze({ type: 'affinity' as const, x: 69, y: 16, level: 3 }),
+            Object.freeze({ type: 'affinity' as const, x: 82, y: 15, level: 3 }),
+            Object.freeze({ type: 'applaud' as const, x: 88, y: 19, level: 3 }),
           ]),
         }),
       ]),
     }),
   }),
   narrative: Object.freeze({
-    flags: Object.freeze({ [ECO_DAS_AGUAS_FLAG]: false }),
+    flags: Object.freeze({
+      [ECO_DAS_AGUAS_FLAG]: false,
+      [IGAPO_CORRUPTION_FOUND_FLAG]: false,
+    }),
   }),
   npcs: Object.freeze([Object.freeze({
     id: ECO_DAS_AGUAS_NPC_ID,
@@ -252,6 +265,20 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
       }),
     ]),
   })]),
+  missions: Object.freeze([Object.freeze({
+    id: IGAPO_DISCOVERY_MISSION_ID,
+    title: 'Rastrear a água sem memória',
+    description: 'Alcance o Vestígio Submerso e confirme a origem da degradação.',
+    scope: 'stage' as const,
+    start: 'stage-enter' as const,
+    objectives: Object.freeze([Object.freeze({
+      id: 'objective.aguas.igapo.reach-vestige',
+      description: 'Encontre o Vestígio Submerso.',
+      signal: 'npc.interacted' as const,
+      target: 1,
+      filter: Object.freeze({ field: 'npcId' as const, equals: ECO_DAS_AGUAS_NPC_ID }),
+    })]),
+  })]),
   events: Object.freeze([Object.freeze({
     id: ECO_DAS_AGUAS_EVENT_ID,
     once: true,
@@ -263,8 +290,25 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
       value: false,
     }),
     commands: Object.freeze([
+      Object.freeze({ type: 'mission.start' as const, missionId: IGAPO_DISCOVERY_MISSION_ID }),
       Object.freeze({ type: 'dialogue.start' as const, dialogueId: ECO_DAS_AGUAS_DIALOGUE_ID }),
       Object.freeze({ type: 'flag.set' as const, flag: ECO_DAS_AGUAS_FLAG, value: true }),
+    ]),
+  }), Object.freeze({
+    id: 'event.aguas.igapo.corruption-discovered',
+    once: true,
+    when: 'mission.completed' as const,
+    filter: Object.freeze({
+      field: 'missionId' as const,
+      equals: IGAPO_DISCOVERY_MISSION_ID,
+    }),
+    commands: Object.freeze([
+      Object.freeze({
+        type: 'flag.set' as const,
+        flag: IGAPO_CORRUPTION_FOUND_FLAG,
+        value: true,
+      }),
+      Object.freeze({ type: 'stage.complete' as const, exitId: IGAPO_RETURN_EXIT_ID }),
     ]),
   })]),
 });

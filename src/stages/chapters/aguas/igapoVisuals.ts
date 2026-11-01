@@ -132,44 +132,43 @@ const igapoRibeirinhoTileset = Object.freeze({
 
 const igapoSombrioTileset = Object.freeze({
   id: IGAPO_SOMBRIO_TILESET_ID,
-  revision: 1,
+  revision: 2,
   tileSize: 32 as const,
   tiles: Object.freeze({
-    floor: worldTile(WORLD_FRAME.dirt, {
-      tint: 0x3f5f55,
+    floor: worldTile(WORLD_FRAME.grassDark, {
+      tint: 0x6f8776,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.dirtVariant, { tint: 0x35534b }),
-        worldVariant(WORLD_FRAME.dirtLight, { tint: 0x476a5e }),
+        worldVariant(WORLD_FRAME.grass, { tint: 0x627c6f }),
+        worldVariant(WORLD_FRAME.dirt, { tint: 0x74816a }),
       ]),
     }),
-    wall: worldTile(WORLD_FRAME.rock, {
-      tint: 0x2d3f46,
+    wall: worldTile(WORLD_FRAME.treeCanopyDense, {
+      tint: 0x526b61,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.rockVariant, { tint: 0x273840 }),
-        worldVariant(WORLD_FRAME.rockEdge, { tint: 0x33474e }),
+        worldVariant(WORLD_FRAME.treeCanopy, { tint: 0x49645c }),
+        worldVariant(WORLD_FRAME.treeCanopyVariant, { tint: 0x587269 }),
       ]),
     }),
-    pillar: worldTile(WORLD_FRAME.stump, {
-      tint: 0x4a3a2f,
+    pillar: worldTile(WORLD_FRAME.singleTreeVariant, {
+      tint: 0x5d6858,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.stumpVariant, { tint: 0x3f3730 }),
-        worldVariant(WORLD_FRAME.rock, { tint: 0x2f3f46 }),
+        worldVariant(WORLD_FRAME.singleTree, { tint: 0x506158 }),
       ]),
     }),
     water: worldTile(WORLD_FRAME.waterDeep, {
-      tint: 0x2f6f7a,
-      alpha: 0.96,
+      tint: 0x528a8d,
+      alpha: 0.98,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.waterVariant, { tint: 0x28616d, alpha: 0.95 }),
-        worldVariant(WORLD_FRAME.water, { tint: 0x245863, alpha: 0.97 }),
+        worldVariant(WORLD_FRAME.waterVariant, { tint: 0x4a7f84, alpha: 0.98 }),
+        worldVariant(WORLD_FRAME.water, { tint: 0x47777d, alpha: 0.98 }),
       ]),
     }),
-    lava: worldTile(WORLD_FRAME.dirt, { tint: 0x4a4a2f }),
-    exit: worldTile(WORLD_FRAME.arch, { tint: 0xa8d8e8 }),
-    'locked-door': worldTile(WORLD_FRAME.rockVariant, { tint: 0x26363d }),
-    chest: worldTile(WORLD_FRAME.chest, { tint: 0x6f8f8a }),
-    spawn: worldTile(WORLD_FRAME.dirt, { tint: 0x476a5e }),
-    boss: worldTile(WORLD_FRAME.dirt, { tint: 0x3a4a3a }),
+    lava: worldTile(WORLD_FRAME.dirt, { tint: 0x77734f }),
+    exit: worldTile(WORLD_FRAME.arch, { tint: 0xb5e3df }),
+    'locked-door': worldTile(WORLD_FRAME.treeCanopyVariant, { tint: 0x486058 }),
+    chest: worldTile(WORLD_FRAME.chest, { tint: 0x91aaa0 }),
+    spawn: worldTile(WORLD_FRAME.grassVariant, { tint: 0x789789 }),
+    boss: worldTile(WORLD_FRAME.dirtLight, { tint: 0x867957 }),
   }),
 });
 
@@ -425,9 +424,9 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
     }),
     Object.freeze({
       id: IGAPO_SOMBRIO_ENVIRONMENT_ID,
-      ambientColor: 0x14343a,
-      lightIntensity: 0.55,
-      fog: Object.freeze({ color: 0x0a2026, opacity: 0.18, depth: 4 }),
+      ambientColor: 0x1a3f42,
+      lightIntensity: 0.62,
+      fog: Object.freeze({ color: 0x102a2d, opacity: 0.12, depth: 4 }),
     }),
   ]),
   themes: Object.freeze([
@@ -441,7 +440,7 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
     }),
     Object.freeze({
       id: IGAPO_SOMBRIO_THEME_ID,
-      revision: 1,
+      revision: 2,
       tilesetId: IGAPO_SOMBRIO_TILESET_ID,
       decorationIds: Object.freeze([
         'igapo_sombrio_dead_tree', 'igapo_sombrio_roots', 'igapo_sombrio_reeds',

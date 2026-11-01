@@ -18,15 +18,25 @@ import {
 } from '../narrative';
 import {
   AGUAS_CHAPTER_MANIFEST,
+  CORACAO_CORROMPIDO_ENCOUNTER_ID,
+  CORACAO_CORROMPIDO_EXIT_ANCHOR,
+  CORACAO_CORROMPIDO_MAP_HEIGHT,
+  CORACAO_CORROMPIDO_MAP_WIDTH,
+  CORACAO_CORROMPIDO_MISSION_ID,
+  CORACAO_CORROMPIDO_STAGE,
+  CORACAO_CORROMPIDO_STAGE_ID,
   ECO_DAS_AGUAS_DIALOGUE_ID,
   ECO_DAS_AGUAS_EVENT_ID,
   ECO_DAS_AGUAS_FLAG,
   ECO_DAS_AGUAS_INTEREST,
   IGAPO_DAS_MEMORIAS_STAGE,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
+  IGAPO_MAP_HEIGHT,
+  IGAPO_MAP_WIDTH,
   IGAPO_RETURN_ANCHOR,
   IGAPO_RETURN_EXIT_ID,
   StageLoader,
+  StageCatalogService,
   StageRegistry,
   registerCampaignChapters,
   registerLegacyStages,
@@ -47,6 +57,15 @@ function loader(): StageLoader {
 
 function loadIgapo(runId = 'run.igapo-tests', runSeed = 'seed.igapo-tests') {
   const result = loader().load({ stageId: IGAPO_DAS_MEMORIAS_STAGE_ID, runId, runSeed });
+  if (!result.ok) throw result.error;
+  return result.value;
+}
+
+function loadCorruptedHeart(
+  runId = 'run.corrupted-heart-tests',
+  runSeed = 'seed.corrupted-heart-tests',
+) {
+  const result = loader().load({ stageId: CORACAO_CORROMPIDO_STAGE_ID, runId, runSeed });
   if (!result.ok) throw result.error;
   return result.value;
 }
@@ -99,10 +118,16 @@ describe('Igapó das Memórias authored chapter', () => {
     const stages = registry();
     expect(stages.getChapter(AGUAS_CHAPTER_MANIFEST.id)).toEqual(AGUAS_CHAPTER_MANIFEST);
     expect(stages.require(IGAPO_DAS_MEMORIAS_STAGE_ID).manifest).toMatchObject({
-      revision: 1,
+      revision: 2,
       chapterId: AGUAS_CHAPTER_MANIFEST.id,
       layout: { kind: 'authored' },
-      exits: [{ id: IGAPO_RETURN_EXIT_ID, targetStageId: 'verse_01_atrium' }],
+      exits: [{ id: IGAPO_RETURN_EXIT_ID, targetStageId: CORACAO_CORROMPIDO_STAGE_ID }],
+    });
+    expect(stages.require(CORACAO_CORROMPIDO_STAGE_ID).manifest).toMatchObject({
+      revision: 1,
+      chapterId: AGUAS_CHAPTER_MANIFEST.id,
+      order: 1,
+      layout: { kind: 'authored' },
     });
     const diagnostics = stages.validate();
     expect(diagnostics.filter(item => item.severity === 'error')).toEqual([]);
@@ -122,10 +147,10 @@ describe('Igapó das Memórias authored chapter', () => {
     expect(first.value).toEqual(second.value);
     expect(first.value.diagnostics.filter(item => item.severity === 'error')).toEqual([]);
 
-    first.value.level.tileMap[20][4] = 0;
+    first.value.level.tileMap[17][4] = 0;
     const third = stageLoader.load(request);
     if (!third.ok) throw third.error;
-    expect(third.value.level.tileMap[20][4]).toBe(8);
+    expect(third.value.level.tileMap[17][4]).toBe(8);
   });
 
   it('has connected exploration, two viable branches and a reachable point of interest', () => {
@@ -134,15 +159,17 @@ describe('Igapó das Memórias authored chapter', () => {
     const spawn = findTile(map, 8);
     const all = reachable(map, spawn);
 
-    expect(map).toHaveLength(25);
-    expect(map.every(row => row.length === 40)).toBe(true);
-    expect(map.flat().filter(tile => tile === 3).length).toBeGreaterThan(250);
-    expect(map.flat().filter(tile => tile === 2).length).toBeGreaterThan(10);
+    expect(map).toHaveLength(IGAPO_MAP_HEIGHT);
+    expect(map.every(row => row.length === IGAPO_MAP_WIDTH)).toBe(true);
+    expect(IGAPO_MAP_WIDTH * 32).toBeGreaterThan(1280);
+    expect(map.flat().filter(tile => tile === 3).length).toBeGreaterThan(1_000);
+    expect(map.flat().filter(tile => tile === 2).length).toBeGreaterThan(20);
     expect(all.has(tileKey(ECO_DAS_AGUAS_INTEREST.x, ECO_DAS_AGUAS_INTEREST.y))).toBe(true);
     expect(all.has(tileKey(IGAPO_RETURN_ANCHOR.x, IGAPO_RETURN_ANCHOR.y))).toBe(true);
 
-    const northCut = new Set([12, 13, 14].map(x => tileKey(x, 14)));
-    const southCut = new Set([19, 20].map(y => tileKey(18, y)));
+    const northCut = new Set([42, 43].flatMap(x =>
+      Array.from({ length: 8 }, (_, index) => tileKey(x, index + 9))));
+    const southCut = new Set([17, 18].map(y => tileKey(31, y)));
     expect(reachable(map, spawn, northCut)
       .has(tileKey(IGAPO_RETURN_ANCHOR.x, IGAPO_RETURN_ANCHOR.y))).toBe(true);
     expect(reachable(map, spawn, southCut)
@@ -250,10 +277,88 @@ describe('Igapó das Memórias authored chapter', () => {
     });
     expect(laterOccurrence).toMatchObject({ ok: true, value: { status: 'processed', commands: [] } });
     expect(restored.value.snapshot().flags[ECO_DAS_AGUAS_FLAG]).toBe(true);
-    expect(restored.value.registry.listEventRules(loaded.manifest.id)[0].id).toBe(ECO_DAS_AGUAS_EVENT_ID);
+    expect(restored.value.registry.listEventRules(loaded.manifest.id)
+      .some(rule => rule.id === ECO_DAS_AGUAS_EVENT_ID)).toBe(true);
   });
 
-  it('preserves hub, authored Igapó, hub and resumption through persisted macro state', () => {
+  it('loads an independent corrupted panorama with its own encounter and connected conclusion', () => {
+    const loaded = loadCorruptedHeart();
+    const map = loaded.level.tileMap;
+    const spawn = findTile(map, 8);
+    const all = reachable(map, spawn);
+
+    expect(map).toHaveLength(CORACAO_CORROMPIDO_MAP_HEIGHT);
+    expect(map.every(row => row.length === CORACAO_CORROMPIDO_MAP_WIDTH)).toBe(true);
+    expect(CORACAO_CORROMPIDO_MAP_WIDTH * 32).toBeGreaterThan(1280);
+    expect(all.has(tileKey(
+      CORACAO_CORROMPIDO_EXIT_ANCHOR.x,
+      CORACAO_CORROMPIDO_EXIT_ANCHOR.y,
+    ))).toBe(true);
+    expect(loaded.encounter?.id).toBe(CORACAO_CORROMPIDO_ENCOUNTER_ID);
+    expect(loaded.encounter?.waves.flatMap(wave => wave.enemies)).toHaveLength(5);
+    expect(loaded.manifest.completionMissionId).toBe(CORACAO_CORROMPIDO_MISSION_ID);
+    expect(loaded.level.tileMap).not.toEqual(loadIgapo().level.tileMap);
+    expect(CORACAO_CORROMPIDO_STAGE.authoredLevel?.tileMap)
+      .not.toEqual(IGAPO_DAS_MEMORIAS_STAGE.authoredLevel?.tileMap);
+  });
+
+  it('reserves the corrupted phase for narrative sequencing instead of random composition', () => {
+    const catalog = StageCatalogService.create(registry());
+    if (!catalog.ok) throw new Error('Stage catalog did not load.');
+    expect(catalog.value.get(CORACAO_CORROMPIDO_STAGE_ID)).toMatchObject({
+      participation: 'narrative-milestone',
+      eligibility: 'narrative-reserved',
+      loadability: 'loadable',
+    });
+    expect(catalog.value.candidates().map(candidate => candidate.stageId))
+      .not.toContain(CORACAO_CORROMPIDO_STAGE_ID);
+  });
+
+  it('completes the corrupted confrontation through the existing narrative runtime', () => {
+    const loaded = loadCorruptedHeart('run.corrupted-narrative', 'seed.corrupted-narrative');
+    const identity: CampaignSaveIdentity = {
+      campaignId: UMBRA_CAMPAIGN_ROUTE_SLICE.id,
+      runId: 'run.corrupted-narrative',
+      runSeed: 'seed.corrupted-narrative',
+      chapterId: loaded.manifest.chapterId,
+      stageId: loaded.manifest.id,
+      manifestRevision: loaded.manifest.revision,
+      stageInstanceId: 'node.corrupted-heart',
+    };
+    const created = StageDirector.create({
+      chapterId: loaded.manifest.chapterId,
+      stageId: loaded.manifest.id,
+      definition: loaded.narrative,
+      npcs: loaded.npcs,
+      dialogues: loaded.dialogues,
+      missions: loaded.missions,
+      events: loaded.events,
+      exitIds: loaded.manifest.exits.map(exit => exit.id),
+    }, undefined, { level: 1, unlockedContent: [] }, { identity });
+    if (!created.ok) throw created.error;
+    const entered = created.value.process({
+      id: 'corrupted.entered',
+      signal: { type: 'stage.entered', stageId: CORACAO_CORROMPIDO_STAGE_ID },
+    });
+    if (!entered.ok) throw entered.error;
+    expect(created.value.snapshot().missionStates[CORACAO_CORROMPIDO_MISSION_ID]?.status)
+      .toBe('active');
+
+    const completed = created.value.process({
+      id: 'corrupted.encounter-completed',
+      signal: { type: 'encounter.completed', encounterId: CORACAO_CORROMPIDO_ENCOUNTER_ID },
+    });
+    if (!completed.ok) throw completed.error;
+    expect(created.value.snapshot().missionStates[CORACAO_CORROMPIDO_MISSION_ID]?.status)
+      .toBe('completed');
+    expect(completed.value.commands).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'stage.complete' }),
+      expect.objectContaining({ type: 'dialogue.start' }),
+    ]));
+    expect(created.value.snapshot().completedStageOccurrences).toHaveLength(1);
+  });
+
+  it('preserves hub, both water phases, hub and resumption through persisted macro state', () => {
     const storage = new MemorySaveStorage();
     const create = () => {
       const result = new GameStageCompositionRoot({ campaignStorage: storage }).createMacroCampaign({
@@ -279,11 +384,26 @@ describe('Igapó das Memórias authored chapter', () => {
     expect(restored.value.loadedStage.manifest.id).toBe(IGAPO_DAS_MEMORIAS_STAGE_ID);
 
     navigate(reloadedInside.adapter);
-    expect(reloadedInside.adapter.state().activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_HUB_CONTEXT);
+    const corrupted = reloadedInside.adapter.inspect();
+    if (!corrupted.ok) throw corrupted.error;
+    expect(corrupted.value.loadedStage.manifest.id).toBe(CORACAO_CORROMPIDO_STAGE_ID);
+    expect(reloadedInside.adapter.state().activeGraphContextId)
+      .toBe(UMBRA_ROUTE_SLICE_WATERS_CONTEXT);
+
+    const reloadedCorrupted = create();
+    const restoredCorrupted = reloadedCorrupted.adapter.inspect();
+    if (!restoredCorrupted.ok) throw restoredCorrupted.error;
+    expect(restoredCorrupted.value.loadedStage.manifest.id).toBe(CORACAO_CORROMPIDO_STAGE_ID);
+    const corruptedNodeId = restoredCorrupted.value.currentNode.id;
+    navigate(reloadedCorrupted.adapter);
+    expect(reloadedCorrupted.adapter.state().activeGraphContextId)
+      .toBe(UMBRA_ROUTE_SLICE_HUB_CONTEXT);
+
     const hubReload = create();
     navigate(hubReload.adapter);
-    expect(hubReload.adapter.state().currentNodeId).toBe(nodeId);
-    expect(hubReload.adapter.state().confirmedTransitionIds).toHaveLength(3);
+    expect(hubReload.adapter.state().currentNodeId).toBe(corruptedNodeId);
+    expect(hubReload.adapter.state().currentNodeId).not.toBe(nodeId);
+    expect(hubReload.adapter.state().confirmedTransitionIds).toHaveLength(4);
   });
 
   it('migrates a revision 2 route save explicitly without losing its active region', () => {
@@ -333,8 +453,8 @@ describe('Igapó das Memórias authored chapter', () => {
 
     expect(migrated.value.persistence).toBe('restored');
     expect(inspected.value.currentNode.stageId).toBe(IGAPO_DAS_MEMORIAS_STAGE_ID);
-    expect(migrated.value.adapter.state().graph.campaignRevision).toBe(3);
-    expect(migrated.value.adapter.state().macroProgress?.definitionRevision).toBe(3);
+    expect(migrated.value.adapter.state().graph.campaignRevision).toBe(4);
+    expect(migrated.value.adapter.state().macroProgress?.definitionRevision).toBe(4);
     expect(migrated.value.adapter.state().confirmedTransitionIds)
       .toEqual(revision2.confirmedTransitionIds);
     expect(storage.read('umbra-trail-run-v1')).not.toBe(previousBytes);

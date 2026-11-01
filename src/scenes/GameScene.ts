@@ -1428,7 +1428,9 @@ export class GameScene extends Phaser.Scene {
     }
     this.campaignNavigation = inspected.value;
     this.macroLoadedStage = inspected.value.loadedStage;
-    const nextLevel = prepared.value.destinationStage.level;
+    // A macro transition can switch graph contexts after confirmation, so the
+    // inspected destination is authoritative over the pre-switch edge target.
+    const nextLevel = inspected.value.loadedStage.level;
     this.cameras.main.flash(600, 255, 215, 0);
     this.time.delayedCall(400, () => {
       try {

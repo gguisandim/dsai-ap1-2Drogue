@@ -47,6 +47,7 @@ export interface GameMacroCampaignLocationView {
 }
 
 interface PreparedMacroTransition {
+  readonly kind: 'macro' | 'internal';
   readonly connectionId: string;
   readonly transition: CampaignPreparedTransition;
 }
@@ -90,15 +91,29 @@ export class GameMacroCampaignAdapter implements GameCampaignNavigationPort {
     const inspected = this.binder.inspect();
     if (!inspected.ok) return this.binderFailure(inspected.error);
     const choice = inspected.value.choices.find(item => item.physicalExitId === physicalExitId);
-    if (!choice) return this.failure(
-      'exit-not-found', 'Physical exit is not bound to a macro choice.', 'unchanged',
-    );
+    if (!choice) {
+      const internal = inspected.value.navigation.snapshot.destinations.find(destination =>
+        destination.physicalExitId === physicalExitId &&
+        !inspected.value.choices.some(item => item.edgeId === destination.edgeId));
+      if (!internal) return this.failure(
+        'exit-not-found', 'Physical exit is not bound to a macro or internal choice.', 'unchanged',
+      );
+      const prepared = this.binder.prepareInternal(physicalExitId);
+      if (!prepared.ok) return this.binderFailure(prepared.error);
+      this.prepared = Object.freeze({
+        kind: 'internal' as const,
+        connectionId: `internal.${internal.edgeId}`,
+        transition: prepared.value,
+      });
+      return this.success(prepared.value);
+    }
     if (choice.status !== 'bound') return this.failure(
       'exit-blocked', `Physical exit is blocked: ${choice.blockedReason ?? choice.status}.`, 'unchanged',
     );
     const prepared = this.binder.prepare(choice.choice.connectionId);
     if (!prepared.ok) return this.binderFailure(prepared.error);
     this.prepared = Object.freeze({
+      kind: 'macro' as const,
       connectionId: choice.choice.connectionId,
       transition: prepared.value.preparation,
     });
@@ -110,7 +125,9 @@ export class GameMacroCampaignAdapter implements GameCampaignNavigationPort {
     if (!pending || pending.transition.preparationId !== preparationId) return this.failure(
       'transition-not-prepared', 'Preparation does not match the macro transition.', 'unchanged',
     );
-    const confirmed = this.binder.confirm(preparationId);
+    const confirmed = pending.kind === 'internal'
+      ? this.binder.confirmInternal(preparationId)
+      : this.binder.confirm(preparationId);
     this.prepared = undefined;
     if (!confirmed.ok) {
       this.binder.cancel(preparationId);
@@ -190,9 +207,14 @@ export class GameMacroCampaignAdapter implements GameCampaignNavigationPort {
   }
 
   private navigationView(inspection: CampaignMacroRouteInspection): CampaignNavigationView {
+    const macroEdgeIds = new Set(inspection.choices
+      .map(choice => choice.edgeId).filter((id): id is string => id !== undefined));
     const exposedIds = new Set(inspection.choices
       .filter(choice => choice.physicalExitId !== undefined)
       .map(choice => choice.physicalExitId as string));
+    inspection.navigation.snapshot.destinations
+      .filter(destination => !macroEdgeIds.has(destination.edgeId))
+      .forEach(destination => exposedIds.add(destination.physicalExitId));
     const navigation = inspection.navigation;
     return Object.freeze({
       ...navigation,

@@ -3,6 +3,7 @@ import {
   CampaignExitBinder,
   CampaignGraphGenerator,
   CampaignGraphValidator,
+  CORACAO_CORROMPIDO_STAGE_ID,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   PhysicalExitResolver,
   applyCampaignRegionBindings,
@@ -49,7 +50,7 @@ const legacyPlaceholder = (stageId: string, reason: string): CampaignContentRefe
 export const UMBRA_CAMPAIGN_ROUTE_SLICE: CampaignMacroDefinition = Object.freeze(
   applyCampaignRegionBindings({
     ...UMBRA_CAMPAIGN_SKELETON,
-    revision: 3,
+    revision: 4,
     hub: Object.freeze({
       ...UMBRA_CAMPAIGN_SKELETON.hub,
       content: legacyPlaceholder(
@@ -63,7 +64,7 @@ export const UMBRA_CAMPAIGN_ROUTE_SLICE: CampaignMacroDefinition = Object.freeze
 const STAGE_IDS = Object.freeze([
   'verse_01_atrium',
   IGAPO_DAS_MEMORIAS_STAGE_ID,
-  'verse_03_santuario',
+  CORACAO_CORROMPIDO_STAGE_ID,
   'verse_01_atrium',
   'verse_02_galeria',
   'verse_03_santuario',
@@ -118,18 +119,19 @@ export function createUmbraCampaignRouteSliceGraph(
   });
   const hub = generated.value.nodes.find(node => node.depth === 0);
   const igapo = generated.value.nodes.find(node => node.depth === 1);
+  const corruptedHeart = generated.value.nodes.find(node => node.depth === 2);
   const hubEdge = generated.value.edges.find(edge =>
     edge.sourceNodeId === hub?.id && edge.targetNodeId === igapo?.id);
-  if (!hub || !igapo || !hubEdge) return Object.freeze({
+  if (!hub || !igapo || !corruptedHeart || !hubEdge) return Object.freeze({
     ok: false as const,
     error: Object.freeze({ code: 'graph-invalid' as const, diagnostics: Object.freeze([]) }),
   });
   const returnEdge = Object.freeze({
-    id: `edge.${igapo.id}.${hub.id}.return`,
-    sourceNodeId: igapo.id,
-    targetNodeId: hub.id,
+    id: `edge.${corruptedHeart.id}.${igapo.id}.return`,
+    sourceNodeId: corruptedHeart.id,
+    targetNodeId: igapo.id,
     exitSlotId: `exit.${hub.id}.return`,
-    physicalExitId: `physical.${igapo.id}.${hub.id}.return`,
+    physicalExitId: `physical.${corruptedHeart.id}.${hub.id}.return`,
     kind: 'return' as const,
     traversalLimit: 2 as const,
   });
@@ -236,7 +238,7 @@ function migrateRouteSliceRevision(
   state: CampaignRunState,
   graph: CampaignGraph,
 ): CampaignRunState {
-  if (state.graph.campaignRevision !== 2) return state;
+  if (state.graph.campaignRevision !== 2 && state.graph.campaignRevision !== 3) return state;
   return canonicalCampaignRunState({
     ...state,
     graph,
@@ -255,14 +257,15 @@ function migrateRouteSliceRevision(
 function migrateMacroRevision(state: CampaignRunState): CampaignRunState {
   const macro = state.macroProgress;
   if (!macro || macro.definitionId !== UMBRA_CAMPAIGN_ROUTE_SLICE.id ||
-    (macro.definitionRevision !== 1 && macro.definitionRevision !== 2)) {
+    (macro.definitionRevision !== 1 && macro.definitionRevision !== 2 &&
+      macro.definitionRevision !== 3)) {
     return state;
   }
   return canonicalCampaignRunState({
     ...state,
     macroProgress: Object.freeze({
       ...macro,
-      definitionRevision: 3,
+      definitionRevision: 4,
     } as CampaignMacroProgressState),
   });
 }
@@ -295,7 +298,7 @@ export class UmbraCampaignRouteSliceFactory {
           previous.graph.runSeed === generated.value.runSeed &&
           previous.graph.id === generated.value.id &&
           (previous.graph.campaignRevision === generated.value.campaignRevision ||
-            previous.graph.campaignRevision === 2);
+            previous.graph.campaignRevision === 2 || previous.graph.campaignRevision === 3);
         if (!compatible) {
           const rejected = saves.load({
             campaignId: generated.value.campaignId,
