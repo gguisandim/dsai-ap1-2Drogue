@@ -5,6 +5,7 @@ import { loadSettings } from '../data/PlayerProfile';
 import { SoundManager } from '../managers/SoundManager';
 import { createMageCastTexture } from '../utils/MageCastTexture';
 import { createPunyAnimations, preloadPunyAssets } from '../presentation/assets/bootPunyAssets';
+import { preloadIgapoAssets } from '../presentation/assets/bootIgapoAssets';
 import { preloadWorldRootAssets } from '../presentation/assets/bootWorldRootAssets';
 
 export class BootScene extends Phaser.Scene {
@@ -37,6 +38,7 @@ export class BootScene extends Phaser.Scene {
       });
     });
     preloadPunyAssets(this);
+    preloadIgapoAssets(this);
     preloadWorldRootAssets(this);
   }
 

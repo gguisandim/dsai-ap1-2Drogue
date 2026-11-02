@@ -104,8 +104,12 @@ describe('declarative stage visual presentation', () => {
     expect(Object.keys(loaded.presentation.decorations).sort()).toEqual([
       'igapo_broad_tree', 'igapo_canopy_high', 'igapo_canopy_shadow',
       'igapo_coconut_palm', 'igapo_emergent_tree', 'igapo_emergent_tree_dark',
-      'igapo_emergent_tree_variant', 'igapo_fruit_tree', 'igapo_mud', 'igapo_palm',
-      'igapo_pebble', 'igapo_reeds', 'igapo_round_tree', 'igapo_shrub', 'igapo_stone',
+      'igapo_emergent_tree_variant', 'igapo_landmark_canoe',
+      'igapo_landmark_drowned_tree', 'igapo_landmark_fallen_trunk',
+      'igapo_landmark_old_arch', 'igapo_landmark_palm_island',
+      'igapo_landmark_stone_garden', 'igapo_palm', 'igapo_pebble',
+      'igapo_reeds', 'igapo_round_tree', 'igapo_shrub', 'igapo_stone',
+      'igapo_waterweed',
     ].sort());
     expect(loaded.presentation.decorations.igapo_emergent_tree).toMatchObject({
       layer: 'foreground', depth: 4.2,

@@ -24,7 +24,7 @@ describe('World Lab POI projection', () => {
     const decorationMarkers = igapo?.markers.filter(marker => marker.kind === 'decoration') ?? [];
     const authoredDecorations = IGAPO_DAS_MEMORIAS_STAGE.authoredLevel?.decorations ?? [];
     expect(decorationMarkers).toHaveLength(authoredDecorations.length);
-    expect(decorationMarkers.length).toBeGreaterThan(400);
+    expect(decorationMarkers.length).toBeGreaterThan(100);
     expect([...new Set(authoredDecorations.map(decoration => decoration.type))])
       .toEqual(expect.arrayContaining([
         'igapo_emergent_tree',

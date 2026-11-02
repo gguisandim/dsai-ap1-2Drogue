@@ -22,6 +22,16 @@ export const IGAPO_AUDIO_PROFILE_ID = 'audio-profile.aguas.forgotten-waters';
 export const IGAPO_SOMBRIO_AUDIO_PROFILE_ID = 'audio-profile.aguas.sombrio-waters';
 export const IGAPO_ENVIRONMENT_ID = 'environment.aguas.forgotten-waters';
 export const IGAPO_SOMBRIO_ENVIRONMENT_ID = 'environment.aguas.sombrio-waters';
+export const IGAPO_CANOA_TEXTURE_ID = 'texture.aguas.igapo-canoa';
+export const IGAPO_CANOA_TEXTURE_KEY = 'igapo_canoa';
+export const IGAPO_LANDMARK_DECORATION_IDS = Object.freeze({
+  drownedTree: 'igapo_landmark_drowned_tree',
+  oldArch: 'igapo_landmark_old_arch',
+  palmIsland: 'igapo_landmark_palm_island',
+  stoneGarden: 'igapo_landmark_stone_garden',
+  fallenTrunk: 'igapo_landmark_fallen_trunk',
+  canoe: 'igapo_landmark_canoe',
+});
 
 const PUNY_WORLD_TEXTURE = 'texture.aguas.puny-world';
 const PUNY_MAGE_TEXTURE = 'texture.aguas.puny-mage';
@@ -64,13 +74,16 @@ const WORLD_FRAME = Object.freeze({
   waterStillDark: 323,
   fruitTree: 704,
   roundTree: 705,
-  broadPalm: 758,
+  broadPalm: 224,
+  broadPalmLegacy: 758,
   palm: 759,
   coconutPalm: 837,
   reeds: 756,
-  shrub: 757,
+  shrub: 705,
+  shrubLegacy: 757,
   stone: 702,
-  pebble: 730,
+  fallenTrunk: 730,
+  pebble: 784,
   pebbleVariant: 784,
   arch: 714,
   chest: 815,
@@ -143,18 +156,18 @@ const igapoRibeirinhoTileset = Object.freeze({
         worldVariant(WORLD_FRAME.treeDark, { tint: 0x335d43 }),
       ]),
     }),
-    water: worldTile(WORLD_FRAME.water, {
-      tint: 0x4f857a,
-      alpha: 0.9,
+    water: worldTile(WORLD_FRAME.waterStillDark, {
+      tint: 0x47776b,
+      alpha: 0.82,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.waterVariant, { tint: 0x487c72, alpha: 0.9 }),
-        worldVariant(WORLD_FRAME.waterDeep, { tint: 0x42746b, alpha: 0.9 }),
-        worldVariant(WORLD_FRAME.waterShallow, { tint: 0x578c80, alpha: 0.9 }),
-        worldVariant(WORLD_FRAME.waterStill, { tint: 0x4b8077, alpha: 0.9 }),
-        worldVariant(WORLD_FRAME.waterStillVariant, { tint: 0x457a71, alpha: 0.9 }),
-        worldVariant(WORLD_FRAME.waterStillDeep, { tint: 0x406f68, alpha: 0.9 }),
-        worldVariant(WORLD_FRAME.waterStillAlt, { tint: 0x52877b, alpha: 0.9 }),
-        worldVariant(WORLD_FRAME.waterStillDark, { tint: 0x3d6b65, alpha: 0.9 }),
+        worldVariant(WORLD_FRAME.waterShallow, { tint: 0x80a98c, alpha: 0.78 }),
+        worldVariant(WORLD_FRAME.water, { tint: 0x5c8c7c, alpha: 0.8 }),
+        worldVariant(WORLD_FRAME.waterVariant, { tint: 0x548477, alpha: 0.8 }),
+        worldVariant(WORLD_FRAME.waterStill, { tint: 0x507d70, alpha: 0.8 }),
+        worldVariant(WORLD_FRAME.waterStillVariant, { tint: 0x4d786c, alpha: 0.8 }),
+        worldVariant(WORLD_FRAME.waterStillDeep, { tint: 0x426e65, alpha: 0.82 }),
+        worldVariant(WORLD_FRAME.waterStillAlt, { tint: 0x5b8877, alpha: 0.8 }),
+        worldVariant(WORLD_FRAME.waterStillDark, { tint: 0x3e695f, alpha: 0.84 }),
       ]),
     }),
     lava: worldTile(WORLD_FRAME.dirt, { tint: 0x87784f }),
@@ -197,12 +210,14 @@ const igapoSombrioTileset = Object.freeze({
       ]),
     }),
     water: worldTile(WORLD_FRAME.waterDeep, {
-      tint: 0x4f7d7d,
-      alpha: 0.98,
+      tint: 0x426f70,
+      alpha: 0.9,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.waterVariant, { tint: 0x467374, alpha: 0.98 }),
-        worldVariant(WORLD_FRAME.water, { tint: 0x436e70, alpha: 0.98 }),
-        worldVariant(WORLD_FRAME.waterShallow, { tint: 0x578687, alpha: 0.98 }),
+        worldVariant(WORLD_FRAME.waterShallow, { tint: 0x739b91, alpha: 0.86 }),
+        worldVariant(WORLD_FRAME.water, { tint: 0x598480, alpha: 0.88 }),
+        worldVariant(WORLD_FRAME.waterVariant, { tint: 0x517c7b, alpha: 0.88 }),
+        worldVariant(WORLD_FRAME.waterStillDeep, { tint: 0x3b686d, alpha: 0.92 }),
+        worldVariant(WORLD_FRAME.waterStillAlt, { tint: 0x527c7e, alpha: 0.88 }),
       ]),
     }),
     lava: worldTile(WORLD_FRAME.dirtVariant, { tint: 0x726a57 }),
@@ -216,7 +231,8 @@ const igapoSombrioTileset = Object.freeze({
 
 interface DecorationSpec {
   readonly id: string;
-  readonly frame: number;
+  readonly textureId?: string;
+  readonly frame?: number;
   readonly layer: 'foreground' | 'terrain' | 'background';
   readonly depth: number;
   readonly defaultScale: number;
@@ -289,6 +305,14 @@ const naturalDecorations: readonly DecorationSpec[] = [
     scaleClass: 'prop' as const,
   },
   {
+    id: 'igapo_fallen_trunk',
+    frame: WORLD_FRAME.fallenTrunk,
+    layer: 'terrain' as const,
+    depth: 1.7,
+    defaultScale: 2.5,
+    scaleClass: 'prop' as const,
+  },
+  {
     id: 'igapo_reeds',
     frame: WORLD_FRAME.reeds,
     layer: 'foreground' as const,
@@ -344,6 +368,78 @@ const naturalDecorations: readonly DecorationSpec[] = [
     defaultScale: 4.4,
     scaleClass: 'oversized' as const,
   },
+  {
+    id: IGAPO_LANDMARK_DECORATION_IDS.drownedTree,
+    frame: WORLD_FRAME.tree,
+    layer: 'foreground' as const,
+    depth: 4.7,
+    defaultScale: 5.1,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: IGAPO_LANDMARK_DECORATION_IDS.oldArch,
+    frame: WORLD_FRAME.arch,
+    layer: 'foreground' as const,
+    depth: 4,
+    defaultScale: 4.5,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: IGAPO_LANDMARK_DECORATION_IDS.palmIsland,
+    frame: WORLD_FRAME.broadPalm,
+    layer: 'foreground' as const,
+    depth: 4.8,
+    defaultScale: 4.4,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: IGAPO_LANDMARK_DECORATION_IDS.fallenTrunk,
+    frame: WORLD_FRAME.fallenTrunk,
+    layer: 'terrain' as const,
+    depth: 1.7,
+    defaultScale: 3,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_waterweed',
+    frame: WORLD_FRAME.reeds,
+    layer: 'terrain' as const,
+    depth: 0.8,
+    defaultScale: 1.8,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: IGAPO_LANDMARK_DECORATION_IDS.canoe,
+    textureId: IGAPO_CANOA_TEXTURE_ID,
+    layer: 'terrain' as const,
+    depth: 1.1,
+    defaultScale: 1.3,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_oil_slick',
+    frame: WORLD_FRAME.waterStillDark,
+    layer: 'terrain' as const,
+    depth: 0.7,
+    defaultScale: 2.2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_waste',
+    frame: WORLD_FRAME.pebbleVariant,
+    layer: 'terrain' as const,
+    depth: 1.3,
+    defaultScale: 1.8,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: IGAPO_LANDMARK_DECORATION_IDS.stoneGarden,
+    frame: WORLD_FRAME.stone,
+    layer: 'terrain' as const,
+    depth: 1.8,
+    defaultScale: 1.8,
+    scaleClass: 'prop' as const,
+  },
 ];
 
 const sombrioDecorations: readonly DecorationSpec[] = [
@@ -372,8 +468,32 @@ const sombrioDecorations: readonly DecorationSpec[] = [
     scaleClass: 'oversized' as const,
   },
   {
+    id: 'igapo_sombrio_cut_stump',
+    frame: WORLD_FRAME.fallenTrunk,
+    layer: 'foreground' as const,
+    depth: 4.2,
+    defaultScale: 4.2,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_sombrio_stump_cluster',
+    frame: WORLD_FRAME.pebbleVariant,
+    layer: 'foreground' as const,
+    depth: 4.3,
+    defaultScale: 3.8,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_sombrio_survivor_tree',
+    frame: WORLD_FRAME.tree,
+    layer: 'foreground' as const,
+    depth: 4.1,
+    defaultScale: 4.2,
+    scaleClass: 'oversized' as const,
+  },
+  {
     id: 'igapo_sombrio_broad_tree',
-    frame: WORLD_FRAME.broadPalm,
+    frame: WORLD_FRAME.broadPalmLegacy,
     layer: 'foreground' as const,
     depth: 4.4,
     defaultScale: 3,
@@ -413,6 +533,14 @@ const sombrioDecorations: readonly DecorationSpec[] = [
   },
   {
     id: 'igapo_sombrio_shrub',
+    frame: WORLD_FRAME.shrubLegacy,
+    layer: 'foreground' as const,
+    depth: 3.6,
+    defaultScale: 2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_sombrio_low_tree',
     frame: WORLD_FRAME.shrub,
     layer: 'foreground' as const,
     depth: 3.6,
@@ -460,6 +588,22 @@ const sombrioDecorations: readonly DecorationSpec[] = [
     scaleClass: 'prop' as const,
   },
   {
+    id: 'igapo_sombrio_oil_slick',
+    frame: WORLD_FRAME.waterStillDark,
+    layer: 'terrain' as const,
+    depth: 0.7,
+    defaultScale: 2.2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_sombrio_waste',
+    frame: WORLD_FRAME.pebbleVariant,
+    layer: 'terrain' as const,
+    depth: 1.3,
+    defaultScale: 1.8,
+    scaleClass: 'prop' as const,
+  },
+  {
     id: 'igapo_sombrio_canopy_high',
     frame: WORLD_FRAME.canopyVariant,
     layer: 'foreground' as const,
@@ -476,19 +620,25 @@ const decoration = (value: DecorationSpec) => Object.freeze({
 });
 
 const sombrioOverrides: Readonly<Record<string, string>> = Object.freeze({
-  igapo_emergent_tree: 'igapo_sombrio_dead_tree',
-  igapo_emergent_tree_variant: 'igapo_sombrio_dead_tree_variant',
-  igapo_emergent_tree_dark: 'igapo_sombrio_dead_tree_variant',
-  igapo_round_tree: 'igapo_sombrio_round_tree',
-  igapo_broad_tree: 'igapo_sombrio_broad_tree',
-  igapo_palm: 'igapo_sombrio_palm',
-  igapo_coconut_palm: 'igapo_sombrio_coconut_palm',
-  igapo_fruit_tree: 'igapo_sombrio_fruit_tree',
+  igapo_emergent_tree: 'igapo_sombrio_cut_stump',
+  igapo_emergent_tree_variant: 'igapo_sombrio_stump_cluster',
+  igapo_emergent_tree_dark: 'igapo_sombrio_stump_cluster',
+  igapo_round_tree: 'igapo_sombrio_survivor_tree',
+  igapo_broad_tree: 'igapo_sombrio_cut_stump',
+  igapo_palm: 'igapo_sombrio_stump_cluster',
+  igapo_coconut_palm: 'igapo_sombrio_cut_stump',
+  igapo_fruit_tree: 'igapo_sombrio_stump_cluster',
   igapo_reeds: 'igapo_sombrio_reeds',
-  igapo_shrub: 'igapo_sombrio_shrub',
-  igapo_stone: 'igapo_sombrio_stone',
-  igapo_pebble: 'igapo_sombrio_pebble',
+  igapo_shrub: 'igapo_sombrio_low_tree',
+  igapo_stone: 'igapo_sombrio_waste',
+  igapo_pebble: 'igapo_sombrio_waste',
   igapo_mud: 'igapo_sombrio_mud',
+  igapo_fallen_trunk: 'igapo_sombrio_waste',
+  [IGAPO_LANDMARK_DECORATION_IDS.drownedTree]: 'igapo_sombrio_cut_stump',
+  [IGAPO_LANDMARK_DECORATION_IDS.palmIsland]: 'igapo_sombrio_stump_cluster',
+  [IGAPO_LANDMARK_DECORATION_IDS.stoneGarden]: 'igapo_sombrio_waste',
+  [IGAPO_LANDMARK_DECORATION_IDS.fallenTrunk]: 'igapo_sombrio_waste',
+  igapo_waterweed: 'igapo_sombrio_oil_slick',
   igapo_canopy_shadow: 'igapo_sombrio_canopy_shadow',
   igapo_canopy_high: 'igapo_sombrio_canopy_high',
 });
@@ -522,12 +672,17 @@ export const IGAPO_NATURAL_EFFECTS: readonly StageEffectDefinition[] = Object.fr
 export const IGAPO_SOMBRIO_EFFECTS: readonly StageEffectDefinition[] = Object.freeze([
   Object.freeze({
     id: 'effect.aguas.sombrio.water-shimmer', kind: 'water-shimmer' as const,
-    color: 0x6fc7b8, alpha: 0.12, depth: 0.6, durationMs: 3200, count: 24,
+    color: 0xb7a66e, alpha: 0.1, depth: 0.6, durationMs: 3200, count: 24,
   }),
   Object.freeze({
     id: 'effect.aguas.sombrio.mist', kind: 'mist' as const,
-    color: 0x102a2d, alpha: 0.14, depth: 5, durationMs: 9000,
-    x: 4, y: 5, width: 80, height: 18, count: 8, amplitude: 70,
+    color: 0x19312e, alpha: 0.08, depth: 4.8, durationMs: 11000,
+    x: 4, y: 5, width: 80, height: 18, count: 7, amplitude: 64,
+  }),
+  Object.freeze({
+    id: 'effect.aguas.sombrio.smoke', kind: 'mist' as const,
+    color: 0x303a32, alpha: 0.12, depth: 5.2, durationMs: 13000,
+    x: 46, y: 7, width: 24, height: 10, count: 4, amplitude: 36,
   }),
   Object.freeze({
     id: 'effect.aguas.sombrio.source-pulse', kind: 'pulse' as const,
@@ -571,6 +726,17 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       pixelArt: true,
       perspective: 'top-down' as const,
       originId: 'origin.puny-characters',
+    }),
+    Object.freeze({
+      id: IGAPO_CANOA_TEXTURE_ID,
+      textureKey: IGAPO_CANOA_TEXTURE_KEY,
+      frameWidth: 48,
+      frameHeight: 16,
+      frameCount: 1,
+      sourceWidth: 48,
+      sourceHeight: 16,
+      pixelArt: true,
+      perspective: 'top-down' as const,
     }),
     Object.freeze({
       id: PUNY_WARRIOR_TEXTURE,

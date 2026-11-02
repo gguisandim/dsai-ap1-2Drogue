@@ -68,3 +68,5 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-10-31 | [Estética e efeitos do capítulo inicial “Raiz do Mundo” — Etapa 10.0](./2026-10-31-etapa-10-0-estetica-efeitos-capitulo-inicial.md) |
 | 2026-11-01 | [Fases panorâmicas e progressão narrativa do Igapó — Etapa 9.8](./2026-11-01-etapa-9-8-fases-panoramicas-igapo.md) |
 | 2026-11-01 | [Correção jogável e direção de arte do Igapó — Etapa 9.8.1](./2026-11-01-etapa-9-8-1-correcao-jogavel-direcao-arte-igapo.md) |
+| 2026-11-02 | [Redesign visual do Igapó das Memórias](./2026-11-02-redesign-visual-igapo-das-memorias.md) |
+| 2026-11-02 | [Redesign do Igapó: geometria autoral e duas apresentações](./2026-11-02-redesign-igapo-geometria-e-variantes.md) |

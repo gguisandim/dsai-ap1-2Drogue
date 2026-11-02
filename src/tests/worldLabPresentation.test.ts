@@ -67,7 +67,14 @@ describe('World Lab visual presentation inspection', () => {
         author: 'Shade', license: 'CC0',
       }),
     ]));
-    expect(visual?.decorations).toHaveLength(15);
+    expect(visual?.decorations?.map(decoration => decoration.id)).toEqual(expect.arrayContaining([
+      'igapo_landmark_canoe',
+      'igapo_landmark_drowned_tree',
+      'igapo_landmark_fallen_trunk',
+      'igapo_landmark_old_arch',
+      'igapo_landmark_palm_island',
+      'igapo_waterweed',
+    ]));
     expect(visual?.npcSprites?.[0]).toMatchObject({
       logicalId: 'environment.memory-vestige', textureKey: 'puny_mage',
       animations: ['puny_mage_idle'],
@@ -94,11 +101,15 @@ describe('World Lab visual presentation inspection', () => {
     expect(visual?.environment?.fog?.opacity).toBe(0.12);
     expect(visual?.decorations?.map(decoration => decoration.id).sort())
       .toEqual(expect.arrayContaining([
-        'igapo_sombrio_dead_tree', 'igapo_sombrio_reeds', 'igapo_sombrio_stone',
+        'igapo_landmark_canoe',
+        'igapo_sombrio_cut_stump',
+        'igapo_sombrio_reeds',
+        'igapo_sombrio_stump_cluster',
+        'igapo_sombrio_oil_slick',
+        'igapo_sombrio_waste',
       ]));
-    // Only decorations actually placed by the stage are resolved; the two
-    // natural ids that share a sombrio override collapse into one entry.
-    expect(visual?.decorations?.length).toBe(14);
+    expect(visual?.decorationOverrides?.igapo_waterweed).toBe('igapo_sombrio_oil_slick');
+    expect(visual?.effects?.map(effect => effect.id)).toContain('effect.aguas.sombrio.smoke');
     expect(document.stages.some(item => item.stageId === IGAPO_DAS_MEMORIAS_STAGE_ID)).toBe(true);
   });
 

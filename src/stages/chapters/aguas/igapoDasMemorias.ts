@@ -2,6 +2,7 @@ import type { DecorationPlacement, StageModule } from '../../contracts';
 import {
   AGUAS_PRESENTATION_VARIANTS,
   AGUAS_RIBEIRINHO_PRESENTATION,
+  IGAPO_LANDMARK_DECORATION_IDS,
   IGAPO_SOMBRIO_THEME_ID,
   IGAPO_VISUAL_THEME_ID,
 } from './igapoVisuals';
@@ -35,18 +36,26 @@ const SPAWN = 8;
  * wobble keeps the banks from reading as rectangles.
  */
 const IGAPO_MASSES: readonly (readonly [number, number, number, number])[] = Object.freeze([
-  [9, 17, 7, 4.5], [18, 16, 5, 3], [27, 15, 6, 5],
-  [36, 8, 8, 2.8], [38, 22, 8, 2.8], [45, 15, 5, 4.5],
-  [53, 16, 7, 5], [63, 11, 7, 3], [66, 20, 7, 3],
-  [76, 16, 7, 4], [87, 16, 8, 5.5],
-  [40, 6, 5, 2], [53, 24, 6, 2], [70, 6, 5, 2],
+  [10, 17, 9, 6.5], [25, 15, 12, 7], [43, 14, 13, 7.5],
+  [62, 15, 13, 7.5], [82, 16, 13, 7],
+  [34, 7, 9, 3.8], [38, 23, 10, 3.5], [64, 7, 10, 3.2], [70, 24, 11, 3.5],
+  [17, 6, 5, 2], [56, 26, 7, 2], [92, 7, 5, 2],
 ]);
 
 const IGAPO_CORRIDORS: readonly (readonly (readonly [number, number])[])[] = Object.freeze([
-  [[4, 17], [28, 16], [45, 16], [60, 16], [76, 16], [91, 16]],
-  [[29, 15], [29, 8], [34, 7], [43, 7], [43, 12], [47, 14]],
-  [[30, 18], [31, 22], [38, 23], [44, 22], [46, 18]],
-  [[76, 14], [84, 12], [91, 15]],
+  [[4, 17], [10, 16], [16, 17], [22, 16], [28, 16], [34, 15], [41, 14],
+    [47, 16], [55, 16], [62, 17], [69, 16], [76, 16], [83, 15], [91, 16]],
+  [[28, 16], [27, 12], [30, 8], [35, 6], [41, 7], [43, 11], [47, 14]],
+  [[28, 16], [29, 19], [32, 22], [38, 24], [43, 23], [46, 19]],
+  [[76, 16], [80, 13], [85, 12], [91, 15]],
+]);
+
+const IGAPO_WATER_CHANNELS: readonly (readonly (readonly [number, number, number])[])[] = Object.freeze([
+  [[1, 10, 1.5], [8, 9, 1.8], [15, 10, 1.6], [21, 12, 1.8], [27, 11, 1.4]],
+  [[36, 11, 1.3], [41, 9, 1.6], [47, 10, 1.5], [53, 8, 1.6],
+    [59, 9, 1.5], [65, 8, 1.6], [71, 10, 1.4]],
+  [[52, 27, 1.4], [60, 25, 1.8], [68, 26, 1.5], [77, 23, 1.8], [87, 24, 1.5], [94, 26, 1.3]],
+  [[87, 3, 1.4], [84, 7, 1.7], [86, 11, 1.5]],
 ]);
 
 /** Deterministic obstacles verified to keep both loops traversable. */
@@ -67,15 +76,48 @@ const TREE_PALETTE = Object.freeze([
   Object.freeze({ type: 'igapo_emergent_tree_dark', tint: 0x89aa84, scale: 4.1 }),
   Object.freeze({ type: 'igapo_round_tree', tint: 0xa8c69b, scale: 4.2 }),
   Object.freeze({ type: 'igapo_broad_tree', tint: 0xb4cfa0, scale: 3.9 }),
-  Object.freeze({ type: 'igapo_palm', tint: 0xb8d0a4, scale: 3.6 }),
-  Object.freeze({ type: 'igapo_coconut_palm', tint: 0xacc79c, scale: 3.3 }),
 ]);
 
 const WET_TREE_PALETTE = Object.freeze([
   Object.freeze({ type: 'igapo_emergent_tree', tint: 0x96b48d, scale: 4 }),
-  Object.freeze({ type: 'igapo_palm', tint: 0xacc79c, scale: 3.5 }),
-  Object.freeze({ type: 'igapo_coconut_palm', tint: 0xa4bf96, scale: 3.2 }),
+  Object.freeze({ type: 'igapo_round_tree', tint: 0xa8c69b, scale: 3.8 }),
   Object.freeze({ type: 'igapo_broad_tree', tint: 0xafca9d, scale: 3.7 }),
+  Object.freeze({ type: 'igapo_palm', tint: 0xacc79c, scale: 3.4 }),
+]);
+
+const VEGETATION_CLUSTERS: readonly (readonly [number, number, number, number])[] = Object.freeze([
+  [12, 11, 5, 3], [20, 22, 5, 3], [33, 4, 5, 2.5], [35, 26, 5, 2.5],
+  [53, 8, 5, 2.5], [62, 25, 5, 2.5], [72, 5, 5, 2.5], [76, 24, 5, 2.5],
+  [87, 9, 6, 3], [89, 24, 5, 3],
+]);
+
+const PALM_GROVES: readonly (readonly [number, number])[] = Object.freeze([
+  [20, 10], [36, 27], [73, 5], [87, 24],
+]);
+
+const TREE_GROVES: readonly (readonly (readonly [number, number])[])[] = Object.freeze([
+  [[16, 16], [17, 18], [18, 20], [19, 17]],
+  [[20, 14], [21, 16], [22, 18], [23, 14]],
+  [[32, 6], [34, 7], [36, 6], [38, 8]],
+  [[34, 23], [36, 24], [39, 22], [41, 24]],
+  [[62, 5], [64, 5], [66, 5], [68, 5]],
+  [[80, 13], [82, 12], [84, 13], [86, 12]],
+  [[72, 23], [74, 24], [76, 23], [78, 24]],
+]);
+
+const LANDMARKS: readonly (readonly [string, number, number, number, number])[] = Object.freeze([
+  [IGAPO_LANDMARK_DECORATION_IDS.drownedTree, 14, 10, 5, 0x9fbd94],
+  [IGAPO_LANDMARK_DECORATION_IDS.oldArch, 38, 26, 4.5, 0x9bb7a0],
+  [IGAPO_LANDMARK_DECORATION_IDS.palmIsland, 72, 5, 4.4, 0xa7c496],
+  [IGAPO_LANDMARK_DECORATION_IDS.fallenTrunk, 31, 5, 2.5, 0xffffff],
+  [IGAPO_LANDMARK_DECORATION_IDS.fallenTrunk, 52, 9, 2.5, 0xffffff],
+  [IGAPO_LANDMARK_DECORATION_IDS.fallenTrunk, 64, 6, 3.2, 0xffffff],
+  [IGAPO_LANDMARK_DECORATION_IDS.fallenTrunk, 86, 9, 2.5, 0xffffff],
+  [IGAPO_LANDMARK_DECORATION_IDS.canoe, 18, 10, 1.3, 0xffffff],
+]);
+
+const POLLUTION_NODES: readonly (readonly [number, number])[] = Object.freeze([
+  [52, 27], [60, 25], [77, 23], [87, 24],
 ]);
 
 function noise(x: number, y: number, salt: string): number {
@@ -124,6 +166,31 @@ function createIgapoMap(): number[][] {
       }
     }
   }
+  IGAPO_WATER_CHANNELS.forEach((channel, channelIndex) => {
+    for (let index = 0; index + 1 < channel.length; index += 1) {
+      const [fromX, fromY, radius] = channel[index];
+      const [toX, toY] = channel[index + 1];
+      const steps = Math.max(Math.abs(toX - fromX), Math.abs(toY - fromY));
+      for (let step = 0; step <= steps; step += 1) {
+        const ratio = steps === 0 ? 0 : step / steps;
+        const centerX = fromX + (toX - fromX) * ratio;
+        const centerY = fromY + (toY - fromY) * ratio;
+        const nextRadius = radius + (channel[index + 1][2] - radius) * ratio;
+        for (let offsetY = -2; offsetY <= 2; offsetY += 1) {
+          for (let offsetX = -2; offsetX <= 2; offsetX += 1) {
+            const x = Math.round(centerX + offsetX);
+            const y = Math.round(centerY + offsetY);
+            const distance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+            const edge = (noise(x, y, `channel-${channelIndex}`) - 0.5) * 0.55;
+            if (x > 0 && y > 0 && x < IGAPO_MAP_WIDTH - 1 && y < IGAPO_MAP_HEIGHT - 1 &&
+              distance <= nextRadius + edge) {
+              map[y][x] = WATER;
+            }
+          }
+        }
+      }
+    }
+  });
   const stamp = (x: number, y: number): void => {
     for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
       for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
@@ -161,7 +228,7 @@ const ANCHOR_TILES: readonly (readonly [number, number])[] = Object.freeze([
   [49, 16], [58, 12], [69, 16], [82, 15], [88, 19], [56, 16],
 ]);
 
-function nearAnchor(x: number, y: number, radius = 2): boolean {
+function nearAnchor(x: number, y: number, radius = 4): boolean {
   return ANCHOR_TILES.some(([anchorX, anchorY]) =>
     Math.abs(anchorX - x) <= radius && Math.abs(anchorY - y) <= radius);
 }
@@ -173,6 +240,23 @@ function touchesWater(map: readonly (readonly number[])[], x: number, y: number)
     }
   }
   return false;
+}
+
+function touchesLand(map: readonly (readonly number[])[], x: number, y: number): boolean {
+  for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
+    for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
+      if (map[y + offsetY]?.[x + offsetX] === FLOOR) return true;
+    }
+  }
+  return false;
+}
+
+function clusterDensity(x: number, y: number): number {
+  return VEGETATION_CLUSTERS.reduce((maximum, [centerX, centerY, radiusX, radiusY]) => {
+    const dx = (x - centerX) / radiusX;
+    const dy = (y - centerY) / radiusY;
+    return Math.max(maximum, 1 - Math.sqrt(dx * dx + dy * dy));
+  }, 0);
 }
 
 function createIgapoDecorations(map: readonly (readonly number[])[]): DecorationPlacement[] {
@@ -198,8 +282,8 @@ function createIgapoDecorations(map: readonly (readonly number[])[]): Decoration
     y: number,
   ): void => {
     const choice = palette[Math.floor(detailNoise(x, y, 'tree-kind') * palette.length)];
-    if (detailNoise(x, y, 'shadow') < 0.55) {
-      add('igapo_canopy_shadow', x, y, 3.2 + detailNoise(x, y, 'shadow-scale') * 1.2, 0x0c211c,
+    if (detailNoise(x, y, 'shadow') < 0.42) {
+      add('igapo_canopy_shadow', x, y, 3.2 + detailNoise(x, y, 'shadow-scale') * 1.2, 0x16352a,
         (detailNoise(x, y, 'shadow-angle') - 0.5) * 0.5);
     }
     add(choice.type, x, y, choice.scale * (0.9 + detailNoise(x, y, 'tree-scale') * 0.24), choice.tint,
@@ -211,26 +295,35 @@ function createIgapoDecorations(map: readonly (readonly number[])[]): Decoration
       if (nearAnchor(x, y)) continue;
       const tile = map[y][x];
       const roll = detailNoise(x, y, 'scenery');
-      if (tile === WATER) {
-        if (roll < 0.06) addTree(WET_TREE_PALETTE, x, y);
-        else if (roll < 0.1) add('igapo_reeds', x, y, 1.8 + detailNoise(x, y, 'reed') * 0.7, 0x9fc4a2);
-        else if (roll < 0.125) add('igapo_shrub', x, y, 1.7 + detailNoise(x, y, 'shrub') * 0.5, 0xa8c9a0);
-        else if (roll < 0.14) add('igapo_stone', x, y, 1.8 + detailNoise(x, y, 'stone') * 0.7, 0x8fa898);
+      const density = clusterDensity(x, y);
+      if (density < 0.12) continue;
+
+      if (tile === WATER && touchesLand(map, x, y)) {
+        if (roll < density * 0.07) {
+          add('igapo_waterweed', x, y, 1.7 + detailNoise(x, y, 'waterweed') * 0.5, 0x526d54);
+        } else if (roll < density * 0.2) {
+          add('igapo_reeds', x, y, 1.8 + detailNoise(x, y, 'reed') * 0.7, 0x9fc4a2);
+        } else if (roll < density * 0.29) {
+          add('igapo_stone', x, y, 1.8 + detailNoise(x, y, 'stone') * 0.7, 0x8fa898);
+        } else if (roll < density * 0.34) {
+          addTree(WET_TREE_PALETTE, x, y);
+        }
       } else if (tile === FLOOR) {
-        if (touchesWater(map, x, y)) {
-          if (roll < 0.1) add('igapo_reeds', x, y, 2 + detailNoise(x, y, 'reed') * 0.8, 0xa8cba2);
-          else if (roll < 0.18) add('igapo_shrub', x, y, 1.8 + detailNoise(x, y, 'shrub') * 0.6, 0xb0cfa0);
-          else if (roll < 0.24) add('igapo_stone', x, y, 1.8 + detailNoise(x, y, 'stone') * 0.9, 0x91a894);
-          else if (roll < 0.27) add('igapo_pebble', x, y, 1 + detailNoise(x, y, 'pebble') * 0.5, 0x9aae96);
-          else if (roll < 0.36) addTree(TREE_PALETTE, x, y);
-        } else if (roll < 0.07) {
+        const shoreline = touchesWater(map, x, y);
+        if (shoreline && roll < density * 0.06) {
+          add('igapo_waterweed', x, y, 1.8 + detailNoise(x, y, 'waterweed') * 0.6, 0x526d54);
+        } else if (shoreline && roll < density * 0.19) {
+          add('igapo_reeds', x, y, 2 + detailNoise(x, y, 'reed') * 0.8, 0xa8cba2);
+        } else if (roll < density * (shoreline ? 0.31 : 0.12)) {
+          add('igapo_shrub', x, y, 1.8 + detailNoise(x, y, 'shrub') * 0.6, 0xb0cfa0);
+        } else if (shoreline && roll < density * 0.42) {
+          add('igapo_stone', x, y, 1.8 + detailNoise(x, y, 'stone') * 0.9, 0x91a894);
+        } else if (roll < density * (shoreline ? 0.49 : 0.2)) {
           addTree(TREE_PALETTE, x, y);
-        } else if (roll < 0.095) {
+        } else if (!shoreline && roll < density * 0.25) {
           add('igapo_fruit_tree', x, y, 2.2 + detailNoise(x, y, 'fruit') * 0.5, 0xc8d9a8,
             (detailNoise(x, y, 'fruit-angle') - 0.5) * 0.2);
-        } else if (roll < 0.115) {
-          add('igapo_shrub', x, y, 1.9 + detailNoise(x, y, 'shrub') * 0.5, 0xaecb9e);
-        } else if (roll < 0.13) {
+        } else if (shoreline && roll < density * 0.55) {
           add('igapo_mud', x, y, 1.4 + detailNoise(x, y, 'mud') * 0.8, 0x8b7c58,
             (detailNoise(x, y, 'mud-angle') - 0.5) * 0.4);
         }
@@ -238,14 +331,52 @@ function createIgapoDecorations(map: readonly (readonly number[])[]): Decoration
     }
   }
 
-  // Far canopy closes the northern and southern horizon without hiding routes.
-  for (let x = 2; x < IGAPO_MAP_WIDTH - 2; x += 1) {
-    if (detailNoise(x, 2, 'canopy') < 0.06) {
-      add('igapo_canopy_high', x, 2, 4.2 + detailNoise(x, 2, 'canopy-scale') * 1.1, 0x83ad8f);
+  PALM_GROVES.forEach(([centerX, centerY], groveIndex) => {
+    [[-1, 0], [0, 0], [1, 1]].forEach(([offsetX, offsetY], palmIndex) => {
+      const x = centerX + offsetX;
+      const y = centerY + offsetY;
+      if (nearAnchor(x, y)) return;
+      const type = (groveIndex + palmIndex) % 2 === 0 ? 'igapo_palm' : 'igapo_coconut_palm';
+      add(type, x, y, 3 + detailNoise(x, y, 'palm-scale') * 0.55, 0xa8c59a,
+        (detailNoise(x, y, 'palm-angle') - 0.5) * 0.12);
+    });
+  });
+
+  TREE_GROVES.forEach(grove => {
+    grove.forEach(([x, y]) => {
+      if (nearAnchor(x, y) || map[y]?.[x] !== FLOOR) return;
+      addTree(TREE_PALETTE, x, y);
+    });
+  });
+
+  LANDMARKS.forEach(([type, x, y, scale, tint]) => {
+    add(type, x, y, scale, tint);
+  });
+
+  POLLUTION_NODES.forEach(([x, y]) => {
+    if (map[y][x] !== WATER || nearAnchor(x, y)) return;
+    add('igapo_waterweed', x, y, 3.1, 0x2a382a);
+    add('igapo_pebble', x + 1, y, 1.5, 0xc4a36a);
+  });
+
+  const stoneGarden = [16, 24] as const;
+  [[-1, 0], [0, -1], [0, 0], [1, 0], [0, 1]].forEach(([offsetX, offsetY]) => {
+    add(
+      IGAPO_LANDMARK_DECORATION_IDS.stoneGarden,
+      stoneGarden[0] + offsetX,
+      stoneGarden[1] + offsetY,
+      1.2 + detailNoise(offsetX, offsetY, 'stone-garden') * 0.4,
+      0x8fa898,
+    );
+  });
+
+  for (let x = 4; x < IGAPO_MAP_WIDTH - 4; x += 8) {
+    if (detailNoise(x, 2, 'canopy') < 0.62) {
+      add('igapo_canopy_high', x, 2, 4.2 + detailNoise(x, 2, 'canopy-scale') * 0.8, 0x83ad8f);
     }
-    if (detailNoise(x, IGAPO_MAP_HEIGHT - 3, 'canopy') < 0.06) {
-      add('igapo_canopy_high', x, IGAPO_MAP_HEIGHT - 3, 4.2 + detailNoise(x, 5, 'canopy-scale') * 1.1,
-        0x7fa78b);
+    if (detailNoise(x, IGAPO_MAP_HEIGHT - 3, 'canopy') < 0.62) {
+      add('igapo_canopy_high', x, IGAPO_MAP_HEIGHT - 3,
+        4.2 + detailNoise(x, 5, 'canopy-scale') * 0.8, 0x7fa78b);
     }
   }
   return decorations;

@@ -68,10 +68,31 @@ function selectVisual(
   logicalId: StageLogicalTileId,
   x: number,
   y: number,
+  shoreline = false,
 ): ResolvedStageTexture {
   const tile = presentation.tiles[logicalId];
+  if (logicalId === 'floor' && presentation.themeId.startsWith('theme.aguas.igapo')) {
+    const choices: readonly ResolvedStageTexture[] = [tile, ...tile.variants];
+    return choices[hashVariant(
+      presentation.themeId, logicalId, Math.floor(x / 3), Math.floor(y / 2),
+    ) % choices.length];
+  }
+  if (logicalId === 'water' && tile.variants.length > 0) {
+    if (shoreline) return tile.variants[0];
+    const patch = hashVariant(presentation.themeId, logicalId, Math.floor(x / 4), Math.floor(y / 3)) % 5;
+    return patch === 0 ? tile.variants[2] ?? tile : tile;
+  }
   const choices: readonly ResolvedStageTexture[] = [tile, ...tile.variants];
   return choices[hashVariant(presentation.themeId, logicalId, x, y) % choices.length];
+}
+
+function isShorelineWater(tileMap: readonly (readonly number[])[], x: number, y: number): boolean {
+  for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
+    for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
+      if (tileMap[y + offsetY]?.[x + offsetX] === 0) return true;
+    }
+  }
+  return false;
 }
 
 function applyVisual<T extends Phaser.GameObjects.Image | Phaser.Physics.Arcade.Sprite>(
@@ -149,7 +170,10 @@ export class StageMapRenderer {
 
       const logicalId = TILE_LOGICAL_IDS[tileValue];
       if (tileValue >= 1 && tileValue <= 3 && logicalId) {
-        const visual = selectVisual(presentation, logicalId, x, y);
+        const visual = selectVisual(
+          presentation, logicalId, x, y,
+          logicalId === 'water' && isShorelineWater(level.tileMap, x, y),
+        );
         const obstacle = (visual.frame !== undefined
           ? collisionGroup.create(posX, posY, visual.textureKey, visual.frame)
           : collisionGroup.create(posX, posY, visual.textureKey)) as Phaser.Physics.Arcade.Sprite;
@@ -289,7 +313,10 @@ export class StageMapRenderer {
             draw(target, selectVisual(presentation, 'floor', x, y), drawX, drawY);
             const logicalId = TILE_LOGICAL_IDS[tileValue];
             if (tileValue >= 1 && tileValue <= 3 && logicalId) {
-              draw(target, selectVisual(presentation, logicalId, x, y), drawX, drawY);
+              draw(target, selectVisual(
+                presentation, logicalId, x, y,
+                logicalId === 'water' && isShorelineWater(level.tileMap, x, y),
+              ), drawX, drawY);
             } else if (tileValue === 4) {
               draw(target, selectVisual(presentation, 'lava', x, y), drawX, drawY);
             }

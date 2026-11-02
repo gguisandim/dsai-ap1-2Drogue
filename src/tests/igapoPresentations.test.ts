@@ -12,6 +12,12 @@ import {
   registerCampaignChapters,
   registerLegacyStages,
 } from '../stages';
+import {
+  IGAPO_CANOA_TEXTURE_ID,
+  IGAPO_CANOA_TEXTURE_KEY,
+  IGAPO_LANDMARK_DECORATION_IDS,
+  IGAPO_SOMBRIO_EFFECTS,
+} from '../stages/chapters/aguas/igapoVisuals';
 
 function registry(): StageRegistry {
   const value = new StageRegistry();
@@ -36,9 +42,11 @@ interface FakeVisual {
   y: number;
   textureKey: string;
   frame?: number;
+  tint?: number;
+  alpha?: number;
   displaySize?: readonly number[];
-  setTint(): this;
-  setAlpha(): this;
+  setTint(value: number): this;
+  setAlpha(value: number): this;
   setDepth(): this;
   setScale(): this;
   setRotation(): this;
@@ -57,11 +65,12 @@ interface FakeVisual {
 function renderSurface(level: Parameters<StageMapRenderer['render']>[1],
   presentation: NonNullable<ReturnType<typeof load>['presentation']>,
   batching = false) {
+  const drawnTiles: { x: number; y: number; frame?: number; tint?: number }[] = [];
   const create = (x: number, y: number, textureKey: string, frame?: number): FakeVisual => {
     const visual: FakeVisual = {
       x, y, textureKey, frame,
-      setTint() { return this; },
-      setAlpha() { return this; },
+      setTint(value) { this.tint = value; return this; },
+      setAlpha(value) { this.alpha = value; return this; },
       setDepth() { return this; },
       setScale() { return this; },
       setRotation() { return this; },
@@ -94,9 +103,19 @@ function renderSurface(level: Parameters<StageMapRenderer['render']>[1],
       ellipse: (x: number, y: number) => create(x, y, 'ellipse'),
       ...(batching ? {
         renderTexture: (x: number, y: number) => {
-          const texture = Object.assign(create(x, y, 'render-texture'), {
+          const texture = create(x, y, 'render-texture');
+          Object.assign(texture, {
             beginDraw() { return this; },
-            batchDraw() { batchDrawCount += 1; return this; },
+            batchDraw(brush: FakeVisual) {
+              batchDrawCount += 1;
+              drawnTiles.push({
+                x: texture.x + brush.x,
+                y: texture.y + brush.y,
+                frame: brush.frame,
+                tint: brush.tint,
+              });
+              return this;
+            },
             endDraw() { return this; },
           });
           renderTextures.push(texture);
@@ -115,7 +134,7 @@ function renderSurface(level: Parameters<StageMapRenderer['render']>[1],
     },
   } as unknown as Phaser.Physics.Arcade.StaticGroup;
   const result = new StageMapRenderer().render(scene, level, presentation, group, true);
-  return { result, obstacles, renderTextures, batchDrawCount };
+  return { result, obstacles, renderTextures, batchDrawCount, drawnTiles };
 }
 
 describe('Igapó A/B presentations over one logical stage', () => {
@@ -165,6 +184,107 @@ describe('Igapó A/B presentations over one logical stage', () => {
       .not.toEqual(first.obstacles.map(item => [item.textureKey, item.frame]));
     expect(second.obstacles.every(item => item.displaySize?.[0] === 32 && item.displaySize?.[1] === 32))
       .toBe(true);
+  });
+
+  it('composes deterministic vegetation clusters and registered landmarks outside gameplay clearings', () => {
+    const ribeirinho = load(IGAPO_RIBEIRINHO_VARIANT_ID);
+    const sombrio = load(IGAPO_SOMBRIO_VARIANT_ID);
+    const placements = ribeirinho.level.decorations;
+    const repeatedLoad = load(IGAPO_RIBEIRINHO_VARIANT_ID);
+    const landmarkIds = Object.values(IGAPO_LANDMARK_DECORATION_IDS);
+    const clearings = [
+      [4, 17], [28, 16], [91, 16], [10, 18], [59, 12], [83, 19],
+      [49, 16], [56, 16], [58, 12], [69, 16], [82, 15], [88, 19],
+    ];
+
+    expect(sombrio.level.decorations).toEqual(placements);
+    expect(repeatedLoad.level.decorations).toEqual(placements);
+    landmarkIds.forEach(id => {
+      expect(placements.some(item => item.type === id)).toBe(true);
+      expect(ribeirinho.presentation?.decorations[id]).toBeDefined();
+      const resolvedId = sombrio.presentation?.decorationOverrides?.[id] ?? id;
+      expect(sombrio.presentation?.decorations[resolvedId]).toBeDefined();
+    });
+    expect(placements.filter(item =>
+      item.type === IGAPO_LANDMARK_DECORATION_IDS.stoneGarden)).toHaveLength(5);
+    const landmarkTreeTypes = new Set([
+      'igapo_emergent_tree', 'igapo_emergent_tree_variant', 'igapo_emergent_tree_dark',
+      'igapo_round_tree', 'igapo_broad_tree',
+    ]);
+    expect(placements.filter(item =>
+      landmarkTreeTypes.has(item.type) && item.x >= 16 && item.x <= 19 &&
+      item.y >= 16 && item.y <= 20)).toHaveLength(4);
+    expect(placements.filter(item => item.type === 'igapo_palm' ||
+      item.type === 'igapo_coconut_palm').length).toBeLessThan(20);
+    expect(placements.some(item => item.type === 'igapo_waterweed')).toBe(true);
+    const markedPollution = placements.filter(item =>
+      item.type === 'igapo_waterweed' && item.scale === 3.1);
+    expect(markedPollution).toHaveLength(4);
+    markedPollution.forEach(item => {
+      expect(ribeirinho.level.tileMap[item.y][item.x]).toBe(3);
+    });
+    expect(sombrio.presentation?.decorationOverrides?.igapo_waterweed)
+      .toBe('igapo_sombrio_oil_slick');
+    expect(IGAPO_SOMBRIO_EFFECTS.some(effect => effect.id === 'effect.aguas.sombrio.smoke'))
+      .toBe(true);
+    expect(placements.length).toBeLessThan(250);
+    placements.forEach(item => {
+      expect(clearings.some(([x, y]) =>
+        Math.abs(item.x - x) <= 4 && Math.abs(item.y - y) <= 4)).toBe(false);
+    });
+  });
+
+  it('registers the original canoe texture and resolves its landmark in the visual theme', () => {
+    const canoe = AGUAS_CHAPTER_MANIFEST.visualResources?.textures
+      .find(texture => texture.id === IGAPO_CANOA_TEXTURE_ID);
+
+    expect(canoe).toMatchObject({
+      textureKey: IGAPO_CANOA_TEXTURE_KEY,
+      sourceWidth: 48,
+      sourceHeight: 16,
+    });
+    expect(load(IGAPO_RIBEIRINHO_VARIANT_ID).presentation?.decorations[
+      IGAPO_LANDMARK_DECORATION_IDS.canoe
+    ]?.textureKey).toBe(IGAPO_CANOA_TEXTURE_KEY);
+  });
+
+  it('renders coherent shallow shoreline and deeper channel water without changing collision geometry', () => {
+    const loaded = load(IGAPO_RIBEIRINHO_VARIANT_ID);
+    const { level, presentation } = loaded;
+    const map = level.tileMap;
+    let shoreline: { x: number; y: number } | undefined;
+    let channel: { x: number; y: number } | undefined;
+    map.forEach((row, y) => row.forEach((tile, x) => {
+      if (tile !== 3) return;
+      const touchesLand = [-1, 0, 1].some(offsetY =>
+        [-1, 0, 1].some(offsetX => map[y + offsetY]?.[x + offsetX] === 0));
+      if (touchesLand && !shoreline) shoreline = { x, y };
+      if (!touchesLand && !channel) channel = { x, y };
+    }));
+    if (!shoreline || !channel || !presentation) throw new Error('Igapó shoreline samples are missing.');
+
+    const logicalMap = map.map(row => [...row]);
+    const rendered = renderSurface(level, presentation, true);
+    const visualAt = (point: { x: number; y: number }) => {
+      const tiles = rendered.drawnTiles
+        .filter(item => item.x === point.x * 32 + 16 && item.y === point.y * 32 + 16);
+      return tiles[tiles.length - 1];
+    };
+    expect(visualAt(shoreline)?.frame).toBe(presentation.tiles.water.variants[0].frame);
+    expect(visualAt(channel)?.frame).not.toBe(presentation.tiles.water.variants[0].frame);
+    let floorPatch: { x: number; y: number } | undefined;
+    for (let y = 0; y < map.length && !floorPatch; y += 1) {
+      for (let x = 0; x < map[y].length - 1; x += 1) {
+        if (map[y][x] === 0 && map[y][x + 1] === 0 && Math.floor(x / 3) === Math.floor((x + 1) / 3)) {
+          floorPatch = { x, y };
+          break;
+        }
+      }
+    }
+    if (!floorPatch) throw new Error('Igapó floor patch samples are missing.');
+    expect(visualAt(floorPatch)?.frame).toBe(visualAt({ x: floorPatch.x + 1, y: floorPatch.y })?.frame);
+    expect(level.tileMap).toEqual(logicalMap);
+    expect(rendered.result.pendingExitTiles).toEqual([{ x: 91 * 32 + 16, y: 16 * 32 + 16 }]);
   });
 
   it('batches a panoramic map into cullable chunks and exact collision runs', () => {

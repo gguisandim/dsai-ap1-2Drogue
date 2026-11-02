@@ -244,6 +244,7 @@ describe('Igapó das Memórias authored chapter', () => {
     expect(IGAPO_MAP_WIDTH * 32).toBeGreaterThan(1280);
     expect(map.flat().filter(tile => tile === 3).length).toBeGreaterThan(1_000);
     expect(map.flat().filter(tile => tile === 2).length).toBeGreaterThan(20);
+    expect(map[8][53]).toBe(3);
     expect(all.has(tileKey(ECO_DAS_AGUAS_INTEREST.x, ECO_DAS_AGUAS_INTEREST.y))).toBe(true);
     expect(all.has(tileKey(IGAPO_RETURN_ANCHOR.x, IGAPO_RETURN_ANCHOR.y))).toBe(true);
 
@@ -632,4 +633,3 @@ describe('Igapó das Memórias authored chapter', () => {
     expect(IGAPO_DAS_MEMORIAS_STAGE.authoredLevel?.tileMap).not.toEqual(VERSE_SECTIONS[1].tileMap);
   });
 });
-
