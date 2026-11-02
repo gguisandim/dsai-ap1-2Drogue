@@ -100,10 +100,10 @@ describe('stage entity presentation', () => {
       animations: { idle: 'puny_mage_idle' },
     });
     expect(loaded.presentation.enemySprites.affinity).toMatchObject({
-      id: 'sprite.aguas.affinity-forgotten', textureKey: 'puny_warrior_128', tint: 0x9fe0b8,
+      id: 'sprite.aguas.affinity-forgotten', textureKey: 'puny_warrior_128', tint: 0xa8e6c0,
     });
     expect(loaded.presentation.enemySprites.applaud).toMatchObject({
-      id: 'sprite.aguas.applaud-forgotten', textureKey: 'puny_archer_128', tint: 0x9fd8e8,
+      id: 'sprite.aguas.applaud-forgotten', textureKey: 'puny_archer_128', tint: 0xa8ddec,
     });
     expect(loaded.encounter?.waves.flatMap(wave => wave.enemies.map(enemy => enemy.type)))
       .toEqual(['affinity', 'applaud', 'affinity', 'affinity', 'applaud']);

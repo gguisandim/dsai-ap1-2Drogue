@@ -170,9 +170,10 @@ describe('stage audio and environment presentation', () => {
     const loaded = loadIgapo();
     const rectangles: Array<{ depth?: number; alpha: number; color: number }> = [];
     const makeVisual = () => ({
+      x: 0, y: 0,
       setTint() { return this; }, setAlpha() { return this; }, setDepth() { return this; },
       setScale() { return this; }, setRotation() { return this; }, refreshBody() { return this; },
-      setDisplaySize() { return this; },
+      setDisplaySize() { return this; }, once() { return this; }, destroy() {},
     });
     const scene = {
       textures: { exists: () => true, getFrame: () => ({}) }, anims: { exists: () => true },
@@ -184,22 +185,27 @@ describe('stage audio and environment presentation', () => {
             color, alpha, depth: undefined as number | undefined,
             setScrollFactor() { return this; },
             setDepth(value: number) { this.depth = value; return this; },
+            setRotation() { return this; }, once() { return this; },
           };
           rectangles.push(rectangle);
           return rectangle;
         }),
+        circle: jest.fn(makeVisual),
+        ellipse: jest.fn(makeVisual),
       },
+      tweens: { add: jest.fn(() => ({ stop() {}, remove() {} })) },
     } as any;
     const collisionGroup = { create: jest.fn(makeVisual) } as any;
     const result = new StageMapRenderer().render(
       scene, loaded.level, loaded.presentation, collisionGroup, false,
     );
-    expect(result.environmentObjects).toHaveLength(2);
-    expect(rectangles).toEqual([
+    expect(result.environmentObjects).toHaveLength(72);
+    expect(rectangles.slice(0, 2)).toEqual([
       expect.objectContaining({ color: 0x1d4a3f, depth: 3 }),
       expect.objectContaining({ color: 0x1b4f4a, alpha: 0.1, depth: 4 }),
     ]);
-    expect(rectangles.every(rectangle => (rectangle.depth ?? 0) < 5)).toBe(true);
+    expect(rectangles.slice(0, 2).every(rectangle => (rectangle.depth ?? 0) < 5)).toBe(true);
+    expect(scene.tweens.add).toHaveBeenCalled();
   });
 
   it('diagnoses unknown audio/environment resources and invalid referenced sounds', () => {

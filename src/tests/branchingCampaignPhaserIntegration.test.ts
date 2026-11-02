@@ -66,6 +66,14 @@ function prepareTransitionScene(state: SceneState): void {
   state.showChapterTitle = jest.fn();
 }
 
+function exposePhysicalExit(state: SceneState, physicalExitId = 'physical.test'): void {
+  state.campaignNavigation = {
+    snapshot: {
+      destinations: [{ physicalExitId, stageExitId: 'exit.test' }],
+    },
+  };
+}
+
 describe('GameScene branching campaign pilot', () => {
   it('keeps branchingCampaign off by default and does not create a router', () => {
     const { scene, state } = sceneShell();
@@ -162,6 +170,7 @@ describe('GameScene branching campaign pilot', () => {
         value: { snapshot: { destinations: [] }, loadedStage: { level: target } },
       })),
     };
+    exposePhysicalExit(state);
 
     state.navigateCampaignExit('physical.test');
 
@@ -216,6 +225,7 @@ describe('GameScene branching campaign pilot', () => {
       })),
     };
     state.buildMapFromDefinition = jest.fn();
+    exposePhysicalExit(state);
 
     state.navigateCampaignExit('physical.test');
 
@@ -376,6 +386,7 @@ describe('GameScene branching campaign pilot', () => {
         error: { code: 'persistence-failed', recovery: 'rolled-back' },
       })),
     };
+    exposePhysicalExit(state);
 
     state.navigateCampaignExit('physical.test');
 

@@ -40,6 +40,8 @@ const TILE_LOGICAL_IDS: Readonly<Record<number, StageLogicalTileId>> = Object.fr
 });
 
 const LAYER_DEPTH = Object.freeze({ background: -3, terrain: 2, foreground: 5 });
+const STATIC_TILE_BATCH_THRESHOLD = 1_024;
+const STATIC_TILE_CHUNK_SIZE = 8;
 
 function hashVariant(themeId: string, logicalId: StageLogicalTileId, x: number, y: number): number {
   const source = `${themeId}|${logicalId}|${x}|${y}`;
@@ -126,7 +128,17 @@ export class StageMapRenderer {
     const pendingExitTiles: RenderedStageExitTile[] = [];
     const tileSize = presentation.tileSize;
 
-    level.tileMap.forEach((row, y) => row.forEach((tileValue, x) => {
+    if (this.canBatchStaticTiles(scene, level)) {
+      images.push(...this.renderStaticTileChunks(scene, level, presentation, tileSize));
+      this.createCollisionRuns(collisionGroup, level, presentation, tileSize);
+      level.tileMap.forEach((row, y) => row.forEach((tileValue, x) => {
+        if (tileValue !== 5 || !includeLegacyExit) return;
+        pendingExitTiles.push(Object.freeze({
+          x: x * tileSize + tileSize / 2,
+          y: y * tileSize + tileSize / 2,
+        }));
+      }));
+    } else level.tileMap.forEach((row, y) => row.forEach((tileValue, x) => {
       const posX = x * tileSize + tileSize / 2;
       const posY = y * tileSize + tileSize / 2;
       const floorVisual = selectVisual(presentation, 'floor', x, y);
@@ -214,6 +226,114 @@ export class StageMapRenderer {
       decorationImages: Object.freeze(decorationImages),
       environmentObjects: Object.freeze(environmentObjects),
       pendingExitTiles: Object.freeze(pendingExitTiles),
+    });
+  }
+
+  /**
+   * Large authored panoramas are immutable during a visit. Flattening their
+   * static tile visuals into camera-cullable chunks replaces thousands of
+   * display-list images with a few dozen render textures. Collision remains
+   * in Arcade Physics, consolidated into exact horizontal runs.
+   */
+  private canBatchStaticTiles(scene: Phaser.Scene, level: LevelDefinition): boolean {
+    const tileCount = level.tileMap.length * (level.tileMap[0]?.length ?? 0);
+    return tileCount >= STATIC_TILE_BATCH_THRESHOLD &&
+      typeof scene.add.renderTexture === 'function' &&
+      typeof scene.make.image === 'function';
+  }
+
+  private renderStaticTileChunks(
+    scene: Phaser.Scene,
+    level: LevelDefinition,
+    presentation: ResolvedStagePresentation,
+    tileSize: number,
+  ): readonly Phaser.GameObjects.RenderTexture[] {
+    const chunks: Phaser.GameObjects.RenderTexture[] = [];
+    const width = level.tileMap[0]?.length ?? 0;
+    const height = level.tileMap.length;
+    const first = selectVisual(presentation, 'floor', 0, 0);
+    const brush = scene.make.image({
+      x: 0, y: 0, key: first.textureKey, frame: first.frame, add: false,
+    }).setOrigin(0.5);
+    const draw = (
+      target: Phaser.GameObjects.RenderTexture,
+      visual: ResolvedStageTexture,
+      x: number,
+      y: number,
+    ): void => {
+      brush.setTexture(visual.textureKey, visual.frame);
+      brush.setPosition(x, y).setDisplaySize(tileSize, tileSize).setAlpha(visual.alpha ?? 1);
+      if (visual.tint !== undefined) brush.setTint(visual.tint);
+      else brush.clearTint();
+      target.batchDraw(brush);
+    };
+
+    for (let chunkY = 0; chunkY < height; chunkY += STATIC_TILE_CHUNK_SIZE) {
+      for (let chunkX = 0; chunkX < width; chunkX += STATIC_TILE_CHUNK_SIZE) {
+        const columns = Math.min(STATIC_TILE_CHUNK_SIZE, width - chunkX);
+        const rows = Math.min(STATIC_TILE_CHUNK_SIZE, height - chunkY);
+        const target = scene.add.renderTexture(
+          chunkX * tileSize,
+          chunkY * tileSize,
+          columns * tileSize,
+          rows * tileSize,
+        ).setOrigin(0, 0).setDepth(-2);
+        target.beginDraw();
+        for (let localY = 0; localY < rows; localY += 1) {
+          for (let localX = 0; localX < columns; localX += 1) {
+            const x = chunkX + localX;
+            const y = chunkY + localY;
+            const tileValue = level.tileMap[y][x];
+            const drawX = localX * tileSize + tileSize / 2;
+            const drawY = localY * tileSize + tileSize / 2;
+            draw(target, selectVisual(presentation, 'floor', x, y), drawX, drawY);
+            const logicalId = TILE_LOGICAL_IDS[tileValue];
+            if (tileValue >= 1 && tileValue <= 3 && logicalId) {
+              draw(target, selectVisual(presentation, logicalId, x, y), drawX, drawY);
+            } else if (tileValue === 4) {
+              draw(target, selectVisual(presentation, 'lava', x, y), drawX, drawY);
+            }
+          }
+        }
+        target.endDraw();
+        chunks.push(target);
+      }
+    }
+    brush.destroy();
+    return chunks;
+  }
+
+  private createCollisionRuns(
+    collisionGroup: Phaser.Physics.Arcade.StaticGroup,
+    level: LevelDefinition,
+    presentation: ResolvedStagePresentation,
+    tileSize: number,
+  ): void {
+    level.tileMap.forEach((row, y) => {
+      let runStart = -1;
+      for (let x = 0; x <= row.length; x += 1) {
+        const tileValue = row[x];
+        const blocked = tileValue >= 1 && tileValue <= 3;
+        if (blocked && runStart < 0) runStart = x;
+        if (blocked || runStart < 0) continue;
+        const runLength = x - runStart;
+        const logicalId = TILE_LOGICAL_IDS[row[runStart]];
+        const visual = selectVisual(presentation, logicalId, runStart, y);
+        const obstacle = (visual.frame !== undefined
+          ? collisionGroup.create(
+              (runStart + runLength / 2) * tileSize,
+              y * tileSize + tileSize / 2,
+              visual.textureKey,
+              visual.frame,
+            )
+          : collisionGroup.create(
+              (runStart + runLength / 2) * tileSize,
+              y * tileSize + tileSize / 2,
+              visual.textureKey,
+            )) as Phaser.Physics.Arcade.Sprite;
+        obstacle.setVisible(false).setDisplaySize(runLength * tileSize, tileSize).refreshBody();
+        runStart = -1;
+      }
     });
   }
 

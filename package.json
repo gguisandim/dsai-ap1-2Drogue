@@ -6,6 +6,7 @@
     "dev": "vite",
     "generate:ai": "node scripts/generate-ai-navigation.mjs",
     "generate:progression": "node scripts/generate-progression-content.mjs",
+    "generate:puny": "node scripts/generate-puny-character-sheets.mjs",
     "generate:simulations": "node scripts/generate-simulation-scenarios.mjs",
     "generate:tools": "node scripts/generate-editor-tools.mjs",
     "check:architecture": "node scripts/check-architecture.mjs",

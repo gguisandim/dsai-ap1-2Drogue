@@ -40,7 +40,22 @@ function inspect(value: ReturnType<typeof create>) {
   return result.value;
 }
 
+function grantNarrativeAccess(value: ReturnType<typeof create>): void {
+  const view = inspect(value);
+  const state = value.adapter.state();
+  value.adapter.setAccess({
+    eligibleEdgeIds: state.graph.edges
+      .filter(edge => edge.sourceNodeId === state.currentNodeId)
+      .map(edge => edge.id)
+      .sort(),
+    unlockedStageExitIds: view.snapshot.destinations
+      .map(destination => destination.stageExitId)
+      .sort(),
+  });
+}
+
 function navigate(value: ReturnType<typeof create>, physicalExitId: string) {
+  grantNarrativeAccess(value);
   const prepared = value.adapter.prepare(physicalExitId);
   if (!prepared.ok) throw prepared.error;
   const confirmed = value.adapter.confirm(prepared.value.preparationId);
@@ -157,6 +172,7 @@ describe('GameMacroCampaignAdapter', () => {
   it('enforces the existing traversal limit instead of enabling unlimited revisits', () => {
     const session = create();
     for (let index = 0; index < 5; index++) {
+      grantNarrativeAccess(session);
       const destination = inspect(session).snapshot.destinations[0];
       expect(destination.available).toBe(true);
       navigate(session, destination.physicalExitId);

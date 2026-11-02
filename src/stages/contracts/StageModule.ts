@@ -1,4 +1,5 @@
 import type { LevelDefinition } from '../../data/LevelData';
+export type { DecorationPlacement } from '../../data/LevelData';
 import type { StageEncounterDefinition } from './StageEncounter';
 import type {
   DialogueId,

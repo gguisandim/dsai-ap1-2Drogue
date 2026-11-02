@@ -596,7 +596,7 @@ export class GameScene extends Phaser.Scene {
         this.damagePlayer(dmg);
       }
     });
-    this.showChapterTitle(this.currentRegionName());
+    this.showChapterTitle(this.chapterTitleName());
     this.reportNarrativeSignal(this.modularNarrativeSession?.enterStage());
     SoundManager.playStageEvent('stage.entered');
     this.createAimReticle();
@@ -742,7 +742,9 @@ export class GameScene extends Phaser.Scene {
     if (!poi || !poi.dialogueId) return;
     if (this.keyInteract && Phaser.Input.Keyboard.JustDown(this.keyInteract)) {
       SoundManager.playStageEvent('npc.interacted');
-      this.modularNarrativeSession.interactNpc(poi.point.id);
+      // Propagate the interaction so mission completion, stage.complete and
+      // exit.unlock reach campaign access before the dialogue opens.
+      this.reportNarrativeSignal(this.modularNarrativeSession.interactNpc(poi.point.id));
       this.dialogueOverlay?.openDialogue(poi.dialogueId);
     }
   }
@@ -857,7 +859,50 @@ export class GameScene extends Phaser.Scene {
     this.campaignNavigation = synchronized.value;
     this.queueCampaignExitTiles();
     this.setupStageInteractions();
+    this.revealNarrativelyUnlockedExits();
     return true;
+  }
+
+  /**
+   * A completed narrative mission can unlock a physical exit before the
+   * encounter is cleared. Reveal the portal as soon as the narrative unlocks
+   * it so the player can recognize the route they earned.
+   */
+  private revealNarrativelyUnlockedExits(): void {
+    const session = this.modularNarrativeSession;
+    if (!session) return;
+    const unlocked = new Set(session.director.snapshot().unlockedExitIds);
+    if (unlocked.size === 0) return;
+    const destinations = this.campaignNavigation?.snapshot.destinations ?? [];
+    if (!destinations.some(destination => unlocked.has(destination.stageExitId))) return;
+    if (this.exitsRevealed) {
+      this.refreshExitAvailability();
+      return;
+    }
+    this.revealExits();
+  }
+
+  /** Keeps already revealed portals in sync after narrative access changes. */
+  private refreshExitAvailability(): void {
+    const exitVisual = this.activeStagePresentation.tiles.exit;
+    const byPhysicalExit = new Map(
+      this.pendingExitTiles
+        .filter(tile => tile.physicalExitId !== undefined)
+        .map(tile => [tile.physicalExitId as string, tile] as const),
+    );
+    this.stairTiles.getChildren().forEach(child => {
+      const tunnel = child as Phaser.Physics.Arcade.Sprite;
+      const physicalExitId = tunnel.getData('physicalExitId') as string | undefined;
+      if (!physicalExitId) return;
+      const tile = byPhysicalExit.get(physicalExitId);
+      if (!tile) return;
+      const available = tile.available !== false;
+      tunnel.setData('available', available);
+      if (!available) tunnel.setTint(0x665c73);
+      else if (exitVisual.tint !== undefined) tunnel.setTint(exitVisual.tint);
+      else tunnel.clearTint();
+      tunnel.setAlpha(available ? 1 : 0.35);
+    });
   }
 
   private requestNarrativeExit(exitId: string, occurrenceId: string): boolean {
@@ -905,8 +950,11 @@ export class GameScene extends Phaser.Scene {
     // Player vs Section Doors → travel between sections
     this.physics.add.overlap(this.player, this.stairTiles, (_playerObj, doorObj) => {
       if (this.isTransitioning) return;
-      // Doors are sealed while a wave is active — finish the fight first
-      if (this.enemies.countActive(true) > 0 || this.waveTransition) {
+      const door = doorObj as Phaser.Physics.Arcade.Sprite;
+      // Stairs/doors act as the level portal. Combat is the legacy seal; a
+      // narrative unlock earned by the mission is an equally valid gate.
+      const narrativelyUnlocked = this.isNarrativelyUnlockedExit(door);
+      if ((this.enemies.countActive(true) > 0 || this.waveTransition) && !narrativelyUnlocked) {
         if (!this.doorSealNotice || this.time.now - this.doorSealNotice > 2000) {
           this.doorSealNotice = this.time.now;
           this.levelBannerText.setText('PORTAS SELADAS! Termine o combate.');
@@ -915,19 +963,18 @@ export class GameScene extends Phaser.Scene {
         }
         return;
       }
-      // Stairs/doors act as the level portal — only open once the section is cleared
-      const wavesCleared = this.currentWaveIndex >= this.waves.length - 1 && this.enemies.countActive(true) === 0 && !this.waveTransition;
-      if (!wavesCleared) {
+      const wavesCleared = this.currentWaveIndex >= this.waves.length - 1 &&
+        this.enemies.countActive(true) === 0 && !this.waveTransition;
+      if (!wavesCleared && !narrativelyUnlocked) {
         if (!this.doorSealNotice || this.time.now - this.doorSealNotice > 2000) {
           this.doorSealNotice = this.time.now;
-          this.levelBannerText.setText('PORTAL BLOQUEADO! Elimine a horda.');
+          this.levelBannerText.setText('PORTAL BLOQUEADO! Cumpra a missão ou elimine a horda.');
           this.levelBannerText.setVisible(true);
           this.time.delayedCall(1200, () => this.levelBannerText.setVisible(false));
         }
         return;
       }
       if (this.campaignRouter) {
-        const door = doorObj as Phaser.Physics.Arcade.Sprite;
         const physicalExitId = door.getData('physicalExitId') as string | undefined;
         this.handleCampaignExitProximity(
           physicalExitId,
@@ -1360,6 +1407,21 @@ export class GameScene extends Phaser.Scene {
     }));
   }
 
+  /**
+   * A mission can unlock a physical exit while combat is still optional. The
+   * campaign destination remains the authority for availability; this only
+   * answers whether the narrative has already cleared the portal.
+   */
+  private isNarrativelyUnlockedExit(door: Phaser.Physics.Arcade.Sprite): boolean {
+    const physicalExitId = door.getData('physicalExitId') as string | undefined;
+    if (!physicalExitId || !this.modularNarrativeSession) return false;
+    const destination = this.campaignNavigation?.snapshot.destinations
+      .find(item => item.physicalExitId === physicalExitId);
+    if (!destination) return false;
+    return this.modularNarrativeSession.director.snapshot().unlockedExitIds
+      .includes(destination.stageExitId);
+  }
+
   private handleCampaignExitProximity(
     physicalExitId: string | undefined,
     available: boolean,
@@ -1379,19 +1441,22 @@ export class GameScene extends Phaser.Scene {
 
   private navigateCampaignExit(physicalExitId: string): void {
     if (!this.campaignRouter || this.isTransitioning || this.campaignPersistenceUncertain) return;
-    const prepared = this.campaignRouter.prepare(physicalExitId);
-    if (!prepared.ok) {
-      this.showCampaignTransitionFailure(`SAÍDA INDISPONÍVEL: ${prepared.error.code}`);
+    // Resolve the narrative exit before the router prepares a macro transition.
+    // Committing narrative consequences synchronizes campaign access, and that
+    // synchronization cannot inspect the binder while a transition is pending.
+    const destination = this.campaignNavigation?.snapshot.destinations
+      .find(item => item.physicalExitId === physicalExitId);
+    if (!destination) {
+      this.showCampaignTransitionFailure('SAÍDA INDISPONÍVEL: exit-not-found');
       return;
     }
     if (!this.requestNarrativeExit(
-      prepared.value.stageExitId,
-      `${this.narrativeOccurrenceScope()}.exit.${prepared.value.stageExitId}`,
-    )) {
-      if (!this.campaignRouter.cancel(prepared.value.preparationId)) {
-        this.campaignPersistenceUncertain = true;
-        this.showCampaignTransitionFailure('CANCELAMENTO DA TRANSIÇÃO INCERTO. REINICIE PARA RECONCILIAR.');
-      }
+      destination.stageExitId,
+      `${this.narrativeOccurrenceScope()}.exit.${destination.stageExitId}`,
+    )) return;
+    const prepared = this.campaignRouter.prepare(physicalExitId);
+    if (!prepared.ok) {
+      this.showCampaignTransitionFailure(`SAÍDA INDISPONÍVEL: ${prepared.error.code}`);
       return;
     }
     this.isTransitioning = true;
@@ -1601,7 +1666,12 @@ export class GameScene extends Phaser.Scene {
 
     this.levelBannerText.setVisible(false);
     SoundManager.playWitchTimeActivate();
-    this.showChapterTitle(this.currentRegionName());
+    this.showChapterTitle(this.chapterTitleName());
+  }
+
+  /** Hubs announce their region; authored stages announce their own title. */
+  private chapterTitleName(): string {
+    return this.isMacroHub() ? this.currentRegionName() : this.currentLevel.name;
   }
 
   private showCampaignTransitionFailure(message: string): void {
@@ -1875,8 +1945,12 @@ export class GameScene extends Phaser.Scene {
     // Escaped state — controls guide is covering the screen
     if (this.controlsGuideOpen || this.shopUI.getIsVisible()) return;
     const aliveEnemies = this.enemies.countActive(true);
-    let objective = '';
-    if (aliveEnemies > 0 || this.waveTransition) {
+    const mission = this.narrativeObjective();
+    const combat = this.combatObjective(aliveEnemies);
+    let objective: string;
+    if (mission) {
+      objective = combat ? `${mission}\n${combat}` : mission;
+    } else if (aliveEnemies > 0 || this.waveTransition) {
       objective = `OBJETIVO: Derrube os inimigos (Onda ${this.currentWaveIndex + 1}/${this.waves.length}, ${aliveEnemies} restantes)`;
     } else if (this.currentWaveIndex < this.waves.length - 1) {
       objective = 'OBJETIVO: Prepare-se para a próxima onda...';
@@ -1887,6 +1961,42 @@ export class GameScene extends Phaser.Scene {
     }
     const location = this.macroLocationLabel();
     this.objectiveText.setText(location ? `${location}\n${objective}` : objective);
+  }
+
+  /**
+   * Narrative missions own the primary objective line. Combat is reported as a
+   * complementary detail so a discovery mission is not mistaken for a horde
+   * clear and the unlocked exit is explicit.
+   */
+  private narrativeObjective(): string | undefined {
+    const loaded = this.stageNarrativeStage;
+    const session = this.modularNarrativeSession;
+    if (!loaded || !session || !loaded.missions || loaded.missions.length === 0) return undefined;
+    const states = session.director.snapshot().missionStates;
+    const active = loaded.missions.find(mission => states[mission.id]?.status === 'active');
+    const completed = loaded.missions.find(mission => states[mission.id]?.status === 'completed');
+    const mission = active ?? completed;
+    if (!mission) return undefined;
+    const state = states[mission.id];
+    if (!state) return undefined;
+    if (state.status === 'completed') {
+      return `MISSÃO CONCLUÍDA: ${mission.title} — saída liberada. Pressione E no portal.`;
+    }
+    const pendingObjective = mission.objectives.find(objective =>
+      (state.objectives[objective.id] ?? 0) < objective.target);
+    if (!pendingObjective) return `MISSÃO: ${mission.title}`;
+    return `MISSÃO: ${mission.title} — ${pendingObjective.description}`;
+  }
+
+  /** Combat progress, or nothing once the encounter has nothing left to say. */
+  private combatObjective(aliveEnemies: number): string | undefined {
+    if (this.waves.length === 0) return undefined;
+    if (aliveEnemies > 0 || this.waveTransition) {
+      const remaining = `${aliveEnemies} restante${aliveEnemies === 1 ? '' : 's'}`;
+      return `COMBATE: ${remaining} (onda ${this.currentWaveIndex + 1}/${this.waves.length})`;
+    }
+    if (this.currentWaveIndex < this.waves.length - 1) return 'COMBATE: próxima onda a caminho...';
+    return undefined;
   }
 
   private revealExits(): void {

@@ -32,8 +32,12 @@ Os arquivos de origem acima foram copiados sem alteração de pixels.
 
 | Arquivo | Origem | Dimensões | SHA-256 |
 |---|---|---|---|
-| `puny-warrior-red-128.png` | `puny-warrior-red.png` | 512×342 | `dd059ea7631c85590447ff0e6335a0ca7a941e2deab221e0a03ca1dd453acc43` |
-| `puny-archer-purple-128.png` | `puny-archer-purple.png` | 512×342 | `41b682336ef3484240640d328656a5f192c60e4dd636fbeb9577a173fbbf8c0b` |
+| `puny-warrior-red-128.png` | `puny-warrior-red.png` | 512×342 | `7c37bdce12b6eca0076a6b456daeac0ff7557e275254bd5c1456a169a8c10816` |
+| `puny-archer-purple-128.png` | `puny-archer-purple.png` | 512×342 | `6cea72e2f9df9cb0e00a8da7b44363d32a6478e9bdd5e4af81798794489eccc1` |
+
+As folhas derivadas são geradas por
+`node scripts/generate-puny-character-sheets.mjs`. O gerador usa somente
+`zlib` da biblioteca padrão e produz bytes determinísticos.
 
 Transformações aplicadas a cada folha derivada:
 
@@ -41,8 +45,10 @@ Transformações aplicadas a cada folha derivada:
    guerreiro, arco para o arqueiro) e `hurt`;
 2. repetição do ciclo de três frames como `0,1,2,1` para preencher o contrato
    existente de quatro frames por animação;
-3. recorte pelo canal alfa e escala nearest-neighbor para caber em 128×114;
-4. composição em uma folha 4×3 de 128×114, com transparência preservada.
+3. recorte fixo de 21×19 pixels por pose e escala uniforme inteira de 6×,
+   sem redimensionar cada frame pelo próprio retângulo alfa;
+4. composição de cada pose isolada em uma célula 128×114 de uma folha 4×3, sem
+   amostrar pixels da célula vizinha e com transparência preservada.
 
 O canvas 128×114 e a ordem `walk`/`attack`/`hurt` são os mesmos já consumidos
 por `Enemy`, `RangedEnemy` e `BossEnemy`, portanto body, offset, atributos e IA

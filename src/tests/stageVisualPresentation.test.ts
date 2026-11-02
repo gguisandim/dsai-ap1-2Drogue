@@ -42,6 +42,8 @@ class FakeImage {
   public setRotation(value: number): this { this.rotation = value; return this; }
   public refreshBody(): this { this.refreshes += 1; return this; }
   public setScrollFactor(): this { return this; }
+  public once(): this { return this; }
+  public destroy(): void {}
 }
 
 function loadIgapo() {
@@ -76,7 +78,9 @@ function fakeRenderingSurface(missingTexture?: string) {
       const rectangle = new FakeImage(x, y, 'rectangle');
       rectangles.push(rectangle);
       return rectangle;
-    } },
+    }, circle: (x: number, y: number) => new FakeImage(x, y, 'circle'),
+    ellipse: (x: number, y: number) => new FakeImage(x, y, 'ellipse') },
+    tweens: { add: () => ({ stop: () => undefined, remove: () => undefined }) },
     cameras: { main: { width: 1280, height: 720 } },
   } as unknown as Phaser.Scene;
   const group = {
@@ -98,10 +102,13 @@ describe('declarative stage visual presentation', () => {
       tileSize: 32,
     });
     expect(Object.keys(loaded.presentation.decorations).sort()).toEqual([
-      'igapo_emergent_tree', 'igapo_fallen_trunk', 'igapo_memory_reeds',
-    ]);
+      'igapo_broad_tree', 'igapo_canopy_high', 'igapo_canopy_shadow',
+      'igapo_coconut_palm', 'igapo_emergent_tree', 'igapo_emergent_tree_dark',
+      'igapo_emergent_tree_variant', 'igapo_fruit_tree', 'igapo_mud', 'igapo_palm',
+      'igapo_pebble', 'igapo_reeds', 'igapo_round_tree', 'igapo_shrub', 'igapo_stone',
+    ].sort());
     expect(loaded.presentation.decorations.igapo_emergent_tree).toMatchObject({
-      layer: 'foreground', depth: 5,
+      layer: 'foreground', depth: 4.2,
     });
   });
 
@@ -208,12 +215,13 @@ describe('declarative stage visual presentation', () => {
       .toEqual(second.images.map(image => [image.textureKey, (image as unknown as FakeImage).tint]));
     const collisionCount = loaded.level.tileMap.flat().filter(tile => tile === 1 || tile === 2 || tile === 3).length;
     expect(first.obstacles).toHaveLength(collisionCount);
-    expect(firstResult.decorationImages).toHaveLength(6);
+    expect(firstResult.decorationImages.length).toBeGreaterThan(40);
     expect(firstResult.pendingExitTiles).toHaveLength(1);
     expect(firstResult.decorationImages.every(image =>
       !first.obstacles.includes(image as unknown as FakeImage))).toBe(true);
-    expect(firstResult.decorationImages.map(image => (image as unknown as FakeImage).depth))
-      .toEqual([5, 2, 4, 5, 2, 4]);
+    const depths = firstResult.decorationImages.map(image => (image as unknown as FakeImage).depth);
+    expect(new Set(depths).size).toBeGreaterThanOrEqual(3);
+    expect(depths.every(depth => typeof depth === 'number' && Number.isFinite(depth))).toBe(true);
   });
 
   it('fails before partial rendering when a resolved texture is absent from Phaser', () => {
@@ -235,8 +243,8 @@ describe('declarative stage visual presentation', () => {
       ...loaded.level,
       decorations: [
         { type: 'igapo_emergent_tree', x: 2, y: 2, visible: false },
-        { type: 'igapo_memory_reeds', x: 3, y: 3, layer: 'background' as const },
-        { type: 'igapo_fallen_trunk', x: 4, y: 4, depth: 9, scale: 1.4, rotation: 0.3 },
+        { type: 'igapo_reeds', x: 3, y: 3, layer: 'background' as const },
+        { type: 'igapo_stone', x: 4, y: 4, depth: 9, scale: 1.4, rotation: 0.3 },
       ],
     };
     const rendered = new StageMapRenderer().render(

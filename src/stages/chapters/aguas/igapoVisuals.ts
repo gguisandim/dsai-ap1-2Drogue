@@ -1,5 +1,6 @@
 import type {
   ChapterVisualResources,
+  StageEffectDefinition,
   StagePresentationDefinition,
 } from '../../contracts';
 
@@ -27,32 +28,50 @@ const PUNY_MAGE_TEXTURE = 'texture.aguas.puny-mage';
 const PUNY_WARRIOR_TEXTURE = 'texture.aguas.puny-warrior';
 const PUNY_ARCHER_TEXTURE = 'texture.aguas.puny-archer';
 
-/** Frames selected from the 27-column Puny World overworld sheet. */
+/**
+ * Frames selected from the 27-column Puny World overworld sheet. The names
+ * describe what the frame actually shows; earlier revisions pointed `stump`
+ * and `palm` at pebbles and fruit trees, which produced the flat, generic
+ * scenery this revision replaces.
+ */
 const WORLD_FRAME = Object.freeze({
   grass: 0,
   grassVariant: 1,
+  grassAlt: 2,
   grassDark: 27,
   grassLight: 54,
   dirt: 40,
   dirtVariant: 34,
-  dirtLight: 7,
-  treeCanopy: 190,
-  treeCanopyVariant: 191,
-  treeCanopyDense: 204,
-  singleTree: 197,
-  singleTreeVariant: 206,
-  singleTreeLight: 224,
+  dirtLight: 8,
+  canopy: 190,
+  canopyVariant: 191,
+  canopyDense: 204,
+  canopyEdge: 216,
+  canopyEdgeVariant: 243,
+  tree: 197,
+  treeVariant: 206,
+  treeAlt: 224,
+  treeDark: 783,
+  treeBlue: 810,
   water: 293,
   waterVariant: 294,
   waterDeep: 295,
-  rock: 109,
-  rockVariant: 110,
-  rockEdge: 122,
-  stump: 730,
-  stumpVariant: 757,
-  palm: 758,
-  bush: 704,
-  bushVariant: 705,
+  waterShallow: 296,
+  waterStill: 319,
+  waterStillVariant: 320,
+  waterStillDeep: 321,
+  waterStillAlt: 322,
+  waterStillDark: 323,
+  fruitTree: 704,
+  roundTree: 705,
+  broadPalm: 758,
+  palm: 759,
+  coconutPalm: 837,
+  reeds: 756,
+  shrub: 757,
+  stone: 702,
+  pebble: 730,
+  pebbleVariant: 784,
   arch: 714,
   chest: 815,
 });
@@ -91,150 +110,438 @@ const enemyAnimations = (prefix: 'puny_warrior' | 'puny_archer') => Object.freez
   hurt: `${prefix}_hurt`,
 });
 
+/** Natural flooded forest: warm bank, murky green water and layered canopy. */
 const igapoRibeirinhoTileset = Object.freeze({
   id: IGAPO_VISUAL_TILESET_ID,
-  revision: 2,
+  revision: 3,
   tileSize: 32 as const,
   tiles: Object.freeze({
     floor: worldTile(WORLD_FRAME.grass, {
+      tint: 0xa3b67c,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.grassVariant),
-        worldVariant(WORLD_FRAME.grassDark),
-        worldVariant(WORLD_FRAME.grassLight),
+        worldVariant(WORLD_FRAME.grassVariant, { tint: 0x97aa72 }),
+        worldVariant(WORLD_FRAME.grassAlt, { tint: 0x8c9f68 }),
+        worldVariant(WORLD_FRAME.grassDark, { tint: 0x82955f }),
+        worldVariant(WORLD_FRAME.grassLight, { tint: 0xacbe84 }),
+        worldVariant(WORLD_FRAME.grass, { tint: 0x9cae75 }),
       ]),
     }),
-    wall: worldTile(WORLD_FRAME.treeCanopy, {
+    wall: worldTile(WORLD_FRAME.canopy, {
+      tint: 0x2f6044,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.treeCanopyVariant),
-        worldVariant(WORLD_FRAME.treeCanopyDense),
+        worldVariant(WORLD_FRAME.canopyVariant, { tint: 0x2a563c }),
+        worldVariant(WORLD_FRAME.canopyDense, { tint: 0x285238 }),
+        worldVariant(WORLD_FRAME.canopyEdge, { tint: 0x356746 }),
+        worldVariant(WORLD_FRAME.canopyEdgeVariant, { tint: 0x2e5c40 }),
       ]),
     }),
-    pillar: worldTile(WORLD_FRAME.singleTree, {
+    pillar: worldTile(WORLD_FRAME.tree, {
+      tint: 0x3d6f4d,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.singleTreeVariant),
-        worldVariant(WORLD_FRAME.singleTreeLight),
+        worldVariant(WORLD_FRAME.treeVariant, { tint: 0x366446 }),
+        worldVariant(WORLD_FRAME.treeAlt, { tint: 0x457853 }),
+        worldVariant(WORLD_FRAME.treeDark, { tint: 0x335d43 }),
       ]),
     }),
     water: worldTile(WORLD_FRAME.water, {
+      tint: 0x4f857a,
+      alpha: 0.9,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.waterVariant),
-        worldVariant(WORLD_FRAME.waterDeep),
+        worldVariant(WORLD_FRAME.waterVariant, { tint: 0x487c72, alpha: 0.9 }),
+        worldVariant(WORLD_FRAME.waterDeep, { tint: 0x42746b, alpha: 0.9 }),
+        worldVariant(WORLD_FRAME.waterShallow, { tint: 0x578c80, alpha: 0.9 }),
+        worldVariant(WORLD_FRAME.waterStill, { tint: 0x4b8077, alpha: 0.9 }),
+        worldVariant(WORLD_FRAME.waterStillVariant, { tint: 0x457a71, alpha: 0.9 }),
+        worldVariant(WORLD_FRAME.waterStillDeep, { tint: 0x406f68, alpha: 0.9 }),
+        worldVariant(WORLD_FRAME.waterStillAlt, { tint: 0x52877b, alpha: 0.9 }),
+        worldVariant(WORLD_FRAME.waterStillDark, { tint: 0x3d6b65, alpha: 0.9 }),
       ]),
     }),
-    lava: worldTile(WORLD_FRAME.dirt, { tint: 0x6f7852 }),
-    exit: worldTile(WORLD_FRAME.arch, { tint: 0xfff0b0 }),
-    'locked-door': worldTile(WORLD_FRAME.treeCanopyVariant, { tint: 0x6f8f7a }),
-    chest: worldTile(WORLD_FRAME.chest, { tint: 0xffe0a0 }),
-    spawn: worldTile(WORLD_FRAME.grassVariant),
-    boss: worldTile(WORLD_FRAME.dirt),
+    lava: worldTile(WORLD_FRAME.dirt, { tint: 0x87784f }),
+    exit: worldTile(WORLD_FRAME.arch, { tint: 0xffe9a6 }),
+    'locked-door': worldTile(WORLD_FRAME.canopyVariant, { tint: 0x5d8f70 }),
+    chest: worldTile(WORLD_FRAME.chest, { tint: 0xffdf9a }),
+    spawn: worldTile(WORLD_FRAME.grassVariant, { tint: 0xc9d79a }),
+    boss: worldTile(WORLD_FRAME.dirt, { tint: 0x8f8054 }),
   }),
 });
 
+/** Corrupted flooded forest: cold water, decaying canopy and exposed ground. */
 const igapoSombrioTileset = Object.freeze({
   id: IGAPO_SOMBRIO_TILESET_ID,
-  revision: 2,
+  revision: 3,
   tileSize: 32 as const,
   tiles: Object.freeze({
     floor: worldTile(WORLD_FRAME.grassDark, {
-      tint: 0x6f8776,
+      tint: 0x7c8f86,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.grass, { tint: 0x627c6f }),
-        worldVariant(WORLD_FRAME.dirt, { tint: 0x74816a }),
+        worldVariant(WORLD_FRAME.grass, { tint: 0x71857c }),
+        worldVariant(WORLD_FRAME.grassAlt, { tint: 0x687c74 }),
+        worldVariant(WORLD_FRAME.dirt, { tint: 0x84796a }),
+        worldVariant(WORLD_FRAME.grassLight, { tint: 0x889a8d }),
       ]),
     }),
-    wall: worldTile(WORLD_FRAME.treeCanopyDense, {
-      tint: 0x526b61,
+    wall: worldTile(WORLD_FRAME.canopyDense, {
+      tint: 0x3d5a52,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.treeCanopy, { tint: 0x49645c }),
-        worldVariant(WORLD_FRAME.treeCanopyVariant, { tint: 0x587269 }),
+        worldVariant(WORLD_FRAME.canopy, { tint: 0x365149 }),
+        worldVariant(WORLD_FRAME.canopyVariant, { tint: 0x415f56 }),
+        worldVariant(WORLD_FRAME.canopyEdge, { tint: 0x46635a }),
       ]),
     }),
-    pillar: worldTile(WORLD_FRAME.singleTreeVariant, {
-      tint: 0x5d6858,
+    pillar: worldTile(WORLD_FRAME.treeDark, {
+      tint: 0x4a5f58,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.singleTree, { tint: 0x506158 }),
+        worldVariant(WORLD_FRAME.treeBlue, { tint: 0x40564f }),
+        worldVariant(WORLD_FRAME.treeAlt, { tint: 0x52665d }),
       ]),
     }),
     water: worldTile(WORLD_FRAME.waterDeep, {
-      tint: 0x528a8d,
+      tint: 0x4f7d7d,
       alpha: 0.98,
       variants: Object.freeze([
-        worldVariant(WORLD_FRAME.waterVariant, { tint: 0x4a7f84, alpha: 0.98 }),
-        worldVariant(WORLD_FRAME.water, { tint: 0x47777d, alpha: 0.98 }),
+        worldVariant(WORLD_FRAME.waterVariant, { tint: 0x467374, alpha: 0.98 }),
+        worldVariant(WORLD_FRAME.water, { tint: 0x436e70, alpha: 0.98 }),
+        worldVariant(WORLD_FRAME.waterShallow, { tint: 0x578687, alpha: 0.98 }),
       ]),
     }),
-    lava: worldTile(WORLD_FRAME.dirt, { tint: 0x77734f }),
-    exit: worldTile(WORLD_FRAME.arch, { tint: 0xb5e3df }),
-    'locked-door': worldTile(WORLD_FRAME.treeCanopyVariant, { tint: 0x486058 }),
-    chest: worldTile(WORLD_FRAME.chest, { tint: 0x91aaa0 }),
-    spawn: worldTile(WORLD_FRAME.grassVariant, { tint: 0x789789 }),
-    boss: worldTile(WORLD_FRAME.dirtLight, { tint: 0x867957 }),
+    lava: worldTile(WORLD_FRAME.dirtVariant, { tint: 0x726a57 }),
+    exit: worldTile(WORLD_FRAME.arch, { tint: 0xa9d7cf }),
+    'locked-door': worldTile(WORLD_FRAME.canopyVariant, { tint: 0x405a52 }),
+    chest: worldTile(WORLD_FRAME.chest, { tint: 0x8aa49a }),
+    spawn: worldTile(WORLD_FRAME.grassVariant, { tint: 0x84998d }),
+    boss: worldTile(WORLD_FRAME.dirt, { tint: 0x7d6e58 }),
   }),
 });
 
-const igapoRibeirinhoDecorations = Object.freeze([
-  Object.freeze({
+interface DecorationSpec {
+  readonly id: string;
+  readonly frame: number;
+  readonly layer: 'foreground' | 'terrain' | 'background';
+  readonly depth: number;
+  readonly defaultScale: number;
+  readonly scaleClass: 'prop' | 'oversized' | 'character' | 'tile';
+}
+
+const naturalDecorations: readonly DecorationSpec[] = [
+  {
     id: 'igapo_emergent_tree',
-    textureId: PUNY_WORLD_TEXTURE,
-    frame: WORLD_FRAME.singleTree,
+    frame: WORLD_FRAME.tree,
     layer: 'foreground' as const,
-    depth: 5,
-    defaultScale: 2.2,
-    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+    depth: 4.2,
+    defaultScale: 4.2,
     scaleClass: 'oversized' as const,
-  }),
-  Object.freeze({
-    id: 'igapo_fallen_trunk',
-    textureId: PUNY_WORLD_TEXTURE,
-    frame: WORLD_FRAME.stump,
-    layer: 'terrain' as const,
-    depth: 2,
-    defaultScale: 1.8,
-    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
-    scaleClass: 'oversized' as const,
-  }),
-  Object.freeze({
-    id: 'igapo_memory_reeds',
-    textureId: PUNY_WORLD_TEXTURE,
-    frame: WORLD_FRAME.bush,
+  },
+  {
+    id: 'igapo_emergent_tree_variant',
+    frame: WORLD_FRAME.treeVariant,
     layer: 'foreground' as const,
-    depth: 4,
-    defaultScale: 1.5,
-    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+    depth: 4.3,
+    defaultScale: 3.8,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_emergent_tree_dark',
+    frame: WORLD_FRAME.treeDark,
+    layer: 'foreground' as const,
+    depth: 4.4,
+    defaultScale: 4,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_round_tree',
+    frame: WORLD_FRAME.roundTree,
+    layer: 'foreground' as const,
+    depth: 4.1,
+    defaultScale: 4,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_broad_tree',
+    frame: WORLD_FRAME.broadPalm,
+    layer: 'foreground' as const,
+    depth: 4.4,
+    defaultScale: 4,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_palm',
+    frame: WORLD_FRAME.palm,
+    layer: 'foreground' as const,
+    depth: 4.5,
+    defaultScale: 3.4,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_coconut_palm',
+    frame: WORLD_FRAME.coconutPalm,
+    layer: 'foreground' as const,
+    depth: 4.6,
+    defaultScale: 3.2,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_fruit_tree',
+    frame: WORLD_FRAME.fruitTree,
+    layer: 'foreground' as const,
+    depth: 3.9,
+    defaultScale: 2.5,
     scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_reeds',
+    frame: WORLD_FRAME.reeds,
+    layer: 'foreground' as const,
+    depth: 3.7,
+    defaultScale: 2.2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_shrub',
+    frame: WORLD_FRAME.shrub,
+    layer: 'foreground' as const,
+    depth: 3.6,
+    defaultScale: 2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_stone',
+    frame: WORLD_FRAME.stone,
+    layer: 'terrain' as const,
+    depth: 1.6,
+    defaultScale: 2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_pebble',
+    frame: WORLD_FRAME.pebble,
+    layer: 'terrain' as const,
+    depth: 1.5,
+    defaultScale: 1.2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_mud',
+    frame: WORLD_FRAME.dirt,
+    layer: 'terrain' as const,
+    depth: 0.8,
+    defaultScale: 2.2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_canopy_shadow',
+    frame: WORLD_FRAME.roundTree,
+    layer: 'terrain' as const,
+    depth: 1.3,
+    defaultScale: 3.8,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_canopy_high',
+    frame: WORLD_FRAME.canopy,
+    layer: 'foreground' as const,
+    depth: 6.4,
+    defaultScale: 4.4,
+    scaleClass: 'oversized' as const,
+  },
+];
+
+const sombrioDecorations: readonly DecorationSpec[] = [
+  {
+    id: 'igapo_sombrio_dead_tree',
+    frame: WORLD_FRAME.treeDark,
+    layer: 'foreground' as const,
+    depth: 4.2,
+    defaultScale: 4.2,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_sombrio_dead_tree_variant',
+    frame: WORLD_FRAME.treeBlue,
+    layer: 'foreground' as const,
+    depth: 4.3,
+    defaultScale: 3.8,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_sombrio_round_tree',
+    frame: WORLD_FRAME.roundTree,
+    layer: 'foreground' as const,
+    depth: 4.1,
+    defaultScale: 4.2,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_sombrio_broad_tree',
+    frame: WORLD_FRAME.broadPalm,
+    layer: 'foreground' as const,
+    depth: 4.4,
+    defaultScale: 3,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_sombrio_palm',
+    frame: WORLD_FRAME.palm,
+    layer: 'foreground' as const,
+    depth: 4.5,
+    defaultScale: 2.8,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_sombrio_coconut_palm',
+    frame: WORLD_FRAME.coconutPalm,
+    layer: 'foreground' as const,
+    depth: 4.6,
+    defaultScale: 2.4,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_sombrio_fruit_tree',
+    frame: WORLD_FRAME.fruitTree,
+    layer: 'foreground' as const,
+    depth: 3.9,
+    defaultScale: 2.4,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_sombrio_reeds',
+    frame: WORLD_FRAME.reeds,
+    layer: 'foreground' as const,
+    depth: 3.7,
+    defaultScale: 2.2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_sombrio_shrub',
+    frame: WORLD_FRAME.shrub,
+    layer: 'foreground' as const,
+    depth: 3.6,
+    defaultScale: 2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_sombrio_stone',
+    frame: WORLD_FRAME.stone,
+    layer: 'terrain' as const,
+    depth: 1.6,
+    defaultScale: 2.2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_sombrio_pebble',
+    frame: WORLD_FRAME.pebbleVariant,
+    layer: 'terrain' as const,
+    depth: 1.5,
+    defaultScale: 1.2,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_sombrio_mud',
+    frame: WORLD_FRAME.dirtVariant,
+    layer: 'terrain' as const,
+    depth: 0.8,
+    defaultScale: 2.4,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_sombrio_canopy_shadow',
+    frame: WORLD_FRAME.treeDark,
+    layer: 'terrain' as const,
+    depth: 1.3,
+    defaultScale: 4,
+    scaleClass: 'oversized' as const,
+  },
+  {
+    id: 'igapo_sombrio_algae',
+    frame: WORLD_FRAME.stone,
+    layer: 'terrain' as const,
+    depth: 1.2,
+    defaultScale: 2.4,
+    scaleClass: 'prop' as const,
+  },
+  {
+    id: 'igapo_sombrio_canopy_high',
+    frame: WORLD_FRAME.canopyVariant,
+    layer: 'foreground' as const,
+    depth: 6.4,
+    defaultScale: 4.4,
+    scaleClass: 'oversized' as const,
+  },
+];
+
+const decoration = (value: DecorationSpec) => Object.freeze({
+  textureId: PUNY_WORLD_TEXTURE,
+  anchor: Object.freeze({ x: 0.5, y: 0.5 }),
+  ...value,
+});
+
+const sombrioOverrides: Readonly<Record<string, string>> = Object.freeze({
+  igapo_emergent_tree: 'igapo_sombrio_dead_tree',
+  igapo_emergent_tree_variant: 'igapo_sombrio_dead_tree_variant',
+  igapo_emergent_tree_dark: 'igapo_sombrio_dead_tree_variant',
+  igapo_round_tree: 'igapo_sombrio_round_tree',
+  igapo_broad_tree: 'igapo_sombrio_broad_tree',
+  igapo_palm: 'igapo_sombrio_palm',
+  igapo_coconut_palm: 'igapo_sombrio_coconut_palm',
+  igapo_fruit_tree: 'igapo_sombrio_fruit_tree',
+  igapo_reeds: 'igapo_sombrio_reeds',
+  igapo_shrub: 'igapo_sombrio_shrub',
+  igapo_stone: 'igapo_sombrio_stone',
+  igapo_pebble: 'igapo_sombrio_pebble',
+  igapo_mud: 'igapo_sombrio_mud',
+  igapo_canopy_shadow: 'igapo_sombrio_canopy_shadow',
+  igapo_canopy_high: 'igapo_sombrio_canopy_high',
+});
+
+export const IGAPO_NATURAL_EFFECTS: readonly StageEffectDefinition[] = Object.freeze([
+  Object.freeze({
+    id: 'effect.aguas.igapo.water-shimmer', kind: 'water-shimmer' as const,
+    color: 0xa7e8cf, alpha: 0.16, depth: 0.6, durationMs: 2600, count: 32,
+  }),
+  Object.freeze({
+    id: 'effect.aguas.igapo.mist', kind: 'mist' as const,
+    color: 0x8fc9b4, alpha: 0.08, depth: 4.8, durationMs: 11000,
+    x: 4, y: 6, width: 86, height: 16, count: 7, amplitude: 80,
+  }),
+  Object.freeze({
+    id: 'effect.aguas.igapo.fireflies', kind: 'fireflies' as const,
+    color: 0xd8f28a, alpha: 0.6, depth: 8.5, durationMs: 3400,
+    x: 6, y: 5, width: 82, height: 18, count: 30, amplitude: 20,
+  }),
+  Object.freeze({
+    id: 'effect.aguas.igapo.vestige-light', kind: 'local-light' as const,
+    color: 0xb8fff0, alpha: 0.12, depth: 7.2, durationMs: 2400,
+    x: 28, y: 16, radius: 44, amplitude: 0.1,
+  }),
+  Object.freeze({
+    id: 'effect.aguas.igapo.foliage', kind: 'foliage-sway' as const,
+    color: 0x4f8c63, alpha: 0.12, depth: 7.5, durationMs: 4200, amplitude: 1.2,
   }),
 ]);
 
-const igapoSombrioDecorations = Object.freeze([
+export const IGAPO_SOMBRIO_EFFECTS: readonly StageEffectDefinition[] = Object.freeze([
   Object.freeze({
-    id: 'igapo_sombrio_dead_tree',
-    textureId: PUNY_WORLD_TEXTURE,
-    frame: WORLD_FRAME.bushVariant,
-    layer: 'foreground' as const,
-    depth: 5,
-    defaultScale: 2.4,
-    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
-    scaleClass: 'oversized' as const,
+    id: 'effect.aguas.sombrio.water-shimmer', kind: 'water-shimmer' as const,
+    color: 0x6fc7b8, alpha: 0.12, depth: 0.6, durationMs: 3200, count: 24,
   }),
   Object.freeze({
-    id: 'igapo_sombrio_roots',
-    textureId: PUNY_WORLD_TEXTURE,
-    frame: WORLD_FRAME.stumpVariant,
-    layer: 'terrain' as const,
-    depth: 2,
-    defaultScale: 2,
-    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
-    scaleClass: 'oversized' as const,
+    id: 'effect.aguas.sombrio.mist', kind: 'mist' as const,
+    color: 0x102a2d, alpha: 0.14, depth: 5, durationMs: 9000,
+    x: 4, y: 5, width: 80, height: 18, count: 8, amplitude: 70,
   }),
   Object.freeze({
-    id: 'igapo_sombrio_reeds',
-    textureId: PUNY_WORLD_TEXTURE,
-    frame: WORLD_FRAME.palm,
-    layer: 'foreground' as const,
-    depth: 4,
-    defaultScale: 1.6,
-    anchor: Object.freeze({ x: 0.5, y: 0.5 }),
-    scaleClass: 'prop' as const,
+    id: 'effect.aguas.sombrio.source-pulse', kind: 'pulse' as const,
+    color: 0x8ee0c8, alpha: 0.18, depth: 7.8, durationMs: 2200,
+    x: 76, y: 16, radius: 64, amplitude: 0.14,
+  }),
+  Object.freeze({
+    id: 'effect.aguas.sombrio.spirits', kind: 'spirits' as const,
+    color: 0x9be7d9, alpha: 0.5, depth: 8.4, durationMs: 5000,
+    x: 60, y: 8, width: 20, height: 14, count: 14, amplitude: 20,
+  }),
+  Object.freeze({
+    id: 'effect.aguas.sombrio.foliage', kind: 'foliage-sway' as const,
+    color: 0x3f6b60, alpha: 0.1, depth: 7.5, durationMs: 5200, amplitude: 0.8,
   }),
 ]);
 
@@ -292,8 +599,8 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
   ]),
   tilesets: Object.freeze([igapoRibeirinhoTileset, igapoSombrioTileset]),
   decorations: Object.freeze([
-    ...igapoRibeirinhoDecorations,
-    ...igapoSombrioDecorations,
+    ...naturalDecorations.map(decoration),
+    ...sombrioDecorations.map(decoration),
   ]),
   sprites: Object.freeze([
     Object.freeze({
@@ -310,7 +617,7 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       id: IGAPO_AFFINITY_SPRITE_ID,
       textureId: PUNY_WARRIOR_TEXTURE,
       animations: enemyAnimations('puny_warrior'),
-      tint: 0x9fe0b8,
+      tint: 0xa8e6c0,
       scale: 1,
       depth: 5,
       anchor: Object.freeze({ x: 0.5, y: 0.5 }),
@@ -320,7 +627,7 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       id: IGAPO_APPLAUD_SPRITE_ID,
       textureId: PUNY_ARCHER_TEXTURE,
       animations: enemyAnimations('puny_archer'),
-      tint: 0x9fd8e8,
+      tint: 0xa8ddec,
       scale: 1,
       depth: 5,
       anchor: Object.freeze({ x: 0.5, y: 0.5 }),
@@ -330,7 +637,7 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       id: IGAPO_SOMBRIO_NPC_SPRITE_ID,
       textureId: PUNY_MAGE_TEXTURE,
       animations: Object.freeze({ idle: 'puny_mage_idle' }),
-      tint: 0x6fae9f,
+      tint: 0x83b9a9,
       scale: 1.7,
       depth: 6,
       anchor: Object.freeze({ x: 0.5, y: 0.5 }),
@@ -340,7 +647,7 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       id: IGAPO_SOMBRIO_AFFINITY_SPRITE_ID,
       textureId: PUNY_WARRIOR_TEXTURE,
       animations: enemyAnimations('puny_warrior'),
-      tint: 0x6f9f8f,
+      tint: 0x86ac9d,
       scale: 1,
       depth: 5,
       anchor: Object.freeze({ x: 0.5, y: 0.5 }),
@@ -350,7 +657,7 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       id: IGAPO_SOMBRIO_APPLAUD_SPRITE_ID,
       textureId: PUNY_ARCHER_TEXTURE,
       animations: enemyAnimations('puny_archer'),
-      tint: 0x6f8fa8,
+      tint: 0x7f9fb4,
       scale: 1,
       depth: 5,
       anchor: Object.freeze({ x: 0.5, y: 0.5 }),
@@ -424,32 +731,27 @@ export const AGUAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
     }),
     Object.freeze({
       id: IGAPO_SOMBRIO_ENVIRONMENT_ID,
-      ambientColor: 0x1a3f42,
+      ambientColor: 0x163b3c,
       lightIntensity: 0.62,
-      fog: Object.freeze({ color: 0x102a2d, opacity: 0.12, depth: 4 }),
+      fog: Object.freeze({ color: 0x0a2026, opacity: 0.12, depth: 4 }),
     }),
   ]),
   themes: Object.freeze([
     Object.freeze({
       id: IGAPO_VISUAL_THEME_ID,
-      revision: 2,
+      revision: 3,
       tilesetId: IGAPO_VISUAL_TILESET_ID,
-      decorationIds: Object.freeze([
-        'igapo_emergent_tree', 'igapo_fallen_trunk', 'igapo_memory_reeds',
-      ]),
+      decorationIds: Object.freeze(naturalDecorations.map(item => item.id)),
     }),
     Object.freeze({
       id: IGAPO_SOMBRIO_THEME_ID,
-      revision: 2,
+      revision: 3,
       tilesetId: IGAPO_SOMBRIO_TILESET_ID,
       decorationIds: Object.freeze([
-        'igapo_sombrio_dead_tree', 'igapo_sombrio_roots', 'igapo_sombrio_reeds',
+        ...naturalDecorations.map(item => item.id),
+        ...sombrioDecorations.map(item => item.id),
       ]),
-      decorationOverrides: Object.freeze({
-        igapo_emergent_tree: 'igapo_sombrio_dead_tree',
-        igapo_fallen_trunk: 'igapo_sombrio_roots',
-        igapo_memory_reeds: 'igapo_sombrio_reeds',
-      }),
+      decorationOverrides: sombrioOverrides,
     }),
   ]),
 });
@@ -466,6 +768,7 @@ export const AGUAS_RIBEIRINHO_PRESENTATION: StagePresentationDefinition = Object
   }),
   audioProfileId: IGAPO_AUDIO_PROFILE_ID,
   environmentId: IGAPO_ENVIRONMENT_ID,
+  effects: IGAPO_NATURAL_EFFECTS,
 });
 
 export const AGUAS_SOMBRIO_PRESENTATION: StagePresentationDefinition = Object.freeze({
@@ -480,6 +783,7 @@ export const AGUAS_SOMBRIO_PRESENTATION: StagePresentationDefinition = Object.fr
   }),
   audioProfileId: IGAPO_SOMBRIO_AUDIO_PROFILE_ID,
   environmentId: IGAPO_SOMBRIO_ENVIRONMENT_ID,
+  effects: IGAPO_SOMBRIO_EFFECTS,
 });
 
 export const AGUAS_PRESENTATION_VARIANTS: Readonly<Record<string, StagePresentationDefinition>> =

@@ -23,12 +23,17 @@ import {
   CORACAO_CORROMPIDO_MAP_HEIGHT,
   CORACAO_CORROMPIDO_MAP_WIDTH,
   CORACAO_CORROMPIDO_MISSION_ID,
+  CORACAO_CORROMPIDO_RETURN_ANCHOR,
+  CORACAO_CORROMPIDO_SOURCE,
   CORACAO_CORROMPIDO_STAGE,
   CORACAO_CORROMPIDO_STAGE_ID,
   ECO_DAS_AGUAS_DIALOGUE_ID,
   ECO_DAS_AGUAS_EVENT_ID,
   ECO_DAS_AGUAS_FLAG,
   ECO_DAS_AGUAS_INTEREST,
+  ECO_DAS_AGUAS_NPC_ID,
+  IGAPO_CORRUPTION_FOUND_FLAG,
+  IGAPO_DISCOVERY_MISSION_ID,
   IGAPO_DAS_MEMORIAS_STAGE,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   IGAPO_MAP_HEIGHT,
@@ -104,7 +109,78 @@ function reachable(
   return visited;
 }
 
+/**
+ * Flood-fills half-tile player-center positions whose 42x58 Arcade body does
+ * not overlap any blocked tile. This catches routes that are connected by
+ * tile but too narrow for the production character body.
+ */
+function physicallyReachable(
+  map: readonly (readonly number[])[],
+  start: { readonly x: number; readonly y: number },
+): ReadonlySet<string> {
+  const tileSize = 32;
+  const step = tileSize / 2;
+  const halfWidth = 42 / 2;
+  const halfHeight = 58 / 2;
+  const width = map[0].length * tileSize;
+  const height = map.length * tileSize;
+  const valid = (x: number, y: number): boolean => {
+    if (x - halfWidth < 0 || y - halfHeight < 0 ||
+      x + halfWidth > width || y + halfHeight > height) return false;
+    const minX = Math.floor((x - halfWidth) / tileSize);
+    const maxX = Math.floor((x + halfWidth - 0.001) / tileSize);
+    const minY = Math.floor((y - halfHeight) / tileSize);
+    const maxY = Math.floor((y + halfHeight - 0.001) / tileSize);
+    for (let tileY = minY; tileY <= maxY; tileY += 1) {
+      for (let tileX = minX; tileX <= maxX; tileX += 1) {
+        if (!WALKABLE.has(map[tileY]?.[tileX])) return false;
+      }
+    }
+    return true;
+  };
+  const startPixels = { x: start.x * tileSize + tileSize / 2, y: start.y * tileSize + tileSize / 2 };
+  const visited = new Set<string>();
+  const queue = [startPixels];
+  while (queue.length > 0) {
+    const point = queue.shift()!;
+    const key = tileKey(point.x, point.y);
+    if (visited.has(key) || !valid(point.x, point.y)) continue;
+    visited.add(key);
+    queue.push(
+      { x: point.x + step, y: point.y },
+      { x: point.x - step, y: point.y },
+      { x: point.x, y: point.y + step },
+      { x: point.x, y: point.y - step },
+    );
+  }
+  return visited;
+}
+
+function physicalKey(point: { readonly x: number; readonly y: number }): string {
+  return tileKey(point.x * 32 + 16, point.y * 32 + 16);
+}
+
+/**
+ * Authored exits are narratively gated. Grant the access that the narrative
+ * projection would produce, then exercise the macro transition itself.
+ */
+function grantNarrativeAccess(adapter: GameMacroCampaignAdapter): void {
+  const inspected = adapter.inspect();
+  if (!inspected.ok) throw inspected.error;
+  const state = adapter.state();
+  adapter.setAccess(Object.freeze({
+    eligibleEdgeIds: Object.freeze(state.graph.edges
+      .filter(edge => edge.sourceNodeId === state.currentNodeId)
+      .map(edge => edge.id)
+      .sort()),
+    unlockedStageExitIds: Object.freeze(inspected.value.snapshot.destinations
+      .map(destination => destination.stageExitId)
+      .sort()),
+  }));
+}
+
 function navigate(adapter: GameMacroCampaignAdapter): void {
+  grantNarrativeAccess(adapter);
   const inspected = adapter.inspect();
   if (!inspected.ok) throw inspected.error;
   const prepared = adapter.prepare(inspected.value.snapshot.destinations[0].physicalExitId);
@@ -121,7 +197,11 @@ describe('Igapó das Memórias authored chapter', () => {
       revision: 2,
       chapterId: AGUAS_CHAPTER_MANIFEST.id,
       layout: { kind: 'authored' },
-      exits: [{ id: IGAPO_RETURN_EXIT_ID, targetStageId: CORACAO_CORROMPIDO_STAGE_ID }],
+      exits: [{
+        id: IGAPO_RETURN_EXIT_ID,
+        targetStageId: CORACAO_CORROMPIDO_STAGE_ID,
+        condition: { type: 'flag.equals', flag: IGAPO_CORRUPTION_FOUND_FLAG, value: true },
+      }],
     });
     expect(stages.require(CORACAO_CORROMPIDO_STAGE_ID).manifest).toMatchObject({
       revision: 1,
@@ -199,6 +279,19 @@ describe('Igapó das Memórias authored chapter', () => {
         expect(WALKABLE.has(level.tileMap[y][x])).toBe(true);
       }
     }
+  });
+
+  it('keeps both panoramas traversable by the production 42x58 player body', () => {
+    const igapo = loadIgapo().level;
+    const igapoReachable = physicallyReachable(igapo.tileMap, findTile(igapo.tileMap, 8));
+    expect(igapoReachable.has(physicalKey(ECO_DAS_AGUAS_INTEREST))).toBe(true);
+    expect(igapoReachable.has(physicalKey(IGAPO_RETURN_ANCHOR))).toBe(true);
+
+    const heart = loadCorruptedHeart().level;
+    const heartReachable = physicallyReachable(heart.tileMap, findTile(heart.tileMap, 8));
+    expect(heartReachable.has(physicalKey(CORACAO_CORROMPIDO_SOURCE))).toBe(true);
+    expect(heartReachable.has(physicalKey(CORACAO_CORROMPIDO_EXIT_ANCHOR))).toBe(true);
+    expect(heartReachable.has(physicalKey(CORACAO_CORROMPIDO_RETURN_ANCHOR))).toBe(true);
   });
 
   it('processes and persists Eco das Águas once, then traverses its dialogue', () => {
@@ -279,6 +372,49 @@ describe('Igapó das Memórias authored chapter', () => {
     expect(restored.value.snapshot().flags[ECO_DAS_AGUAS_FLAG]).toBe(true);
     expect(restored.value.registry.listEventRules(loaded.manifest.id)
       .some(rule => rule.id === ECO_DAS_AGUAS_EVENT_ID)).toBe(true);
+  });
+
+  it('completes the discovery mission and unlocks the eastern exit through npc.interacted', () => {
+    const loaded = loadIgapo('run.discovery', 'seed.discovery');
+    const created = StageDirector.create({
+      chapterId: loaded.manifest.chapterId,
+      stageId: loaded.manifest.id,
+      definition: loaded.narrative,
+      npcs: loaded.npcs,
+      dialogues: loaded.dialogues,
+      missions: loaded.missions,
+      events: loaded.events,
+      exitIds: loaded.manifest.exits.map(exit => exit.id),
+    }, undefined, { level: 1, unlockedContent: [] }, {
+      identity: Object.freeze({
+        campaignId: UMBRA_CAMPAIGN_ROUTE_SLICE.id,
+        runId: 'run.discovery',
+        runSeed: 'seed.discovery',
+        chapterId: loaded.manifest.chapterId,
+        stageId: loaded.manifest.id,
+        manifestRevision: loaded.manifest.revision,
+        stageInstanceId: 'node.discovery',
+      }),
+    });
+    if (!created.ok) throw created.error;
+    expect(created.value.process({
+      id: 'discovery.entered',
+      signal: { type: 'stage.entered', stageId: IGAPO_DAS_MEMORIAS_STAGE_ID },
+    }).ok).toBe(true);
+    expect(created.value.snapshot().missionStates[IGAPO_DISCOVERY_MISSION_ID]?.status).toBe('active');
+
+    const interacted = created.value.process({
+      id: 'discovery.npc',
+      signal: { type: 'npc.interacted', npcId: ECO_DAS_AGUAS_NPC_ID },
+    });
+    if (!interacted.ok) throw interacted.error;
+    const snapshot = created.value.snapshot();
+    expect(snapshot.missionStates[IGAPO_DISCOVERY_MISSION_ID]?.status).toBe('completed');
+    expect(snapshot.flags[IGAPO_CORRUPTION_FOUND_FLAG]).toBe(true);
+    expect(snapshot.unlockedExitIds).toContain(IGAPO_RETURN_EXIT_ID);
+    expect(snapshot.completedStageOccurrences).toEqual([
+      expect.objectContaining({ exitId: IGAPO_RETURN_EXIT_ID }),
+    ]);
   });
 
   it('loads an independent corrupted panorama with its own encounter and connected conclusion', () => {

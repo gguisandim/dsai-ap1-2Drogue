@@ -1,4 +1,4 @@
-import type { StageModule } from '../../contracts';
+import type { DecorationPlacement, StageModule } from '../../contracts';
 import {
   AGUAS_PRESENTATION_VARIANTS,
   AGUAS_RIBEIRINHO_PRESENTATION,
@@ -30,56 +30,229 @@ const CHEST = 7;
 const SPAWN = 8;
 
 /**
- * Water is the negative space. Islands and roots form a west-to-east route
- * with optional northern and southern loops that always reconnect.
+ * Land masses are ellipses with a deterministic edge wobble. The corridors
+ * guarantee a west-to-east route and two reconnectable loops, while the
+ * wobble keeps the banks from reading as rectangles.
  */
+const IGAPO_MASSES: readonly (readonly [number, number, number, number])[] = Object.freeze([
+  [9, 17, 7, 4.5], [18, 16, 5, 3], [27, 15, 6, 5],
+  [36, 8, 8, 2.8], [38, 22, 8, 2.8], [45, 15, 5, 4.5],
+  [53, 16, 7, 5], [63, 11, 7, 3], [66, 20, 7, 3],
+  [76, 16, 7, 4], [87, 16, 8, 5.5],
+  [40, 6, 5, 2], [53, 24, 6, 2], [70, 6, 5, 2],
+]);
+
+const IGAPO_CORRIDORS: readonly (readonly (readonly [number, number])[])[] = Object.freeze([
+  [[4, 17], [28, 16], [45, 16], [60, 16], [76, 16], [91, 16]],
+  [[29, 15], [29, 8], [34, 7], [43, 7], [43, 12], [47, 14]],
+  [[30, 18], [31, 22], [38, 23], [44, 22], [46, 18]],
+  [[76, 14], [84, 12], [91, 15]],
+]);
+
+/** Deterministic obstacles verified to keep both loops traversable. */
+const IGAPO_ROOTS: readonly (readonly [number, number])[] = Object.freeze([
+  [51, 20], [35, 16], [40, 17], [24, 13], [61, 22], [45, 18], [29, 14], [66, 23],
+  [55, 20], [49, 18], [38, 15], [59, 20], [43, 16], [27, 12], [64, 21], [32, 13],
+  [69, 22], [53, 18], [47, 16], [57, 18], [41, 14], [62, 19], [30, 11], [67, 20],
+  [72, 21], [45, 14], [50, 15], [60, 17], [28, 9], [65, 18], [33, 10], [70, 19],
+  [54, 15], [75, 20], [43, 12], [48, 13], [37, 10], [58, 15], [63, 16], [84, 21],
+  [31, 8], [68, 17], [52, 13], [73, 18], [41, 10], [78, 19], [46, 11], [88, 21],
+  [35, 8], [56, 13], [82, 19], [66, 15], [71, 16], [39, 8], [76, 17], [60, 13],
+  [44, 9], [86, 19], [33, 6], [91, 20],
+]);
+
+const TREE_PALETTE = Object.freeze([
+  Object.freeze({ type: 'igapo_emergent_tree', tint: 0x9fbd94, scale: 4.4 }),
+  Object.freeze({ type: 'igapo_emergent_tree_variant', tint: 0x93b18a, scale: 3.9 }),
+  Object.freeze({ type: 'igapo_emergent_tree_dark', tint: 0x89aa84, scale: 4.1 }),
+  Object.freeze({ type: 'igapo_round_tree', tint: 0xa8c69b, scale: 4.2 }),
+  Object.freeze({ type: 'igapo_broad_tree', tint: 0xb4cfa0, scale: 3.9 }),
+  Object.freeze({ type: 'igapo_palm', tint: 0xb8d0a4, scale: 3.6 }),
+  Object.freeze({ type: 'igapo_coconut_palm', tint: 0xacc79c, scale: 3.3 }),
+]);
+
+const WET_TREE_PALETTE = Object.freeze([
+  Object.freeze({ type: 'igapo_emergent_tree', tint: 0x96b48d, scale: 4 }),
+  Object.freeze({ type: 'igapo_palm', tint: 0xacc79c, scale: 3.5 }),
+  Object.freeze({ type: 'igapo_coconut_palm', tint: 0xa4bf96, scale: 3.2 }),
+  Object.freeze({ type: 'igapo_broad_tree', tint: 0xafca9d, scale: 3.7 }),
+]);
+
+function noise(x: number, y: number, salt: string): number {
+  const text = `${salt}|${x}|${y}`;
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) / 0xffffffff;
+}
+
+/** Decorrelation pass for scenery: the raw FNV hash produced visible columns. */
+function detailNoise(x: number, y: number, salt: string): number {
+  const text = `${salt}|${y}|${x}`;
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  hash ^= hash >>> 16;
+  hash = Math.imul(hash, 0x7feb352d);
+  hash ^= hash >>> 15;
+  hash = Math.imul(hash, 0x846ca68b);
+  hash ^= hash >>> 16;
+  return (hash >>> 0) / 0xffffffff;
+}
+
+function insideMass(
+  cx: number, cy: number, rx: number, ry: number, x: number, y: number,
+): boolean {
+  const dx = (x - cx) / rx;
+  const dy = (y - cy) / ry;
+  return dx * dx + dy * dy <= 1 + (noise(x, y, 'edge') - 0.5) * 0.34;
+}
+
 function createIgapoMap(): number[][] {
   const map: number[][] = Array.from({ length: IGAPO_MAP_HEIGHT }, (_, y) =>
     Array.from({ length: IGAPO_MAP_WIDTH }, (_, x) =>
       x === 0 || y === 0 || x === IGAPO_MAP_WIDTH - 1 || y === IGAPO_MAP_HEIGHT - 1
         ? WALL : WATER));
-  const fill = (x1: number, y1: number, x2: number, y2: number, tile = FLOOR): void => {
-    for (let y = y1; y <= y2; y += 1) {
-      for (let x = x1; x <= x2; x += 1) map[y][x] = tile;
+  for (let y = 1; y < IGAPO_MAP_HEIGHT - 1; y += 1) {
+    for (let x = 1; x < IGAPO_MAP_WIDTH - 1; x += 1) {
+      if (IGAPO_MASSES.some(([cx, cy, rx, ry]) => insideMass(cx, cy, rx, ry, x, y))) {
+        map[y][x] = FLOOR;
+      }
+    }
+  }
+  const stamp = (x: number, y: number): void => {
+    for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
+      for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
+        const nextX = x + offsetX;
+        const nextY = y + offsetY;
+        if (nextX > 0 && nextY > 0 &&
+          nextX < IGAPO_MAP_WIDTH - 1 && nextY < IGAPO_MAP_HEIGHT - 1) {
+          map[nextY][nextX] = FLOOR;
+        }
+      }
     }
   };
-
-  // Introduction: a broad safe bank narrows into the first flooded passage.
-  fill(2, 13, 16, 21);
-  fill(14, 15, 30, 18);
-
-  // Exploration: northern canopy and southern reed bed form optional loops.
-  fill(26, 9, 30, 16);
-  fill(24, 6, 44, 11);
-  fill(42, 9, 47, 16);
-  fill(31, 17, 35, 23);
-  fill(32, 21, 48, 25);
-  fill(46, 17, 51, 23);
-
-  // The paths merge at the memory island and open into a corrupted estuary.
-  fill(44, 13, 60, 20);
-  fill(56, 8, 70, 17);
-  fill(58, 17, 68, 22);
-  fill(67, 14, 84, 18);
-
-  // Transition: the final bank remains spacious while vegetation closes in.
-  fill(80, 10, 93, 22);
-  fill(76, 17, 83, 21);
-
-  // Emergent trees and exposed roots shape narrow passages without closing them.
-  [
-    [7, 14], [11, 20], [18, 16], [22, 17],
-    [25, 7], [31, 7], [38, 10], [43, 7], [28, 12], [43, 12],
-    [33, 22], [39, 24], [47, 22], [49, 18],
-    [52, 15], [58, 9], [64, 12], [68, 16], [61, 20],
-    [73, 15], [78, 18], [82, 12], [86, 21], [90, 11],
-  ].forEach(([x, y]) => { map[y][x] = ROOT; });
-
+  // Roots enrich the land masses, but the authored travel bands must be
+  // stamped afterwards so a 42x58 player body keeps its full clearance.
+  IGAPO_ROOTS.forEach(([x, y]) => { map[y][x] = ROOT; });
+  IGAPO_CORRIDORS.forEach(points => {
+    for (let index = 0; index + 1 < points.length; index += 1) {
+      const [fromX, fromY] = points[index];
+      const [toX, toY] = points[index + 1];
+      const steps = Math.max(Math.abs(toX - fromX), Math.abs(toY - fromY));
+      for (let step = 0; step <= steps; step += 1) {
+        const ratio = steps === 0 ? 0 : step / steps;
+        stamp(Math.round(fromX + (toX - fromX) * ratio), Math.round(fromY + (toY - fromY) * ratio));
+      }
+    }
+  });
   map[17][4] = SPAWN;
   map[ECO_DAS_AGUAS_INTEREST.y][ECO_DAS_AGUAS_INTEREST.x] = CHEST;
   map[IGAPO_RETURN_ANCHOR.y][IGAPO_RETURN_ANCHOR.x] = EXIT;
   return map;
 }
+
+const ANCHOR_TILES: readonly (readonly [number, number])[] = Object.freeze([
+  [4, 17], [28, 16], [91, 16], [10, 18], [59, 12], [83, 19],
+  [49, 16], [58, 12], [69, 16], [82, 15], [88, 19], [56, 16],
+]);
+
+function nearAnchor(x: number, y: number, radius = 2): boolean {
+  return ANCHOR_TILES.some(([anchorX, anchorY]) =>
+    Math.abs(anchorX - x) <= radius && Math.abs(anchorY - y) <= radius);
+}
+
+function touchesWater(map: readonly (readonly number[])[], x: number, y: number): boolean {
+  for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
+    for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
+      if (map[y + offsetY]?.[x + offsetX] === WATER) return true;
+    }
+  }
+  return false;
+}
+
+function createIgapoDecorations(map: readonly (readonly number[])[]): DecorationPlacement[] {
+  const decorations: DecorationPlacement[] = [];
+  const add = (
+    type: string,
+    x: number,
+    y: number,
+    scale?: number,
+    tint?: number,
+    rotation?: number,
+  ): void => {
+    decorations.push({
+      type, x, y,
+      ...(scale !== undefined ? { scale } : {}),
+      ...(tint !== undefined ? { tint } : {}),
+      ...(rotation !== undefined ? { rotation } : {}),
+    });
+  };
+  const addTree = (
+    palette: readonly { readonly type: string; readonly tint: number; readonly scale: number }[],
+    x: number,
+    y: number,
+  ): void => {
+    const choice = palette[Math.floor(detailNoise(x, y, 'tree-kind') * palette.length)];
+    if (detailNoise(x, y, 'shadow') < 0.55) {
+      add('igapo_canopy_shadow', x, y, 3.2 + detailNoise(x, y, 'shadow-scale') * 1.2, 0x0c211c,
+        (detailNoise(x, y, 'shadow-angle') - 0.5) * 0.5);
+    }
+    add(choice.type, x, y, choice.scale * (0.9 + detailNoise(x, y, 'tree-scale') * 0.24), choice.tint,
+      (detailNoise(x, y, 'tree-angle') - 0.5) * 0.16);
+  };
+
+  for (let y = 1; y < IGAPO_MAP_HEIGHT - 1; y += 1) {
+    for (let x = 1; x < IGAPO_MAP_WIDTH - 1; x += 1) {
+      if (nearAnchor(x, y)) continue;
+      const tile = map[y][x];
+      const roll = detailNoise(x, y, 'scenery');
+      if (tile === WATER) {
+        if (roll < 0.06) addTree(WET_TREE_PALETTE, x, y);
+        else if (roll < 0.1) add('igapo_reeds', x, y, 1.8 + detailNoise(x, y, 'reed') * 0.7, 0x9fc4a2);
+        else if (roll < 0.125) add('igapo_shrub', x, y, 1.7 + detailNoise(x, y, 'shrub') * 0.5, 0xa8c9a0);
+        else if (roll < 0.14) add('igapo_stone', x, y, 1.8 + detailNoise(x, y, 'stone') * 0.7, 0x8fa898);
+      } else if (tile === FLOOR) {
+        if (touchesWater(map, x, y)) {
+          if (roll < 0.1) add('igapo_reeds', x, y, 2 + detailNoise(x, y, 'reed') * 0.8, 0xa8cba2);
+          else if (roll < 0.18) add('igapo_shrub', x, y, 1.8 + detailNoise(x, y, 'shrub') * 0.6, 0xb0cfa0);
+          else if (roll < 0.24) add('igapo_stone', x, y, 1.8 + detailNoise(x, y, 'stone') * 0.9, 0x91a894);
+          else if (roll < 0.27) add('igapo_pebble', x, y, 1 + detailNoise(x, y, 'pebble') * 0.5, 0x9aae96);
+          else if (roll < 0.36) addTree(TREE_PALETTE, x, y);
+        } else if (roll < 0.07) {
+          addTree(TREE_PALETTE, x, y);
+        } else if (roll < 0.095) {
+          add('igapo_fruit_tree', x, y, 2.2 + detailNoise(x, y, 'fruit') * 0.5, 0xc8d9a8,
+            (detailNoise(x, y, 'fruit-angle') - 0.5) * 0.2);
+        } else if (roll < 0.115) {
+          add('igapo_shrub', x, y, 1.9 + detailNoise(x, y, 'shrub') * 0.5, 0xaecb9e);
+        } else if (roll < 0.13) {
+          add('igapo_mud', x, y, 1.4 + detailNoise(x, y, 'mud') * 0.8, 0x8b7c58,
+            (detailNoise(x, y, 'mud-angle') - 0.5) * 0.4);
+        }
+      }
+    }
+  }
+
+  // Far canopy closes the northern and southern horizon without hiding routes.
+  for (let x = 2; x < IGAPO_MAP_WIDTH - 2; x += 1) {
+    if (detailNoise(x, 2, 'canopy') < 0.06) {
+      add('igapo_canopy_high', x, 2, 4.2 + detailNoise(x, 2, 'canopy-scale') * 1.1, 0x83ad8f);
+    }
+    if (detailNoise(x, IGAPO_MAP_HEIGHT - 3, 'canopy') < 0.06) {
+      add('igapo_canopy_high', x, IGAPO_MAP_HEIGHT - 3, 4.2 + detailNoise(x, 5, 'canopy-scale') * 1.1,
+        0x7fa78b);
+    }
+  }
+  return decorations;
+}
+
+const IGAPO_LEVEL_MAP = createIgapoMap();
+const IGAPO_LEVEL_DECORATIONS = createIgapoDecorations(IGAPO_LEVEL_MAP);
 
 export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
   manifest: Object.freeze({
@@ -111,6 +284,11 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
       id: IGAPO_RETURN_EXIT_ID,
       anchor: Object.freeze({ kind: 'tile' as const, ...IGAPO_RETURN_ANCHOR }),
       targetStageId: CORACAO_CORROMPIDO_STAGE_ID,
+      condition: Object.freeze({
+        type: 'flag.equals' as const,
+        flag: IGAPO_CORRUPTION_FOUND_FLAG,
+        value: true,
+      }),
     })]),
     entryDialogueId: ECO_DAS_AGUAS_DIALOGUE_ID,
     completionMissionId: IGAPO_DISCOVERY_MISSION_ID,
@@ -184,21 +362,14 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
     fogColor: 0x071b1d,
     fogDensity: 0.48,
     lightIntensity: 0.48,
-    tileMap: createIgapoMap(),
+    tileMap: IGAPO_LEVEL_MAP,
     enemies: [],
     items: [
       { type: 'health_herb', x: 10, y: 18, quantity: 1 },
       { type: 'key', x: 59, y: 12, quantity: 1 },
       { type: 'mana_shard', x: 83, y: 19, quantity: 1 },
     ],
-    decorations: [
-      { type: 'igapo_emergent_tree', x: 25, y: 7, scale: 1.2, tint: 0x315c42 },
-      { type: 'igapo_fallen_trunk', x: 42, y: 10, rotation: 0.08, tint: 0x594735 },
-      { type: 'igapo_memory_reeds', x: 28, y: 16, scale: 0.9, tint: 0x78b9a5 },
-      { type: 'igapo_emergent_tree', x: 64, y: 12, scale: 1.25, tint: 0x315c42 },
-      { type: 'igapo_fallen_trunk', x: 78, y: 18, rotation: -0.06, tint: 0x4f4033 },
-      { type: 'igapo_memory_reeds', x: 86, y: 21, scale: 1, tint: 0x5e8f7f },
-    ],
+    decorations: IGAPO_LEVEL_DECORATIONS,
     parTime: 420,
     difficulty: 3,
   }),
@@ -312,4 +483,3 @@ export const IGAPO_DAS_MEMORIAS_STAGE: StageModule = Object.freeze({
     ]),
   })]),
 });
-

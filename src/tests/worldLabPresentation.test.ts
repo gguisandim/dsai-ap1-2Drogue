@@ -67,7 +67,7 @@ describe('World Lab visual presentation inspection', () => {
         author: 'Shade', license: 'CC0',
       }),
     ]));
-    expect(visual?.decorations).toHaveLength(3);
+    expect(visual?.decorations).toHaveLength(15);
     expect(visual?.npcSprites?.[0]).toMatchObject({
       logicalId: 'environment.memory-vestige', textureKey: 'puny_mage',
       animations: ['puny_mage_idle'],
@@ -93,7 +93,12 @@ describe('World Lab visual presentation inspection', () => {
     expect(visual?.tiles?.find(tile => tile.logicalId === 'water')?.frame).toBe(295);
     expect(visual?.environment?.fog?.opacity).toBe(0.12);
     expect(visual?.decorations?.map(decoration => decoration.id).sort())
-      .toEqual(['igapo_sombrio_dead_tree', 'igapo_sombrio_reeds', 'igapo_sombrio_roots']);
+      .toEqual(expect.arrayContaining([
+        'igapo_sombrio_dead_tree', 'igapo_sombrio_reeds', 'igapo_sombrio_stone',
+      ]));
+    // Only decorations actually placed by the stage are resolved; the two
+    // natural ids that share a sombrio override collapse into one entry.
+    expect(visual?.decorations?.length).toBe(14);
     expect(document.stages.some(item => item.stageId === IGAPO_DAS_MEMORIAS_STAGE_ID)).toBe(true);
   });
 

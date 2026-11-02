@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import {
   PUNY_ANIMATIONS,
   PUNY_ASSET_ORIGINS,
@@ -23,6 +24,54 @@ function readPngDimensions(file: string): { width: number; height: number } {
 
 function sha256(file: string): string {
   return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+}
+
+/** Reads an 8-bit RGBA PNG written by the deterministic derived-sheet generator. */
+function readRgba(file: string): { width: number; height: number; pixels: Buffer } {
+  const buffer = fs.readFileSync(file);
+  const width = buffer.readUInt32BE(16);
+  const height = buffer.readUInt32BE(20);
+  const chunks: Buffer[] = [];
+  let offset = 8;
+  while (offset < buffer.length) {
+    const length = buffer.readUInt32BE(offset);
+    const type = buffer.subarray(offset + 4, offset + 8).toString('ascii');
+    if (type === 'IDAT') chunks.push(buffer.subarray(offset + 8, offset + 8 + length));
+    if (type === 'IEND') break;
+    offset += 12 + length;
+  }
+  const raw = zlib.inflateSync(Buffer.concat(chunks));
+  const stride = width * 4;
+  const pixels = Buffer.alloc(width * height * 4);
+  for (let y = 0; y < height; y += 1) {
+    expect(raw[y * (stride + 1)]).toBe(0);
+    raw.copy(pixels, y * stride, y * (stride + 1) + 1, (y + 1) * (stride + 1));
+  }
+  return { width, height, pixels };
+}
+
+function alphaBounds(
+  image: { width: number; height: number; pixels: Buffer },
+  originX: number,
+  originY: number,
+  width: number,
+  height: number,
+): { minX: number; minY: number; maxX: number; maxY: number } {
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const alpha = image.pixels[((originY + y) * image.width + originX + x) * 4 + 3];
+      if (alpha <= 8) continue;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+  return { minX, minY, maxX, maxY };
 }
 
 describe('Puny asset pipeline', () => {
@@ -59,8 +108,8 @@ describe('Puny asset pipeline', () => {
       }
     });
     const expectedDerived = {
-      'puny-warrior-red-128.png': 'dd059ea7631c85590447ff0e6335a0ca7a941e2deab221e0a03ca1dd453acc43',
-      'puny-archer-purple-128.png': '41b682336ef3484240640d328656a5f192c60e4dd636fbeb9577a173fbbf8c0b',
+      'puny-warrior-red-128.png': '7c37bdce12b6eca0076a6b456daeac0ff7557e275254bd5c1456a169a8c10816',
+      'puny-archer-purple-128.png': '6cea72e2f9df9cb0e00a8da7b44363d32a6478e9bdd5e4af81798794489eccc1',
     };
     Object.entries(expectedDerived).forEach(([file, hash]) => {
       expect(sha256(path.join(punyRoot, file))).toBe(hash);
@@ -70,6 +119,36 @@ describe('Puny asset pipeline', () => {
         asset.sourceFileId === source.id && asset.modifications.every(item => item.includes('without pixel')));
       if (!incorporated) return;
       expect(sha256(path.join(punyRoot, incorporated.fileName))).toBe(source.sha256);
+    });
+  });
+
+  it('keeps every derived frame inside its own cell without neighbouring fragments', () => {
+    const script = path.join(root, 'scripts', 'generate-puny-character-sheets.mjs');
+    expect(fs.existsSync(script)).toBe(true);
+    ['puny-warrior-red-128.png', 'puny-archer-purple-128.png'].forEach(file => {
+      const image = readRgba(path.join(punyRoot, file));
+      expect(image.width).toBe(512);
+      expect(image.height).toBe(342);
+      const rowBounds: Array<{ minX: number; maxX: number }> = [];
+      for (let row = 0; row < 3; row += 1) {
+        for (let column = 0; column < 4; column += 1) {
+          const bounds = alphaBounds(image, column * 128, row * 114, 128, 114);
+          // A single character never reaches the cell border; the old manual
+          // derivation filled an entire cell and bled into its neighbours.
+          expect(bounds.minX).toBeGreaterThan(4);
+          expect(bounds.maxX).toBeLessThan(123);
+          expect(bounds.minY).toBeGreaterThanOrEqual(0);
+          expect(bounds.maxY).toBeLessThanOrEqual(113);
+          expect(bounds.maxX - bounds.minX).toBeLessThan(100);
+          expect(bounds.maxY - bounds.minY).toBeGreaterThan(60);
+          rowBounds.push({ minX: bounds.minX, maxX: bounds.maxX });
+        }
+      }
+      // Repeated walk pose frames keep the same horizontal silhouette.
+      expect(Math.max(...rowBounds.slice(0, 4).map(item => item.minX)) -
+        Math.min(...rowBounds.slice(0, 4).map(item => item.minX))).toBeLessThanOrEqual(1);
+      expect(Math.max(...rowBounds.slice(0, 4).map(item => item.maxX)) -
+        Math.min(...rowBounds.slice(0, 4).map(item => item.maxX))).toBeLessThanOrEqual(6);
     });
   });
 

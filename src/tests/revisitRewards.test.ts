@@ -23,7 +23,23 @@ function create() {
   return result.value;
 }
 
+function grantNarrativeAccess(binder: ReturnType<typeof create>['binder']): void {
+  const inspected = binder.inspect();
+  if (!inspected.ok) throw inspected.error;
+  const state = binder.state();
+  binder.setAccess({
+    eligibleEdgeIds: state.graph.edges
+      .filter(edge => edge.sourceNodeId === state.currentNodeId)
+      .map(edge => edge.id)
+      .sort(),
+    unlockedStageExitIds: inspected.value.navigation.snapshot.destinations
+      .map(destination => destination.stageExitId)
+      .sort(),
+  });
+}
+
 function navigate(binder: ReturnType<typeof create>['binder'], connectionId: string) {
+  grantNarrativeAccess(binder);
   const prepared = binder.prepare(connectionId);
   if (!prepared.ok) throw new Error(JSON.stringify(prepared.error));
   const confirmed = binder.confirm(prepared.value.preparation.preparationId);
@@ -32,6 +48,7 @@ function navigate(binder: ReturnType<typeof create>['binder'], connectionId: str
 }
 
 function navigateInternal(binder: ReturnType<typeof create>['binder']) {
+  grantNarrativeAccess(binder);
   const inspected = binder.inspect();
   if (!inspected.ok) throw inspected.error;
   const macroEdgeIds = new Set(inspected.value.choices.flatMap(choice =>

@@ -112,10 +112,10 @@ export const PUNY_SOURCE_FILES: readonly PunySourceFile[] = Object.freeze([
 ]);
 
 const DERIVED_MODIFICATIONS = Object.freeze([
-  'Cropped the down-facing frames from the walk, attack and hurt rows.',
+  'Sampled the three down-facing poses (columns 0-2) from the walk, attack and hurt rows.',
   'Repeated each 3-frame cycle as 0,1,2,1 to fill the existing 4-frame contract.',
-  'Scaled each frame by its alpha bounding box to fit a 128x114 canvas.',
-  'Preserved transparency and used nearest-neighbor scaling.',
+  'Applied one fixed 21x19 source crop and a uniform 6x nearest-neighbor scale to every pose.',
+  'Composed each pose inside its own 128x114 cell without sampling neighbouring frames.',
 ]);
 
 export const PUNY_TEXTURE_ASSETS: readonly PunyTextureAsset[] = Object.freeze([

@@ -1,6 +1,7 @@
 import { WorldLabMacroDataService } from '../devtools/world-lab';
 import {
   ECO_DAS_AGUAS_NPC_ID,
+  IGAPO_DAS_MEMORIAS_STAGE,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
 } from '../stages';
 
@@ -20,7 +21,16 @@ describe('World Lab POI projection', () => {
       x: 28,
       y: 16,
     }));
-    expect(igapo?.markers.filter(marker => marker.kind === 'decoration')).toHaveLength(6);
+    const decorationMarkers = igapo?.markers.filter(marker => marker.kind === 'decoration') ?? [];
+    const authoredDecorations = IGAPO_DAS_MEMORIAS_STAGE.authoredLevel?.decorations ?? [];
+    expect(decorationMarkers).toHaveLength(authoredDecorations.length);
+    expect(decorationMarkers.length).toBeGreaterThan(400);
+    expect([...new Set(authoredDecorations.map(decoration => decoration.type))])
+      .toEqual(expect.arrayContaining([
+        'igapo_emergent_tree',
+        'igapo_reeds',
+        'igapo_coconut_palm',
+      ]));
     expect(igapo?.visualPresentation).toMatchObject({
       themeId: 'theme.aguas.igapo',
       tilesetId: 'tileset.aguas.igapo-technical',

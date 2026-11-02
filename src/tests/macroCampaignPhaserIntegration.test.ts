@@ -72,6 +72,24 @@ function prepareTransitionScene(state: SceneState): void {
   state.showChapterTitle = jest.fn();
 }
 
+function grantNarrativeAccess(state: SceneState): void {
+  const inspected = state.campaignRouter.inspect();
+  if (!inspected.ok) throw inspected.error;
+  const campaignState = state.campaignRouter.state();
+  state.campaignRouter.setAccess({
+    eligibleEdgeIds: campaignState.graph.edges
+      .filter((edge: { sourceNodeId: string }) => edge.sourceNodeId === campaignState.currentNodeId)
+      .map((edge: { id: string }) => edge.id)
+      .sort(),
+    unlockedStageExitIds: inspected.value.snapshot.destinations
+      .map((destination: { stageExitId: string }) => destination.stageExitId)
+      .sort(),
+  });
+  const refreshed = state.campaignRouter.inspect();
+  if (!refreshed.ok) throw refreshed.error;
+  state.campaignNavigation = refreshed.value;
+}
+
 describe('GameScene macro campaign vertical slice', () => {
   afterEach(() => jest.restoreAllMocks());
 
@@ -139,12 +157,14 @@ describe('GameScene macro campaign vertical slice', () => {
     expect(state.campaignRouter.state().activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_WATERS_CONTEXT);
     expect(state.spawnEnemiesAndItems).toHaveBeenCalledWith(state.currentLevel);
 
+    grantNarrativeAccess(state);
     const corruptedExit = state.campaignNavigation.snapshot.destinations[0];
     state.handleCampaignExitProximity(corruptedExit.physicalExitId, true, true);
     const corruptedNodeId = state.campaignRouter.state().currentNodeId;
     expect(state.currentLevel.id).toBe(CORACAO_CORROMPIDO_STAGE_ID);
     expect(state.campaignRouter.state().activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_WATERS_CONTEXT);
 
+    grantNarrativeAccess(state);
     const returnExit = state.campaignNavigation.snapshot.destinations[0];
     state.handleCampaignExitProximity(returnExit.physicalExitId, true, true);
     expect(state.currentLevel.id).toBe('verse_01_atrium');
@@ -176,6 +196,11 @@ describe('GameScene macro campaign vertical slice', () => {
         ok: false,
         error: { code: 'persistence-failed', message: 'fixture', recovery: 'rolled-back' },
       })),
+    };
+    state.campaignNavigation = {
+      snapshot: {
+        destinations: [{ physicalExitId: 'physical.macro', stageExitId: 'exit.test.macro' }],
+      },
     };
 
     state.navigateCampaignExit('physical.macro');
@@ -280,13 +305,17 @@ describe('GameScene macro campaign vertical slice', () => {
     if (!loaded.ok) throw loaded.error;
     const { state } = sceneShell();
     const visual = () => ({
+      x: 0,
+      y: 0,
       setTint: jest.fn().mockReturnThis(),
+      clearTint: jest.fn().mockReturnThis(),
       setAlpha: jest.fn().mockReturnThis(),
       setDepth: jest.fn().mockReturnThis(),
       setScale: jest.fn().mockReturnThis(),
       setRotation: jest.fn().mockReturnThis(),
       setScrollFactor: jest.fn().mockReturnThis(),
       setDisplaySize: jest.fn().mockReturnThis(),
+      once: jest.fn().mockReturnThis(),
       refreshBody: jest.fn().mockReturnThis(),
     });
     state.textures = {
@@ -294,7 +323,13 @@ describe('GameScene macro campaign vertical slice', () => {
       getFrame: jest.fn(() => ({})),
     };
     state.anims = { exists: jest.fn(() => true) };
-    state.add = { image: jest.fn(() => visual()), rectangle: jest.fn(() => visual()) };
+    state.add = {
+      image: jest.fn(() => visual()),
+      rectangle: jest.fn(() => visual()),
+      circle: jest.fn(() => visual()),
+      ellipse: jest.fn(() => visual()),
+    };
+    state.tweens = { add: jest.fn(() => ({ stop: jest.fn(), remove: jest.fn() })) };
     state.cameras = { main: { width: 1280, height: 720 } };
     state.wallTiles = { create: jest.fn(() => visual()) };
     state.macroLoadedStage = loaded.value;
