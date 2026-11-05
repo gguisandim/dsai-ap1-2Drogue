@@ -9,7 +9,13 @@ import type {
 } from '../../stages';
 import type { ChapterTemplate } from '../../examples/chapter-template';
 
-export type ChapterCommandName = 'create' | 'validate' | 'inspect' | 'preview' | 'help';
+export type ChapterCommandName =
+  | 'create'
+  | 'validate'
+  | 'inspect'
+  | 'preview'
+  | 'capabilities'
+  | 'help';
 
 export interface ChapterCliArguments {
   readonly command: ChapterCommandName;

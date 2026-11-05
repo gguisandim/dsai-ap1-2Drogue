@@ -1,7 +1,9 @@
 import { usageError } from './errors';
 import type { ChapterCliArguments, ChapterCommandName } from './types';
 
-const COMMANDS = new Set<ChapterCommandName>(['create', 'validate', 'inspect', 'preview']);
+const COMMANDS = new Set<ChapterCommandName>([
+  'create', 'validate', 'inspect', 'preview', 'capabilities',
+]);
 
 function requireValue(args: readonly string[], index: number, option: string): string {
   const value = args[index + 1];
@@ -36,8 +38,11 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
     const argument = rest[index];
     if (argument.startsWith('-')) {
       if (argument === '--json') {
-        if (command !== 'inspect') {
-          throw usageError('usage.unsupported-option', '--json is only supported by inspect.');
+        if (command !== 'inspect' && command !== 'capabilities') {
+          throw usageError(
+            'usage.unsupported-option',
+            '--json is only supported by inspect and capabilities.',
+          );
         }
         json = true;
         continue;
@@ -83,6 +88,16 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
     slug = argument;
   }
 
+  if (command === 'capabilities') {
+    if (slug !== undefined) {
+      throw usageError(
+        'usage.unexpected-argument',
+        `Command capabilities does not accept a chapter slug: ${slug}.`,
+      );
+    }
+    return Object.freeze({ command, json, visual: false, chaptersDir });
+  }
+
   if (slug === undefined) {
     throw usageError('usage.missing-chapter', `Command ${command} requires a chapter slug.`);
   }
@@ -102,6 +117,7 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
 export const CHAPTER_CLI_HELP = `Umbra Trail chapter authoring CLI
 
 Usage:
+  npm run chapter -- capabilities [--json]
   npm run chapter -- create <slug> [--title <text>] [--namespace <id>] [--revision <n>]
   npm run chapter -- validate <slug>
   npm run chapter -- inspect <slug> [--json]
@@ -109,7 +125,7 @@ Usage:
 
 Options:
   --chapters-dir <path>  Authoring root inside src/ (default: src/examples/chapters)
-  --json                 JSON output for inspect
+  --json                 JSON output for inspect and capabilities
   --visual               Prepare the Phaser browser preview URL (preview only)
   --help, -h             Show this help
 

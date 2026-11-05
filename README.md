@@ -118,6 +118,8 @@ ou pelo seletor **Variante** na área **Fases** do World Lab.
 ### Autoria independente e preview visual
 
 ```sh
+npm run chapter -- capabilities
+npm run chapter -- capabilities --json
 npm run chapter -- create minha-fase
 npm run chapter -- validate minha-fase
 npm run chapter -- inspect minha-fase
@@ -125,6 +127,9 @@ npm run chapter -- preview minha-fase
 npm run chapter -- preview minha-fase --visual
 npm run dev
 ```
+
+O guia para agentes externos, com o fluxo de autoria, capacidades do motor e
+erros comuns, está em [`docs/stage-authoring.md`](./docs/stage-authoring.md).
 
 O preview visual usa a URL `http://localhost:5173/?chapterPreview=minha-fase`. A
 `BootScene` descobre somente capítulos de `src/examples/chapters/*/index.ts` por

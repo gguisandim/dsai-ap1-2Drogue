@@ -3,6 +3,10 @@ import type {
   StageRuntimeCapability,
   StageRuntimeCapabilityProfile,
 } from '../contracts';
+import {
+  STAGE_ENEMY_ARCHETYPES,
+  STAGE_LOGICAL_TILE_IDS,
+} from './StageAuthoringVocabulary';
 
 function capability(
   id: string,
@@ -12,9 +16,7 @@ function capability(
   return Object.freeze({ id, category, version: 1, status });
 }
 
-const TILE_NAMES = Object.freeze([
-  'floor', 'wall', 'pillar', 'water', 'lava', 'exit', 'locked-door', 'chest', 'spawn', 'boss',
-]);
+const TILE_NAMES = STAGE_LOGICAL_TILE_IDS;
 
 const BIOMES = Object.freeze([
   'cathedral', 'inferno', 'celestial', 'streets', 'ruins',
@@ -42,7 +44,7 @@ export const DEFAULT_STAGE_RUNTIME_CAPABILITIES: StageRuntimeCapabilityProfile =
     capability('theme.legacy.default', 'theme'),
     capability('theme.aguas.igapo', 'theme'),
     capability('theme.aguas.igapo-sombrio', 'theme'),
-    ...['affinity', 'applaud', 'fortitudo', 'ranged', 'boss', 'miniboss']
+    ...STAGE_ENEMY_ARCHETYPES
       .map(name => capability(`enemy.${name}`, 'enemy')),
     capability('encounter.declarative', 'encounter'),
     capability('enemy.visual-variant', 'enemy'),

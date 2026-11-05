@@ -28,17 +28,20 @@ import type {
   StageVisualThemeDefinition,
   StageDecorationVisualDefinition,
 } from '../contracts';
+import {
+  STAGE_AUDIO_EVENTS,
+  STAGE_EFFECT_KINDS,
+  STAGE_ENEMY_ARCHETYPES,
+  STAGE_LOGICAL_TILE_IDS,
+  STAGE_SOUND_WAVEFORMS,
+  STAGE_VISUAL_LAYERS,
+  STAGE_VISUAL_PERSPECTIVES,
+} from './StageAuthoringVocabulary';
 
 const STABLE_ID = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 const TEXTURE_KEY = /^[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*$/;
 
-export const STAGE_LOGICAL_TILE_IDS: readonly StageLogicalTileId[] = Object.freeze([
-  'floor', 'wall', 'pillar', 'water', 'lava', 'exit', 'locked-door', 'chest', 'spawn', 'boss',
-]);
-
-export const STAGE_ENEMY_ARCHETYPES: readonly StageEnemyArchetype[] = Object.freeze([
-  'affinity', 'applaud', 'fortitudo', 'ranged', 'boss', 'miniboss',
-]);
+export { STAGE_ENEMY_ARCHETYPES, STAGE_LOGICAL_TILE_IDS };
 
 const LEGACY_TEXTURES: readonly StageVisualTextureDefinition[] = Object.freeze([
   Object.freeze({ id: 'texture.legacy.floor', textureKey: 'tile_floor' }),
@@ -293,8 +296,7 @@ export class StageVisualRegistry {
         [...path, 'id'], stageId, effect.id,
       ));
       seen.add(effect.id);
-      if (!['fireflies', 'mist', 'pulse', 'spirits', 'local-light', 'water-shimmer', 'foliage-sway']
-        .includes(effect.kind)) diagnostics.push(this.diagnostic(
+      if (!STAGE_EFFECT_KINDS.includes(effect.kind)) diagnostics.push(this.diagnostic(
         'stage.visual.effect.kind-invalid', `Visual effect kind is unsupported: ${effect.kind}.`,
         [...path, 'kind'], stageId, effect.id,
       ));
@@ -365,7 +367,7 @@ export class StageVisualRegistry {
       ));
     });
     if (value.perspective !== undefined &&
-      !['top-down', 'neutral', 'side-view', 'isometric'].includes(value.perspective)) {
+      !STAGE_VISUAL_PERSPECTIVES.includes(value.perspective)) {
       diagnostics.push(this.diagnostic(
         'stage.visual.texture.perspective-invalid', 'Texture perspective is unsupported.',
         [...path, 'perspective'], undefined, value.id,
@@ -424,7 +426,7 @@ export class StageVisualRegistry {
       const allowed = new Set(theme.decorationIds ?? []);
       level.decorations.forEach((placement, index) => {
         const placementPath = ['level', 'decorations', index] as const;
-        if (placement.layer !== undefined && !['background', 'terrain', 'foreground'].includes(placement.layer)) {
+        if (placement.layer !== undefined && !STAGE_VISUAL_LAYERS.includes(placement.layer)) {
           diagnostics.push(this.diagnostic(
             'stage.visual.decoration.layer-invalid', 'Decoration placement layer is invalid.',
             [...placementPath, 'layer'], manifest.id, placement.type,
@@ -688,7 +690,7 @@ export class StageVisualRegistry {
       'stage.visual.decoration.texture-missing', `Decoration texture is not registered: ${value.textureId}.`,
       [...path, 'textureId'], undefined, value.textureId,
     ));
-    if (!['background', 'terrain', 'foreground'].includes(value.layer)) diagnostics.push(this.diagnostic(
+    if (!STAGE_VISUAL_LAYERS.includes(value.layer)) diagnostics.push(this.diagnostic(
       'stage.visual.decoration.layer-invalid', 'Decoration layer is invalid.', [...path, 'layer'], undefined, value.id,
     ));
     if (!Number.isFinite(value.depth)) diagnostics.push(this.diagnostic(
@@ -745,7 +747,7 @@ export class StageVisualRegistry {
 
   private validateSound(registered: Registered<StageSoundDefinition>, diagnostics: StageDiagnostic[]): void {
     const { value, path } = registered;
-    if (value.kind !== 'synth' || !['sine', 'triangle', 'square', 'sawtooth'].includes(value.waveform)) {
+    if (value.kind !== 'synth' || !STAGE_SOUND_WAVEFORMS.includes(value.waveform)) {
       diagnostics.push(this.diagnostic(
         'stage.visual.sound.kind-invalid', 'Only local synth sound resources are supported.',
         [...path, 'kind'], undefined, value.id,
@@ -785,7 +787,7 @@ export class StageVisualRegistry {
       ));
     });
     Object.keys(value.eventSoundIds ?? {}).forEach(event => {
-      if (!['stage.entered', 'npc.interacted', 'enemy.defeated'].includes(event)) diagnostics.push(this.diagnostic(
+      if (!STAGE_AUDIO_EVENTS.includes(event as typeof STAGE_AUDIO_EVENTS[number])) diagnostics.push(this.diagnostic(
         'stage.visual.audio-profile.event-invalid', `Audio event is unsupported: ${event}.`,
         [...path, 'eventSoundIds', event], undefined, event,
       ));

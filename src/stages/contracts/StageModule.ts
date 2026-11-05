@@ -75,8 +75,10 @@ export interface MissionObjective {
   readonly optional?: boolean;
 }
 
+export type StageMissionStatus = 'locked' | 'available' | 'active' | 'completed' | 'failed';
+
 export interface MissionState {
-  readonly status: 'locked' | 'available' | 'active' | 'completed' | 'failed';
+  readonly status: StageMissionStatus;
   readonly objectives: Readonly<Record<string, number>>;
 }
 

@@ -9,6 +9,7 @@ import type {
   StageEncounterDefinition,
   StageEncounterEnemyPlacement,
   StageId,
+  StageMissionStatus,
   StageModule,
   StageRuntimeCapabilityProfile,
 } from '../contracts';
@@ -19,24 +20,23 @@ import {
   tileCapabilityId,
 } from './StageRuntimeCapabilities';
 import { StageVisualRegistry } from './StageVisualRegistry';
+import {
+  STAGE_CATALOG_AVAILABILITIES,
+  STAGE_CATALOG_MAXIMUM_PHYSICAL_EXITS,
+  STAGE_CATALOG_MINIMUM_DIFFICULTY,
+  STAGE_CATALOG_PARTICIPATIONS,
+  STAGE_CATALOG_REVISITS,
+  STAGE_CATALOG_ROLES,
+  STAGE_CAPABILITY_CATEGORIES,
+  STAGE_CONDITION_TYPES,
+  STAGE_ENCOUNTER_ENEMY_LEVEL_RANGE,
+  STAGE_ENCOUNTER_MAX_ENEMIES_PER_WAVE,
+  STAGE_ENEMY_ARCHETYPES,
+  STAGE_MISSION_STATUSES,
+} from './StageAuthoringVocabulary';
 
 const STABLE_ID = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/;
 const PRESET_IDS = new Set<string>(GENERATION_PRESETS.map(preset => preset.id));
-const CAPABILITY_CATEGORIES = new Set<StageCapabilityCategory>([
-  'tile', 'theme', 'biome', 'enemy', 'item', 'audio', 'lighting',
-  'effect', 'npc', 'interaction', 'narrative', 'navigation', 'encounter',
-]);
-const ENCOUNTER_ARCHETYPES = new Set([
-  'affinity', 'applaud', 'fortitudo', 'ranged', 'boss', 'miniboss',
-]);
-const CONDITION_TYPES = new Set([
-  'flag.equals', 'mission.status', 'progression.unlocked', 'all', 'any', 'not',
-]);
-const MISSION_STATUSES = new Set(['locked', 'available', 'active', 'completed', 'failed']);
-const CATALOG_AVAILABILITY = new Set(['available', 'planned']);
-const CATALOG_PARTICIPATION = new Set(['candidate', 'individual-only', 'narrative-milestone']);
-const CATALOG_ROLES = new Set(['standard', 'milestone', 'special']);
-const CATALOG_REVISIT = new Set(['forbidden', 'checkpoint', 'repeatable']);
 
 function isStableId(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0 && value === value.trim() && STABLE_ID.test(value);
@@ -466,8 +466,10 @@ export class StageValidator {
     }
     if (encounter.source.kind === 'resolved-level-enemies') {
       if (!Number.isInteger(encounter.source.maximumEnemiesPerWave) ||
-        encounter.source.maximumEnemiesPerWave < 1 || encounter.source.maximumEnemiesPerWave > 64) add(
-        'stage.encounter.wave-size.invalid', 'maximumEnemiesPerWave must be an integer from 1 to 64.',
+        encounter.source.maximumEnemiesPerWave < 1 ||
+        encounter.source.maximumEnemiesPerWave > STAGE_ENCOUNTER_MAX_ENEMIES_PER_WAVE) add(
+        'stage.encounter.wave-size.invalid',
+        `maximumEnemiesPerWave must be an integer from 1 to ${STAGE_ENCOUNTER_MAX_ENEMIES_PER_WAVE}.`,
         ['source', 'maximumEnemiesPerWave'],
       );
       if (!Number.isInteger(encounter.source.delayBeforeWaveMs) || encounter.source.delayBeforeWaveMs < 0) add(
@@ -485,7 +487,7 @@ export class StageValidator {
             'stage.encounter.archetype-mapping-id.invalid', 'Mapped source archetype id must be stable.',
             ['source', 'archetypeMapping', sourceId], sourceId,
           );
-          if (!ENCOUNTER_ARCHETYPES.has(archetype)) add(
+          if (!STAGE_ENEMY_ARCHETYPES.includes(archetype)) add(
             'stage.encounter.archetype.unknown', `Mapped enemy archetype is not supported: ${archetype}.`,
             ['source', 'archetypeMapping', sourceId], String(archetype),
           );
@@ -531,7 +533,7 @@ export class StageValidator {
           add('stage.encounter.enemy.invalid', 'Encounter enemy must be an object.', enemyPath);
           return;
         }
-        if (!ENCOUNTER_ARCHETYPES.has(enemy.type)) add(
+        if (!STAGE_ENEMY_ARCHETYPES.includes(enemy.type)) add(
           'stage.encounter.archetype.unknown', `Enemy archetype is not supported: ${enemy.type}.`,
           [...enemyPath, 'type'], String(enemy.type),
         );
@@ -542,8 +544,12 @@ export class StageValidator {
         if (!Number.isInteger(enemy.x) || enemy.x < 0 || !Number.isInteger(enemy.y) || enemy.y < 0) add(
           'stage.encounter.spawn.invalid', 'Encounter enemy requires non-negative integer tile coordinates.', enemyPath,
         );
-        if (!Number.isInteger(enemy.level) || enemy.level < 1 || enemy.level > 10) add(
-          'stage.encounter.enemy-level.invalid', 'Encounter enemy level must be an integer from 1 to 10.',
+        if (!Number.isInteger(enemy.level) ||
+          enemy.level < STAGE_ENCOUNTER_ENEMY_LEVEL_RANGE.minimum ||
+          enemy.level > STAGE_ENCOUNTER_ENEMY_LEVEL_RANGE.maximum) add(
+          'stage.encounter.enemy-level.invalid',
+          `Encounter enemy level must be an integer from ${STAGE_ENCOUNTER_ENEMY_LEVEL_RANGE.minimum} to ` +
+          `${STAGE_ENCOUNTER_ENEMY_LEVEL_RANGE.maximum}.`,
           [...enemyPath, 'level'],
         );
       });
@@ -570,15 +576,15 @@ export class StageValidator {
       add('stage.catalog.invalid', 'campaignCatalog must be an object.', []);
       return;
     }
-    if (!CATALOG_AVAILABILITY.has(metadata.availability)) add(
+    if (!STAGE_CATALOG_AVAILABILITIES.includes(metadata.availability)) add(
       'stage.catalog.availability.invalid', 'Catalog availability is invalid.', ['availability'],
       String(metadata.availability),
     );
-    if (!CATALOG_PARTICIPATION.has(metadata.participation)) add(
+    if (!STAGE_CATALOG_PARTICIPATIONS.includes(metadata.participation)) add(
       'stage.catalog.participation.invalid', 'Catalog participation is invalid.', ['participation'],
       String(metadata.participation),
     );
-    if (!CATALOG_ROLES.has(metadata.role)) add(
+    if (!STAGE_CATALOG_ROLES.includes(metadata.role)) add(
       'stage.catalog.role.invalid', 'Catalog role is invalid.', ['role'], String(metadata.role),
     );
     if (metadata.participation === 'narrative-milestone' && metadata.role !== 'milestone') add(
@@ -622,18 +628,20 @@ export class StageValidator {
       );
     });
     if (metadata.difficulty !== undefined &&
-      (!Number.isInteger(metadata.difficulty.minimum) || metadata.difficulty.minimum < 1 ||
+      (!Number.isInteger(metadata.difficulty.minimum) ||
+        metadata.difficulty.minimum < STAGE_CATALOG_MINIMUM_DIFFICULTY ||
         !Number.isInteger(metadata.difficulty.maximum) ||
         metadata.difficulty.maximum < metadata.difficulty.minimum)) add(
       'stage.catalog.difficulty.invalid',
       'Catalog difficulty must be a positive inclusive range.', ['difficulty'],
     );
     if (metadata.maximumPhysicalExits !== undefined &&
-      ![1, 2, 3].includes(metadata.maximumPhysicalExits)) add(
+      !STAGE_CATALOG_MAXIMUM_PHYSICAL_EXITS.includes(metadata.maximumPhysicalExits)) add(
       'stage.catalog.exit-capacity.invalid',
-      'maximumPhysicalExits must be 1, 2 or 3.', ['maximumPhysicalExits'],
+      `maximumPhysicalExits must be one of ${STAGE_CATALOG_MAXIMUM_PHYSICAL_EXITS.join(', ')}.`,
+      ['maximumPhysicalExits'],
     );
-    if (metadata.revisit !== undefined && !CATALOG_REVISIT.has(metadata.revisit)) add(
+    if (metadata.revisit !== undefined && !STAGE_CATALOG_REVISITS.includes(metadata.revisit)) add(
       'stage.catalog.revisit.invalid', 'Catalog revisit policy is invalid.', ['revisit'],
       String(metadata.revisit),
     );
@@ -686,7 +694,7 @@ export class StageValidator {
         code: 'capability.id.invalid', severity: 'error', message: 'Capability id must be stable.',
         path: [...itemPath, 'id'], ...(stageId ? { stageId } : {}),
       });
-      if (!CAPABILITY_CATEGORIES.has(category as StageCapabilityCategory)) diagnostics.push({
+      if (!STAGE_CAPABILITY_CATEGORIES.includes(category as StageCapabilityCategory)) diagnostics.push({
         code: 'capability.category.unknown', severity: 'error', message: 'Capability category is unknown.',
         path: [...itemPath, 'category'], ...(stageId ? { stageId } : {}), referenceId: String(category),
       });
@@ -791,7 +799,8 @@ export class StageValidator {
       return;
     }
     const value = condition as Record<string, unknown>;
-    if (typeof value.type !== 'string' || !CONDITION_TYPES.has(value.type)) {
+    if (typeof value.type !== 'string' ||
+      !STAGE_CONDITION_TYPES.includes(value.type as StageCondition['type'])) {
       add('stage.condition.unknown', 'Condition type is unknown.', String(value.type), ['type']);
       return;
     }
@@ -802,7 +811,8 @@ export class StageValidator {
         add('stage.condition.flag.missing', 'Condition references an undeclared stage flag.', value.flag, ['flag']);
       }
     } else if (value.type === 'mission.status') {
-      if (!isStableId(value.missionId) || !MISSION_STATUSES.has(String(value.status))) {
+      if (!isStableId(value.missionId) ||
+        !STAGE_MISSION_STATUSES.includes(String(value.status) as StageMissionStatus)) {
         add('stage.condition.mission.invalid', 'Mission condition is invalid.', String(value.missionId));
       } else if (!missions.has(value.missionId)) {
         add('stage.condition.mission.missing', 'Condition references an undeclared mission.', value.missionId, ['missionId']);

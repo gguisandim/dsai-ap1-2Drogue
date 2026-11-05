@@ -34,6 +34,21 @@ completo.
 
 A arquitetura modular de campanha está especificada em `SPEC/2026-10-27-arquitetura-campanha-modular.md`. Enquanto os contratos nela propostos ainda não existirem em `src/stages/contracts/`, trate-os como plano de migração, não como API disponível.
 
+## Autoria de fases por agentes externos
+
+Agentes como Codex e DeepSeek que forem criar uma fase devem, antes de escrever
+conteúdo:
+
+1. executar `npm run chapter -- capabilities` (ou `--json`) e usar somente IDs
+   publicados com status `supported`;
+2. ler `docs/stage-authoring.md`;
+3. reutilizar os contratos, IDs e recursos existentes em vez de criar catálogos
+   paralelos;
+4. modificar preferencialmente os arquivos do capítulo em edição, respeitando os
+   limites arquiteturais deste arquivo;
+5. executar `npm run chapter -- validate <slug>` e `npm run chapter -- preview
+   <slug>` antes de considerar a fase concluída.
+
 ## Processo de SPEC e rastreabilidade
 
 - Toda mudança comportamental deve ter uma SPEC anterior à implementação.

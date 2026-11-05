@@ -4,6 +4,7 @@ export * from './StagePresentation';
 export * from './StageEncounter';
 export * from './StageCatalog';
 export * from './StageModule';
+export * from './StageAuthoringCapabilities';
 export * from './StageDiagnostic';
 export * from './StageLoad';
 export * from './CampaignGraph';

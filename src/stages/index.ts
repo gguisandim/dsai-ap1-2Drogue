@@ -99,7 +99,20 @@ export type {
   StageLoadRequest,
   StageLoadResult,
   StageManifest,
+  StageMissionStatus,
   StageModule,
+  StageAuthoringCapabilities,
+  StageAuthoringCapabilitiesReport,
+  StageAuthoringCapabilityEntry,
+  StageAuthoringDynamicResource,
+  StageAuthoringEncounterVocabulary,
+  StageAuthoringFlagVocabulary,
+  StageAuthoringLimitation,
+  StageAuthoringNarrativeVocabulary,
+  StageAuthoringProceduralPreset,
+  StageAuthoringRule,
+  StageAuthoringTransitionVocabulary,
+  StageAuthoringVisualVocabulary,
   StageRuntimeCapability,
   StageRuntimeCapabilityProfile,
   StageRuntimeCapabilityStatus,
@@ -169,6 +182,12 @@ export { StageRegistry, StageRegistryError } from './runtime/StageRegistry';
 export type { StageRegistryErrorCode } from './runtime/StageRegistry';
 export { StageValidator } from './runtime/StageValidator';
 export { DEFAULT_STAGE_RUNTIME_CAPABILITIES } from './runtime/StageRuntimeCapabilities';
+export {
+  STAGE_AUTHORING_CAPABILITIES_KIND,
+  STAGE_AUTHORING_CAPABILITIES_REVISION,
+  STAGE_AUTHORING_CAPABILITIES_SCHEMA_VERSION,
+  createStageAuthoringCapabilities,
+} from './runtime/StageAuthoringCapabilities';
 export { CampaignGraphValidator } from './runtime/CampaignGraphValidator';
 export { CampaignGraphGenerator } from './runtime/CampaignGraphGenerator';
 export { CampaignCompositionGraphAdapter } from './runtime/CampaignCompositionGraphAdapter';

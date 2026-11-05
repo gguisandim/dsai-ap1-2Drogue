@@ -70,3 +70,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-11-01 | [Correção jogável e direção de arte do Igapó — Etapa 9.8.1](./2026-11-01-etapa-9-8-1-correcao-jogavel-direcao-arte-igapo.md) |
 | 2026-11-02 | [Redesign visual do Igapó das Memórias](./2026-11-02-redesign-visual-igapo-das-memorias.md) |
 | 2026-11-02 | [Redesign do Igapó: geometria autoral e duas apresentações](./2026-11-02-redesign-igapo-geometria-e-variantes.md) |
+| 2026-11-05 | [Contexto de autoria para agentes externos — Etapa 9.9](./2026-11-05-etapa-9-9-contexto-autoria-agentes-externos.md) |

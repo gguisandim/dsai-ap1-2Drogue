@@ -1,4 +1,6 @@
 import path from 'node:path';
+import { createStageAuthoringCapabilities } from '../../stages';
+import { printCapabilities } from './capabilities';
 import { CHAPTER_CLI_HELP, parseChapterCliArguments } from './args';
 import { ChapterCliError } from './errors';
 import { nodeChapterFileSystem } from './fs';
@@ -41,6 +43,11 @@ export function runChapterCli(
     const parsed = parseChapterCliArguments(argv);
     if (parsed.command === 'help') {
       print(CHAPTER_CLI_HELP);
+      return 0;
+    }
+
+    if (parsed.command === 'capabilities') {
+      printCapabilities(createStageAuthoringCapabilities(), parsed.json, print);
       return 0;
     }
 
