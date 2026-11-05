@@ -7,7 +7,7 @@ import type {
   StageCatalogLoadability,
   StageModule,
 } from '../../stages';
-import type { ChapterTemplate } from '../../examples/chapter-template';
+import type { ChapterTemplate, TemplateGeometryId } from '../../examples/chapter-template';
 
 export type ChapterCommandName =
   | 'create'
@@ -25,6 +25,11 @@ export interface ChapterCliArguments {
   readonly title?: string;
   readonly namespace?: string;
   readonly revision?: number;
+  readonly template?: TemplateGeometryId;
+  readonly seed?: number;
+  readonly width?: number;
+  readonly height?: number;
+  readonly regionCount?: number;
   readonly json: boolean;
   readonly visual: boolean;
   readonly chaptersDir?: string;
@@ -222,6 +227,11 @@ export interface CreateChapterRequest {
   readonly stageTitle: string;
   readonly summary: string;
   readonly revision: number;
+  readonly template?: TemplateGeometryId;
+  readonly seed?: number;
+  readonly width?: number;
+  readonly height?: number;
+  readonly regionCount?: number;
   readonly fileSystem: ChapterFileSystem;
   readonly loadGenerated?: (chapterDir: string) => LoadedChapterModule;
 }

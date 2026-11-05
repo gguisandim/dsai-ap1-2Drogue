@@ -120,7 +120,7 @@ ou pelo seletor **Variante** na área **Fases** do World Lab.
 ```sh
 npm run chapter -- capabilities
 npm run chapter -- capabilities --json
-npm run chapter -- create minha-fase
+npm run chapter -- create minha-fase --template horizontal --seed 42
 npm run chapter -- validate minha-fase
 npm run chapter -- inspect minha-fase
 npm run chapter -- plan validate minha-fase

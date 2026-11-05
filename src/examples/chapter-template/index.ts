@@ -1,4 +1,5 @@
 export * from './ids';
+export * from './geometry';
 export * from './level';
 export * from './presentation';
 export * from './encounter';

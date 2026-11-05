@@ -54,8 +54,12 @@ export function printCreateResult(
   print(`Stage: ${created.template.ids.stageId}`);
   print(`Namespace: ${created.template.namespace}`);
   print(`Revision: ${created.template.chapter.revision}`);
+  print(`Geometry: ${created.template.geometry.template} (seed ${created.template.geometry.seed}, ` +
+    `${created.template.geometry.width}x${created.template.geometry.height}, ` +
+    `${created.template.geometry.regionCount} regions)`);
   print(`Files (${created.files.length}): ${created.files.join(', ')}`);
   print('Next steps:');
+  print(`  npm run chapter -- plan validate ${slug}`);
   print(`  npm run chapter -- validate ${slug}`);
   print(`  npm run chapter -- inspect ${slug}`);
   print(`  npm run chapter -- preview ${slug}`);

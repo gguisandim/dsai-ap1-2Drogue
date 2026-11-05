@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { createStageAuthoringCapabilities } from '../../stages';
+import { createStageAuthoringCapabilities, type StageModule } from '../../stages';
 import { printCapabilities } from './capabilities';
 import { CHAPTER_CLI_HELP, parseChapterCliArguments } from './args';
 import { ChapterCliError } from './errors';
@@ -64,7 +64,15 @@ export function runChapterCli(
       const chapterDir = resolveChapterDir(chaptersRoot, parsed.slug as string);
       const planFile = path.join(chapterDir, STAGE_PLAN_FILENAME);
       const displayPath = path.relative(repoRoot, planFile).split(path.sep).join('/');
-      const report = validateStagePlanFile(planFile, fileSystem, displayPath);
+      let stage: StageModule | undefined;
+      if (fileSystem.exists(path.join(chapterDir, 'index.ts'))) {
+        try {
+          stage = entryFromModule(loadChapterModule(chapterDir)).stages[0];
+        } catch {
+          stage = undefined;
+        }
+      }
+      const report = validateStagePlanFile(planFile, fileSystem, displayPath, stage);
       printPlanValidationReport(report, parsed.json, print);
       return report.ok ? 0 : 1;
     }
@@ -85,6 +93,11 @@ export function runChapterCli(
         stageTitle: `${title} — Aproximação`,
         summary: `Capítulo ${title} gerado a partir do template oficial.`,
         revision: parsed.revision ?? 1,
+        ...(parsed.template !== undefined ? { template: parsed.template } : {}),
+        ...(parsed.seed !== undefined ? { seed: parsed.seed } : {}),
+        ...(parsed.width !== undefined ? { width: parsed.width } : {}),
+        ...(parsed.height !== undefined ? { height: parsed.height } : {}),
+        ...(parsed.regionCount !== undefined ? { regionCount: parsed.regionCount } : {}),
         fileSystem,
         ...(options.loadGenerated ? { loadGenerated: options.loadGenerated } : {}),
       });

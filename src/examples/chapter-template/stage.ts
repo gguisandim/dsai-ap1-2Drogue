@@ -3,8 +3,9 @@ import type {
   StageModule,
 } from '../../stages';
 import type { ChapterTemplateIds } from './ids';
+import type { TemplateGeometry } from './geometry';
 import { createTemplateEncounter } from './encounter';
-import { createTemplateLevel, TEMPLATE_EXIT_POSITION } from './level';
+import { createTemplateLevel } from './level';
 import { createTemplateNarrative } from './narrative';
 import { createTemplatePresentation } from './presentation';
 
@@ -38,13 +39,14 @@ export interface TemplateStageOptions {
   readonly revision: number;
   readonly title: string;
   readonly summary: string;
+  readonly geometry: TemplateGeometry;
 }
 
 export function createTemplateStage(
   ids: ChapterTemplateIds,
   options: TemplateStageOptions,
 ): StageModule {
-  const narrative = createTemplateNarrative(ids);
+  const narrative = createTemplateNarrative(ids, options.geometry);
   return Object.freeze({
     manifest: Object.freeze({
       schemaVersion: 1 as const,
@@ -57,7 +59,7 @@ export function createTemplateStage(
       layout: Object.freeze({ kind: 'authored' as const }),
       exits: Object.freeze([Object.freeze({
         id: ids.exitId,
-        anchor: Object.freeze({ kind: 'tile' as const, ...TEMPLATE_EXIT_POSITION }),
+        anchor: Object.freeze({ kind: 'tile' as const, ...options.geometry.exit }),
         targetStageId: 'campaign.complete' as const,
         condition: Object.freeze({
           type: 'flag.equals' as const,
@@ -77,15 +79,18 @@ export function createTemplateStage(
         difficulty: Object.freeze({ minimum: 1, maximum: 1 }),
         revisit: 'checkpoint' as const,
       }),
-      tags: Object.freeze(['example', 'template', 'authored', 'isolated']),
+      tags: Object.freeze([
+        'example', 'template', 'authored', 'isolated', `template.${options.geometry.template}`,
+      ]),
     }),
     authoredLevel: createTemplateLevel({
       stageId: ids.stageId,
       name: options.title,
       description: options.summary,
       ids,
+      geometry: options.geometry,
     }),
-    encounter: createTemplateEncounter(ids),
+    encounter: createTemplateEncounter(ids, options.geometry),
     narrative: narrative.definition,
     npcs: narrative.npcs,
     dialogues: narrative.dialogues,

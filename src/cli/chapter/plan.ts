@@ -1,6 +1,8 @@
+import { isWalkableTile } from '../../procedural';
 import type {
   StageCapabilityRequirement,
   StageEnemyArchetype,
+  StageModule,
 } from '../../stages';
 import {
   DEFAULT_STAGE_RUNTIME_CAPABILITIES,
@@ -17,9 +19,13 @@ export const STAGE_PLAN_REPORT_KIND = 'umbra.stage-plan.validation' as const;
 export type StagePlanProgression = 'linear' | 'branched';
 export type StagePlanRegionRole = 'start' | 'exploration' | 'combat' | 'objective' | 'exit';
 export type StagePlanInteractionKind = 'npc' | 'dialogue' | 'item';
+export type StagePlanTemplate = 'room' | 'horizontal' | 'branched';
 
 export const STAGE_PLAN_PROGRESSIONS: readonly StagePlanProgression[] = Object.freeze([
   'linear', 'branched',
+]);
+export const STAGE_PLAN_TEMPLATES: readonly StagePlanTemplate[] = Object.freeze([
+  'room', 'horizontal', 'branched',
 ]);
 export const STAGE_PLAN_REGION_ROLES: readonly StagePlanRegionRole[] = Object.freeze([
   'start', 'exploration', 'combat', 'objective', 'exit',
@@ -33,6 +39,8 @@ export interface StagePlanRegion {
   readonly title: string;
   readonly role: StagePlanRegionRole;
   readonly connections: readonly string[];
+  /** Optional tile anchor used to compare the plan with a generated map. */
+  readonly anchor?: Readonly<{ x: number; y: number }>;
 }
 
 export interface StagePlanObjective {
@@ -74,10 +82,12 @@ export interface StagePlan {
   readonly schemaVersion: 1;
   readonly kind: 'umbra.stage-plan';
   readonly id: string;
+  readonly chapterId?: string;
   readonly stageId?: string;
   readonly title: string;
   readonly summary: string;
   readonly progression: StagePlanProgression;
+  readonly template?: StagePlanTemplate;
   readonly visualDirection: string;
   readonly themeCapabilityId?: string;
   readonly startRegionId: string;
@@ -172,6 +182,159 @@ function summaryFrom(raw: Record<string, unknown> | undefined): StagePlanSummary
   });
 }
 
+type PlanDiagnosticAdder = (
+  code: string,
+  severity: CliDiagnosticSeverity,
+  message: string,
+  path: readonly (string | number)[],
+  referenceId?: string,
+) => void;
+
+function regionGraphHasCycle(regions: unknown): boolean {
+  if (!Array.isArray(regions)) return false;
+  const adjacency = new Map<string, Set<string>>();
+  regions.forEach(entry => {
+    if (isObject(entry) && isStableId(entry.id)) adjacency.set(entry.id, new Set());
+  });
+  regions.forEach(entry => {
+    if (!isObject(entry)) return;
+    const id = entry.id;
+    if (!isStableId(id) || !Array.isArray(entry.connections)) return;
+    entry.connections.forEach(connection => {
+      if (!isStableId(connection) || !adjacency.has(connection)) return;
+      adjacency.get(id)!.add(connection);
+      adjacency.get(connection)!.add(id);
+    });
+  });
+  const state = new Map<string, 0 | 1 | 2>();
+  const visit = (node: string, parent: string | undefined): boolean => {
+    state.set(node, 1);
+    for (const next of adjacency.get(node) ?? []) {
+      if (next === parent) continue;
+      const current = state.get(next) ?? 0;
+      if (current === 1) return true;
+      if (current === 0 && visit(next, node)) return true;
+    }
+    state.set(node, 2);
+    return false;
+  };
+  for (const id of adjacency.keys()) {
+    if ((state.get(id) ?? 0) === 0 && visit(id, undefined)) return true;
+  }
+  return false;
+}
+
+function walkableReachable(
+  tileMap: readonly (readonly number[])[],
+  start: Readonly<{ x: number; y: number }>,
+): ReadonlySet<string> {
+  const height = tileMap.length;
+  const width = tileMap[0]?.length ?? 0;
+  const visited = new Set<string>([`${start.x},${start.y}`]);
+  const pending = [start];
+  while (pending.length > 0) {
+    const current = pending.shift()!;
+    for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]] as const) {
+      const next = { x: current.x + dx, y: current.y + dy };
+      const key = `${next.x},${next.y}`;
+      if (next.x < 0 || next.y < 0 || next.x >= width || next.y >= height || visited.has(key)) continue;
+      if (!isWalkableTile(tileMap[next.y][next.x])) continue;
+      visited.add(key);
+      pending.push(next);
+    }
+  }
+  return visited;
+}
+
+/**
+ * Basic plan-versus-stage checks. Only observable geometry and identity are
+ * compared; unimplemented narrative aspects become info diagnostics.
+ */
+function validatePlanAgainstStage(
+  raw: Record<string, unknown>,
+  stage: StageModule,
+  add: PlanDiagnosticAdder,
+): void {
+  if (typeof raw.stageId === 'string' && raw.stageId !== stage.manifest.id) add(
+    'plan.stage-id.mismatch', 'error',
+    `Plan stageId ${raw.stageId} does not match ${stage.manifest.id}.`,
+    ['stageId'], raw.stageId,
+  );
+  if (typeof raw.chapterId === 'string' && raw.chapterId !== stage.manifest.chapterId) add(
+    'plan.chapter-id.mismatch', 'error',
+    `Plan chapterId ${raw.chapterId} does not match ${stage.manifest.chapterId}.`,
+    ['chapterId'], raw.chapterId,
+  );
+  if (raw.template === 'branched' && !regionGraphHasCycle(raw.regions)) add(
+    'plan.template.no-branch', 'error',
+    'Branched plans require at least one cycle in the region graph.',
+    ['regions'],
+  );
+  const level = stage.authoredLevel;
+  if (!level) {
+    add('plan.stage.authored-level-missing', 'warning',
+      'Stage has no authored level; plan geometry cannot be compared yet.', ['authoredLevel']);
+    return;
+  }
+  const map = level.tileMap;
+  const height = map.length;
+  const width = map[0]?.length ?? 0;
+  const spawns: Array<{ x: number; y: number }> = [];
+  map.forEach((row, y) => row.forEach((tile, x) => {
+    if (tile === 8) spawns.push({ x, y });
+  }));
+  const spawn = spawns[0];
+  const reachable = spawn ? walkableReachable(map, spawn) : undefined;
+  const anchors = new Map<string, { x: number; y: number }>();
+  const regions = Array.isArray(raw.regions) ? raw.regions : [];
+  regions.forEach((entry, index) => {
+    if (!isObject(entry) || !isStableId(entry.id)) return;
+    const anchor = entry.anchor;
+    if (anchor === undefined) {
+      add('plan.region.anchor-pending', 'info',
+        `Region ${entry.id} has no anchor yet; add one when the area is implemented.`,
+        ['regions', index, 'anchor'], entry.id);
+      return;
+    }
+    if (!isObject(anchor) || !Number.isInteger(anchor.x) || !Number.isInteger(anchor.y)) return;
+    const point = { x: Number(anchor.x), y: Number(anchor.y) };
+    const key = `${point.x},${point.y}`;
+    if (point.x < 0 || point.y < 0 || point.x >= width || point.y >= height) {
+      add('plan.region.anchor-out-of-bounds', 'error',
+        `Region ${entry.id} anchor is outside the authored map.`,
+        ['regions', index, 'anchor'], entry.id);
+    } else if (!isWalkableTile(map[point.y][point.x])) {
+      add('plan.region.anchor-not-walkable', 'error',
+        `Region ${entry.id} anchor is not walkable.`,
+        ['regions', index, 'anchor'], entry.id);
+    } else if (reachable && !reachable.has(key)) {
+      add('plan.region.anchor-unreachable', 'error',
+        `Region ${entry.id} anchor is unreachable from spawn.`,
+        ['regions', index, 'anchor'], entry.id);
+    } else {
+      anchors.set(entry.id, point);
+    }
+  });
+  const startRegionId = raw.startRegionId;
+  if (isStableId(startRegionId)) {
+    const anchor = anchors.get(startRegionId);
+    if (anchor && map[anchor.y][anchor.x] !== 8) add(
+      'plan.start.anchor-mismatch', 'error',
+      'Start region anchor must use the spawn tile.', ['startRegionId'], startRegionId,
+    );
+  }
+  const exitRegionIds = Array.isArray(raw.exitRegionIds) ? raw.exitRegionIds : [];
+  exitRegionIds.forEach((exitRegionId, index) => {
+    if (!isStableId(exitRegionId)) return;
+    const anchor = anchors.get(exitRegionId);
+    if (anchor && map[anchor.y][anchor.x] !== 5) add(
+      'plan.exit.anchor-mismatch', 'error',
+      'Exit region anchor must use the exit tile.',
+      ['exitRegionIds', index], exitRegionId,
+    );
+  });
+}
+
 function finish(
   planPath: string,
   raw: Record<string, unknown> | undefined,
@@ -199,7 +362,11 @@ function finish(
  * Validates a parsed plan. It is pure and deterministic: graph checks never
  * depend on filesystem order or map iteration order.
  */
-export function validateStagePlan(value: unknown, planPath = STAGE_PLAN_FILENAME): StagePlanValidationReport {
+export function validateStagePlan(
+  value: unknown,
+  planPath = STAGE_PLAN_FILENAME,
+  stage?: StageModule,
+): StagePlanValidationReport {
   const diagnostics: CliDiagnostic[] = [];
   const add = (
     code: string,
@@ -233,8 +400,25 @@ export function validateStagePlan(value: unknown, planPath = STAGE_PLAN_FILENAME
   if (!nonEmpty(raw.visualDirection)) add(
     'plan.visual-direction.required', 'error', 'Plan visualDirection is required.', ['visualDirection'],
   );
+  if (raw.chapterId !== undefined && !isStableId(raw.chapterId)) add(
+    'plan.chapter-id.invalid', 'error', 'Plan chapterId must be a stable identifier.',
+    ['chapterId'], String(raw.chapterId),
+  );
   if (raw.stageId !== undefined && !isStableId(raw.stageId)) add(
     'plan.stage-id.invalid', 'error', 'Plan stageId must be a stable identifier.', ['stageId'], String(raw.stageId),
+  );
+  if (raw.template !== undefined && !STAGE_PLAN_TEMPLATES.includes(raw.template as StagePlanTemplate)) add(
+    'plan.template.invalid', 'error', 'Plan template must be room, horizontal or branched.',
+    ['template'], String(raw.template),
+  );
+  if (raw.template === 'room' || raw.template === 'horizontal') {
+    if (raw.progression !== 'linear') add(
+      'plan.template.progression-mismatch', 'error',
+      `Template ${raw.template} requires linear progression.`, ['progression'], String(raw.progression),
+    );
+  } else if (raw.template === 'branched' && raw.progression !== 'branched') add(
+    'plan.template.progression-mismatch', 'error',
+    'Template branched requires branched progression.', ['progression'], String(raw.progression),
   );
 
   const regionsRaw = Array.isArray(raw.regions) ? raw.regions : [];
@@ -263,6 +447,14 @@ export function validateStagePlan(value: unknown, planPath = STAGE_PLAN_FILENAME
     if (!STAGE_PLAN_REGION_ROLES.includes(entry.role as StagePlanRegionRole)) add(
       'plan.region.role.invalid', 'error', 'Region role is invalid.', [...base, 'role'], String(entry.role),
     );
+    if (entry.anchor !== undefined) {
+      if (!isObject(entry.anchor) ||
+        !Number.isInteger(entry.anchor.x) || !Number.isInteger(entry.anchor.y) ||
+        Number(entry.anchor.x) < 0 || Number(entry.anchor.y) < 0) {
+        add('plan.region.anchor.invalid', 'error', 'Region anchor must use non-negative integer tiles.',
+          [...base, 'anchor']);
+      }
+    }
     if (!Array.isArray(entry.connections)) {
       add('plan.region.connections.invalid', 'error', 'Region connections must be an array.', [...base, 'connections']);
       return;
@@ -693,6 +885,7 @@ export function validateStagePlan(value: unknown, planPath = STAGE_PLAN_FILENAME
     }
   }
 
+  if (stage) validatePlanAgainstStage(raw, stage, add);
   return finish(planPath, raw, diagnostics);
 }
 
@@ -701,6 +894,7 @@ export function validateStagePlanFile(
   planFilePath: string,
   fileSystem: ChapterFileSystem,
   displayPath = planFilePath,
+  stage?: StageModule,
 ): StagePlanValidationReport {
   if (!fileSystem.exists(planFilePath)) {
     return finish(displayPath, undefined, [diagnostic({
@@ -732,5 +926,5 @@ export function validateStagePlanFile(
       path: [],
     })]);
   }
-  return validateStagePlan(parsed, displayPath);
+  return validateStagePlan(parsed, displayPath, stage);
 }

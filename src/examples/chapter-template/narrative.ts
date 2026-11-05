@@ -6,7 +6,7 @@ import type {
   StageEventRule,
 } from '../../narrative';
 import type { ChapterTemplateIds } from './ids';
-import { TEMPLATE_NPC_POSITION } from './level';
+import type { TemplateGeometry } from './geometry';
 
 export interface TemplateNarrative {
   readonly definition: NarrativeDefinition;
@@ -22,7 +22,10 @@ export interface TemplateNarrative {
  * stage.complete, npc.interacted, encounter.completed, stage.entered and
  * stage.exit.requested.
  */
-export function createTemplateNarrative(ids: ChapterTemplateIds): TemplateNarrative {
+export function createTemplateNarrative(
+  ids: ChapterTemplateIds,
+  geometry: TemplateGeometry,
+): TemplateNarrative {
   return Object.freeze({
     definition: Object.freeze({
       flags: Object.freeze({
@@ -36,7 +39,7 @@ export function createTemplateNarrative(ids: ChapterTemplateIds): TemplateNarrat
       displayName: 'Guardião do Farol',
       role: 'quest' as const,
       presentationId: ids.visual.npcPresentationId,
-      spawn: Object.freeze({ kind: 'tile' as const, ...TEMPLATE_NPC_POSITION }),
+      spawn: Object.freeze({ kind: 'tile' as const, ...geometry.npc }),
       interactionDialogueId: ids.dialogueId,
     })]),
     dialogues: Object.freeze([Object.freeze({

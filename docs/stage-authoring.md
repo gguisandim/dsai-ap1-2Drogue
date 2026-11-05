@@ -362,3 +362,57 @@ Depois de validar o plano, implemente o `StageModule` correspondente e rode
 `validate`, `inspect` e `preview`. O plano não altera nenhum capítulo em
 execução; o exemplo real está em
 `src/examples/chapters/igapo-das-memorias/stage-plan.json`.
+
+## 13. Templates panorâmicos
+
+`chapter create` aceita um template de geometria, uma seed e dimensões:
+
+```sh
+npm run chapter -- create travessia --template horizontal --seed 42
+npm run chapter -- create bifurcacao --template branched --seed 42 \
+  --width 104 --height 32 --regions 6
+npm run chapter -- create camara --template room
+```
+
+| Template | Padrão | Uso |
+|---|---|---|
+| `room` | 19×11, 3 regiões | compatibilidade com o template clássico |
+| `horizontal` | 96×30, 5 regiões | travessia contínua oeste→leste |
+| `branched` | 100×34, 5 regiões | percurso principal com bifurcação física |
+
+Limites: largura 32–160, altura 16–48, regiões 3–8; `branched` exige pelo menos
+5 regiões. A seed é um inteiro não negativo de 32 bits. Valores inválidos
+retornam código 2.
+
+Os templates `horizontal` e `branched` geram uma faixa de terreno orgânica com
+variação de altura, covas, obstáculos fora do percurso e regiões lógicas
+distribuídas ao longo do mesmo cenário. O `branched` acrescenta um segundo
+caminho físico entre `split` e `rejoin`; ele não é teletransporte nem sala
+separada. O template `room` mantém exatamente o mapa 19×11 anterior.
+
+O capítulo gerado contém:
+
+| Arquivo | Papel |
+|---|---|
+| `geometry.ts` | gerador determinístico, regiões, âncoras e rotas |
+| `stage-plan.json` | plano gerado com `template`, `chapterId` e âncoras |
+| `index.ts` | template, seed, dimensões e número de regiões |
+
+Para ajustar a fase sem reconstruir tudo, edite os parâmetros em `index.ts` ou
+a lógica em `geometry.ts`; a seed e as dimensões originais permanecem legíveis.
+
+`plan validate` compara o plano com o `StageModule` quando o capítulo tem
+`index.ts`: identidade, template, progressão, âncoras caminháveis, conexões,
+spawn e saída. Regiões sem `anchor` produzem `info`; divergências comprovadas
+produzem erro. Depois valide o capítulo e abra o preview:
+
+```sh
+npm run chapter -- plan validate travessia
+npm run chapter -- validate travessia
+npm run chapter -- preview travessia --visual
+npm run dev
+```
+
+O preview usa a câmera e o `StageMapRenderer` existentes. A homologação visual
+precisa ser feita no navegador; `validate` e `preview` headless não comprovam
+jogabilidade.

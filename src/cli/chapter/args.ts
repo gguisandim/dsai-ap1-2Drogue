@@ -1,5 +1,26 @@
+import {
+  TEMPLATE_GEOMETRY_LIMITS,
+  type TemplateGeometryId,
+} from '../../examples/chapter-template';
 import { usageError } from './errors';
 import type { ChapterCliArguments, ChapterCommandName } from './types';
+
+const GEOMETRY_TEMPLATES = new Set<TemplateGeometryId>(['room', 'horizontal', 'branched']);
+
+function parseInteger(
+  raw: string,
+  code: string,
+  message: string,
+  minimum: number,
+  maximum: number,
+): number {
+  if (!/^[0-9]+$/.test(raw)) throw usageError(code, message);
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < minimum || value > maximum) {
+    throw usageError(code, message);
+  }
+  return value;
+}
 
 const COMMANDS = new Set<ChapterCommandName>([
   'create', 'validate', 'inspect', 'preview', 'capabilities', 'plan',
@@ -74,6 +95,11 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
   let title: string | undefined;
   let namespace: string | undefined;
   let revision: number | undefined;
+  let template: TemplateGeometryId | undefined;
+  let seed: number | undefined;
+  let width: number | undefined;
+  let height: number | undefined;
+  let regionCount: number | undefined;
   let json = false;
   let visual = false;
   let chaptersDir: string | undefined;
@@ -113,13 +139,66 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
         continue;
       }
       if (command === 'create' && argument === '--revision') {
-        const raw = requireValue(rest, index, argument);
-        if (!/^[0-9]+$/.test(raw)) {
-          throw usageError('usage.invalid-revision', 'Revision must be a positive integer.');
+        revision = parseInteger(
+          requireValue(rest, index, argument),
+          'usage.invalid-revision',
+          'Revision must be a positive integer.',
+          1,
+          Number.MAX_SAFE_INTEGER,
+        );
+        index += 1;
+        continue;
+      }
+      if (command === 'create' && argument === '--template') {
+        const value = requireValue(rest, index, argument);
+        if (!GEOMETRY_TEMPLATES.has(value as TemplateGeometryId)) {
+          throw usageError(
+            'usage.invalid-template',
+            'Template must be room, horizontal or branched.',
+          );
         }
-        revision = Number(raw);
-        if (!Number.isSafeInteger(revision) || revision < 1) {
-          throw usageError('usage.invalid-revision', 'Revision must be a positive integer.');
+        template = value as TemplateGeometryId;
+        index += 1;
+        continue;
+      }
+      if (command === 'create' && argument === '--seed') {
+        seed = parseInteger(
+          requireValue(rest, index, argument),
+          'usage.invalid-seed',
+          'Seed must be a non-negative 32-bit integer.',
+          TEMPLATE_GEOMETRY_LIMITS.seed.minimum,
+          TEMPLATE_GEOMETRY_LIMITS.seed.maximum,
+        );
+        index += 1;
+        continue;
+      }
+      if (command === 'create' && (argument === '--width' || argument === '--height')) {
+        const raw = requireValue(rest, index, argument);
+        const limits = argument === '--width'
+          ? TEMPLATE_GEOMETRY_LIMITS.width
+          : TEMPLATE_GEOMETRY_LIMITS.height;
+        const value = parseInteger(
+          raw,
+          argument === '--width' ? 'usage.invalid-width' : 'usage.invalid-height',
+          `${argument} is outside the supported geometry range.`,
+          limits.minimum,
+          limits.maximum,
+        );
+        if (argument === '--width') width = value;
+        else height = value;
+        index += 1;
+        continue;
+      }
+      if (command === 'create' && argument === '--regions') {
+        regionCount = parseInteger(
+          requireValue(rest, index, argument),
+          'usage.invalid-regions',
+          'Region count is outside the supported geometry range.',
+          TEMPLATE_GEOMETRY_LIMITS.regions.minimum,
+          TEMPLATE_GEOMETRY_LIMITS.regions.maximum,
+        );
+        if (template === 'branched' && regionCount < 5) {
+          throw usageError('usage.invalid-regions', 'Branched templates require at least five regions.');
         }
         index += 1;
         continue;
@@ -145,6 +224,9 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
   if (slug === undefined) {
     throw usageError('usage.missing-chapter', `Command ${command} requires a chapter slug.`);
   }
+  if (template === 'branched' && regionCount !== undefined && regionCount < 5) {
+    throw usageError('usage.invalid-regions', 'Branched templates require at least five regions.');
+  }
 
   return Object.freeze({
     command,
@@ -152,6 +234,11 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
     ...(title !== undefined ? { title } : {}),
     ...(namespace !== undefined ? { namespace } : {}),
     ...(revision !== undefined ? { revision } : {}),
+    ...(template !== undefined ? { template } : {}),
+    ...(seed !== undefined ? { seed } : {}),
+    ...(width !== undefined ? { width } : {}),
+    ...(height !== undefined ? { height } : {}),
+    ...(regionCount !== undefined ? { regionCount } : {}),
     ...(chaptersDir !== undefined ? { chaptersDir } : {}),
     json,
     visual,
@@ -163,6 +250,8 @@ export const CHAPTER_CLI_HELP = `Umbra Trail chapter authoring CLI
 Usage:
   npm run chapter -- capabilities [--json]
   npm run chapter -- create <slug> [--title <text>] [--namespace <id>] [--revision <n>]
+                                   [--template room|horizontal|branched] [--seed <n>]
+                                   [--width <n>] [--height <n>] [--regions <n>]
   npm run chapter -- validate <slug>
   npm run chapter -- inspect <slug> [--json]
   npm run chapter -- preview <slug> [--visual]

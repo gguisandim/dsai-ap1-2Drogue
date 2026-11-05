@@ -1,13 +1,16 @@
 import type { StageEncounterDefinition } from '../../stages';
 import type { ChapterTemplateIds } from './ids';
-import { TEMPLATE_ENEMY_POSITIONS } from './level';
+import type { TemplateGeometry } from './geometry';
 
 /**
  * Declarative encounter: two existing archetypes in one authored wave. Wave
  * execution stays owned by gameplay; the template only declares data.
  */
-export function createTemplateEncounter(ids: ChapterTemplateIds): StageEncounterDefinition {
-  const [affinity, ranged] = TEMPLATE_ENEMY_POSITIONS;
+export function createTemplateEncounter(
+  ids: ChapterTemplateIds,
+  geometry: TemplateGeometry,
+): StageEncounterDefinition {
+  const [affinity, ranged] = geometry.enemies;
   return Object.freeze({
     schemaVersion: 1 as const,
     id: ids.encounterId,
