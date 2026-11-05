@@ -1,3 +1,4 @@
+import type { StagePlanValidationReport } from './plan';
 import type {
   ChapterInspection,
   ChapterPreview,
@@ -112,6 +113,31 @@ export function printInspection(
   print(`Diagnostics: ${inspection.diagnostics.length === 0 ? 'none' : ''}`);
   if (inspection.diagnostics.length > 0) printDiagnostics(inspection.diagnostics, print);
   print('Phaser assets: not executed (headless inspection only).');
+}
+
+export function printPlanValidationReport(
+  report: StagePlanValidationReport,
+  json: boolean,
+  print: (line: string) => void,
+): void {
+  if (json) {
+    print(JSON.stringify(report, null, 2));
+    return;
+  }
+  const { summary } = report;
+  print(`Plan: ${summary.planId ?? 'unknown'} — ${report.planPath}`);
+  print(`Stage: ${summary.stageId ?? 'not declared'}  Progression: ${summary.progression ?? 'unknown'}`);
+  print(`Regions: ${summary.regions}  Objectives: ${summary.objectives}  ` +
+    `Encounters: ${summary.encounters}  Interactions: ${summary.interactions}  ` +
+    `Exit conditions: ${summary.exitConditions}`);
+  print(`Errors: ${report.errors.length}  Warnings: ${report.warnings.length}  ` +
+    `Infos: ${report.infos.length}`);
+  if (report.diagnostics.length > 0) {
+    print('Diagnostics:');
+    printDiagnostics(report.diagnostics, print);
+  }
+  print('Phaser assets: not executed (logical plan validation only).');
+  print(`Result: ${report.ok ? report.warnings.length > 0 ? 'OK (warnings)' : 'OK' : 'FAILED'}`);
 }
 
 export function printPreview(

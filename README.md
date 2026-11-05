@@ -123,6 +123,7 @@ npm run chapter -- capabilities --json
 npm run chapter -- create minha-fase
 npm run chapter -- validate minha-fase
 npm run chapter -- inspect minha-fase
+npm run chapter -- plan validate minha-fase
 npm run chapter -- preview minha-fase
 npm run chapter -- preview minha-fase --visual
 npm run dev

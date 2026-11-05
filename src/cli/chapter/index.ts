@@ -6,6 +6,7 @@ export * from './generator';
 export * from './inspect';
 export * from './loader';
 export * from './names';
+export * from './plan';
 export * from './preview';
 export * from './render';
 export * from './run';

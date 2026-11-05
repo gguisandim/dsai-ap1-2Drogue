@@ -284,3 +284,81 @@ só pode importar o próprio diretório, `src/stages/contracts/` e
 
 Para ver a lista completa, execute `validate` e leia os diagnósticos com
 `code`, `severity`, `path` e `referenceId`.
+
+## 12. Planejamento estruturado com `stage-plan.json`
+
+Antes de implementar uma fase nova, descreva a intenção em
+`src/examples/chapters/<slug>/stage-plan.json`. O plano é um artefato de
+autoria: `StageModule` continua sendo a fonte de verdade do runtime e nada é
+executado a partir do plano.
+
+Campos obrigatórios: `schemaVersion: 1`, `kind: "umbra.stage-plan"`, `id`,
+`title`, `summary`, `progression` (`linear` ou `branched`), `visualDirection`,
+`startRegionId`, `exitRegionIds`, `regions`, `objectives` e `exitConditions`.
+Opcionais: `stageId`, `themeCapabilityId`, `encounters`, `interactions` e
+`capabilities`.
+
+O plano cobre as três dimensões de autoria:
+
+- **Narrativa:** `objectives` (`dependsOn`, `missionId`, `unlocksExitIds`) e
+  `exitConditions`;
+- **Cenário:** `regions`, `connections`, `startRegionId`, `exitRegionIds`,
+  `visualDirection` e `themeCapabilityId`;
+- **Mecânicas:** `encounters`, `interactions` e `capabilities`.
+
+Cada região usa `role` `start`, `exploration`, `combat`, `objective` ou `exit`.
+Conexões são a adjacência lógica entre regiões; a busca de conectividade é
+indireta e não modela colisão física.
+
+Plano mínimo válido:
+
+```json
+{
+  "schemaVersion": 1,
+  "kind": "umbra.stage-plan",
+  "id": "plan.exemplo.farol",
+  "title": "Farol de Vidro",
+  "summary": "Uma câmara curta até o farol.",
+  "progression": "linear",
+  "visualDirection": "Pedra clara e luz fria.",
+  "startRegionId": "region.exemplo.farol.entrada",
+  "exitRegionIds": ["region.exemplo.farol.saida"],
+  "regions": [
+    { "id": "region.exemplo.farol.entrada", "title": "Entrada", "role": "start",
+      "connections": ["region.exemplo.farol.saida"] },
+    { "id": "region.exemplo.farol.saida", "title": "Saída", "role": "exit",
+      "connections": ["region.exemplo.farol.entrada"] }
+  ],
+  "objectives": [
+    { "id": "objective.exemplo.farol.acender", "title": "Acender o farol",
+      "regionId": "region.exemplo.farol.entrada",
+      "unlocksExitIds": ["exit.exemplo.farol.depart"] }
+  ],
+  "exitConditions": [
+    { "exitId": "exit.exemplo.farol.depart", "regionId": "region.exemplo.farol.saida",
+      "requiresObjectiveIds": ["objective.exemplo.farol.acender"] }
+  ],
+  "capabilities": [
+    { "id": "navigation.authored-map", "category": "navigation",
+      "minimumVersion": 1, "requirement": "required" }
+  ]
+}
+```
+
+Valide com:
+
+```sh
+npm run chapter -- plan validate minha-fase
+npm run chapter -- plan validate minha-fase --json
+```
+
+O validador detecta regiões inexistentes ou desconectadas, objetivos
+inexistentes ou em ciclo, saída sem condição, condição que referencia objetivo
+inexistente e capability desconhecida ou planejada. Referências a interações são
+locais ao capítulo e produzem `info`; temas não enumeráveis globalmente produzem
+`warning`, nunca erro por ausência no catálogo.
+
+Depois de validar o plano, implemente o `StageModule` correspondente e rode
+`validate`, `inspect` e `preview`. O plano não altera nenhum capítulo em
+execução; o exemplo real está em
+`src/examples/chapters/igapo-das-memorias/stage-plan.json`.

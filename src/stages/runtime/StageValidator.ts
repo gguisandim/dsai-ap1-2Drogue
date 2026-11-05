@@ -1,7 +1,6 @@
 import { GENERATION_PRESETS } from '../../procedural';
 import type {
   ChapterManifest,
-  StageCapabilityCategory,
   StageCapabilityRequirement,
   StageAnchor,
   StageCondition,
@@ -20,6 +19,7 @@ import {
   tileCapabilityId,
 } from './StageRuntimeCapabilities';
 import { StageVisualRegistry } from './StageVisualRegistry';
+import { validateStageCapabilityRequirements } from './StageCapabilityRequirements';
 import {
   STAGE_CATALOG_AVAILABILITIES,
   STAGE_CATALOG_MAXIMUM_PHYSICAL_EXITS,
@@ -27,7 +27,6 @@ import {
   STAGE_CATALOG_PARTICIPATIONS,
   STAGE_CATALOG_REVISITS,
   STAGE_CATALOG_ROLES,
-  STAGE_CAPABILITY_CATEGORIES,
   STAGE_CONDITION_TYPES,
   STAGE_ENCOUNTER_ENEMY_LEVEL_RANGE,
   STAGE_ENCOUNTER_MAX_ENEMIES_PER_WAVE,
@@ -667,77 +666,9 @@ export class StageValidator {
     stageId: StageId | undefined,
     diagnostics: StageDiagnostic[],
   ): void {
-    if (requirements === undefined) return;
-    if (!Array.isArray(requirements)) {
-      diagnostics.push({
-        code: 'capability.requirements.invalid', severity: 'error',
-        message: 'Capabilities must be an array.', path, ...(stageId ? { stageId } : {}),
-      });
-      return;
-    }
-    const seen = new Set<string>();
-    requirements.forEach((requirement, index) => {
-      const itemPath = [...path, index];
-      if (!requirement || typeof requirement !== 'object') {
-        diagnostics.push({
-          code: 'capability.requirement.invalid', severity: 'error',
-          message: 'Capability requirement must be an object.', path: itemPath,
-          ...(stageId ? { stageId } : {}),
-        });
-        return;
-      }
-      const id = (requirement as { id?: unknown }).id;
-      const category = (requirement as { category?: unknown }).category;
-      const minimumVersion = (requirement as { minimumVersion?: unknown }).minimumVersion;
-      const kind = (requirement as { requirement?: unknown }).requirement;
-      if (!isStableId(id)) diagnostics.push({
-        code: 'capability.id.invalid', severity: 'error', message: 'Capability id must be stable.',
-        path: [...itemPath, 'id'], ...(stageId ? { stageId } : {}),
-      });
-      if (!STAGE_CAPABILITY_CATEGORIES.includes(category as StageCapabilityCategory)) diagnostics.push({
-        code: 'capability.category.unknown', severity: 'error', message: 'Capability category is unknown.',
-        path: [...itemPath, 'category'], ...(stageId ? { stageId } : {}), referenceId: String(category),
-      });
-      if (!isPositiveRevision(minimumVersion)) diagnostics.push({
-        code: 'capability.version.invalid', severity: 'error', message: 'Capability minimumVersion must be positive.',
-        path: [...itemPath, 'minimumVersion'], ...(stageId ? { stageId } : {}),
-      });
-      if (kind !== 'required' && kind !== 'optional') diagnostics.push({
-        code: 'capability.requirement-kind.invalid', severity: 'error',
-        message: 'Capability requirement must be required or optional.',
-        path: [...itemPath, 'requirement'], ...(stageId ? { stageId } : {}),
-      });
-      if (!isStableId(id)) return;
-      if (seen.has(id)) diagnostics.push({
-        code: 'capability.id.duplicate', severity: 'error', message: `Capability is declared twice: ${id}.`,
-        path: [...itemPath, 'id'], ...(stageId ? { stageId } : {}), referenceId: id,
-      });
-      seen.add(id);
-      const runtime = this.runtimeCapabilities.get(id);
-      if (!runtime) {
-        diagnostics.push({
-          code: 'capability.unknown', severity: 'error', message: `Runtime does not recognize capability ${id}.`,
-          path: itemPath, ...(stageId ? { stageId } : {}), referenceId: id,
-        });
-        return;
-      }
-      if (runtime.category !== category) diagnostics.push({
-        code: 'capability.category.mismatch', severity: 'error',
-        message: `Capability ${id} belongs to ${runtime.category}, not ${String(category)}.`,
-        path: [...itemPath, 'category'], ...(stageId ? { stageId } : {}), referenceId: id,
-      });
-      if (!isPositiveRevision(minimumVersion) || (kind !== 'required' && kind !== 'optional')) return;
-      if (runtime.status !== 'supported') diagnostics.push({
-        code: 'capability.unavailable', severity: kind === 'optional' ? 'warning' : 'error',
-        message: `Capability ${id} is planned but not implemented.`, path: itemPath,
-        ...(stageId ? { stageId } : {}), referenceId: id,
-      });
-      else if (runtime.version < minimumVersion) diagnostics.push({
-        code: 'capability.version.unsupported', severity: kind === 'optional' ? 'warning' : 'error',
-        message: `Capability ${id} supports version ${runtime.version}, below ${minimumVersion}.`,
-        path: [...itemPath, 'minimumVersion'], ...(stageId ? { stageId } : {}), referenceId: id,
-      });
-    });
+    diagnostics.push(...validateStageCapabilityRequirements(
+      requirements, this.runtimeCapabilities, path, stageId,
+    ));
   }
 
   private validateAuthoredCapabilities(module: StageModule, diagnostics: StageDiagnostic[]): void {

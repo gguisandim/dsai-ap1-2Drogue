@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "kind": "umbra.stage-plan",
+  "id": "plan.aguas.igapo-das-memorias",
+  "stageId": "stage.aguas.igapo-das-memorias",
+  "title": "Igapó das Memórias",
+  "summary": "Uma travessia ribeirinha encontra o Vestígio Submerso e confirma a origem da corrupção antes de abrir a nascente.",
+  "progression": "linear",
+  "visualDirection": "Floresta amazônica inundada, água esverdeada, luz difusa e vestígios de memória entre as raízes.",
+  "themeCapabilityId": "theme.aguas.igapo",
+  "startRegionId": "region.aguas.igapo.ribeirinho",
+  "exitRegionIds": [
+    "region.aguas.igapo.nascente"
+  ],
+  "regions": [
+    {
+      "id": "region.aguas.igapo.ribeirinho",
+      "title": "Margem ribeirinha",
+      "role": "start",
+      "connections": [
+        "region.aguas.igapo.travessia"
+      ]
+    },
+    {
+      "id": "region.aguas.igapo.travessia",
+      "title": "Travessia inundada",
+      "role": "exploration",
+      "connections": [
+        "region.aguas.igapo.ribeirinho",
+        "region.aguas.igapo.combate"
+      ]
+    },
+    {
+      "id": "region.aguas.igapo.combate",
+      "title": "Clareira de combate",
+      "role": "combat",
+      "connections": [
+        "region.aguas.igapo.travessia",
+        "region.aguas.igapo.vestigio"
+      ]
+    },
+    {
+      "id": "region.aguas.igapo.vestigio",
+      "title": "Vestígio Submerso",
+      "role": "objective",
+      "connections": [
+        "region.aguas.igapo.combate",
+        "region.aguas.igapo.nascente"
+      ]
+    },
+    {
+      "id": "region.aguas.igapo.nascente",
+      "title": "Nascente da corrupção",
+      "role": "exit",
+      "connections": [
+        "region.aguas.igapo.vestigio"
+      ]
+    }
+  ],
+  "objectives": [
+    {
+      "id": "objective.aguas.igapo.reach-vestige",
+      "title": "Encontrar o Vestígio Submerso",
+      "missionId": "mission.aguas.igapo.trace-corruption",
+      "regionId": "region.aguas.igapo.vestigio",
+      "unlocksExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "id": "objective.aguas.igapo.confirm-corruption",
+      "title": "Confirmar que a água perdeu a memória",
+      "missionId": "mission.aguas.igapo.trace-corruption",
+      "regionId": "region.aguas.igapo.vestigio",
+      "dependsOn": [
+        "objective.aguas.igapo.reach-vestige"
+      ],
+      "unlocksExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    }
+  ],
+  "encounters": [
+    {
+      "id": "encounter.stage.aguas.igapo-das-memorias",
+      "regionId": "region.aguas.igapo.combate",
+      "archetypes": [
+        "affinity",
+        "applaud"
+      ],
+      "waveCount": 2
+    }
+  ],
+  "interactions": [
+    {
+      "id": "interaction.aguas.igapo.memory-vestige",
+      "regionId": "region.aguas.igapo.vestigio",
+      "kind": "npc",
+      "referenceId": "npc.aguas.igapo.memory-vestige"
+    },
+    {
+      "id": "interaction.aguas.igapo.memory-dialogue",
+      "regionId": "region.aguas.igapo.vestigio",
+      "kind": "dialogue",
+      "referenceId": "dialogue.aguas.igapo.eco-das-aguas"
+    },
+    {
+      "id": "interaction.aguas.igapo.health-herb",
+      "regionId": "region.aguas.igapo.travessia",
+      "kind": "item",
+      "referenceId": "health_herb"
+    }
+  ],
+  "exitConditions": [
+    {
+      "exitId": "exit.aguas.igapo.enter-corrupted-heart",
+      "regionId": "region.aguas.igapo.nascente",
+      "requiresObjectiveIds": [
+        "objective.aguas.igapo.reach-vestige",
+        "objective.aguas.igapo.confirm-corruption"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "navigation.authored-map",
+      "category": "navigation",
+      "minimumVersion": 1,
+      "requirement": "required"
+    },
+    {
+      "id": "interaction.npc-dialogue",
+      "category": "interaction",
+      "minimumVersion": 1,
+      "requirement": "required"
+    },
+    {
+      "id": "encounter.declarative",
+      "category": "encounter",
+      "minimumVersion": 1,
+      "requirement": "required"
+    },
+    {
+      "id": "npc.custom-sprite",
+      "category": "npc",
+      "minimumVersion": 1,
+      "requirement": "required"
+    },
+    {
+      "id": "enemy.affinity",
+      "category": "enemy",
+      "minimumVersion": 1,
+      "requirement": "required"
+    },
+    {
+      "id": "enemy.applaud",
+      "category": "enemy",
+      "minimumVersion": 1,
+      "requirement": "required"
+    },
+    {
+      "id": "tile.custom-tileset",
+      "category": "tile",
+      "minimumVersion": 1,
+      "requirement": "required"
+    },
+    {
+      "id": "theme.aguas.igapo",
+      "category": "theme",
+      "minimumVersion": 1,
+      "requirement": "required"
+    }
+  ]
+}

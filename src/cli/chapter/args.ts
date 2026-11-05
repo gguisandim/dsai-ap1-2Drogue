@@ -2,8 +2,51 @@ import { usageError } from './errors';
 import type { ChapterCliArguments, ChapterCommandName } from './types';
 
 const COMMANDS = new Set<ChapterCommandName>([
-  'create', 'validate', 'inspect', 'preview', 'capabilities',
+  'create', 'validate', 'inspect', 'preview', 'capabilities', 'plan',
 ]);
+
+function parsePlanArguments(args: readonly string[]): ChapterCliArguments {
+  const [action, ...rest] = args;
+  if (action !== 'validate') {
+    throw usageError(
+      'usage.unknown-plan-command',
+      `Unknown plan command: ${action ?? '(missing)'}. Expected: plan validate <slug>.`,
+    );
+  }
+  let slug: string | undefined;
+  let json = false;
+  let chaptersDir: string | undefined;
+  for (let index = 0; index < rest.length; index += 1) {
+    const argument = rest[index];
+    if (argument.startsWith('-')) {
+      if (argument === '--json') {
+        json = true;
+        continue;
+      }
+      if (argument === '--chapters-dir') {
+        chaptersDir = requireValue(rest, index, argument);
+        index += 1;
+        continue;
+      }
+      throw usageError('usage.unknown-option', `Unknown option for plan ${action}: ${argument}.`);
+    }
+    if (slug !== undefined) {
+      throw usageError('usage.unexpected-argument', `Unexpected argument: ${argument}.`);
+    }
+    slug = argument;
+  }
+  if (slug === undefined) {
+    throw usageError('usage.missing-chapter', `Command plan ${action} requires a chapter slug.`);
+  }
+  return Object.freeze({
+    command: 'plan' as const,
+    planAction: 'validate' as const,
+    slug,
+    json,
+    visual: false,
+    ...(chaptersDir !== undefined ? { chaptersDir } : {}),
+  });
+}
 
 function requireValue(args: readonly string[], index: number, option: string): string {
   const value = args[index + 1];
@@ -25,7 +68,8 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
   if (!COMMANDS.has(rawCommand as ChapterCommandName)) {
     throw usageError('usage.unknown-command', `Unknown chapter command: ${rawCommand}.`);
   }
-  const command = rawCommand as Exclude<ChapterCommandName, 'help'>;
+  if (rawCommand === 'plan') return parsePlanArguments(rest);
+  const command = rawCommand as Exclude<ChapterCommandName, 'help' | 'plan'>;
   let slug: string | undefined;
   let title: string | undefined;
   let namespace: string | undefined;
@@ -122,10 +166,11 @@ Usage:
   npm run chapter -- validate <slug>
   npm run chapter -- inspect <slug> [--json]
   npm run chapter -- preview <slug> [--visual]
+  npm run chapter -- plan validate <slug> [--json]
 
 Options:
   --chapters-dir <path>  Authoring root inside src/ (default: src/examples/chapters)
-  --json                 JSON output for inspect and capabilities
+  --json                 JSON output for inspect, capabilities and plan validate
   --visual               Prepare the Phaser browser preview URL (preview only)
   --help, -h             Show this help
 

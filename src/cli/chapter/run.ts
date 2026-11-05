@@ -7,6 +7,7 @@ import { nodeChapterFileSystem } from './fs';
 import { createChapter } from './generator';
 import { inspectChapterEntry } from './inspect';
 import { entryFromModule, loadChapterModule } from './loader';
+import { STAGE_PLAN_FILENAME, validateStagePlanFile } from './plan';
 import {
   defaultTitle,
   deriveNamespace,
@@ -20,6 +21,7 @@ import {
   printCreateResult,
   printDiagnostics,
   printInspection,
+  printPlanValidationReport,
   printPreview,
   printValidationReport,
 } from './render';
@@ -57,6 +59,15 @@ export function runChapterCli(
       options.chaptersRoot ?? parsed.chaptersDir,
     );
     const fileSystem = options.fileSystem ?? nodeChapterFileSystem;
+
+    if (parsed.command === 'plan') {
+      const chapterDir = resolveChapterDir(chaptersRoot, parsed.slug as string);
+      const planFile = path.join(chapterDir, STAGE_PLAN_FILENAME);
+      const displayPath = path.relative(repoRoot, planFile).split(path.sep).join('/');
+      const report = validateStagePlanFile(planFile, fileSystem, displayPath);
+      printPlanValidationReport(report, parsed.json, print);
+      return report.ok ? 0 : 1;
+    }
 
     if (parsed.command === 'create') {
       const slug = validateSlug(parsed.slug as string);

@@ -37,6 +37,7 @@ function componentFor(origin: CliDiagnosticOrigin): string {
     case 'loader': return 'stages/loader';
     case 'narrative': return 'narrative';
     case 'template': return 'examples/chapter-template';
+    case 'plan': return 'authoring/plan';
     case 'filesystem': return 'filesystem';
     case 'runtime': return 'runtime';
     default: return 'cli';

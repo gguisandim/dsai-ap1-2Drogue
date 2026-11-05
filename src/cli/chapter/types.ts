@@ -15,10 +15,12 @@ export type ChapterCommandName =
   | 'inspect'
   | 'preview'
   | 'capabilities'
+  | 'plan'
   | 'help';
 
 export interface ChapterCliArguments {
   readonly command: ChapterCommandName;
+  readonly planAction?: 'validate';
   readonly slug?: string;
   readonly title?: string;
   readonly namespace?: string;
@@ -56,6 +58,7 @@ export type CliDiagnosticOrigin =
   | 'loader'
   | 'narrative'
   | 'template'
+  | 'plan'
   | 'runtime';
 
 export interface CliDiagnostic {

@@ -182,6 +182,7 @@ export { StageRegistry, StageRegistryError } from './runtime/StageRegistry';
 export type { StageRegistryErrorCode } from './runtime/StageRegistry';
 export { StageValidator } from './runtime/StageValidator';
 export { DEFAULT_STAGE_RUNTIME_CAPABILITIES } from './runtime/StageRuntimeCapabilities';
+export { validateStageCapabilityRequirements } from './runtime/StageCapabilityRequirements';
 export {
   STAGE_AUTHORING_CAPABILITIES_KIND,
   STAGE_AUTHORING_CAPABILITIES_REVISION,

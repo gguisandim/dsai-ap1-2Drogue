@@ -71,3 +71,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-11-02 | [Redesign visual do Igapó das Memórias](./2026-11-02-redesign-visual-igapo-das-memorias.md) |
 | 2026-11-02 | [Redesign do Igapó: geometria autoral e duas apresentações](./2026-11-02-redesign-igapo-geometria-e-variantes.md) |
 | 2026-11-05 | [Contexto de autoria para agentes externos — Etapa 9.9](./2026-11-05-etapa-9-9-contexto-autoria-agentes-externos.md) |
+| 2026-11-05 | [Planejamento estruturado de fases — Etapa 9.10](./2026-11-05-etapa-9-10-planejamento-estruturado-fases.md) |

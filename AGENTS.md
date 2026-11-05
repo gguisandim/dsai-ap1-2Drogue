@@ -46,7 +46,9 @@ conteúdo:
    paralelos;
 4. modificar preferencialmente os arquivos do capítulo em edição, respeitando os
    limites arquiteturais deste arquivo;
-5. executar `npm run chapter -- validate <slug>` e `npm run chapter -- preview
+5. descrever a fase em `stage-plan.json` e validá-la com
+   `npm run chapter -- plan validate <slug>`;
+6. executar `npm run chapter -- validate <slug>` e `npm run chapter -- preview
    <slug>` antes de considerar a fase concluída.
 
 ## Processo de SPEC e rastreabilidade
