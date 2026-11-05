@@ -213,6 +213,25 @@ export { ProceduralStageAdapter } from './compatibility/ProceduralStageAdapter';
 export { StageLoader } from './runtime/StageLoader';
 export { StageEncounterResolver } from './runtime/StageEncounterResolver';
 export type { StageLoaderOptions } from './runtime/StageLoader';
+export { PLAYTEST_CHARACTER, StagePlaytestValidator } from './runtime/StagePlaytestValidator';
+export type {
+  PlaytestCameraResult,
+  PlaytestCharacterModel,
+  PlaytestCheck,
+  PlaytestDiagnostic,
+  PlaytestPlanExitConditionView,
+  PlaytestPlanObjectiveView,
+  PlaytestPlanRegionView,
+  PlaytestPlanView,
+  PlaytestPoint,
+  PlaytestRegionResult,
+  PlaytestRegionRole,
+  PlaytestRoutesView,
+  PlaytestSeedSource,
+  PlaytestStatus,
+  StagePlaytestInput,
+  StagePlaytestSeedReport,
+} from './runtime/StagePlaytestValidator';
 export { StageCatalogService } from './runtime/StageCatalogService';
 export type {
   StageCatalogFailure,

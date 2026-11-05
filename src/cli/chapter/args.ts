@@ -3,7 +3,11 @@ import {
   type TemplateGeometryId,
 } from '../../examples/chapter-template';
 import { usageError } from './errors';
-import type { ChapterCliArguments, ChapterCommandName } from './types';
+import {
+  PLAYTEST_MAXIMUM_SEEDS,
+  type ChapterCliArguments,
+  type ChapterCommandName,
+} from './types';
 
 const GEOMETRY_TEMPLATES = new Set<TemplateGeometryId>(['room', 'horizontal', 'branched']);
 
@@ -23,7 +27,7 @@ function parseInteger(
 }
 
 const COMMANDS = new Set<ChapterCommandName>([
-  'create', 'validate', 'inspect', 'preview', 'capabilities', 'plan',
+  'create', 'validate', 'inspect', 'preview', 'capabilities', 'plan', 'playtest',
 ]);
 
 function parsePlanArguments(args: readonly string[]): ChapterCliArguments {
@@ -100,6 +104,7 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
   let width: number | undefined;
   let height: number | undefined;
   let regionCount: number | undefined;
+  let seeds: number | undefined;
   let json = false;
   let visual = false;
   let chaptersDir: string | undefined;
@@ -108,10 +113,10 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
     const argument = rest[index];
     if (argument.startsWith('-')) {
       if (argument === '--json') {
-        if (command !== 'inspect' && command !== 'capabilities') {
+        if (command !== 'inspect' && command !== 'capabilities' && command !== 'playtest') {
           throw usageError(
             'usage.unsupported-option',
-            '--json is only supported by inspect and capabilities.',
+            '--json is only supported by inspect, capabilities and playtest.',
           );
         }
         json = true;
@@ -189,6 +194,28 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
         index += 1;
         continue;
       }
+      if (command === 'playtest' && argument === '--seed') {
+        seed = parseInteger(
+          requireValue(rest, index, argument),
+          'usage.invalid-seed',
+          'Seed must be a non-negative 32-bit integer.',
+          TEMPLATE_GEOMETRY_LIMITS.seed.minimum,
+          TEMPLATE_GEOMETRY_LIMITS.seed.maximum,
+        );
+        index += 1;
+        continue;
+      }
+      if (command === 'playtest' && argument === '--seeds') {
+        seeds = parseInteger(
+          requireValue(rest, index, argument),
+          'usage.invalid-seeds',
+          `Seed count must be an integer from 1 to ${PLAYTEST_MAXIMUM_SEEDS}.`,
+          1,
+          PLAYTEST_MAXIMUM_SEEDS,
+        );
+        index += 1;
+        continue;
+      }
       if (command === 'create' && argument === '--regions') {
         regionCount = parseInteger(
           requireValue(rest, index, argument),
@@ -227,6 +254,12 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
   if (template === 'branched' && regionCount !== undefined && regionCount < 5) {
     throw usageError('usage.invalid-regions', 'Branched templates require at least five regions.');
   }
+  if (command === 'playtest' && seed !== undefined && seeds !== undefined) {
+    throw usageError(
+      'usage.invalid-seeds',
+      'Use either --seed (one seed) or --seeds (a reproducible range), not both.',
+    );
+  }
 
   return Object.freeze({
     command,
@@ -236,6 +269,7 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
     ...(revision !== undefined ? { revision } : {}),
     ...(template !== undefined ? { template } : {}),
     ...(seed !== undefined ? { seed } : {}),
+    ...(seeds !== undefined ? { seeds } : {}),
     ...(width !== undefined ? { width } : {}),
     ...(height !== undefined ? { height } : {}),
     ...(regionCount !== undefined ? { regionCount } : {}),
@@ -256,11 +290,14 @@ Usage:
   npm run chapter -- inspect <slug> [--json]
   npm run chapter -- preview <slug> [--visual]
   npm run chapter -- plan validate <slug> [--json]
+  npm run chapter -- playtest <slug> [--json] [--seed <n> | --seeds <n>]
 
 Options:
   --chapters-dir <path>  Authoring root inside src/ (default: src/examples/chapters)
-  --json                 JSON output for inspect, capabilities and plan validate
+  --json                 JSON output for inspect, capabilities, playtest and plan validate
   --visual               Prepare the Phaser browser preview URL (preview only)
+  --seed <n>             Reproduce one geometry seed (playtest only)
+  --seeds <n>            Evaluate n consecutive seeds from the authored seed (playtest only)
   --help, -h             Show this help
 
 Exit codes:

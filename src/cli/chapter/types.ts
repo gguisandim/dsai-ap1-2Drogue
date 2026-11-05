@@ -7,7 +7,11 @@ import type {
   StageCatalogLoadability,
   StageModule,
 } from '../../stages';
-import type { ChapterTemplate, TemplateGeometryId } from '../../examples/chapter-template';
+import type {
+  ChapterTemplate,
+  ChapterTemplateOptions,
+  TemplateGeometryId,
+} from '../../examples/chapter-template';
 
 export type ChapterCommandName =
   | 'create'
@@ -16,6 +20,7 @@ export type ChapterCommandName =
   | 'preview'
   | 'capabilities'
   | 'plan'
+  | 'playtest'
   | 'help';
 
 export interface ChapterCliArguments {
@@ -26,7 +31,10 @@ export interface ChapterCliArguments {
   readonly namespace?: string;
   readonly revision?: number;
   readonly template?: TemplateGeometryId;
+  /** Geometry seed for `create`, or the single seed reproduced by `playtest`. */
   readonly seed?: number;
+  /** Number of consecutive seeds evaluated by `playtest`. */
+  readonly seeds?: number;
   readonly width?: number;
   readonly height?: number;
   readonly regionCount?: number;
@@ -50,7 +58,15 @@ export interface ChapterFileSystem {
 export interface LoadedChapterModule {
   readonly CHAPTER_TEMPLATE?: ChapterTemplate;
   readonly CHAPTER_TEMPLATE_ENTRY?: CampaignChapterEntry;
+  /** Present on generated chapters; used to rebuild deterministic seed variants. */
+  readonly createChapterTemplate?: (
+    namespace: string,
+    options?: ChapterTemplateOptions,
+  ) => ChapterTemplate;
 }
+
+/** Upper bound for a single `playtest --seeds` invocation. */
+export const PLAYTEST_MAXIMUM_SEEDS = 25;
 
 export type CliDiagnosticSeverity = 'error' | 'warning' | 'info';
 
@@ -64,6 +80,7 @@ export type CliDiagnosticOrigin =
   | 'narrative'
   | 'template'
   | 'plan'
+  | 'playtest'
   | 'runtime';
 
 export interface CliDiagnostic {

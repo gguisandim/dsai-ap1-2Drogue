@@ -416,3 +416,135 @@ npm run dev
 O preview usa a câmera e o `StageMapRenderer` existentes. A homologação visual
 precisa ser feita no navegador; `validate` e `preview` headless não comprovam
 jogabilidade.
+
+## 14. Playtest estático e múltiplas seeds
+
+O `playtest` verifica se a fase é fisicamente percorrível pelo corpo real do
+jogador e se a progressão declarada pode ser satisfeita. Ele não executa Phaser,
+não simula combate e não substitui a homologação no navegador.
+
+```sh
+npm run chapter -- playtest minha-fase
+npm run chapter -- playtest minha-fase --json
+npm run chapter -- playtest minha-fase --seed 42
+npm run chapter -- playtest minha-fase --seeds 5
+```
+
+`--seed` reproduz uma seed individual. `--seeds` avalia seeds consecutivas a
+partir da seed autoral (`42` → `42, 43, ...`) e aceita de 1 a 25. As duas opções
+são exclusivas. Capítulos sem a factory `createChapterTemplate` exportada
+retornam `PLAYTEST_SEED_UNSUPPORTED` como UNKNOWN.
+
+### O que é verificado
+
+- o corpo físico real do jogador (`29 × 39` px, derivado de `Hero.ts`) passa
+  pelo mapa em uma grade de clearance de 8 px;
+- spawn, saída, regiões do plano, NPCs e inimigos de encontros obrigatórios são
+  alcançáveis;
+- passagens estreitas produzem `PASSAGE_TOO_NARROW` em vez de um falso aprovado;
+- o template `branched` tem duas rotas físicas independentes entre `split` e
+  `rejoin`;
+- condições de saída, início de missões, objetivos e `stage.complete` são
+  satisfatíveis pelo conteúdo declarado;
+- o plano é comparado com a fase carregada por `validateStagePlan`;
+- os limites de mundo da câmera são válidos.
+
+Cada resultado é `PASS`, `FAIL` ou `UNKNOWN`. `UNKNOWN` cobre o que depende de
+execução real (câmera, transição de cena, ordem de escolhas) e nunca é
+apresentado como aprovação.
+
+### Como ler o relatório
+
+```sh
+npm run chapter -- playtest minha-fase --json
+```
+
+O documento tem `schemaVersion: 1`, `kind: "umbra.stage-playtest.report"`,
+`result`, `summary`, `validation`, `runtime` e `seeds[]`. Cada seed informa
+`seed`, `source`, `result`, `character`, `checks`, `diagnostics`, `regions`,
+`camera`, `plan` e `liveExecution`.
+
+Códigos principais:
+
+| Código | Significado |
+|---|---|
+| `NAVIGATION_PATH_CLEAR` / `NAVIGATION_PATH_BLOCKED` | spawn com ou sem espaço para o corpo |
+| `PASSAGE_TOO_NARROW` | caminho por tiles existe, mas o corpo não passa |
+| `REGION_UNREACHABLE` / `OBJECTIVE_UNREACHABLE` | região ou objetivo do plano inalcançável |
+| `EXIT_UNREACHABLE` | saída inalcançável |
+| `NPC_UNREACHABLE` / `ENCOUNTER_UNREACHABLE` | NPC ou inimigo obrigatório inalcançável |
+| `BRANCH_PATH_BLOCKED` / `BRANCH_RETURN_BLOCKED` / `BRANCH_MAIN_PATH_BLOCKED` | bifurcação física inválida |
+| `PROGRESSION_CONDITION_UNMET` | condição de saída comprovadamente impossível |
+| `PROGRESSION_OBJECTIVE_UNSTARTABLE` | missão sem gatilho de início |
+| `PROGRESSION_SIGNAL_UNSATISFIABLE` | objetivo pede um sinal que a fase não produz |
+| `PROGRESSION_COMPLETION_UNREACHABLE` | nenhuma saída permite concluir |
+| `TRANSITION_TARGET_INVALID` / `TRANSITION_UNVERIFIED` | destino inválido ou transição não executada |
+| `CAMERA_BOUNDS_VALID` / `CAMERA_BOUNDS_INVALID` | limites de mundo da câmera |
+| `REGION_ANCHOR_PENDING` | região do plano sem âncora física |
+| `PLAYTEST_LIVE_EXECUTION_UNVERIFIED` | nenhum passeio real em Phaser |
+| `PLAYTEST_SEED_UNSUPPORTED` | capítulo sem factory de geometria por seed |
+
+Cada diagnóstico inclui `code`, `severity`, `message`, `location` quando
+aplicável e `suggestion`.
+
+### Exemplo aprovado
+
+```text
+Playtest: chapter.authoring.travessia — Travessia
+Stage: stage.authoring.travessia.approach  Template: horizontal
+Seeds: 1  Pass: 1  Fail: 0  Unknown: 0
+Checks: 18 total, 0 failed, 3 unknown
+Seed 42 (authored): PASS  plan=file  checks 18, 0 failed, 3 unknown
+  Regions:
+    PASS    region...start (start) @3,15 distance=0 — Region ... is reachable.
+    PASS    region...exit (exit) @92,15 distance=2848 — Region ... is reachable.
+  ...
+Result: PASS
+```
+
+### Exemplo reprovado
+
+Depois de inserir temporariamente uma coluna de parede no corredor:
+
+```json
+{
+  "result": "FAIL",
+  "diagnostics": [
+    {
+      "code": "EXIT_UNREACHABLE",
+      "severity": "error",
+      "message": "Exit exit.demo.playtest.depart at 92,14 is unreachable from spawn.",
+      "location": { "x": 92, "y": 14 },
+      "suggestion": "Remove or reposition solid tiles between spawn and the target."
+    },
+    {
+      "code": "PROGRESSION_CONDITION_UNMET",
+      "severity": "error",
+      "message": "Exit exit.demo.playtest.depart condition cannot be produced by any reachable command.",
+      "suggestion": "Add a reachable flag/mission producer, or make the exit unconditional."
+    }
+  ]
+}
+```
+
+Remova a obstrução e repita o comando; a fase volta a `PASS`. Um teste
+automatizado cobre exatamente esse ciclo de obstrução e restauração.
+
+### Múltiplas seeds
+
+```sh
+npm run chapter -- playtest bifurcacao --seeds 10 --json
+npm run chapter -- playtest bifurcacao --seed 48 --json
+```
+
+A lista de seeds é reproduzível e aparece no relatório. Se uma seed falhar, o
+diagnóstico identifica a seed, a região e a sugestão; reproduza-a com `--seed`
+para iterar sem gerar todas as outras.
+
+### Limitações
+
+O playtest é geométrico e estático. Ele não executa Arcade Physics, combate,
+escolhas do jogador, dano, progressão persistente ou a cena Phaser. A câmera é
+verificada apenas por limites de mundo. O resultado `PASS` significa que a
+geometria e a satisfatibilidade narrativa foram comprovadas; a homologação no
+navegador continua necessária e é declarada separadamente.

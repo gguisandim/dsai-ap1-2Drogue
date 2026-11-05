@@ -73,3 +73,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-11-05 | [Contexto de autoria para agentes externos — Etapa 9.9](./2026-11-05-etapa-9-9-contexto-autoria-agentes-externos.md) |
 | 2026-11-05 | [Planejamento estruturado de fases — Etapa 9.10](./2026-11-05-etapa-9-10-planejamento-estruturado-fases.md) |
 | 2026-11-05 | [Geometria panorâmica reutilizável — Etapa 9.11](./2026-11-05-etapa-9-11-geometria-panoramica.md) |
+| 2026-11-05 | [Validação automatizada de jogabilidade — Etapa 9.12](./2026-11-05-etapa-9-12-validacao-automatizada-jogabilidade.md) |

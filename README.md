@@ -124,6 +124,8 @@ npm run chapter -- create minha-fase --template horizontal --seed 42
 npm run chapter -- validate minha-fase
 npm run chapter -- inspect minha-fase
 npm run chapter -- plan validate minha-fase
+npm run chapter -- playtest minha-fase
+npm run chapter -- playtest minha-fase --seeds 5 --json
 npm run chapter -- preview minha-fase
 npm run chapter -- preview minha-fase --visual
 npm run dev

@@ -22,9 +22,11 @@ import {
   printDiagnostics,
   printInspection,
   printPlanValidationReport,
+  printPlaytestReport,
   printPreview,
   printValidationReport,
 } from './render';
+import { playtestChapter, playtestExitCode } from './playtest';
 import { validateChapterEntry } from './validation';
 import type { ChapterCliOptions } from './types';
 
@@ -103,6 +105,22 @@ export function runChapterCli(
       });
       printCreateResult(created, slug, print);
       return 0;
+    }
+
+    if (parsed.command === 'playtest') {
+      const chapterDir = resolveChapterDir(chaptersRoot, parsed.slug as string);
+      const planPath = path.join(chapterDir, STAGE_PLAN_FILENAME);
+      const planDisplayPath = path.relative(repoRoot, planPath).split(path.sep).join('/');
+      const report = playtestChapter({
+        module: loadChapterModule(chapterDir),
+        chapterDir,
+        planDisplayPath,
+        fileSystem,
+        ...(parsed.seed !== undefined ? { seed: parsed.seed } : {}),
+        ...(parsed.seeds !== undefined ? { seeds: parsed.seeds } : {}),
+      });
+      printPlaytestReport(report, parsed.json, print);
+      return playtestExitCode(report);
     }
 
     const chapterDir = resolveChapterDir(chaptersRoot, parsed.slug as string);

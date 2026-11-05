@@ -1,4 +1,5 @@
 import type { StagePlanValidationReport } from './plan';
+import type { PlaytestChapterReport } from './playtest';
 import type {
   ChapterInspection,
   ChapterPreview,
@@ -142,6 +143,75 @@ export function printPlanValidationReport(
   }
   print('Phaser assets: not executed (logical plan validation only).');
   print(`Result: ${report.ok ? report.warnings.length > 0 ? 'OK (warnings)' : 'OK' : 'FAILED'}`);
+}
+
+export function printPlaytestReport(
+  report: PlaytestChapterReport,
+  json: boolean,
+  print: (line: string) => void,
+): void {
+  if (json) {
+    print(JSON.stringify(report, null, 2));
+    return;
+  }
+  print(`Playtest: ${report.chapterId} — ${report.title}`);
+  print(`Stage: ${report.stageId}  Template: ${report.template ?? 'none'}`);
+  print(`Seeds: ${report.summary.seeds}  Pass: ${report.summary.passed}  ` +
+    `Fail: ${report.summary.failed}  Unknown: ${report.summary.unknown}`);
+  print(`Checks: ${report.summary.checks} total, ${report.summary.failedChecks} failed, ` +
+    `${report.summary.unknownChecks} unknown`);
+  report.seeds.forEach(seed => {
+    print('');
+    print(`Seed ${seed.seed ?? 'authored'} (${seed.source}): ${seed.result}  ` +
+      `plan=${seed.plan.source}  checks ${seed.checks.length}, ` +
+      `${seed.checks.filter(check => check.status === 'FAIL').length} failed, ` +
+      `${seed.checks.filter(check => check.status === 'UNKNOWN').length} unknown`);
+    if (report.seeds.length === 1) {
+      print(`  Player body: ${seed.character.bodyWidth}x${seed.character.bodyHeight} px ` +
+        `(clearance grid ${seed.character.sampleStep} px)`);
+      print('  Regions:');
+      if (seed.regions.length === 0) print('    none');
+      seed.regions.forEach(region => print(
+        `    ${region.status.padEnd(7)} ${region.id} (${region.role}) ` +
+        `${region.anchor ? `@${region.anchor.x},${region.anchor.y}` : '@no-anchor'}` +
+        `${region.distance !== null ? ` distance=${region.distance}` : ''} — ${region.message}`,
+      ));
+    } else {
+      const passedRegions = seed.regions.filter(region => region.status === 'PASS').length;
+      print(`  Regions: ${seed.regions.length} checked, ${passedRegions} PASS`);
+    }
+    const problems = seed.checks.filter(check => check.status !== 'PASS');
+    if (problems.length > 0) {
+      print('  Problems and unverified checks:');
+      problems.forEach(check => {
+        const location = check.location ? ` @${check.location.x},${check.location.y}` : '';
+        const blocking = check.required ? '' : ' (non-blocking)';
+        print(`    ${check.status.padEnd(7)} [${check.code}] ${check.id}${location}${blocking} — ${check.message}`);
+        if (check.suggestion) print(`      suggestion: ${check.suggestion}`);
+      });
+    }
+    if (report.seeds.length === 1) {
+      print('  Passed checks:');
+      seed.checks.filter(check => check.status === 'PASS').forEach(check => print(
+        `    ${check.code} (${check.id})${check.referenceId ? ` ref=${check.referenceId}` : ''}`,
+      ));
+    }
+    if (seed.plan.diagnostics.length > 0) {
+      print('  Plan diagnostics:');
+      printDiagnostics(seed.plan.diagnostics, line => print(`    ${line}`));
+    }
+    if (report.seeds.length > 1) {
+      print(`  Chapter validation: ${seed.validation.errors} errors, ${seed.validation.warnings} warnings`);
+    }
+    print(`  Camera: ${seed.camera.status} — ${seed.camera.message}`);
+    print(`  Live execution: ${seed.liveExecution}`);
+  });
+  print('');
+  print(`Chapter validation: ${report.validation.errors} errors, ${report.validation.warnings} warnings`);
+  if (report.validation.diagnostics.length > 0) printDiagnostics(report.validation.diagnostics, print);
+  print('Phaser execution: not executed (static geometry and narrative satisfiability only).');
+  print(`Result: ${report.result === 'UNKNOWN' ? 'INCONCLUSIVE' : report.result} ` +
+    '(static playtest; live Phaser execution UNKNOWN)');
 }
 
 export function printPreview(
