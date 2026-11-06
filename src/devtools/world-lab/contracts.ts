@@ -1,3 +1,5 @@
+import type { PlaytestPlanView } from '../../stages';
+
 export const WORLD_LAB_SNAPSHOT_SCHEMA = 'umbra-world-lab/v1' as const;
 
 export type WorldLabDiagnosticOrigin =
@@ -8,7 +10,89 @@ export type WorldLabDiagnosticOrigin =
   | 'campaign-exit-binder'
   | 'stage-catalog'
   | 'integration'
+  | 'playtest-static'
+  | 'playtest-runtime'
   | 'snapshot';
+
+export type WorldLabValidationStatus = 'PASS' | 'FAIL' | 'UNKNOWN';
+export type WorldLabEvidenceSource = 'static-analysis' | 'phaser-runtime';
+
+export interface WorldLabValidationPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
+export interface WorldLabValidationCheck {
+  readonly id: string;
+  readonly code: string;
+  readonly status: WorldLabValidationStatus;
+  readonly required: boolean;
+  readonly message: string;
+  readonly suggestion?: string;
+  readonly referenceId?: string;
+  readonly location?: WorldLabValidationPoint;
+  readonly regionId?: string;
+  readonly evidence: WorldLabEvidenceSource;
+}
+
+export interface WorldLabValidationRegion {
+  readonly id: string;
+  readonly title: string;
+  readonly role: string;
+  readonly anchor?: WorldLabValidationPoint;
+  readonly status: WorldLabValidationStatus;
+  readonly required: boolean;
+  readonly code: string;
+  readonly message: string;
+}
+
+export interface WorldLabValidationSummary {
+  readonly checks: number;
+  readonly passed: number;
+  readonly failed: number;
+  readonly unknown: number;
+  readonly requiredFailed: number;
+  readonly requiredUnknown: number;
+}
+
+export interface WorldLabValidationRoutes {
+  readonly main: readonly WorldLabValidationPoint[];
+  readonly branch?: readonly WorldLabValidationPoint[];
+}
+
+export interface WorldLabStageValidation {
+  readonly stageId: string;
+  readonly seed: number | null;
+  readonly result: WorldLabValidationStatus;
+  readonly evidence: WorldLabEvidenceSource;
+  readonly checks: readonly WorldLabValidationCheck[];
+  readonly regions: readonly WorldLabValidationRegion[];
+  readonly summary: WorldLabValidationSummary;
+  readonly plan: {
+    readonly source: 'file' | 'generated' | 'none';
+    readonly planId: string | null;
+  };
+  readonly routes?: WorldLabValidationRoutes;
+}
+
+export interface WorldLabRuntimeValidation {
+  readonly schemaVersion: 1;
+  readonly kind: 'umbra.stage-homologation.report';
+  readonly stageId: string;
+  readonly chapterId?: string;
+  readonly title?: string;
+  readonly variantId?: string;
+  readonly scenario?: string;
+  readonly seed?: number | null;
+  readonly result: WorldLabValidationStatus;
+  readonly checks: readonly WorldLabValidationCheck[];
+  readonly observations?: readonly unknown[];
+  readonly evidence?: {
+    readonly screenshots?: readonly string[];
+    readonly browser?: string;
+    readonly durationMs?: number;
+  };
+}
 
 export interface WorldLabDiagnostic {
   readonly code: string;
@@ -19,6 +103,13 @@ export interface WorldLabDiagnostic {
   readonly edgeId?: string;
   readonly stageId?: string;
   readonly path?: readonly (string | number)[];
+  /** Optional playtest metadata; ignored by older snapshot consumers. */
+  readonly status?: WorldLabValidationStatus;
+  readonly evidence?: WorldLabEvidenceSource;
+  readonly location?: WorldLabValidationPoint;
+  readonly regionId?: string;
+  readonly checkId?: string;
+  readonly suggestion?: string;
 }
 
 export interface WorldLabGraphNodeView {
@@ -92,6 +183,8 @@ export interface WorldLabStageView {
   readonly manifestRevision?: number;
   readonly themeRevision?: number;
   readonly visualPresentation?: WorldLabStageVisualPresentation;
+  /** Static playtest projection (9.12) for this stage. */
+  readonly validation?: WorldLabStageValidation;
 }
 
 export interface WorldLabStageVisualPresentation {
@@ -250,6 +343,8 @@ export interface WorldLabSelection {
   readonly edgeId?: string;
   readonly tile?: { readonly x: number; readonly y: number };
   readonly diagnosticCode?: string;
+  readonly validationCheckId?: string;
+  readonly regionId?: string;
 }
 
 export interface WorldLabFilters {
@@ -267,6 +362,24 @@ export interface WorldLabSessionState {
   readonly diagnostics: readonly WorldLabDiagnostic[];
   readonly selection: WorldLabSelection;
   readonly filters: WorldLabFilters;
+  /** Runtime homologation reports imported by the developer, keyed by stageId. */
+  readonly runtimeValidations?: Readonly<Record<string, WorldLabRuntimeValidation>>;
+}
+
+export interface WorldLabPlanSource {
+  readonly plan: PlaytestPlanView;
+  readonly source: 'file' | 'generated';
+}
+
+/** Optional adapters that provide authoring plans and runtime evidence to the World Lab. */
+export interface WorldLabValidationSource {
+  planForStage?(stageId: string): WorldLabPlanSource | undefined;
+  routesForStage?(stageId: string): {
+    readonly main: readonly WorldLabValidationPoint[];
+    readonly branch?: readonly WorldLabValidationPoint[];
+  } | undefined;
+  seedForStage?(stageId: string): number | null;
+  runtimeForStage?(stageId: string): WorldLabRuntimeValidation | undefined;
 }
 
 export type WorldLabGenerationResult =

@@ -5,3 +5,4 @@ export * from './WorldLabMacroProjector';
 export * from './WorldLabProjector';
 export * from './WorldLabSession';
 export * from './WorldLabSnapshot';
+export * from './WorldLabValidation';

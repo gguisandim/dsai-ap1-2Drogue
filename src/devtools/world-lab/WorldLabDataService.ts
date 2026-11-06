@@ -3,6 +3,7 @@ import {
   CampaignGraphGenerator,
   PhysicalExitResolver,
   StageLoader,
+  StagePlaytestValidator,
   StageRegistry,
   registerCampaignChapters,
   registerLegacyStages,
@@ -22,8 +23,13 @@ import type {
   WorldLabDiagnostic,
   WorldLabDiagnosticOrigin,
   WorldLabGenerationResult,
+  WorldLabValidationSource,
 } from './contracts';
 import { WORLD_LAB_FIXTURE_CATALOG } from './fixtures/fixtureCatalog';
+import {
+  toWorldLabStageValidation,
+  validationDiagnostics,
+} from './WorldLabValidation';
 import {
   WorldLabProjector,
   type WorldLabProjectionInput,
@@ -49,6 +55,8 @@ export interface WorldLabDataServiceOptions {
   readonly presentationVariantId?: string;
   /** Development-only focus: projects this stage in one graph node. */
   readonly focusStageId?: string;
+  /** Supplies authoring plans/routes and runtime evidence to the playtest projection. */
+  readonly validationSource?: WorldLabValidationSource;
 }
 
 export interface WorldLabStageOption {
@@ -97,6 +105,8 @@ export class WorldLabDataService {
   private readonly binder: CampaignExitBinder;
   private readonly projector: WorldLabProjector;
   private readonly registry: StageRegistry;
+  private readonly validationSource?: WorldLabValidationSource;
+  private readonly playtest = new StagePlaytestValidator();
   private currentFocusStageId?: string;
   private currentPresentationVariantId?: string;
   private lastFocusNodeId?: string;
@@ -116,6 +126,7 @@ export class WorldLabDataService {
     this.resolver = options.resolver ?? new PhysicalExitResolver();
     this.binder = options.binder ?? new CampaignExitBinder();
     this.projector = options.projector ?? new WorldLabProjector();
+    this.validationSource = options.validationSource;
   }
 
   public presentationVariants(): readonly string[] {
@@ -261,6 +272,29 @@ export class WorldLabDataService {
         { nodeId: node.id, stageId: node.stageId },
       )));
 
+      let validation: WorldLabStageProjectionInput['validation'];
+      const module = this.registry.get(node.stageId);
+      if (module?.manifest.layout.kind === 'authored') {
+        const planSource = this.validationSource?.planForStage?.(node.stageId);
+        const routes = this.validationSource?.routesForStage?.(node.stageId);
+        const seed = this.validationSource?.seedForStage?.(node.stageId) ?? null;
+        const report = this.playtest.validate({
+          stage: module,
+          level: loaded.value.level,
+          ...(loaded.value.encounter ? { encounter: loaded.value.encounter } : {}),
+          ...(planSource ? { plan: planSource.plan } : {}),
+          ...(routes ? { routes } : {}),
+          chapterStageIds: this.registry.getChapter(module.manifest.chapterId)?.stageIds ??
+            [module.manifest.id],
+          ...(seed !== null ? { seed } : {}),
+        });
+        validation = toWorldLabStageValidation(report, node.stageId, planSource, routes);
+        diagnostics.push(...validationDiagnostics(validation, {
+          nodeId: node.id,
+          stageId: node.stageId,
+        }));
+      }
+
       const campaignStage = fixtureStage(loaded.value);
       const outgoing = graph.edges.filter(edge => edge.sourceNodeId === node.id);
       const physicalExitResult = this.resolver.resolve({
@@ -303,6 +337,7 @@ export class WorldLabDataService {
         displayStage: loaded.value,
         physicalExitResult,
         ...(bindingResult ? { bindingResult } : {}),
+        ...(validation ? { validation } : {}),
       }));
     }
 

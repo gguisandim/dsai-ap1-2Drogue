@@ -8,7 +8,10 @@ import {
   type WorldLabSnapshotFailureCode,
   type WorldLabSnapshotResult,
   type WorldLabStageMarker,
+  type WorldLabStageValidation,
   type WorldLabStageView,
+  type WorldLabValidationCheck,
+  type WorldLabValidationRegion,
 } from './contracts';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -81,13 +84,53 @@ function validMarker(value: unknown): value is WorldLabStageMarker {
     (value.physicalExitId === undefined || text(value.physicalExitId));
 }
 
+function validValidationCheck(value: unknown): value is WorldLabValidationCheck {
+  return isRecord(value) && text(value.id) && text(value.code) &&
+    ['PASS', 'FAIL', 'UNKNOWN'].includes(String(value.status)) &&
+    typeof value.required === 'boolean' && text(value.message) &&
+    (value.suggestion === undefined || text(value.suggestion)) &&
+    (value.referenceId === undefined || text(value.referenceId)) &&
+    (value.regionId === undefined || text(value.regionId)) &&
+    (value.evidence === 'static-analysis' || value.evidence === 'phaser-runtime') &&
+    (value.location === undefined || (isRecord(value.location) &&
+      integer(value.location.x) && integer(value.location.y)));
+}
+
+function validValidationRegion(value: unknown): value is WorldLabValidationRegion {
+  return isRecord(value) && text(value.id) && text(value.title) && text(value.role) &&
+    ['PASS', 'FAIL', 'UNKNOWN'].includes(String(value.status)) &&
+    typeof value.required === 'boolean' && text(value.code) && text(value.message) &&
+    (value.anchor === undefined || (isRecord(value.anchor) &&
+      integer(value.anchor.x) && integer(value.anchor.y)));
+}
+
+function validValidation(value: unknown): value is WorldLabStageValidation {
+  return isRecord(value) && text(value.stageId) &&
+    (value.seed === null || integer(value.seed)) &&
+    ['PASS', 'FAIL', 'UNKNOWN'].includes(String(value.result)) &&
+    (value.evidence === 'static-analysis' || value.evidence === 'phaser-runtime') &&
+    Array.isArray(value.checks) && value.checks.every(validValidationCheck) &&
+    Array.isArray(value.regions) && value.regions.every(validValidationRegion) &&
+    isRecord(value.summary) && integer(value.summary.checks) &&
+    isRecord(value.plan) &&
+    (value.plan.source === 'file' || value.plan.source === 'generated' || value.plan.source === 'none') &&
+    (value.plan.planId === null || text(value.plan.planId)) &&
+    (value.routes === undefined || (isRecord(value.routes) && Array.isArray(value.routes.main) &&
+      value.routes.main.every((point: unknown) => isRecord(point) &&
+        integer(point.x) && integer(point.y)) &&
+      (value.routes.branch === undefined || (Array.isArray(value.routes.branch) &&
+        value.routes.branch.every((point: unknown) => isRecord(point) &&
+          integer(point.x) && integer(point.y))))));
+}
+
 function validStage(value: unknown): value is WorldLabStageView {
   if (!isRecord(value) || !text(value.nodeId) || !text(value.stageId) || !text(value.title) ||
     !text(value.theme) || !integer(value.width) || !integer(value.height) ||
     !Array.isArray(value.tiles) || !Array.isArray(value.markers) ||
     !Array.isArray(value.physicalExitIds) ||
     (value.manifestRevision !== undefined && (!integer(value.manifestRevision) || value.manifestRevision < 1)) ||
-    (value.themeRevision !== undefined && (!integer(value.themeRevision) || value.themeRevision < 1))) return false;
+    (value.themeRevision !== undefined && (!integer(value.themeRevision) || value.themeRevision < 1)) ||
+    (value.validation !== undefined && !validValidation(value.validation))) return false;
   if (value.visualPresentation !== undefined && (!isRecord(value.visualPresentation) ||
     !text(value.visualPresentation.themeId) || !text(value.visualPresentation.tilesetId) ||
     !Array.isArray(value.visualPresentation.textureKeys) || !value.visualPresentation.textureKeys.every(text) ||
@@ -154,11 +197,20 @@ function validVisualEnvironment(value: unknown): boolean {
 function validDiagnostic(value: unknown): value is WorldLabDiagnostic {
   return isRecord(value) && text(value.code) &&
     ['info', 'warning', 'error'].includes(String(value.severity)) &&
-    ['campaign-generator', 'stage-loader', 'physical-exit-resolver', 'campaign-exit-binder',
-      'integration', 'snapshot'].includes(String(value.origin)) && text(value.message) &&
+    ['campaign-generator', 'campaign-composer', 'stage-loader', 'physical-exit-resolver',
+      'campaign-exit-binder', 'stage-catalog', 'integration', 'playtest-static',
+      'playtest-runtime', 'snapshot'].includes(String(value.origin)) && text(value.message) &&
     (value.nodeId === undefined || text(value.nodeId)) &&
     (value.edgeId === undefined || text(value.edgeId)) &&
     (value.stageId === undefined || text(value.stageId)) &&
+    (value.status === undefined || ['PASS', 'FAIL', 'UNKNOWN'].includes(String(value.status))) &&
+    (value.evidence === undefined ||
+      ['static-analysis', 'phaser-runtime'].includes(String(value.evidence))) &&
+    (value.regionId === undefined || text(value.regionId)) &&
+    (value.checkId === undefined || text(value.checkId)) &&
+    (value.suggestion === undefined || text(value.suggestion)) &&
+    (value.location === undefined || (isRecord(value.location) &&
+      integer(value.location.x) && integer(value.location.y))) &&
     (value.path === undefined || (Array.isArray(value.path) &&
       value.path.every(part => typeof part === 'string' || integer(part))));
 }
@@ -178,10 +230,43 @@ function cloneMarker(marker: WorldLabStageMarker): WorldLabStageMarker {
   return Object.freeze({ ...marker });
 }
 
+function cloneValidationCheck(check: WorldLabValidationCheck): WorldLabValidationCheck {
+  return Object.freeze({
+    ...check,
+    ...(check.location ? { location: Object.freeze({ ...check.location }) } : {}),
+  });
+}
+
+function cloneValidationRegion(region: WorldLabValidationRegion): WorldLabValidationRegion {
+  return Object.freeze({
+    ...region,
+    ...(region.anchor ? { anchor: Object.freeze({ ...region.anchor }) } : {}),
+  });
+}
+
+function cloneValidation(validation: WorldLabStageValidation): WorldLabStageValidation {
+  return Object.freeze({
+    ...validation,
+    checks: Object.freeze([...validation.checks]
+      .sort((left, right) => compare(left.id, right.id)).map(cloneValidationCheck)),
+    regions: Object.freeze([...validation.regions]
+      .sort((left, right) => compare(left.id, right.id)).map(cloneValidationRegion)),
+    summary: Object.freeze({ ...validation.summary }),
+    plan: Object.freeze({ ...validation.plan }),
+    ...(validation.routes ? { routes: Object.freeze({
+      main: Object.freeze(validation.routes.main.map(point => Object.freeze({ ...point }))),
+      ...(validation.routes.branch ? {
+        branch: Object.freeze(validation.routes.branch.map(point => Object.freeze({ ...point }))),
+      } : {}),
+    }) } : {}),
+  });
+}
+
 function cloneStage(stage: WorldLabStageView): WorldLabStageView {
   return Object.freeze({
     ...stage,
     tiles: Object.freeze(stage.tiles.map(row => Object.freeze([...row]))),
+    ...(stage.validation ? { validation: cloneValidation(stage.validation) } : {}),
     markers: Object.freeze([...stage.markers]
       .sort((left, right) => compare(left.id, right.id) || compare(left.kind, right.kind))
       .map(cloneMarker)),
@@ -238,6 +323,7 @@ function cloneDiagnostic(value: WorldLabDiagnostic): WorldLabDiagnostic {
   return Object.freeze({
     ...value,
     ...(value.path ? { path: Object.freeze([...value.path]) } : {}),
+    ...(value.location ? { location: Object.freeze({ ...value.location }) } : {}),
   });
 }
 
@@ -257,6 +343,8 @@ export function canonicalWorldLabDocument(document: WorldLabDocument): WorldLabD
         compare(left.nodeId ?? '', right.nodeId ?? '') || compare(left.edgeId ?? '', right.edgeId ?? '') ||
         compare(left.stageId ?? '', right.stageId ?? '') ||
         compare(left.path?.map(String).join('.') ?? '', right.path?.map(String).join('.') ?? '') ||
+        compare(left.status ?? '', right.status ?? '') ||
+        compare(left.checkId ?? '', right.checkId ?? '') ||
         compare(left.message, right.message))
       .map(cloneDiagnostic)),
   });

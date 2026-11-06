@@ -27,7 +27,7 @@ function parseInteger(
 }
 
 const COMMANDS = new Set<ChapterCommandName>([
-  'create', 'validate', 'inspect', 'preview', 'capabilities', 'plan', 'playtest',
+  'create', 'validate', 'inspect', 'preview', 'capabilities', 'plan', 'playtest', 'homologate',
 ]);
 
 function parsePlanArguments(args: readonly string[]): ChapterCliArguments {
@@ -105,6 +105,8 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
   let height: number | undefined;
   let regionCount: number | undefined;
   let seeds: number | undefined;
+  let stageId: string | undefined;
+  let variantId: string | undefined;
   let json = false;
   let visual = false;
   let chaptersDir: string | undefined;
@@ -113,10 +115,11 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
     const argument = rest[index];
     if (argument.startsWith('-')) {
       if (argument === '--json') {
-        if (command !== 'inspect' && command !== 'capabilities' && command !== 'playtest') {
+        if (command !== 'inspect' && command !== 'capabilities' &&
+          command !== 'playtest' && command !== 'homologate') {
           throw usageError(
             'usage.unsupported-option',
-            '--json is only supported by inspect, capabilities and playtest.',
+            '--json is only supported by inspect, capabilities, playtest and homologate.',
           );
         }
         json = true;
@@ -216,6 +219,22 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
         index += 1;
         continue;
       }
+      if (command === 'homologate' && argument === '--stage') {
+        stageId = requireValue(rest, index, argument).trim();
+        if (stageId.length === 0) {
+          throw usageError('usage.invalid-stage', 'Stage id cannot be empty.');
+        }
+        index += 1;
+        continue;
+      }
+      if (command === 'homologate' && argument === '--variant') {
+        variantId = requireValue(rest, index, argument).trim();
+        if (variantId.length === 0) {
+          throw usageError('usage.invalid-variant', 'Presentation variant cannot be empty.');
+        }
+        index += 1;
+        continue;
+      }
       if (command === 'create' && argument === '--regions') {
         regionCount = parseInteger(
           requireValue(rest, index, argument),
@@ -248,7 +267,20 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
     return Object.freeze({ command, json, visual: false, chaptersDir });
   }
 
-  if (slug === undefined) {
+  if (command === 'homologate') {
+    if (slug !== undefined && stageId !== undefined) {
+      throw usageError(
+        'usage.ambiguous-target',
+        'Use a chapter slug or --stage, not both.',
+      );
+    }
+    if (slug === undefined && stageId === undefined) {
+      throw usageError(
+        'usage.missing-chapter',
+        'Command homologate requires a chapter slug or --stage <stageId>.',
+      );
+    }
+  } else if (slug === undefined) {
     throw usageError('usage.missing-chapter', `Command ${command} requires a chapter slug.`);
   }
   if (template === 'branched' && regionCount !== undefined && regionCount < 5) {
@@ -273,6 +305,8 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
     ...(width !== undefined ? { width } : {}),
     ...(height !== undefined ? { height } : {}),
     ...(regionCount !== undefined ? { regionCount } : {}),
+    ...(stageId !== undefined ? { stageId } : {}),
+    ...(variantId !== undefined ? { variantId } : {}),
     ...(chaptersDir !== undefined ? { chaptersDir } : {}),
     json,
     visual,
@@ -291,6 +325,8 @@ Usage:
   npm run chapter -- preview <slug> [--visual]
   npm run chapter -- plan validate <slug> [--json]
   npm run chapter -- playtest <slug> [--json] [--seed <n> | --seeds <n>]
+  npm run chapter -- homologate <slug> [--json] [--variant <id>]
+  npm run chapter -- homologate --stage <stageId> [--json] [--variant <id>]
 
 Options:
   --chapters-dir <path>  Authoring root inside src/ (default: src/examples/chapters)
@@ -298,6 +334,8 @@ Options:
   --visual               Prepare the Phaser browser preview URL (preview only)
   --seed <n>             Reproduce one geometry seed (playtest only)
   --seeds <n>            Evaluate n consecutive seeds from the authored seed (playtest only)
+  --stage <stageId>      Production stage for homologate
+  --variant <id>         Presentation variant for homologate
   --help, -h             Show this help
 
 Exit codes:

@@ -1,8 +1,9 @@
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { createStageAuthoringCapabilities, type StageModule } from '../../stages';
 import { printCapabilities } from './capabilities';
 import { CHAPTER_CLI_HELP, parseChapterCliArguments } from './args';
-import { ChapterCliError } from './errors';
+import { ChapterCliError, usageError } from './errors';
 import { nodeChapterFileSystem } from './fs';
 import { createChapter } from './generator';
 import { inspectChapterEntry } from './inspect';
@@ -105,6 +106,38 @@ export function runChapterCli(
       });
       printCreateResult(created, slug, print);
       return 0;
+    }
+
+    if (parsed.command === 'homologate') {
+      const canonicalRoot = path.resolve(repoRoot, 'src', 'examples', 'chapters');
+      if (path.resolve(chaptersRoot) !== canonicalRoot) {
+        throw usageError(
+          'usage.homologate-canonical-root',
+          'Browser homologation requires the canonical authoring root src/examples/chapters.',
+        );
+      }
+      const script = path.join(repoRoot, 'scripts', 'homologate-chapter.mjs');
+      const scriptArgs = [script];
+      if (parsed.slug !== undefined) scriptArgs.push(parsed.slug);
+      else scriptArgs.push('--stage', parsed.stageId as string);
+      if (parsed.variantId !== undefined) scriptArgs.push('--variant', parsed.variantId);
+      if (parsed.json) scriptArgs.push('--json');
+      try {
+        const output = execFileSync(process.execPath, scriptArgs, {
+          cwd: repoRoot,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+          timeout: 600_000,
+          maxBuffer: 16 * 1024 * 1024,
+        });
+        if (output.trim().length > 0) print(output.trimEnd());
+        return 0;
+      } catch (error) {
+        const failure = error as { readonly stdout?: string; readonly stderr?: string };
+        if (failure.stdout?.trim()) print(failure.stdout.trimEnd());
+        if (failure.stderr?.trim()) printError(failure.stderr.trimEnd());
+        return 1;
+      }
     }
 
     if (parsed.command === 'playtest') {

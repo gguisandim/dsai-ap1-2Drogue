@@ -230,6 +230,42 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .wl-diagnostic-filters { display: flex; gap: 4px; }
 .wl-diagnostic-filters button { min-height: 25px; padding: 3px 7px; color: #667c8a; font-size: 9px; }
 .wl-diagnostic-filters button.is-active { color: #d5e1e7; }
+.wl-validation-route { fill: none; stroke: #2e9d76; stroke-width: 2.5; opacity: .75; pointer-events: none; }
+.wl-validation-route--branch { stroke: #d3a64b; stroke-dasharray: 7 5; opacity: .8; }
+.wl-validation-region { cursor: pointer; }
+.wl-validation-region rect { fill: #1c3a33; stroke: #5d8f7d; stroke-width: 1.5; }
+.wl-validation-region text { fill: #d9fff0; font: 700 7px ui-monospace, monospace; pointer-events: none; }
+.wl-validation-region--fail rect { fill: #4a1e24; stroke: #e06973; }
+.wl-validation-region--unknown rect { fill: #42361a; stroke: #e0b75c; }
+.wl-validation-region--pass rect { fill: #173b2d; stroke: #54d59d; }
+.wl-validation-check { pointer-events: auto; cursor: pointer; }
+.wl-validation-check circle { stroke: #08111a; stroke-width: 1.5; }
+.wl-validation-check text { font: 800 8px ui-monospace, monospace; fill: #08111a; pointer-events: none; }
+.wl-validation-check--fail circle { fill: #ec6673; }
+.wl-validation-check--unknown circle { fill: #e3b75b; }
+.wl-validation-check--pass circle { fill: #53d59f; }
+.wl-validation-check.is-selected circle { stroke: #f3e6a0; stroke-width: 3; }
+.wl-validation-list { display: grid; gap: 3px; max-height: 300px; overflow: auto; padding-right: 2px; }
+.wl-validation-row { display: grid; gap: 3px; width: 100%; padding: 6px 7px; border: 1px solid #243945; border-left-width: 3px; border-radius: 3px; background: #0d1922; color: #b9cad3; font-size: 9px; text-align: left; }
+.wl-validation-row:hover { background: #13222c; border-color: #3b5a68; }
+.wl-validation-row.is-selected { border-color: #e8bc59; background: #1d2418; }
+.wl-validation-row--fail { border-left-color: #d65f69; }
+.wl-validation-row--unknown { border-left-color: #d1a54e; }
+.wl-validation-row--pass { border-left-color: #3fb588; }
+.wl-validation-row-head { display: flex; align-items: center; gap: 7px; }
+.wl-validation-row-head strong { font: 700 8px ui-monospace, monospace; letter-spacing: .03em; text-transform: uppercase; }
+.wl-validation-row--fail strong { color: #f08a92; }
+.wl-validation-row--unknown strong { color: #e7c477; }
+.wl-validation-row--pass strong { color: #7ddfb8; }
+.wl-validation-row-head code { color: #9fc1d2; font: 8px ui-monospace, monospace; overflow-wrap: anywhere; }
+.wl-validation-row small { color: #718896; font: 8px/1.4 ui-monospace, monospace; }
+.wl-validation-row-message { color: #c8d6dd; font-size: 9px; line-height: 1.35; }
+.wl-validation-row-suggestion { color: #b9a36c; }
+.wl-validation-import { display: inline-block; margin-top: 8px; padding: 5px 8px; border: 1px solid #2b4c5b; border-radius: 3px; background: #10232c; color: #b7d7e2; font-size: 9px; cursor: pointer; }
+.wl-validation-import input { display: none; }
+.wl-validation-empty, .wl-validation-note { margin: 6px 0 0; color: #7e94a1; font-size: 9px; line-height: 1.4; }
+.wl-validation-note { color: #b09a63; }
+
 .wl-diagnostics { display: none; max-height: 210px; overflow: auto; padding: 5px 8px 8px; }
 .wl-diagnostics-drawer.is-open .wl-diagnostics { display: block; }
 .wl-diagnostic { margin-bottom: 4px; border: 1px solid #253945; border-left-width: 3px; border-radius: 3px; background: #0d1922; }

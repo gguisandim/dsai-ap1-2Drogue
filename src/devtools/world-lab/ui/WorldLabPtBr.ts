@@ -21,6 +21,9 @@ export const WORLD_LAB_PT_BR = Object.freeze({
     selectedNode: 'Nó selecionado', viewedStage: 'Fase visualizada', activeVariant: 'Variante ativa',
     inspectedItem: 'Item inspecionado', noSelection: 'Nenhuma seleção', unavailable: 'Indisponível',
     yes: 'sim', no: 'não', legacy: 'legado', none: 'nenhum', fallback: 'padrão técnico',
+    result: 'Resultado', evidence: 'Evidência', region: 'Região', coordinates: 'Coordenadas',
+    suggestion: 'Sugestão', runtimeReport: 'Relatório de homologação',
+    importRuntime: 'Importar homologação', validationChecks: 'Verificações',
   }),
   panels: Object.freeze({
     graph: 'Grafo da campanha', stage: 'Prévia da fase', comparison: 'Comparação de variantes',
@@ -30,7 +33,7 @@ export const WORLD_LAB_PT_BR = Object.freeze({
     general: 'Geral', visual: 'Visual', transformation: 'Transformação', collision: 'Colisão',
     origin: 'Origem', diagnostics: 'Diagnósticos', progress: 'Progresso', catalog: 'Catálogo dinâmico',
     composition: 'Composição determinística', choices: 'Escolhas do runtime', layers: 'Camadas',
-    entities: 'Entidades', assets: 'Assets',
+    entities: 'Entidades', assets: 'Assets', validation: 'Validação',
   }),
   empty: Object.freeze({
     graph: 'Gere uma campanha para inspecionar o grafo.',
@@ -49,6 +52,8 @@ export const WORLD_LAB_PT_BR = Object.freeze({
     structural: 'Mapa estrutural · camadas e colisões apenas de inspeção',
     fixture: 'Dados de demonstração · não representam um save de produção',
     registered: 'Conteúdo registrado', runtime: 'Problema do runtime',
+    validation: 'Sobreposições de inspeção; não alteram colisões ou gameplay',
+    validationStructural: 'As sobreposições de validação aparecem no modo Estrutural',
   }),
   severities: Object.freeze({ error: 'Erros', warning: 'Avisos', info: 'Informações' }),
   categories: Object.freeze({ tile: 'Tile', decoration: 'Decoração', npc: 'NPC', enemy: 'Inimigo' }),
@@ -93,7 +98,16 @@ const ORIGINS: Readonly<Record<WorldLabDiagnostic['origin'], string>> = Object.f
   'campaign-generator': 'Gerador de campanha', 'campaign-composer': 'Compositor de campanha',
   'stage-loader': 'Carregador de fases', 'physical-exit-resolver': 'Resolvedor de saídas físicas',
   'campaign-exit-binder': 'Vínculo de saídas', 'stage-catalog': 'Catálogo de fases',
-  integration: 'Integração', snapshot: 'Snapshot',
+  integration: 'Integração', 'playtest-static': 'Validação estática',
+  'playtest-runtime': 'Homologação Phaser', snapshot: 'Snapshot',
+});
+
+const VALIDATION_STATUS: Readonly<Record<string, string>> = Object.freeze({
+  PASS: 'aprovado', FAIL: 'reprovado', UNKNOWN: 'não verificado',
+});
+
+const EVIDENCE: Readonly<Record<string, string>> = Object.freeze({
+  'static-analysis': 'análise estática', 'phaser-runtime': 'execução Phaser',
 });
 
 const DIAGNOSTICS: Readonly<Record<string, string>> = Object.freeze({
@@ -124,6 +138,14 @@ export function localizeArtWarning(value: string): string {
 
 export function localizeDiagnosticOrigin(origin: WorldLabDiagnostic['origin']): string {
   return ORIGINS[origin];
+}
+
+export function localizeValidationStatus(value: string | undefined): string {
+  return value ? VALIDATION_STATUS[value] ?? value : WORLD_LAB_PT_BR.labels.unavailable;
+}
+
+export function localizeEvidence(value: string | undefined): string {
+  return value ? EVIDENCE[value] ?? value : WORLD_LAB_PT_BR.labels.unavailable;
 }
 
 export function localizeDiagnosticMessage(diagnostic: WorldLabDiagnostic): string {

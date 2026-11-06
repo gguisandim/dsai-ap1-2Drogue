@@ -17,6 +17,7 @@
       "id": "region.aguas.igapo.ribeirinho",
       "title": "Margem ribeirinha",
       "role": "start",
+      "anchor": { "x": 4, "y": 17 },
       "connections": [
         "region.aguas.igapo.travessia"
       ]
@@ -25,6 +26,7 @@
       "id": "region.aguas.igapo.travessia",
       "title": "Travessia inundada",
       "role": "exploration",
+      "anchor": { "x": 16, "y": 17 },
       "connections": [
         "region.aguas.igapo.ribeirinho",
         "region.aguas.igapo.combate"
@@ -34,6 +36,7 @@
       "id": "region.aguas.igapo.combate",
       "title": "Clareira de combate",
       "role": "combat",
+      "anchor": { "x": 49, "y": 16 },
       "connections": [
         "region.aguas.igapo.travessia",
         "region.aguas.igapo.vestigio"
@@ -43,6 +46,7 @@
       "id": "region.aguas.igapo.vestigio",
       "title": "Vestígio Submerso",
       "role": "objective",
+      "anchor": { "x": 28, "y": 16 },
       "connections": [
         "region.aguas.igapo.combate",
         "region.aguas.igapo.nascente"
@@ -52,6 +56,7 @@
       "id": "region.aguas.igapo.nascente",
       "title": "Nascente da corrupção",
       "role": "exit",
+      "anchor": { "x": 91, "y": 16 },
       "connections": [
         "region.aguas.igapo.vestigio"
       ]

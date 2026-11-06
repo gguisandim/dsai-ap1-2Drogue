@@ -548,3 +548,130 @@ escolhas do jogador, dano, progressão persistente ou a cena Phaser. A câmera �
 verificada apenas por limites de mundo. O resultado `PASS` significa que a
 geometria e a satisfatibilidade narrativa foram comprovadas; a homologação no
 navegador continua necessária e é declarada separadamente.
+
+## 15. Homologação em navegador e World Lab
+
+A homologação de runtime complementa o `playtest` estático. Ela abre o preview
+Phaser existente, controla o personagem com entradas reais de teclado e mouse e
+observa NPC, diálogo, missão, encontro, combate, saída, conclusão e câmera.
+
+```sh
+npm run chapter -- homologate minha-fase --json
+npm run chapter -- homologate minha-fase --variant variant.exemplo --json
+npm run chapter -- homologate --stage stage.aguas.igapo-das-memorias --json
+npm run chapter -- homologate --stage stage.aguas.igapo-das-memorias \
+  --variant variant.aguas.igapo-sombrio --json
+npm run homologate -- minha-fase --json
+```
+
+Pré-requisitos:
+
+- Node com `WebSocket` global (Node 22 ou superior);
+- Edge/Chrome/Chromium local, ou `UMBRA_BROWSER`/`--browser <caminho>`;
+- o capítulo no diretório canônico `src/examples/chapters/` no modo capítulo;
+- Vite disponível no projeto.
+
+O comando sobe o Vite, abre o preview, executa o roteiro e grava:
+
+- `.tmp/evidence-913/<stageId>[-<variant>]-homologation.json`;
+- capturas `.png` no mesmo diretório.
+
+O diretório `.tmp/` é ignorado pelo Git. O executor não usa aumento de HP, dano
+infinito, teletransporte nem alteração de regras. O perfil de classe é o padrão
+do jogo. Se o jogador morrer ou o combate exceder o tempo, o relatório registra
+FAIL/UNKNOWN com a evidência real.
+
+### Relatório de runtime
+
+O documento é `umbra.stage-homologation.report` v1 e é **complementar** ao
+`umbra.stage-playtest.report` v1. Ele contém `stageId`, `variantId`, `result`,
+`checks`, `observations` e `evidence`.
+
+```json
+{
+  "schemaVersion": 1,
+  "kind": "umbra.stage-homologation.report",
+  "stageId": "stage.aguas.igapo-das-memorias",
+  "variantId": "variant.aguas.igapo-sombrio",
+  "result": "PASS",
+  "checks": [
+    {
+      "id": "runtime.exit.triggered",
+      "code": "RUNTIME_EXIT_TRIGGERED",
+      "status": "PASS",
+      "required": true,
+      "message": "A saída acionou o evento de conclusão.",
+      "location": { "x": 91, "y": 16 },
+      "evidence": "phaser-runtime"
+    }
+  ],
+  "evidence": {
+    "screenshots": ["01-loaded.png", "02-npc-dialogue.png", "05-exit.png"],
+    "browser": "Edg/… (Chromium)",
+    "durationMs": 29912
+  }
+}
+```
+
+Códigos úteis: `RUNTIME_STAGE_LOADED`, `RUNTIME_PLAYER_MOVED`,
+`RUNTIME_CAMERA_FOLLOW`, `RUNTIME_CAMERA_BOUNDS`, `RUNTIME_NPC_REACHED`,
+`RUNTIME_DIALOGUE_OPENED`, `RUNTIME_MISSION_STARTED`,
+`RUNTIME_MISSION_COMPLETED`, `RUNTIME_ENCOUNTER_STARTED`,
+`RUNTIME_COMBAT_DAMAGE`, `RUNTIME_PLAYER_DAMAGED`, `RUNTIME_PLAYER_DIED`,
+`RUNTIME_ENCOUNTER_COMPLETED`, `RUNTIME_BRANCH_REJOINED`,
+`RUNTIME_FLAG_UPDATED`, `RUNTIME_EXIT_UNLOCKED`, `RUNTIME_EXIT_REACHED`,
+`RUNTIME_EXIT_TRIGGERED`, `RUNTIME_TRANSITION_EXECUTED`,
+`RUNTIME_TRANSITION_UNVERIFIED`, `RUNTIME_BROWSER_UNAVAILABLE` e
+`RUNTIME_EXECUTION_FAILED`.
+
+`PASS` é uma verificação executada; `FAIL` é um problema comprovado; `UNKNOWN`
+é uma verificação não executada ou inconclusiva. A transição de cena no preview
+individual é UNKNOWN quando a fase conclui mas a próxima fase não é carregada.
+
+### World Lab
+
+Inicie o World Lab:
+
+```sh
+npm run dev
+# http://localhost:5173/world-lab.html?stage=stage.aguas.igapo-das-memorias
+```
+
+No modo **Estrutural**, o mapa mostra:
+
+- âncoras de região do plano;
+- rota principal e rota secundária;
+- checks com localização (FAIL, UNKNOWN e o check selecionado);
+- destaque do problema selecionado.
+
+O inspetor contém a seção **Validação** com resultado, seed, contagens,
+evidências, plano, rotas e a lista de checks com código, região, coordenadas,
+descrição e sugestão. Clicar em um check seleciona o tile correspondente.
+
+Para adicionar a evidência de runtime, use **Importar homologação** e escolha o
+JSON gerado em `.tmp/evidence-913/`. O World Lab mescla os checks de runtime com
+a análise estática e mostra a origem de cada evidência. Problemas aparecem
+também no painel de diagnósticos existente, com status, evidência, região,
+coordenadas, check e sugestão.
+
+As sobreposições são apenas de inspeção: não alteram tiles, colisões, objetos
+ou estado de gameplay. Fases legadas/procedurais não recebem validação estática
+de autoria; o painel informa a indisponibilidade.
+
+O World Lab descobre capítulos e planos por `import.meta.glob` estático. Depois
+de criar um capítulo novo, reinicie o Vite para que ele apareça no seletor.
+
+### Resultados desta etapa
+
+| Caso | Resultado | Observação |
+|---|---|---|
+| Horizontal (template) | PASS | NPC, diálogo, missão, combate real, encontro, saída e conclusão; transição UNKNOWN |
+| Ramificado (template) | PASS | split → branch → rejoin, combate, saída e conclusão |
+| Igapó Natural | PASS | NPC, diálogo, missão, flag, saída e conclusão; transição UNKNOWN |
+| Igapó Corrompida | PASS | mesma trilha com `variant.aguas.igapo-sombrio` |
+| Fixture de falha | FAIL controlado | bolso selado detectado e exibido no World Lab |
+
+A transição real entre fases não é executada no preview individual. O executor
+é pequeno e orientado pelos dados do capítulo; não é um bot genérico. O combate
+pode terminar em morte ou timeout, e isso é reportado como resultado real, não
+como homologação completa.

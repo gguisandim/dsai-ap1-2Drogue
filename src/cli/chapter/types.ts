@@ -21,12 +21,17 @@ export type ChapterCommandName =
   | 'capabilities'
   | 'plan'
   | 'playtest'
+  | 'homologate'
   | 'help';
 
 export interface ChapterCliArguments {
   readonly command: ChapterCommandName;
   readonly planAction?: 'validate';
   readonly slug?: string;
+  /** Production stage targeted by `homologate --stage`. */
+  readonly stageId?: string;
+  /** Optional presentation variant for `homologate`. */
+  readonly variantId?: string;
   readonly title?: string;
   readonly namespace?: string;
   readonly revision?: number;

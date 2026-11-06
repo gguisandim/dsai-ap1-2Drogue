@@ -3,13 +3,16 @@ import type {
   WorldLabDocument,
   WorldLabFilters,
   WorldLabGenerationResult,
+  WorldLabRuntimeValidation,
   WorldLabSelection,
   WorldLabSessionState,
   WorldLabSnapshotResult,
+  WorldLabValidationCheck,
 } from './contracts';
 import { WorldLabDataService } from './WorldLabDataService';
 import type { WorldLabStageOption } from './WorldLabDataService';
 import { WorldLabSnapshotCodec } from './WorldLabSnapshot';
+import { parseRuntimeValidation, type RuntimeValidationParseResult } from './WorldLabValidation';
 
 export interface WorldLabDataSource {
   generate(seed: string): WorldLabGenerationResult;
@@ -37,6 +40,7 @@ function freezeState(state: WorldLabSessionState): WorldLabSessionState {
     diagnostics: Object.freeze([...state.diagnostics]),
     selection: freezeSelection(state.selection),
     filters: Object.freeze({ ...state.filters }),
+    runtimeValidations: Object.freeze({ ...(state.runtimeValidations ?? {}) }),
   });
 }
 
@@ -54,6 +58,7 @@ export class WorldLabSession {
       generation: 0,
       diagnostics: [],
       selection: {},
+      runtimeValidations: {},
       filters: {
         showGrid: true,
         showOverlays: true,
@@ -181,9 +186,91 @@ export class WorldLabSession {
       selection: {
         ...(diagnostic.nodeId || edge ? { nodeId: diagnostic.nodeId ?? edge?.sourceNodeId } : {}),
         ...(diagnostic.edgeId ? { edgeId: diagnostic.edgeId } : {}),
+        ...(diagnostic.location ? { tile: { ...diagnostic.location } } : {}),
+        ...(diagnostic.regionId ? { regionId: diagnostic.regionId } : {}),
+        ...(diagnostic.checkId ? { validationCheckId: diagnostic.checkId } : {}),
         diagnosticCode: diagnostic.code,
       },
     });
+  }
+
+  public runtimeValidation(stageId: string): WorldLabRuntimeValidation | undefined {
+    return this.stateValue.runtimeValidations?.[stageId];
+  }
+
+  public validationChecks(stageId: string): readonly WorldLabValidationCheck[] {
+    const stage = this.stateValue.document?.stages.find(candidate => candidate.stageId === stageId);
+    return Object.freeze([
+      ...(stage?.validation?.checks ?? []),
+      ...(this.stateValue.runtimeValidations?.[stageId]?.checks ?? []),
+    ]);
+  }
+
+  /**
+   * Selects a static or runtime check and moves the stage map to its location.
+   * It never mutates the document or the game state.
+   */
+  public selectValidationCheck(checkId: string): boolean {
+    const selectedStage = this.stateValue.document?.stages.find(stage =>
+      stage.nodeId === this.stateValue.selection.nodeId) ??
+      this.stateValue.document?.stages.find(stage =>
+        [...(stage.validation?.checks ?? []),
+          ...(this.stateValue.runtimeValidations?.[stage.stageId]?.checks ?? [])]
+          .some(check => check.id === checkId));
+    if (!selectedStage) return false;
+    const check = this.validationChecks(selectedStage.stageId).find(item => item.id === checkId);
+    if (!check) return false;
+    this.replace({
+      ...this.stateValue,
+      selection: {
+        ...this.stateValue.selection,
+        nodeId: selectedStage.nodeId,
+        ...(check.location ? { tile: { ...check.location } } : {}),
+        ...(check.regionId ? { regionId: check.regionId } : {}),
+        validationCheckId: check.id,
+        diagnosticCode: check.code,
+      },
+    });
+    return true;
+  }
+
+  public importRuntimeValidation(serialized: string): RuntimeValidationParseResult {
+    const parsed = parseRuntimeValidation(serialized);
+    if (!parsed.ok) {
+      this.replace({
+        ...this.stateValue,
+        diagnostics: Object.freeze([...this.stateValue.diagnostics, ...parsed.diagnostics]),
+      });
+      return parsed;
+    }
+    const stageExists = this.stateValue.document?.stages.some(stage =>
+      stage.stageId === parsed.value.stageId);
+    if (!stageExists) {
+      const diagnostic: WorldLabDiagnostic = Object.freeze({
+        code: 'world-lab.runtime-report.unknown-stage',
+        severity: 'error' as const,
+        origin: 'playtest-runtime' as const,
+        message: `O relatório de homologação referencia uma fase ausente do documento: ${parsed.value.stageId}.`,
+        stageId: parsed.value.stageId,
+        path: Object.freeze(['runtime-report', 'stageId']),
+      });
+      this.replace({
+        ...this.stateValue,
+        diagnostics: Object.freeze([...this.stateValue.diagnostics, diagnostic]),
+      });
+      return Object.freeze({ ok: false as const, diagnostics: Object.freeze([diagnostic]) });
+    }
+    const stage = this.stateValue.document?.stages.find(candidate =>
+      candidate.stageId === parsed.value.stageId);
+    this.replace({
+      ...this.stateValue,
+      runtimeValidations: Object.freeze({
+        ...(this.stateValue.runtimeValidations ?? {}),
+        [parsed.value.stageId]: parsed.value,
+      }),
+      ...(stage ? { selection: { ...this.stateValue.selection, nodeId: stage.nodeId } } : {}),
+    });
+    return parsed;
   }
 
   public setFilters(filters: Partial<WorldLabFilters>): void {

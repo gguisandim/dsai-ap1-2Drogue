@@ -4,12 +4,16 @@ import type {
   WorldLabDocument,
   WorldLabMacroRouteResult,
   WorldLabMacroRouteView,
+  WorldLabRuntimeValidation,
   WorldLabSessionState,
   WorldLabStageMarker,
+  WorldLabStageValidation,
   WorldLabStageView,
+  WorldLabValidationCheck,
 } from '../contracts';
 import { WorldLabSession } from '../WorldLabSession';
 import { WorldLabMacroDataService } from '../WorldLabMacroDataService';
+import { runtimeValidationDiagnostics } from '../WorldLabValidation';
 import { renderCampaignGraph } from './CampaignGraphView';
 import { renderMacroCampaignGraph, type MacroCampaignSelection } from './MacroCampaignGraphView';
 import { renderStageInspector } from './StageInspectorView';
@@ -23,8 +27,10 @@ import {
   WORLD_LAB_PT_BR as T,
   localizeDiagnosticMessage,
   localizeDiagnosticOrigin,
+  localizeEvidence,
   localizeMarker,
   localizeStatus,
+  localizeValidationStatus,
 } from './WorldLabPtBr';
 
 type Workspace = 'campaign' | 'stages' | 'comparison';
@@ -130,8 +136,10 @@ function renderAssetInspector(
   marker: WorldLabStageMarker | undefined,
   variantId: string | undefined,
   diagnosticCode: string | undefined,
+  validationPanel?: (content: HTMLElement) => void,
 ): void {
   container.replaceChildren();
+  if (validationPanel) detailsSection(container, T.sections.validation, validationPanel, true);
   detailsSection(container, T.sections.general, content => fieldsSection(content, [
     [T.labels.viewedStage, stage ? `${stage.title} · ${stage.stageId}` : undefined],
     [T.labels.activeVariant, variantId || T.labels.defaultVariant],
@@ -539,8 +547,15 @@ export class WorldLabApp {
     } else {
       this.elements.graph.replaceChildren(); this.renderStageWorkspace(state, variants);
     }
-    const diagnostics = campaign && !procedural ? this.macroDiagnostics : state.diagnostics;
-    this.renderDiagnostics(diagnostics, diagnostic => { if (procedural) this.session.selectDiagnostic(diagnostic); this.diagnosticsOpen = true; });
+    const runtimeDiagnostics = Object.values(state.runtimeValidations ?? {})
+      .flatMap(runtimeValidationDiagnostics);
+    const diagnostics = campaign && !procedural
+      ? this.macroDiagnostics
+      : [...state.diagnostics, ...runtimeDiagnostics];
+    this.renderDiagnostics(diagnostics, diagnostic => {
+      if (procedural) this.session.selectDiagnostic(diagnostic);
+      this.diagnosticsOpen = true;
+    });
   }
 
   private renderProceduralCampaign(state: WorldLabSessionState): void {
@@ -575,6 +590,7 @@ export class WorldLabApp {
 
   private renderStageWorkspace(state: WorldLabSessionState, variants: readonly string[]): void {
     const stage = selectedStage(state); const selectedVariant = this.session.presentationVariantId();
+    const runtimeValidation = stage ? this.session.runtimeValidation(stage.stageId) : undefined;
     this.setSource(stage ? `${T.help.registered} · ${stage.stageId}` : T.empty.stage);
     this.renderExplorer(stage, state);
     if (this.workspace === 'comparison' && stage) renderPhaserPreview(this.elements.stage, {
@@ -583,15 +599,144 @@ export class WorldLabApp {
     });
     else if (this.stageMode === 'structural') renderStageInspector(this.elements.stage, stage, state.selection, state.filters.showGrid, state.filters.showOverlays, {
       selectTile: (x, y) => this.session.selectTile(x, y), selectPhysicalExit: id => this.session.selectPhysicalExit(id),
-    }, { entities: state.filters.showEntities, decorations: state.filters.showDecorations, exits: state.filters.showExits });
+      selectValidationCheck: id => this.session.selectValidationCheck(id),
+    }, { entities: state.filters.showEntities, decorations: state.filters.showDecorations, exits: state.filters.showExits }, {
+      ...(stage?.validation ? { static: stage.validation } : {}),
+      ...(runtimeValidation ? { runtimeChecks: runtimeValidation.checks } : {}),
+      ...(state.selection.validationCheckId ? { selectedCheckId: state.selection.validationCheckId } : {}),
+    });
     else if (stage) renderPhaserPreview(this.elements.stage, {
       stage, variantId: selectedVariant, mode: 'visual', zoom: this.previewZoom, showGrid: state.filters.showGrid, showHud: this.previewHud, enabled: this.previewEnabled,
     });
     else renderStageInspector(this.elements.stage, undefined, state.selection, true, true, { selectTile: () => undefined, selectPhysicalExit: () => undefined });
     const asset = stage?.visualPresentation?.artAssets?.find(item => item.id === this.inspectedAssetId);
     const marker = stage?.markers.find(item => item.id === this.inspectedMarkerId);
-    renderAssetInspector(this.elements.inspector, stage, asset, marker, selectedVariant, state.selection.diagnosticCode);
+    renderAssetInspector(
+      this.elements.inspector, stage, asset, marker, selectedVariant, state.selection.diagnosticCode,
+      content => this.renderValidationPanel(content, stage, runtimeValidation),
+    );
     this.elements.comparisonVariant.disabled = this.workspace !== 'comparison' || variants.length === 0;
+  }
+
+  private renderValidationPanel(
+    content: HTMLElement,
+    stage: WorldLabStageView | undefined,
+    runtime: WorldLabRuntimeValidation | undefined,
+  ): void {
+    content.replaceChildren();
+    if (!stage) { content.textContent = T.empty.stage; return; }
+    const validation: WorldLabStageValidation | undefined = stage.validation;
+    const checks: WorldLabValidationCheck[] = [
+      ...(validation?.checks ?? []),
+      ...(runtime?.checks ?? []),
+    ];
+    const statusRank: Readonly<Record<WorldLabValidationCheck['status'], number>> = Object.freeze({
+      FAIL: 0, UNKNOWN: 1, PASS: 2,
+    });
+    checks.sort((left, right) => statusRank[left.status] - statusRank[right.status] ||
+      (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
+    const passed = checks.filter(check => check.status === 'PASS').length;
+    const failed = checks.filter(check => check.status === 'FAIL').length;
+    const unknown = checks.filter(check => check.status === 'UNKNOWN').length;
+    const fields = document.createElement('dl');
+    fields.className = 'wl-fields';
+    appendField(fields, T.labels.result, validation
+      ? localizeValidationStatus(validation.result)
+      : 'indisponível (fase sem validação estática)');
+    if (runtime) appendField(fields, 'Homologação Phaser', localizeValidationStatus(runtime.result));
+    appendField(fields, T.labels.seed, validation?.seed ?? runtime?.seed ?? 'autoral');
+    appendField(fields, T.labels.validationChecks, `${passed} PASS · ${failed} FAIL · ${unknown} UNKNOWN`);
+    appendField(fields, T.labels.evidence, [...new Set(checks.map(check => check.evidence))]
+      .map(localizeEvidence).join(' · ') || 'nenhuma');
+    if (validation) {
+      appendField(fields, 'Plano', `${validation.plan.source}${validation.plan.planId ? ` · ${validation.plan.planId}` : ''}`);
+      appendField(fields, 'Rotas', validation.routes ? 'principal e secundária' : 'não fornecidas');
+    }
+    if (runtime?.evidence?.browser) appendField(fields, 'Navegador', runtime.evidence.browser);
+    if (runtime?.evidence?.screenshots?.length) {
+      appendField(fields, 'Capturas', runtime.evidence.screenshots.join(', '));
+    }
+    content.append(fields);
+    if (!validation && !runtime) {
+      const empty = document.createElement('p');
+      empty.className = 'wl-validation-empty';
+      empty.textContent = 'A validação estática está disponível para fases autorais. Importe um relatório de homologação para adicionar evidência de runtime.';
+      content.append(empty);
+    } else if (checks.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'wl-validation-empty';
+      empty.textContent = 'Nenhuma verificação registrada.';
+      content.append(empty);
+    } else {
+      const list = document.createElement('div');
+      list.className = 'wl-validation-list';
+      list.dataset.role = 'validation-list';
+      checks.forEach(check => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = `wl-validation-row wl-validation-row--${check.status.toLowerCase()}`;
+        row.dataset.validationCheck = check.id;
+        row.dataset.validationStatus = check.status;
+        if (check.location) row.dataset.validationLocation = `${check.location.x},${check.location.y}`;
+        row.classList.toggle('is-selected', check.id === this.session.state().selection.validationCheckId);
+        const head = document.createElement('span');
+        head.className = 'wl-validation-row-head';
+        const status = document.createElement('strong');
+        status.textContent = localizeValidationStatus(check.status);
+        const code = document.createElement('code');
+        code.textContent = check.code;
+        head.append(status, code);
+        const meta = document.createElement('small');
+        meta.textContent = [
+          check.regionId ? `${T.labels.region}: ${check.regionId}` : '',
+          check.location ? `${check.location.x}, ${check.location.y}` : '',
+          localizeEvidence(check.evidence),
+          check.required ? '' : 'não bloqueante',
+        ].filter(Boolean).join(' · ');
+        const message = document.createElement('span');
+        message.className = 'wl-validation-row-message';
+        message.textContent = check.message;
+        row.append(head, meta, message);
+        if (check.suggestion) {
+          const suggestion = document.createElement('small');
+          suggestion.className = 'wl-validation-row-suggestion';
+          suggestion.textContent = `${T.labels.suggestion}: ${check.suggestion}`;
+          row.append(suggestion);
+        }
+        row.addEventListener('click', () => {
+          this.session.selectValidationCheck(check.id);
+          this.render(this.session.state());
+        });
+        list.append(row);
+      });
+      content.append(list);
+    }
+    if (this.stageMode === 'visual' && this.workspace !== 'comparison') {
+      const note = document.createElement('p');
+      note.className = 'wl-validation-note';
+      note.textContent = T.help.validationStructural;
+      content.append(note);
+    }
+    const importLabel = document.createElement('label');
+    importLabel.className = 'wl-validation-import';
+    importLabel.textContent = T.labels.importRuntime;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    input.dataset.role = 'import-runtime';
+    input.addEventListener('change', () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        const result = this.session.importRuntimeValidation(String(reader.result ?? ''));
+        if (!result.ok) this.diagnosticsOpen = true;
+        this.render(this.session.state());
+      });
+      reader.readAsText(file);
+    });
+    importLabel.append(input);
+    content.append(importLabel);
   }
 
   private renderExplorer(stage: WorldLabStageView | undefined, state: WorldLabSessionState): void {
@@ -630,11 +775,23 @@ export class WorldLabApp {
       const details = document.createElement('details'); details.className = `wl-diagnostic wl-diagnostic--${diagnostic.severity}`; details.dataset.diagnosticCode = diagnostic.code;
       const summary = document.createElement('summary');
       const message = document.createElement('span'); message.textContent = localizeDiagnosticMessage(diagnostic);
-      const context = document.createElement('small'); context.textContent = diagnostic.code.startsWith('world-lab.fixture') ? T.help.fixture : diagnostic.origin === 'stage-catalog' ? T.help.registered : T.help.runtime;
+      const context = document.createElement('small');
+      context.textContent = diagnostic.evidence
+        ? localizeEvidence(diagnostic.evidence)
+        : diagnostic.code.startsWith('world-lab.fixture')
+          ? T.help.fixture
+          : diagnostic.origin === 'stage-catalog' ? T.help.registered : T.help.runtime;
       summary.append(message, context);
       const technical = document.createElement('dl'); technical.className = 'wl-fields';
       appendField(technical, 'Código', diagnostic.code); appendField(technical, 'Origem', localizeDiagnosticOrigin(diagnostic.origin));
-      appendField(technical, 'Mensagem original', diagnostic.message); appendField(technical, 'Referências', [diagnostic.nodeId, diagnostic.edgeId, diagnostic.stageId].filter(Boolean).join(' · '));
+      appendField(technical, 'Status', diagnostic.status ? localizeValidationStatus(diagnostic.status) : undefined);
+      appendField(technical, 'Evidência', diagnostic.evidence ? localizeEvidence(diagnostic.evidence) : undefined);
+      appendField(technical, 'Região', diagnostic.regionId);
+      appendField(technical, 'Coordenadas', diagnostic.location ? `${diagnostic.location.x}, ${diagnostic.location.y}` : undefined);
+      appendField(technical, 'Check', diagnostic.checkId);
+      appendField(technical, 'Mensagem original', diagnostic.message);
+      appendField(technical, 'Sugestão', diagnostic.suggestion);
+      appendField(technical, 'Referências', [diagnostic.nodeId, diagnostic.edgeId, diagnostic.stageId].filter(Boolean).join(' · '));
       appendField(technical, 'Caminho', diagnostic.path?.join('.'));
       summary.addEventListener('click', () => select(diagnostic));
       details.append(summary, technical); this.elements.diagnostics.append(details);

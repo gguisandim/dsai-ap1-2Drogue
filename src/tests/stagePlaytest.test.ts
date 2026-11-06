@@ -541,6 +541,27 @@ describe('Etapa 9.12 automated gameplay validation', () => {
       expect(failed.regions.some(region => region.status === 'FAIL')).toBe(true);
     });
 
+    it('parses browser homologation targets', () => {
+      expect(parseChapterCliArguments(['homologate', 'minha-fase', '--json'])).toMatchObject({
+        command: 'homologate',
+        slug: 'minha-fase',
+        json: true,
+      });
+      expect(parseChapterCliArguments([
+        'homologate', '--stage', 'stage.aguas.igapo-das-memorias',
+        '--variant', 'variant.aguas.igapo-sombrio', '--json',
+      ])).toMatchObject({
+        command: 'homologate',
+        stageId: 'stage.aguas.igapo-das-memorias',
+        variantId: 'variant.aguas.igapo-sombrio',
+        json: true,
+      });
+      expect(() => parseChapterCliArguments([
+        'homologate', 'minha-fase', '--stage', 'stage.aguas.igapo-das-memorias',
+      ])).toThrow(ChapterCliError);
+      expect(() => parseChapterCliArguments(['homologate'])).toThrow(ChapterCliError);
+    });
+
     it('declares multi-seed UNKNOWN when the chapter has no seed factory', () => {
       const template = createChapterTemplate('test.playtest.unsupported', {
         template: 'horizontal', seed: 42,

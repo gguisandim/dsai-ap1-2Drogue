@@ -12,6 +12,7 @@ import type {
   WorldLabGraphNodeView,
   WorldLabAssetOrigin,
   WorldLabStageMarker,
+  WorldLabStageValidation,
   WorldLabStageView,
   WorldLabArtAssetPresentation,
 } from './contracts';
@@ -27,6 +28,7 @@ export interface WorldLabStageProjectionInput {
   readonly displayStage: LoadedStage;
   readonly physicalExitResult?: PhysicalExitResult;
   readonly bindingResult?: CampaignExitBindingResult;
+  readonly validation?: WorldLabStageValidation;
 }
 
 export interface WorldLabProjectionInput {
@@ -319,6 +321,7 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
     markers: Object.freeze(markers.map(freezeMarker)),
     physicalExitIds: Object.freeze(physicalExitIds),
     manifestRevision: stage.manifest.revision,
+    ...(input.validation ? { validation: input.validation } : {}),
     ...(presentation ? { themeRevision: presentation.themeRevision } : {}),
     ...(presentation ? { visualPresentation: Object.freeze({
       themeId: presentation.themeId,

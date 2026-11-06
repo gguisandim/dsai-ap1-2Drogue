@@ -1,21 +1,48 @@
-import type { WorldLabSelection, WorldLabStageMarker, WorldLabStageView } from '../contracts';
+import type {
+  WorldLabSelection,
+  WorldLabStageMarker,
+  WorldLabStageValidation,
+  WorldLabStageView,
+  WorldLabValidationCheck,
+} from '../contracts';
 import { installSvgPanZoom, svgElement } from './svgInteraction';
 import {
   WORLD_LAB_PT_BR,
   localizeArtWarning,
+  localizeEvidence,
   localizeMarker,
   localizeStatus,
+  localizeValidationStatus,
 } from './WorldLabPtBr';
 
 export interface StageInspectorCallbacks {
   readonly selectTile: (x: number, y: number) => void;
   readonly selectPhysicalExit: (physicalExitId: string) => void;
+  readonly selectValidationCheck?: (checkId: string) => void;
 }
 
 export interface StageInspectorLayers {
   readonly entities?: boolean;
   readonly decorations?: boolean;
   readonly exits?: boolean;
+}
+
+export interface StageInspectorValidation {
+  readonly static?: WorldLabStageValidation;
+  readonly runtimeChecks?: readonly WorldLabValidationCheck[];
+  readonly selectedCheckId?: string;
+}
+
+function validationCheckClass(status: WorldLabValidationCheck['status']): string {
+  return `wl-validation-check wl-validation-check--${status.toLowerCase()}`;
+}
+
+function regionStatusClass(status: WorldLabStageValidation['result']): string {
+  return `wl-validation-region wl-validation-region--${status.toLowerCase()}`;
+}
+
+function pointLabel(point: { readonly x: number; readonly y: number }): string {
+  return `${point.x}, ${point.y}`;
 }
 
 const TILE_COLORS: Readonly<Record<number, string>> = Object.freeze({
@@ -40,6 +67,7 @@ export function renderStageInspector(
   showOverlays: boolean,
   callbacks: StageInspectorCallbacks,
   layers: StageInspectorLayers = {},
+  validation: StageInspectorValidation = {},
 ): void {
   container.replaceChildren();
   if (!stage) {
@@ -125,6 +153,25 @@ export function renderStageInspector(
     });
     svg.append(rect);
   }));
+  const validationData = validation.static ?? stage.validation;
+  const validationChecks = [
+    ...(validationData?.checks ?? []),
+    ...(validation.runtimeChecks ?? []),
+  ];
+  if (showOverlays && validationData?.routes) {
+    const route = (points: readonly { readonly x: number; readonly y: number }[]): string =>
+      points.map(point => `${point.x * size + size / 2},${point.y * size + size / 2}`).join(' ');
+    svg.append(svgElement('polyline', {
+      points: route(validationData.routes.main),
+      class: 'wl-validation-route wl-validation-route--main',
+      'data-validation-route': 'main',
+    }));
+    if (validationData.routes.branch) svg.append(svgElement('polyline', {
+      points: route(validationData.routes.branch),
+      class: 'wl-validation-route wl-validation-route--branch',
+      'data-validation-route': 'branch',
+    }));
+  }
   const markerVisible = (marker: WorldLabStageMarker): boolean => {
     if (marker.kind === 'decoration') return layers.decorations ?? true;
     if (['anchor', 'section-exit', 'physical-exit'].includes(marker.kind)) return layers.exits ?? true;
@@ -153,6 +200,59 @@ export function renderStageInspector(
     }
     svg.append(group);
   });
+  if (showOverlays && validationData) {
+    validationData.regions.forEach(region => {
+      if (!region.anchor) return;
+      const group = svgElement('g', {
+        transform: `translate(${region.anchor.x * size + size / 2} ${region.anchor.y * size + size / 2})`,
+        class: regionStatusClass(region.status),
+        'data-validation-region': region.id,
+        'data-selectable': 'true',
+      });
+      group.append(svgElement('rect', {
+        x: -5, y: -5, width: 10, height: 10, transform: 'rotate(45)',
+      }));
+      const label = svgElement('text', { 'text-anchor': 'middle', y: 3 });
+      label.textContent = region.role === 'exit' ? 'X' : region.role === 'objective' ? 'O' : 'R';
+      const title = svgElement('title');
+      title.textContent = `${region.title} (${region.id}) · ${localizeValidationStatus(region.status)} · ${pointLabel(region.anchor)} · ${region.message}`;
+      group.append(label, title);
+      group.addEventListener('click', event => {
+        event.stopPropagation();
+        const check = validationChecks.find(candidate => candidate.regionId === region.id);
+        if (check && callbacks.selectValidationCheck) callbacks.selectValidationCheck(check.id);
+        else callbacks.selectTile(region.anchor!.x, region.anchor!.y);
+      });
+      svg.append(group);
+    });
+  }
+  if (showOverlays && validationChecks.length > 0) {
+    validationChecks
+      .filter(check => check.location &&
+        (check.status !== 'PASS' || check.id === validation.selectedCheckId))
+      .forEach(check => {
+        const location = check.location as { readonly x: number; readonly y: number };
+        const group = svgElement('g', {
+          transform: `translate(${location.x * size + size / 2} ${location.y * size + size / 2})`,
+          class: `${validationCheckClass(check.status)}${check.id === validation.selectedCheckId ? ' is-selected' : ''}`,
+          'data-validation-check': check.id,
+          'data-selectable': 'true',
+        });
+        group.append(svgElement('circle', { r: 6 }));
+        const label = svgElement('text', { 'text-anchor': 'middle', y: 3 });
+        label.textContent = check.status === 'FAIL' ? '!' : check.status === 'UNKNOWN' ? '?' : '✓';
+        const title = svgElement('title');
+        title.textContent = `${check.code} · ${localizeValidationStatus(check.status)} · ${pointLabel(location)}`
+          + ` · ${localizeEvidence(check.evidence)} · ${check.message}`;
+        group.append(label, title);
+        group.addEventListener('click', event => {
+          event.stopPropagation();
+          callbacks.selectValidationCheck?.(check.id);
+          callbacks.selectTile(location.x, location.y);
+        });
+        svg.append(group);
+      });
+  }
   installSvgPanZoom(svg, {
     x: 0, y: 0, width: stage.width * size, height: stage.height * size,
   });
