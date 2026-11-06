@@ -25,6 +25,9 @@ class FakeImage {
   public depth?: number;
   public scale?: number;
   public rotation?: number;
+  public flipX?: boolean;
+  public flipY?: boolean;
+  public origin?: readonly [number, number];
   public refreshes = 0;
 
   public constructor(
@@ -40,6 +43,9 @@ class FakeImage {
   public setScale(value: number): this { this.scale = value; return this; }
   public setDisplaySize(): this { return this; }
   public setRotation(value: number): this { this.rotation = value; return this; }
+  public setFlipX(value: boolean): this { this.flipX = value; return this; }
+  public setFlipY(value: boolean): this { this.flipY = value; return this; }
+  public setOrigin(x: number, y: number): this { this.origin = [x, y]; return this; }
   public refreshBody(): this { this.refreshes += 1; return this; }
   public setScrollFactor(): this { return this; }
   public once(): this { return this; }
@@ -249,15 +255,22 @@ describe('declarative stage visual presentation', () => {
         { type: 'igapo_emergent_tree', x: 2, y: 2, visible: false },
         { type: 'igapo_reeds', x: 3, y: 3, layer: 'background' as const },
         { type: 'igapo_stone', x: 4, y: 4, depth: 9, scale: 1.4, rotation: 0.3 },
+        {
+          type: 'igapo_stone', x: 5, y: 5, depth: 9.5, alpha: 0.72,
+          flipX: true, flipY: true, originX: 0.25, originY: 0.75,
+        },
       ],
     };
     const rendered = new StageMapRenderer().render(
       surface.scene, level, loaded.presentation, surface.group, false,
     );
-    expect(rendered.decorationImages).toHaveLength(2);
-    expect(rendered.decorationImages.map(image => (image as unknown as FakeImage).depth)).toEqual([-3, 9]);
+    expect(rendered.decorationImages).toHaveLength(3);
+    expect(rendered.decorationImages.map(image => (image as unknown as FakeImage).depth)).toEqual([-3, 9, 9.5]);
     expect((rendered.decorationImages[1] as unknown as FakeImage)).toMatchObject({
       scale: 1.4, rotation: 0.3,
+    });
+    expect((rendered.decorationImages[2] as unknown as FakeImage)).toMatchObject({
+      alpha: 0.72, flipX: true, flipY: true, origin: [0.25, 0.75],
     });
     expect(surface.obstacles).toHaveLength(level.tileMap.flat().filter(tile => [1, 2, 3].includes(tile)).length);
   });

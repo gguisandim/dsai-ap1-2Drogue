@@ -3,7 +3,19 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import type Phaser from 'phaser';
 import { StageMapRenderer } from '../presentation/stages/StageMapRenderer';
-import { WORLD_ROOT_TEXTURE_ASSET } from '../presentation/assets/worldRootAssetCatalog';
+import {
+  WORLD_ROOT_APPROACH_ASSET,
+  WORLD_ROOT_CANOPY_ASSET,
+  WORLD_ROOT_COMPOSITION_ASSETS,
+  WORLD_ROOT_ENTRANCE_ASSET,
+  WORLD_ROOT_GROUND_ASSET,
+  WORLD_ROOT_GROVE_ASSET,
+  WORLD_ROOT_PASSAGE_ASSET,
+  WORLD_ROOT_STONE_ASSET,
+  WORLD_ROOT_STREAM_ASSET,
+  WORLD_ROOT_TEXTURE_ASSET,
+  WORLD_ROOT_TRAIL_ASSET,
+} from '../presentation/assets/worldRootAssetCatalog';
 import {
   StageCatalogService,
   StageLoader,
@@ -12,10 +24,18 @@ import {
   WORLD_ROOT_CHAPTER_MANIFEST,
   WORLD_ROOT_EFFECTS,
   WORLD_ROOT_EXIT,
+  WORLD_ROOT_MAP_HEIGHT,
+  WORLD_ROOT_MAP_WIDTH,
+  WORLD_ROOT_MISSION_ID,
   WORLD_ROOT_MONOLITHS,
+  WORLD_ROOT_NPC_ANCHOR,
+  WORLD_ROOT_PASSAGE_FLAG,
+  WORLD_ROOT_RUINS,
   WORLD_ROOT_SPAWN,
   WORLD_ROOT_STAGE,
   WORLD_ROOT_STAGE_ID,
+  createWorldRootDecorations,
+  createWorldRootMap,
   registerCampaignChapters,
   registerLegacyStages,
 } from '../stages';
@@ -52,6 +72,9 @@ class FakeVisual {
   public setScale(): this { return this; }
   public setDisplaySize(): this { return this; }
   public setRotation(value: number): this { this.rotation = value; return this; }
+  public setFlipX(): this { return this; }
+  public setFlipY(): this { return this; }
+  public setOrigin(): this { return this; }
   public setScrollFactor(): this { return this; }
   public refreshBody(): this { return this; }
   public once(_event: string, callback: () => void): this { this.destroyListener = callback; return this; }
@@ -68,15 +91,43 @@ describe('Raiz do Mundo', () => {
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(WORLD_ROOT_TEXTURE_ASSET.sha256);
     expect(readFileSync(join(__dirname, '..', 'assets', 'world-root', 'README.md'), 'utf8'))
       .toContain(WORLD_ROOT_TEXTURE_ASSET.sha256);
+
+    const groundPath = join(__dirname, '..', 'assets', 'world-root', WORLD_ROOT_GROUND_ASSET.fileName);
+    const groundSource = readFileSync(groundPath, 'utf8');
+    expect(createHash('sha256').update(groundSource).digest('hex')).toBe(WORLD_ROOT_GROUND_ASSET.sha256);
+    expect(groundSource).toContain(`width="${WORLD_ROOT_GROUND_ASSET.width}" height="${WORLD_ROOT_GROUND_ASSET.height}"`);
+    expect(groundSource.match(/<g(?:\s|>)/g)).toHaveLength(WORLD_ROOT_GROUND_ASSET.frameCount);
+    expect(readFileSync(join(__dirname, '..', 'assets', 'world-root', 'README.md'), 'utf8'))
+      .toContain(WORLD_ROOT_GROUND_ASSET.sha256);
+
+    for (const asset of [WORLD_ROOT_STONE_ASSET, WORLD_ROOT_CANOPY_ASSET]) {
+      const source = readFileSync(join(__dirname, '..', 'assets', 'world-root', asset.fileName), 'utf8');
+      expect(createHash('sha256').update(source).digest('hex')).toBe(asset.sha256);
+      expect(source).toContain(`width="${asset.width}" height="${asset.height}"`);
+      expect(readFileSync(join(__dirname, '..', 'assets', 'world-root', 'README.md'), 'utf8'))
+        .toContain(asset.sha256);
+    }
+
+    for (const asset of WORLD_ROOT_COMPOSITION_ASSETS) {
+      const assetPath = join(__dirname, '..', 'assets', 'world-root', asset.fileName);
+      const assetBytes = readFileSync(assetPath);
+      expect(assetBytes.subarray(1, 4).toString('ascii')).toBe('PNG');
+      expect(assetBytes.readUInt32BE(16)).toBe(asset.width);
+      expect(assetBytes.readUInt32BE(20)).toBe(asset.height);
+      expect(createHash('sha256').update(assetBytes).digest('hex')).toBe(asset.sha256);
+      expect(readFileSync(join(__dirname, '..', 'assets', 'world-root', 'README.md'), 'utf8'))
+        .toContain(asset.sha256);
+    }
   });
 
-  it('registers as a loadable individual-only stage without becoming a campaign candidate', () => {
+  it('registers as the loadable narrative milestone without becoming a procedural candidate', () => {
     const value = registry();
     const catalog = StageCatalogService.create(value);
     expect(catalog.ok).toBe(true);
     if (!catalog.ok) return;
     expect(catalog.value.get(WORLD_ROOT_STAGE_ID)).toMatchObject({
-      eligibility: 'individual-only', loadability: 'loadable', participation: 'individual-only',
+      eligibility: 'narrative-reserved', loadability: 'loadable', participation: 'narrative-milestone',
+      completionMissionId: WORLD_ROOT_MISSION_ID,
     });
     expect(catalog.value.candidates().some(item => item.stageId === WORLD_ROOT_STAGE_ID)).toBe(false);
     expect(loadWorldRoot()).toMatchObject({
@@ -86,15 +137,18 @@ describe('Raiz do Mundo', () => {
     });
   });
 
-  it('has fixed geometry, one spawn, four monoliths and a reachable completion exit', () => {
+  it('has panoramic fixed geometry, one spawn, rooted ruins and a reachable Igapó exit', () => {
     const map = WORLD_ROOT_STAGE.authoredLevel!.tileMap;
-    expect(map).toHaveLength(25);
-    expect(map.every(row => row.length === 40)).toBe(true);
+    expect(map).toHaveLength(WORLD_ROOT_MAP_HEIGHT);
+    expect(map.every(row => row.length === WORLD_ROOT_MAP_WIDTH)).toBe(true);
+    expect(WORLD_ROOT_MAP_WIDTH / WORLD_ROOT_MAP_HEIGHT).toBeGreaterThan(3);
     expect(map[WORLD_ROOT_SPAWN.y][WORLD_ROOT_SPAWN.x]).toBe(8);
     expect(map[WORLD_ROOT_EXIT.y][WORLD_ROOT_EXIT.x]).toBe(5);
     expect(map.flat().filter(tile => tile === 8)).toHaveLength(1);
     expect(WORLD_ROOT_MONOLITHS).toHaveLength(4);
     expect(WORLD_ROOT_MONOLITHS.every(point => map[point.y][point.x] === 2)).toBe(true);
+    expect(WORLD_ROOT_RUINS.every(point => map[point.y][point.x] === 2)).toBe(true);
+    expect(map[WORLD_ROOT_NPC_ANCHOR.y][WORLD_ROOT_NPC_ANCHOR.x]).toBe(0);
     expect(map[0].every(tile => tile === 1)).toBe(true);
     expect(map[map.length - 1].every(tile => tile === 1)).toBe(true);
 
@@ -111,19 +165,87 @@ describe('Raiz do Mundo', () => {
       }
     }
     expect(visited.has(`${WORLD_ROOT_EXIT.x},${WORLD_ROOT_EXIT.y}`)).toBe(true);
-    expect(WORLD_ROOT_STAGE.manifest.exits[0]).toMatchObject({ targetStageId: 'campaign.complete' });
+    expect(WORLD_ROOT_EXIT.x - WORLD_ROOT_SPAWN.x).toBeGreaterThan(100);
+    expect(WORLD_ROOT_STAGE.manifest.exits[0]).toMatchObject({
+      targetStageId: 'stage.aguas.igapo-das-memorias',
+      condition: { type: 'flag.equals', flag: WORLD_ROOT_PASSAGE_FLAG, value: true },
+    });
+  });
+
+  it('creates deterministic authored compositions without changing traversable map cells', () => {
+    const map = createWorldRootMap();
+    const originalMap = map.map(row => [...row]);
+    const decorations = createWorldRootDecorations(map);
+    expect(decorations.filter(item => item.type === 'raiz_do_mundo_trail_composition')).toHaveLength(2);
+    expect(decorations.filter(item => item.type === 'raiz_do_mundo_entrance_composition')).toHaveLength(1);
+    expect(decorations.filter(item => item.type === 'raiz_do_mundo_passage_composition')).toHaveLength(1);
+    expect(decorations.filter(item => item.type === 'raiz_do_mundo_sanctuary_approach')).toHaveLength(1);
+    expect(decorations.filter(item => item.type === 'raiz_do_mundo_stream')).toHaveLength(15);
+    expect(decorations.filter(item => item.type === 'raiz_do_mundo_grove')).toHaveLength(38);
+    expect(decorations.filter(item => item.layer === 'foreground')).toHaveLength(4);
+    expect(decorations.some(item => item.flipX === true)).toBe(true);
+    expect(decorations.every(item => item.depth !== undefined)).toBe(true);
+    expect(loadWorldRoot().presentation.tiles.floor.variants.map(variant => variant.frame))
+      .toEqual([1, 2, 3]);
+    expect(loadWorldRoot().presentation.tiles.floor.variants.every(
+      variant => variant.textureKey === 'world_root_ground',
+    )).toBe(true);
+    expect(createWorldRootMap()).toEqual(map);
+    expect(createWorldRootDecorations(map)).toEqual(decorations);
+    expect(map).toEqual(originalMap);
+    expect(map[WORLD_ROOT_SPAWN.y][WORLD_ROOT_SPAWN.x]).toBe(8);
+    expect(map[WORLD_ROOT_EXIT.y][WORLD_ROOT_EXIT.x]).toBe(5);
   });
 
   it('declares the full art composition and all active VFX groups', () => {
     const decorations = WORLD_ROOT_STAGE.authoredLevel!.decorations;
     expect(decorations.filter(item => item.type === 'raiz_do_mundo_sanctuary')).toHaveLength(1);
-    expect(decorations.filter(item => item.type === 'raiz_do_mundo_monolith')).toHaveLength(4);
-    expect(decorations.some(item => item.type === 'raiz_do_mundo_roots')).toBe(true);
-    expect(decorations.some(item => item.type === 'raiz_do_mundo_undergrowth')).toBe(true);
-    expect(decorations.some(item => item.type === 'raiz_do_mundo_vines')).toBe(true);
-    expect(decorations.filter(item => item.type === 'raiz_do_mundo_biolume')).toHaveLength(4);
+    expect(decorations).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'raiz_do_mundo_entrance_composition', depth: -1.28 }),
+      expect.objectContaining({ type: 'raiz_do_mundo_trail_composition', depth: -1.26 }),
+      expect.objectContaining({ type: 'raiz_do_mundo_sanctuary_approach', depth: 0.7 }),
+      expect.objectContaining({ type: 'raiz_do_mundo_passage_composition', depth: -1.24 }),
+      expect.objectContaining({ type: 'raiz_do_mundo_stream' }),
+      expect.objectContaining({ type: 'raiz_do_mundo_grove', layer: 'foreground' }),
+    ]));
+    expect([
+      WORLD_ROOT_TRAIL_ASSET.textureKey,
+      WORLD_ROOT_APPROACH_ASSET.textureKey,
+      WORLD_ROOT_STREAM_ASSET.textureKey,
+      WORLD_ROOT_GROVE_ASSET.textureKey,
+      WORLD_ROOT_ENTRANCE_ASSET.textureKey,
+      WORLD_ROOT_PASSAGE_ASSET.textureKey,
+    ].every(key => Object.values(loadWorldRoot().presentation.decorations)
+      .some(decoration => decoration.textureKey === key))).toBe(true);
     expect(new Set(WORLD_ROOT_EFFECTS.map(effect => effect.kind))).toEqual(new Set([
       'fireflies', 'mist', 'pulse', 'spirits', 'local-light', 'water-shimmer', 'foliage-sway',
+    ]));
+  });
+
+  it('declares a completable introductory mission and progressive 1-to-2 combat waves', () => {
+    expect(WORLD_ROOT_STAGE.missions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: WORLD_ROOT_MISSION_ID,
+        start: 'stage-enter',
+        objectives: expect.arrayContaining([
+          expect.objectContaining({ signal: 'npc.interacted', target: 1 }),
+          expect.objectContaining({ signal: 'encounter.completed', target: 1 }),
+        ]),
+      }),
+    ]));
+    const source = WORLD_ROOT_STAGE.encounter!.source;
+    expect(source.kind).toBe('authored-waves');
+    if (source.kind !== 'authored-waves') return;
+    expect(source.waves.map(wave => wave.enemies.length)).toEqual([1, 2]);
+    expect(source.waves[0].enemies[0].x - WORLD_ROOT_SPAWN.x).toBeGreaterThan(30);
+    expect(WORLD_ROOT_STAGE.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        when: 'mission.completed',
+        commands: expect.arrayContaining([
+          expect.objectContaining({ type: 'exit.unlock', exitId: 'exit.raiz-do-mundo.to-igapo' }),
+          expect.objectContaining({ type: 'stage.complete', exitId: 'exit.raiz-do-mundo.to-igapo' }),
+        ]),
+      }),
     ]));
   });
 
@@ -200,8 +322,15 @@ describe('Raiz do Mundo', () => {
     ]));
     expect(stage?.visualPresentation?.assetOrigins).toEqual(expect.arrayContaining([
       expect.objectContaining({ assetId: 'asset.world-root.sanctuary' }),
+      expect.objectContaining({ assetId: WORLD_ROOT_TRAIL_ASSET.id }),
+      expect.objectContaining({ assetId: WORLD_ROOT_APPROACH_ASSET.id }),
+      expect.objectContaining({ assetId: WORLD_ROOT_STREAM_ASSET.id }),
+      expect.objectContaining({ assetId: WORLD_ROOT_GROVE_ASSET.id }),
+      expect.objectContaining({
+        assetId: WORLD_ROOT_GROUND_ASSET.id,
+        license: 'asset original do projeto; sem licença de terceiro',
+      }),
       expect.objectContaining({ assetId: 'asset.puny.world', license: 'CC0' }),
     ]));
   });
 });
-

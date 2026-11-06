@@ -590,8 +590,8 @@ describe('Igapó das Memórias authored chapter', () => {
 
     expect(migrated.value.persistence).toBe('restored');
     expect(inspected.value.currentNode.stageId).toBe(IGAPO_DAS_MEMORIAS_STAGE_ID);
-    expect(migrated.value.adapter.state().graph.campaignRevision).toBe(4);
-    expect(migrated.value.adapter.state().macroProgress?.definitionRevision).toBe(4);
+    expect(migrated.value.adapter.state().graph.campaignRevision).toBe(5);
+    expect(migrated.value.adapter.state().macroProgress?.definitionRevision).toBe(5);
     expect(migrated.value.adapter.state().confirmedTransitionIds)
       .toEqual(revision2.confirmedTransitionIds);
     expect(storage.read('umbra-trail-run-v1')).not.toBe(previousBytes);

@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "kind": "umbra.stage-plan",
+  "id": "plan.raiz-do-mundo.floresta-das-raizes",
+  "chapterId": "chapter.raiz-do-mundo",
+  "stageId": "stage.raiz-do-mundo.santuario",
+  "title": "Floresta das Raízes",
+  "summary": "Prólogo panorâmico pela floresta ancestral até a passagem das águas.",
+  "progression": "linear",
+  "visualDirection": "Fantasia amazônica úmida, antiga e luminosa; trilhas sinuosas, igarapés, ruínas enraizadas, vegetação em camadas e árvore monumental descoberta no fim.",
+  "startRegionId": "region.raiz-do-mundo.entrada",
+  "exitRegionIds": [
+    "region.raiz-do-mundo.passagem-das-aguas"
+  ],
+  "regions": [
+    {
+      "id": "region.raiz-do-mundo.entrada",
+      "title": "Entrada da Floresta",
+      "role": "start",
+      "anchor": { "x": 5, "y": 18 },
+      "connections": ["region.raiz-do-mundo.vestigios"]
+    },
+    {
+      "id": "region.raiz-do-mundo.vestigios",
+      "title": "Trilha dos Vestígios",
+      "role": "exploration",
+      "anchor": { "x": 28, "y": 15 },
+      "connections": [
+        "region.raiz-do-mundo.entrada",
+        "region.raiz-do-mundo.guardiao",
+        "region.raiz-do-mundo.primeiro-conflito"
+      ]
+    },
+    {
+      "id": "region.raiz-do-mundo.guardiao",
+      "title": "Clareira do Guardião",
+      "role": "objective",
+      "anchor": { "x": 54, "y": 22 },
+      "connections": [
+        "region.raiz-do-mundo.vestigios",
+        "region.raiz-do-mundo.primeiro-conflito"
+      ]
+    },
+    {
+      "id": "region.raiz-do-mundo.primeiro-conflito",
+      "title": "Raízes em Alerta",
+      "role": "combat",
+      "anchor": { "x": 40, "y": 18 },
+      "connections": [
+        "region.raiz-do-mundo.vestigios",
+        "region.raiz-do-mundo.guardiao",
+        "region.raiz-do-mundo.santuario"
+      ]
+    },
+    {
+      "id": "region.raiz-do-mundo.santuario",
+      "title": "Coração Ancestral",
+      "role": "objective",
+      "anchor": { "x": 80, "y": 18 },
+      "connections": [
+        "region.raiz-do-mundo.primeiro-conflito",
+        "region.raiz-do-mundo.passagem-das-aguas"
+      ]
+    },
+    {
+      "id": "region.raiz-do-mundo.passagem-das-aguas",
+      "title": "Passagem das Águas",
+      "role": "exit",
+      "anchor": { "x": 111, "y": 18 },
+      "connections": ["region.raiz-do-mundo.santuario"]
+    }
+  ],
+  "objectives": [
+    {
+      "id": "objective.raiz-do-mundo.ouvir-guardiao",
+      "title": "Ouvir o Guardião da Seiva",
+      "regionId": "region.raiz-do-mundo.guardiao",
+      "missionId": "mission.raiz-do-mundo.ouvir-raizes"
+    },
+    {
+      "id": "objective.raiz-do-mundo.acalmar-raizes",
+      "title": "Acalmar as raízes em alerta",
+      "regionId": "region.raiz-do-mundo.primeiro-conflito",
+      "missionId": "mission.raiz-do-mundo.ouvir-raizes",
+      "dependsOn": ["objective.raiz-do-mundo.ouvir-guardiao"],
+      "unlocksExitIds": ["exit.raiz-do-mundo.to-igapo"]
+    }
+  ],
+  "exitConditions": [
+    {
+      "exitId": "exit.raiz-do-mundo.to-igapo",
+      "regionId": "region.raiz-do-mundo.passagem-das-aguas",
+      "requiresObjectiveIds": ["objective.raiz-do-mundo.acalmar-raizes"]
+    }
+  ],
+  "encounters": [
+    {
+      "id": "encounter.raiz-do-mundo.guardians",
+      "regionId": "region.raiz-do-mundo.primeiro-conflito",
+      "archetypes": ["affinity", "applaud"],
+      "waveCount": 2
+    }
+  ],
+  "interactions": [
+    {
+      "id": "npc.raiz-do-mundo.keeper",
+      "kind": "npc",
+      "regionId": "region.raiz-do-mundo.guardiao",
+      "referenceId": "npc.raiz-do-mundo.keeper"
+    },
+    {
+      "id": "dialogue.raiz-do-mundo.keeper",
+      "kind": "dialogue",
+      "regionId": "region.raiz-do-mundo.guardiao",
+      "referenceId": "dialogue.raiz-do-mundo.keeper"
+    }
+  ],
+  "capabilities": [
+    { "id": "navigation.authored-map", "category": "navigation", "minimumVersion": 1, "requirement": "required" },
+    { "id": "navigation.physical-exit", "category": "navigation", "minimumVersion": 1, "requirement": "required" },
+    { "id": "interaction.npc-dialogue", "category": "interaction", "minimumVersion": 1, "requirement": "required" },
+    { "id": "narrative.mission", "category": "narrative", "minimumVersion": 1, "requirement": "required" },
+    { "id": "encounter.declarative", "category": "encounter", "minimumVersion": 1, "requirement": "required" }
+  ]
+}

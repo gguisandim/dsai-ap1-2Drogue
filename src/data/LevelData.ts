@@ -52,6 +52,16 @@ export interface DecorationPlacement {
   layer?: 'background' | 'terrain' | 'foreground';
   depth?: number;
   visible?: boolean;
+  /** Visual-only opacity in the 0..1 range; it never affects collision. */
+  alpha?: number;
+  /** Mirrors the image horizontally to add variety without new art. */
+  flipX?: boolean;
+  /** Mirrors the image vertically to add variety without new art. */
+  flipY?: boolean;
+  /** Normalized horizontal origin; default is the image center (0.5). */
+  originX?: number;
+  /** Normalized vertical origin; default is the image center (0.5). */
+  originY?: number;
 }
 
 export interface LevelDefinition {

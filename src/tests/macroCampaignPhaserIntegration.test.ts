@@ -21,7 +21,11 @@ import {
 import { VERSE_SECTIONS } from '../data/VerseLevelData';
 import { MemorySaveStorage } from '../narrative';
 import { GameScene } from '../scenes/GameScene';
-import { CORACAO_CORROMPIDO_STAGE_ID, IGAPO_DAS_MEMORIAS_STAGE_ID } from '../stages';
+import {
+  CORACAO_CORROMPIDO_STAGE_ID,
+  IGAPO_DAS_MEMORIAS_STAGE_ID,
+  WORLD_ROOT_STAGE_ID,
+} from '../stages';
 
 type SceneState = Record<string, any>;
 
@@ -110,14 +114,14 @@ describe('GameScene macro campaign vertical slice', () => {
     } as any);
     expect(macro.state.macroStageSource).toBe('campaign');
     expect(macro.state.macroLoadedStage).toBeDefined();
-    expect(macro.state.macroLoadedStage.manifest.id).toBe('verse_01_atrium');
+    expect(macro.state.macroLoadedStage.manifest.id).toBe(WORLD_ROOT_STAGE_ID);
     expect(macro.state.branchingCampaign).toBe(false);
     expect(macro.state.branchingStageSource).toBe('legacy');
-    expect(macro.state.currentLevel.id).toBe('verse_01_atrium');
+    expect(macro.state.currentLevel.id).toBe(WORLD_ROOT_STAGE_ID);
     expect(macro.state.campaignNavigation.snapshot.destinations).toHaveLength(1);
   });
 
-  it('keeps the hub combat-free and reveals its physical exit immediately', () => {
+  it('treats the authored hub as a playable prologue with its own encounter', () => {
     const { scene, state } = sceneShell();
     scene.init({ macroCampaign: true, macroRunId: 'run.scene-hub' } as any);
     state.spawnEnemiesAndItems = jest.fn();
@@ -128,11 +132,11 @@ describe('GameScene macro campaign vertical slice', () => {
     state.prepareCurrentStageEncounter();
     state.startCurrentStageEncounter();
 
-    expect(state.macroCampaignAdapter.location()).toMatchObject({ isHub: true });
-    expect(state.spawnEnemiesAndItems).not.toHaveBeenCalled();
-    expect(state.spawnWave).not.toHaveBeenCalled();
-    expect(state.revealExits).toHaveBeenCalledTimes(1);
-    expect(state.levelClearedBannerShowing).toBe(true);
+    expect(state.macroCampaignAdapter.location()).toMatchObject({ isHub: false });
+    expect(state.spawnEnemiesAndItems).toHaveBeenCalledWith(state.currentLevel);
+    expect(state.spawnWave).toHaveBeenCalledWith(0);
+    expect(state.revealExits).not.toHaveBeenCalled();
+    expect(state.levelClearedBannerShowing).toBe(false);
   });
 
   it('plays hub, Igapó, corrupted heart, return and resumption through the shared portal flow', () => {
@@ -144,6 +148,7 @@ describe('GameScene macro campaign vertical slice', () => {
     } as any);
     prepareTransitionScene(state);
     const initialGraphId = state.campaignRouter.state().graph.id;
+    grantNarrativeAccess(state);
     const firstExit = state.campaignNavigation.snapshot.destinations[0];
 
     state.handleCampaignExitProximity(firstExit.physicalExitId, true, false);
@@ -167,11 +172,12 @@ describe('GameScene macro campaign vertical slice', () => {
     grantNarrativeAccess(state);
     const returnExit = state.campaignNavigation.snapshot.destinations[0];
     state.handleCampaignExitProximity(returnExit.physicalExitId, true, true);
-    expect(state.currentLevel.id).toBe('verse_01_atrium');
+    expect(state.currentLevel.id).toBe(WORLD_ROOT_STAGE_ID);
     expect(state.campaignRouter.state().activeGraphContextId).toBe(UMBRA_ROUTE_SLICE_HUB_CONTEXT);
     expect(state.campaignRouter.state().parkedGraphContexts[UMBRA_ROUTE_SLICE_WATERS_CONTEXT].currentNodeId)
       .toBe(corruptedNodeId);
 
+    grantNarrativeAccess(state);
     const resumeExit = state.campaignNavigation.snapshot.destinations[0];
     state.handleCampaignExitProximity(resumeExit.physicalExitId, true, true);
     expect(state.currentLevel.id).toBe(CORACAO_CORROMPIDO_STAGE_ID);
@@ -271,6 +277,12 @@ describe('GameScene macro campaign vertical slice', () => {
     if (!first.ok) throw first.error;
     const hub = first.value.adapter.inspect();
     if (!hub.ok) throw hub.error;
+    first.value.adapter.setAccess({
+      eligibleEdgeIds: first.value.adapter.state().graph.edges
+        .filter(edge => edge.sourceNodeId === first.value.adapter.state().currentNodeId)
+        .map(edge => edge.id),
+      unlockedStageExitIds: hub.value.snapshot.destinations.map(destination => destination.stageExitId),
+    });
     const prepared = first.value.adapter.prepare(hub.value.snapshot.destinations[0].physicalExitId);
     if (!prepared.ok) throw prepared.error;
     const confirmed = first.value.adapter.confirm(prepared.value.preparationId);

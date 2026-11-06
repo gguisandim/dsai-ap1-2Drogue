@@ -6,6 +6,7 @@ import {
   CORACAO_CORROMPIDO_STAGE_ID,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   PhysicalExitResolver,
+  WORLD_ROOT_STAGE_ID,
   applyCampaignRegionBindings,
 } from '../../stages';
 import type {
@@ -40,29 +41,25 @@ export const UMBRA_ROUTE_SLICE_WATERS_CONTEXT = 'context.route.aguas';
 export const UMBRA_ROUTE_SLICE_RUN_ID = 'campaign.umbra-trail.route-slice.default-run';
 export const UMBRA_ROUTE_SLICE_SEED = 'campaign.umbra-trail.route-slice.default-seed';
 
-const legacyPlaceholder = (stageId: string, reason: string): CampaignContentReference => Object.freeze({
+const authoredStage = (stageId: string, minimumManifestRevision: number): CampaignContentReference => Object.freeze({
   kind: 'stage' as const,
   stageId,
-  minimumManifestRevision: 1,
-  placeholder: Object.freeze({ kind: 'legacy-map' as const, reason }),
+  minimumManifestRevision,
 });
 
 export const UMBRA_CAMPAIGN_ROUTE_SLICE: CampaignMacroDefinition = Object.freeze(
   applyCampaignRegionBindings({
     ...UMBRA_CAMPAIGN_SKELETON,
-    revision: 4,
+    revision: 5,
     hub: Object.freeze({
       ...UMBRA_CAMPAIGN_SKELETON.hub,
-      content: legacyPlaceholder(
-        'verse_01_atrium',
-        'Placeholder temporário para Floresta das Raízes; não representa o mapa final.',
-      ),
+      content: authoredStage(WORLD_ROOT_STAGE_ID, 2),
     }),
   }),
 );
 
 const STAGE_IDS = Object.freeze([
-  'verse_01_atrium',
+  WORLD_ROOT_STAGE_ID,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   CORACAO_CORROMPIDO_STAGE_ID,
   'verse_01_atrium',
@@ -238,7 +235,8 @@ function migrateRouteSliceRevision(
   state: CampaignRunState,
   graph: CampaignGraph,
 ): CampaignRunState {
-  if (state.graph.campaignRevision !== 2 && state.graph.campaignRevision !== 3) return state;
+  if (state.graph.campaignRevision !== 2 && state.graph.campaignRevision !== 3 &&
+    state.graph.campaignRevision !== 4) return state;
   return canonicalCampaignRunState({
     ...state,
     graph,
@@ -258,14 +256,14 @@ function migrateMacroRevision(state: CampaignRunState): CampaignRunState {
   const macro = state.macroProgress;
   if (!macro || macro.definitionId !== UMBRA_CAMPAIGN_ROUTE_SLICE.id ||
     (macro.definitionRevision !== 1 && macro.definitionRevision !== 2 &&
-      macro.definitionRevision !== 3)) {
+      macro.definitionRevision !== 3 && macro.definitionRevision !== 4)) {
     return state;
   }
   return canonicalCampaignRunState({
     ...state,
     macroProgress: Object.freeze({
       ...macro,
-      definitionRevision: 4,
+      definitionRevision: 5,
     } as CampaignMacroProgressState),
   });
 }
@@ -298,7 +296,8 @@ export class UmbraCampaignRouteSliceFactory {
           previous.graph.runSeed === generated.value.runSeed &&
           previous.graph.id === generated.value.id &&
           (previous.graph.campaignRevision === generated.value.campaignRevision ||
-            previous.graph.campaignRevision === 2 || previous.graph.campaignRevision === 3);
+            previous.graph.campaignRevision === 2 || previous.graph.campaignRevision === 3 ||
+            previous.graph.campaignRevision === 4);
         if (!compatible) {
           const rejected = saves.load({
             campaignId: generated.value.campaignId,

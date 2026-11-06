@@ -454,6 +454,23 @@ export class StageVisualRegistry {
           'stage.visual.decoration.visibility-invalid', 'Decoration placement visibility must be boolean.',
           [...placementPath, 'visible'], manifest.id, placement.type,
         ));
+        if (placement.alpha !== undefined && (!Number.isFinite(placement.alpha) ||
+          placement.alpha < 0 || placement.alpha > 1)) diagnostics.push(this.diagnostic(
+          'stage.visual.decoration.alpha-invalid', 'Decoration placement alpha must be within 0 and 1.',
+          [...placementPath, 'alpha'], manifest.id, placement.type,
+        ));
+        if ((placement.flipX !== undefined && typeof placement.flipX !== 'boolean') ||
+          (placement.flipY !== undefined && typeof placement.flipY !== 'boolean')) diagnostics.push(this.diagnostic(
+          'stage.visual.decoration.flip-invalid', 'Decoration placement flips must be boolean.',
+          [...placementPath, 'flipX'], manifest.id, placement.type,
+        ));
+        if ((placement.originX !== undefined && (!Number.isFinite(placement.originX) ||
+          placement.originX < 0 || placement.originX > 1)) ||
+          (placement.originY !== undefined && (!Number.isFinite(placement.originY) ||
+            placement.originY < 0 || placement.originY > 1))) diagnostics.push(this.diagnostic(
+          'stage.visual.decoration.origin-invalid', 'Decoration placement origins must be within 0 and 1.',
+          [...placementPath, 'originX'], manifest.id, placement.type,
+        ));
         const resolvedId = theme.decorationOverrides?.[placement.type] ?? placement.type;
         const definition = this.decorations.get(resolvedId)?.value;
         if (!definition || !allowed.has(resolvedId)) {

@@ -8,6 +8,7 @@ import {
   CORACAO_CORROMPIDO_STAGE_ID,
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   IGAPO_RETURN_ANCHOR,
+  WORLD_ROOT_STAGE_ID,
 } from '../stages';
 
 const RUN_ID = 'run.macro-phaser-adapter';
@@ -68,23 +69,25 @@ describe('GameMacroCampaignAdapter', () => {
     const session = create();
     const view = inspect(session);
 
-    expect(view.currentNode.stageId).toBe('verse_01_atrium');
+    expect(view.currentNode.stageId).toBe(WORLD_ROOT_STAGE_ID);
     expect(view.snapshot.destinations).toHaveLength(1);
     expect(view.snapshot.destinations[0]).toMatchObject({
-      sourceStageId: 'verse_01_atrium',
+      sourceStageId: WORLD_ROOT_STAGE_ID,
       targetStageId: IGAPO_DAS_MEMORIAS_STAGE_ID,
       physicalExitId: expect.any(String),
-      available: true,
+      available: false,
+      blockedReason: 'stage-exit-locked',
     });
     expect(session.adapter.location()).toEqual(expect.objectContaining({
       regionName: 'Floresta das Raízes',
-      isHub: true,
+      isHub: false,
     }));
   });
 
   it('uses the physical id once and rejects a concurrent preparation', () => {
     const session = create();
     const destination = inspect(session).snapshot.destinations[0];
+    grantNarrativeAccess(session);
     const prepared = session.adapter.prepare(destination.physicalExitId);
     if (!prepared.ok) throw prepared.error;
 
@@ -106,6 +109,7 @@ describe('GameMacroCampaignAdapter', () => {
   it('cancels a prepared transition so a narrative failure can retry safely', () => {
     const session = create();
     const destination = inspect(session).snapshot.destinations[0];
+    grantNarrativeAccess(session);
     const prepared = session.adapter.prepare(destination.physicalExitId);
     if (!prepared.ok) throw prepared.error;
 
@@ -190,6 +194,7 @@ describe('GameMacroCampaignAdapter', () => {
     const session = create(storage);
     const before = session.adapter.state();
     const bytes = storage.read('umbra-trail-run-v1');
+    grantNarrativeAccess(session);
     const prepared = session.adapter.prepare(inspect(session).snapshot.destinations[0].physicalExitId);
     if (!prepared.ok) throw prepared.error;
     storage.failWrites = true;

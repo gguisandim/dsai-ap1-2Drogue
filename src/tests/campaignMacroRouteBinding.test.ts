@@ -13,6 +13,7 @@ import {
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   StageLoader,
   StageRegistry,
+  WORLD_ROOT_STAGE_ID,
   registerCampaignChapters,
   registerLegacyStages,
 } from '../stages';
@@ -94,11 +95,12 @@ class ToggleStorage implements SaveStoragePort {
 }
 
 describe('CampaignMacroRouteBinder vertical slice', () => {
-  it('keeps the legacy hub placeholder and declares Igapó as authored content', () => {
-    expect(UMBRA_CAMPAIGN_ROUTE_SLICE.revision).toBe(4);
+  it('uses Floresta das Raízes as the authored hub and keeps Igapó authored', () => {
+    expect(UMBRA_CAMPAIGN_ROUTE_SLICE.revision).toBe(5);
     expect(UMBRA_CAMPAIGN_ROUTE_SLICE.hub.content).toMatchObject({
-      kind: 'stage', stageId: 'verse_01_atrium', placeholder: { kind: 'legacy-map' },
+      kind: 'stage', stageId: WORLD_ROOT_STAGE_ID, minimumManifestRevision: 2,
     });
+    expect(UMBRA_CAMPAIGN_ROUTE_SLICE.hub.content).not.toHaveProperty('placeholder');
     const regions = UMBRA_CAMPAIGN_ROUTE_SLICE.routes.flatMap(route => route.regions);
     expect(regions.find(region => region.id === 'region.aguas.igapo')?.content).toMatchObject({
       kind: 'stage', stageId: IGAPO_DAS_MEMORIAS_STAGE_ID,
@@ -115,7 +117,7 @@ describe('CampaignMacroRouteBinder vertical slice', () => {
     expect(first).toEqual(second);
     if (!first.ok) throw first.error;
     expect(first.value.nodes).toHaveLength(9);
-    expect(first.value.nodes.find(node => node.depth === 0)?.stageId).toBe('verse_01_atrium');
+    expect(first.value.nodes.find(node => node.depth === 0)?.stageId).toBe(WORLD_ROOT_STAGE_ID);
     expect(first.value.nodes.find(node => node.depth === 1)?.stageId)
       .toBe(IGAPO_DAS_MEMORIAS_STAGE_ID);
     expect(first.value.nodes.find(node => node.depth === 2)?.stageId)
@@ -134,7 +136,9 @@ describe('CampaignMacroRouteBinder vertical slice', () => {
     const initial = session.binder.inspect();
     if (!initial.ok) throw initial.error;
     const waters = initial.value.choices.find(choice => choice.choice.connectionId === HUB_TO_WATERS);
-    expect(waters).toMatchObject({ status: 'bound', physicalExitId: expect.any(String) });
+    expect(waters).toMatchObject({
+      status: 'blocked', physicalExitId: expect.any(String), blockedReason: 'stage-exit-locked',
+    });
     expect(initial.value.choices.filter(choice => choice.choice.kind === 'enter-route' &&
       choice.choice.connectionId !== HUB_TO_WATERS).every(choice => choice.status === 'blocked')).toBe(true);
 
@@ -192,6 +196,7 @@ describe('CampaignMacroRouteBinder vertical slice', () => {
     const session = create(storage);
     const before = session.binder.state();
     const bytes = storage.read('umbra-trail-run-v1');
+    grantNarrativeAccess(session.binder);
     const prepared = session.binder.prepare(HUB_TO_WATERS);
     if (!prepared.ok) throw prepared.error;
     storage.failWrites = true;
@@ -225,7 +230,7 @@ describe('CampaignMacroRouteBinder vertical slice', () => {
     if (!generated.ok) throw generated.error;
     const waters = generated.value.connections.find(connection => connection.connectionId === HUB_TO_WATERS);
     expect(waters).toMatchObject({
-      status: 'bound',
+      status: 'blocked',
       contentKind: 'stage',
       stageId: IGAPO_DAS_MEMORIAS_STAGE_ID,
       edgeId: expect.any(String),

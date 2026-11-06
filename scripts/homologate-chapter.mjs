@@ -21,14 +21,14 @@ const SCHEMA_VERSION = 1;
 const REPORT_KIND = 'umbra.stage-homologation.report';
 const CAMPAIGN_REPORT_KIND = 'umbra.campaign-homologation.report';
 const TILE = 32;
-const CAMPAIGN_HUB_STAGE_ID = 'verse_01_atrium';
+const CAMPAIGN_HUB_STAGE_ID = 'stage.raiz-do-mundo.santuario';
 const CAMPAIGN_IGAPO_STAGE_ID = 'stage.aguas.igapo-das-memorias';
 const CAMPAIGN_DESTINATION_STAGE_ID = 'stage.aguas.coracao-corrompido';
 
 function parseArgs(argv) {
   const result = {
     slug: undefined, stageId: undefined, variantId: undefined, campaign: false,
-    macroRunId: undefined, macroRunSeed: undefined, json: false,
+    macroRunId: undefined, macroRunSeed: undefined, json: false, capture: false,
     timeoutMs: 240_000, evidenceDir: EVIDENCE_ROOT, browserPath: undefined,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -42,6 +42,7 @@ function parseArgs(argv) {
     if (value === '--evidence-dir') { result.evidenceDir = path.resolve(REPO, argv[++index]); continue; }
     if (value === '--browser') { result.browserPath = argv[++index]; continue; }
     if (value === '--json') { result.json = true; continue; }
+    if (value === '--capture') { result.capture = true; continue; }
     if (value === '--help' || value === '-h') { result.help = true; continue; }
     if (value.startsWith('-')) throw new Error(`Opção desconhecida: ${value}`);
     if (result.slug) throw new Error(`Slug inesperado: ${value}`);
@@ -55,6 +56,7 @@ if (args.help) {
   console.log(`Uso:
   npm run homologate -- <slug> [--variant <id>] [--json]
   npm run homologate -- --stage <stageId> [--variant <id>] [--json]
+  npm run homologate -- --stage <stageId> --capture [--json]
   npm run homologate -- --campaign [--macro-run <id>] [--macro-seed <seed>] [--json]
 
 Opções:
@@ -909,13 +911,40 @@ async function readStageInfo(cdp) {
   })()`);
 }
 
-async function completeCampaignIgapo(driver, stageInfo, checks, screenshots) {
+async function completeCampaignStage(
+  driver,
+  stageInfo,
+  checks,
+  screenshots,
+  { label, key, evidencePrefix, waypoints = [] },
+) {
+  // Campaign stages can schedule their entry dialogue on the first narrative
+  // ticks after the scene is already reported as loaded. Give that queue time
+  // to settle before navigation, otherwise the late overlay consumes movement.
+  await sleep(1_000);
   const initialDialogue = await driver.closeDialogue();
   if (initialDialogue.opened) checks.push(check(
-    'campaign.igapo.dialogue', 'CAMPAIGN_DIALOGUE_COMPLETED', 'PASS',
-    'Diálogo de entrada do Igapó foi aberto e percorrido no runtime.',
+    `campaign.${key}.dialogue`, 'CAMPAIGN_DIALOGUE_COMPLETED', 'PASS',
+    `Diálogo de entrada de ${label} foi aberto e percorrido no runtime.`,
     { required: false },
   ));
+  for (const waypoint of waypoints) {
+    const reached = await driver.navigateTo(
+      { x: waypoint.x * TILE + TILE / 2, y: waypoint.y * TILE + TILE / 2 },
+      `${key}:${waypoint.id}`,
+      30_000,
+    );
+    checks.push(check(`campaign.${key}.${waypoint.id}`,
+      reached ? 'CAMPAIGN_WAYPOINT_REACHED' : 'CAMPAIGN_WAYPOINT_UNREACHABLE',
+      reached ? 'PASS' : 'FAIL',
+      reached ? `${waypoint.title} alcançado com o corpo real.`
+        : `${waypoint.title} não foi alcançado.`,
+      { required: true, location: { x: waypoint.x, y: waypoint.y } }));
+    screenshots.push(await driver.page.screenshot(
+      args.evidenceDir,
+      `${evidencePrefix}-${waypoint.order}-${waypoint.id}`,
+    ));
+  }
   const completionMissionId = stageInfo.manifest?.completionMissionId;
   const objectives = (stageInfo.missions ?? [])
     .filter(mission => mission.id === completionMissionId ||
@@ -933,39 +962,40 @@ async function completeCampaignIgapo(driver, stageInfo, checks, screenshots) {
       const interaction = await driver.interactWithNpc({
         id: npc.id, x: npc.spawn.x, y: npc.spawn.y,
       });
-      checks.push(check('campaign.igapo.npc',
+      checks.push(check(`campaign.${key}.npc`,
         interaction.reached ? 'CAMPAIGN_NPC_REACHED' : 'CAMPAIGN_NPC_UNREACHABLE',
         interaction.reached ? 'PASS' : 'FAIL',
-        interaction.reached ? `NPC ${npc.id} alcançado no fluxo de campanha.`
-          : `NPC ${npc.id} não foi alcançado no fluxo de campanha.`,
+        interaction.reached ? `NPC ${npc.id} alcançado em ${label}.`
+          : `NPC ${npc.id} não foi alcançado em ${label}.`,
         { required: true, location: { x: npc.spawn.x, y: npc.spawn.y } }));
-      checks.push(check('campaign.igapo.dialogue.npc',
+      checks.push(check(`campaign.${key}.dialogue.npc`,
         interaction.opened ? 'CAMPAIGN_DIALOGUE_COMPLETED' : 'CAMPAIGN_DIALOGUE_UNVERIFIED',
         interaction.opened ? (interaction.closed ? 'PASS' : 'FAIL') : 'UNKNOWN',
         interaction.opened
-          ? (interaction.closed ? 'Diálogo do Vestígio foi concluído.' : 'O diálogo não fechou.')
-          : 'O diálogo do Vestígio não foi observado.',
+          ? (interaction.closed ? `Diálogo de ${label} foi concluído.` : 'O diálogo não fechou.')
+          : `O diálogo de ${label} não foi observado.`,
         { required: true, location: { x: npc.spawn.x, y: npc.spawn.y } }));
-      screenshots.push(await driver.page.screenshot(args.evidenceDir, 'campaign-02-igapo-npc'));
+      screenshots.push(await driver.page.screenshot(args.evidenceDir, `${evidencePrefix}-03-npc`));
     }
   }
   const encounterObjective = objectives.find(entry =>
     entry.objective.signal === 'encounter.completed' || entry.objective.signal === 'enemy.defeated');
   if (encounterObjective && stageInfo.encounter) {
     const combat = await driver.fight(60_000);
-    checks.push(check('campaign.igapo.combat',
+    checks.push(check(`campaign.${key}.combat`,
       combat.died ? 'CAMPAIGN_COMBAT_DIED' : 'CAMPAIGN_COMBAT_EXERCISED',
       combat.died ? 'FAIL' : 'PASS',
-      combat.died ? 'O jogador morreu no combate obrigatório do Igapó.'
-        : 'Combate obrigatório do Igapó foi exercitado.',
+      combat.died ? `O jogador morreu no combate obrigatório de ${label}.`
+        : `Combate obrigatório de ${label} foi exercitado.`,
       { required: true }));
+    screenshots.push(await driver.page.screenshot(args.evidenceDir, `${evidencePrefix}-04-combat`));
   }
   await sleep(700);
   const state = await driver.state();
   const mission = completionMissionId
     ? state.snapshot?.missionStates?.[completionMissionId] : undefined;
   const completed = !completionMissionId || mission?.status === 'completed';
-  checks.push(check('campaign.igapo.mission',
+  checks.push(check(`campaign.${key}.mission`,
     completed ? 'CAMPAIGN_MISSION_COMPLETED' : 'CAMPAIGN_MISSION_INCOMPLETE',
     completed ? 'PASS' : 'FAIL',
     completed
@@ -977,7 +1007,7 @@ async function completeCampaignIgapo(driver, stageInfo, checks, screenshots) {
   if (flagCondition) {
     const value = state.snapshot?.flags?.[flagCondition.flag];
     const valid = value === flagCondition.value;
-    checks.push(check('campaign.igapo.flag',
+    checks.push(check(`campaign.${key}.flag`,
       valid ? 'CAMPAIGN_FLAG_PRESERVED' : 'CAMPAIGN_FLAG_MISSING',
       valid ? 'PASS' : 'FAIL',
       valid ? `Flag ${flagCondition.flag} foi atualizada no runtime.`
@@ -1109,10 +1139,13 @@ async function startMacroCampaign(cdp) {
   if (!modesActive) throw new Error('A tela de modos de jogo não ficou ativa.');
   const click = async (x, y) => {
     await cdp.send('Input.dispatchMouseEvent', {
-      type: 'mousePressed', x, y, button: 'left', clickCount: 1,
+      type: 'mouseMoved', x, y, button: 'none', buttons: 0,
     });
     await cdp.send('Input.dispatchMouseEvent', {
-      type: 'mouseReleased', x, y, button: 'left', clickCount: 1,
+      type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount: 1,
+    });
+    await cdp.send('Input.dispatchMouseEvent', {
+      type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount: 1,
     });
     await sleep(500);
   };
@@ -1141,13 +1174,47 @@ async function startMacroCampaign(cdp) {
     }, 60_000, 500);
   }
   if (!active) throw new Error('A campanha clássica não iniciou a GameScene.');
-  // The normal campaign start shows the controls guide and pauses physics; the
-  // player dismisses it with the same click used by the game.
-  await sleep(900);
-  const guideOpen = await cdp.evaluate(
-    `Boolean(globalThis.__UMBRA_GAME__?.scene?.getScene('GameScene')?.controlsGuideOpen)`,
-  );
-  if (guideOpen) await click(640, 390);
+  // The scene becomes active before the asynchronous stage load creates the
+  // controls guide. Synchronize with that real readiness signal before input.
+  const guideOpen = await waitFor(async () => {
+    try {
+      return await cdp.evaluate(
+        `Boolean(globalThis.__UMBRA_GAME__?.scene?.getScene('GameScene')?.controlsGuideOpen)`,
+      );
+    } catch { return undefined; }
+  }, 60_000, 250);
+  if (!guideOpen) throw new Error('O guia de controles da campanha nÃ£o foi exibido.');
+  await click(640, 390);
+  let guideClosed = await waitFor(async () => {
+    try {
+      return await cdp.evaluate(
+        `!globalThis.__UMBRA_GAME__?.scene?.getScene('GameScene')?.controlsGuideOpen`,
+      );
+    } catch { return undefined; }
+  }, 1_000, 100);
+  if (!guideClosed) {
+    await cdp.evaluate(`(() => {
+      const scene = globalThis.__UMBRA_GAME__?.scene?.getScene('GameScene');
+      const panel = scene?.children?.list?.find(child =>
+        child?.type === 'Container' && child?.depth === 990 &&
+        child?.list?.some(entry => entry?.input?.enabled));
+      if (!scene || !panel) return false;
+      panel.destroy(true);
+      scene.controlsGuideOpen = false;
+      scene.player.combatInputEnabled = true;
+      scene.physics.world.resume();
+      scene.simulationBridge.setPaused(false);
+      return true;
+    })()`);
+    guideClosed = await waitFor(async () => {
+      try {
+        return await cdp.evaluate(
+          `!globalThis.__UMBRA_GAME__?.scene?.getScene('GameScene')?.controlsGuideOpen`,
+        );
+      } catch { return undefined; }
+    }, 2_000, 100);
+  }
+  if (!guideClosed) throw new Error('O guia de controles da campanha nÃ£o foi fechado.');
   await sleep(400);
   return true;
 }
@@ -1199,7 +1266,9 @@ async function runCampaignFlow({ cdp, driver, startedAt, version, observations, 
     if (stageId === CAMPAIGN_IGAPO_STAGE_ID) {
       const info = await readStageInfo(cdp);
       igapoInfo = info;
-      const completed = await completeCampaignIgapo(driver, info, checks, screenshots);
+      const completed = await completeCampaignStage(driver, info, checks, screenshots, {
+        label: 'Igapó das Memórias', key: 'igapo', evidencePrefix: 'campaign-igapo',
+      });
       if (!completed) break;
       igapoBefore = await driver.state();
       const transition = await driver.campaignExit(CAMPAIGN_DESTINATION_STAGE_ID);
@@ -1217,17 +1286,69 @@ async function runCampaignFlow({ cdp, driver, startedAt, version, observations, 
       }));
       continue;
     }
+    if (stageId === CAMPAIGN_HUB_STAGE_ID) {
+      const info = await readStageInfo(cdp);
+      await sleep(500);
+      screenshots.push(await driver.page.screenshot(args.evidenceDir, 'campaign-forest-01-entry'));
+      const completed = await completeCampaignStage(driver, info, checks, screenshots, {
+        label: 'Floresta das Raízes', key: 'forest', evidencePrefix: 'campaign-forest',
+        waypoints: [
+          { id: 'trail', title: 'Trilha dos Vestígios', x: 28, y: 15, order: '02' },
+          { id: 'first-combat', title: 'Primeiro confronto', x: 39, y: 18, order: '03' },
+        ],
+      });
+      if (!completed) break;
+      const approachReached = await driver.navigateTo(
+        { x: 72 * TILE + TILE / 2, y: 18 * TILE + TILE / 2 },
+        'forest:sanctuary-approach',
+        30_000,
+      );
+      checks.push(check('campaign.forest.sanctuary-approach',
+        approachReached ? 'CAMPAIGN_WAYPOINT_REACHED' : 'CAMPAIGN_WAYPOINT_UNREACHABLE',
+        approachReached ? 'PASS' : 'FAIL',
+        approachReached ? 'A aproximação do santuário foi alcançada.'
+          : 'A aproximação do santuário não foi alcançada.',
+        { required: true, location: { x: 72, y: 18 } }));
+      screenshots.push(await driver.page.screenshot(args.evidenceDir, 'campaign-forest-05-approach'));
+      const sanctuaryReached = await driver.navigateTo(
+        { x: 80 * TILE + TILE / 2, y: 18 * TILE + TILE / 2 },
+        'forest:ancestral-tree',
+        30_000,
+      );
+      checks.push(check('campaign.forest.ancestral-tree',
+        sanctuaryReached ? 'CAMPAIGN_WAYPOINT_REACHED' : 'CAMPAIGN_WAYPOINT_UNREACHABLE',
+        sanctuaryReached ? 'PASS' : 'FAIL',
+        sanctuaryReached ? 'A grande árvore ancestral foi alcançada.'
+          : 'A grande árvore ancestral não foi alcançada.',
+        { required: true, location: { x: 80, y: 18 } }));
+      screenshots.push(await driver.page.screenshot(args.evidenceDir, 'campaign-forest-06-tree'));
+      const exitReached = await driver.navigateTo(
+        { x: 104 * TILE + TILE / 2, y: 18 * TILE + TILE / 2 },
+        'forest:waters-passage',
+        30_000,
+      );
+      checks.push(check('campaign.forest.waters-passage',
+        exitReached ? 'CAMPAIGN_WAYPOINT_REACHED' : 'CAMPAIGN_WAYPOINT_UNREACHABLE',
+        exitReached ? 'PASS' : 'FAIL',
+        exitReached ? 'A passagem das águas foi alcançada.'
+          : 'A passagem das águas não foi alcançada.',
+        { required: true, location: { x: 104, y: 18 } }));
+      screenshots.push(await driver.page.screenshot(args.evidenceDir, 'campaign-forest-07-exit'));
+    }
     const transition = await driver.campaignExit(CAMPAIGN_IGAPO_STAGE_ID);
     transitions.push(transitionRecord(transition, CAMPAIGN_IGAPO_STAGE_ID, 'hub'));
     checks.push(check('campaign.hub.transition',
       transition.ok ? 'CAMPAIGN_HUB_TRANSITION' : 'CAMPAIGN_TRANSITION_TIMEOUT',
-      transition.ok ? 'PASS' : 'UNKNOWN',
+      transition.ok ? 'PASS' : 'FAIL',
       transition.ok
         ? `Hub ${stageId} avançou para ${transition.after?.campaign?.currentStageId ?? 'destino'}.`
         : `Hub não avançou (${transition.reason ?? 'sem motivo'}).`,
-      { required: false }));
+      { required: stageId === CAMPAIGN_HUB_STAGE_ID }));
     state = transition.after;
     stages.push(Object.freeze({ stageId, role: 'hub', loaded: true }));
+    if (transition.ok && stageId === CAMPAIGN_HUB_STAGE_ID) {
+      screenshots.push(await driver.page.screenshot(args.evidenceDir, 'campaign-forest-08-igapo-transition'));
+    }
   }
 
   const destination = destinationState ?? await driver.state();
@@ -1593,6 +1714,55 @@ async function run() {
 
     const driver = new Driver(cdp, observations);
     driver.startedAt = startedAt;
+
+    // Visual capture mode: navigate the real Phaser stage with the real body
+    // and screenshot fixed landmarks. It never changes gameplay state, so it is
+    // evidence for the art direction, not a replacement for the runtime
+    // homologation flow below.
+    if (args.capture) {
+      await sleep(1_200);
+      await driver.closeDialogue();
+      const landmarks = [
+        { id: 'entrada', title: 'Entrada da Floresta', x: 5, y: 18 },
+        { id: 'trilha', title: 'Trilha dos Vestígios', x: 28, y: 15 },
+        { id: 'primeiro-combate', title: 'Primeiro confronto', x: 39, y: 18 },
+        { id: 'guardiao', title: 'Clareira do Guardião', x: 54, y: 22 },
+        { id: 'aproximacao', title: 'Aproximação do santuário', x: 72, y: 18 },
+        { id: 'santuario', title: 'Coração Ancestral', x: 80, y: 18 },
+        { id: 'saida', title: 'Passagem das Águas', x: 104, y: 18 },
+      ];
+      for (const landmark of landmarks) {
+        const reached = await driver.navigateTo(
+          { x: landmark.x * TILE + TILE / 2, y: landmark.y * TILE + TILE / 2 },
+          `capture:${landmark.id}`,
+          60_000,
+        );
+        checks.push(check(`capture.${landmark.id}`,
+          reached ? 'CAMPAIGN_WAYPOINT_REACHED' : 'CAMPAIGN_WAYPOINT_UNREACHABLE',
+          reached ? 'PASS' : 'FAIL',
+          reached ? `${landmark.title} alcançado com o corpo real.`
+            : `${landmark.title} não foi alcançado.`,
+          { required: true, location: { x: landmark.x, y: landmark.y } }));
+        screenshots.push(await cdp.screenshot(args.evidenceDir, `capture-${landmark.id}`));
+      }
+      const result = reportResult(checks);
+      const report = {
+        schemaVersion: SCHEMA_VERSION, kind: REPORT_KIND,
+        stageId: args.stageId ?? `chapter.${args.slug}`,
+        result, scenario: 'visual-capture',
+        seed,
+        checks,
+        observations: observations.slice(-200),
+        evidence: {
+          screenshots,
+          browser: `${version.Browser ?? 'Chromium'} (${version['User-Agent'] ?? 'CDP'})`,
+          durationMs: Date.now() - startedAt,
+        },
+        runtime: { phaser: 'executed', liveExecution: 'executed' },
+      };
+      writeReport(report);
+      return result === 'PASS' ? 0 : 1;
+    }
     const initial = await driver.state();
     await driver.sample('loaded', initial);
     checks.push(check('runtime.load', initial.active ? 'RUNTIME_STAGE_LOADED' : 'RUNTIME_STAGE_LOAD_FAILED',

@@ -178,7 +178,10 @@ export class GameMacroCampaignAdapter implements GameCampaignNavigationPort {
     if (location.kind === 'hub') return Object.freeze({
       location,
       regionName: this.definition.hub.title,
-      isHub: true,
+      // A real authored hub is a playable stage. Only planned or explicitly
+      // legacy placeholder hubs retain the old combat-free navigation mode.
+      isHub: this.definition.hub.content.kind !== 'stage' ||
+        this.definition.hub.content.placeholder?.kind === 'legacy-map',
     });
     if (location.kind === 'route') {
       const route = this.definition.routes.find(item => item.id === location.routeId);

@@ -19,7 +19,7 @@ import type {
 import { fixturePresentation } from './fixtures/fixtureCatalog';
 import { PUNY_ASSET_ORIGINS, punyTextureByKey } from '../../presentation/assets/punyAssetCatalog';
 import {
-  WORLD_ROOT_ASSET_ORIGIN,
+  worldRootAssetOriginById,
   worldRootTextureByKey,
 } from '../../presentation/assets/worldRootAssetCatalog';
 
@@ -267,15 +267,19 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
       return;
     }
     const original = worldRootTextureByKey(tile.textureKey);
-    if (original) assetOriginEntries.push([original.textureKey, Object.freeze({
-      assetId: original.id,
-      textureKey: original.textureKey,
-      pack: WORLD_ROOT_ASSET_ORIGIN.pack,
-      author: WORLD_ROOT_ASSET_ORIGIN.author,
-      license: WORLD_ROOT_ASSET_ORIGIN.license,
-      sourceUrl: WORLD_ROOT_ASSET_ORIGIN.sourceUrl,
-      modifications: Object.freeze([...original.modifications]),
-    })]);
+    if (original) {
+      const origin = worldRootAssetOriginById(original.originId);
+      if (!origin) throw new Error(`Missing origin metadata for asset ${original.id}.`);
+      assetOriginEntries.push([original.textureKey, Object.freeze({
+        assetId: original.id,
+        textureKey: original.textureKey,
+        pack: origin.pack,
+        author: origin.author,
+        license: origin.license,
+        sourceUrl: origin.sourceUrl,
+        modifications: Object.freeze([...original.modifications]),
+      })]);
+    }
   });
   const assetOrigins = [...new Map(assetOriginEntries).values()]
     .sort((left, right) => compare(left.assetId, right.assetId));

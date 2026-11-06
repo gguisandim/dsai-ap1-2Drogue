@@ -218,6 +218,12 @@ export class StageMapRenderer {
       image.setScale(placement.scale ?? definition.defaultScale);
       if (placement.rotation !== undefined) image.setRotation(placement.rotation);
       if (placement.tint !== undefined) image.setTint(placement.tint);
+      if (placement.alpha !== undefined) image.setAlpha(placement.alpha);
+      if (placement.flipX) image.setFlipX(true);
+      if (placement.flipY) image.setFlipY(true);
+      if (placement.originX !== undefined || placement.originY !== undefined) {
+        image.setOrigin(placement.originX ?? 0.5, placement.originY ?? 0.5);
+      }
       images.push(image);
       decorationImages.push(image);
       const layer = placement.layer ?? definition.layer;
