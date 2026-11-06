@@ -245,6 +245,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .wl-validation-check--unknown circle { fill: #e3b75b; }
 .wl-validation-check--pass circle { fill: #53d59f; }
 .wl-validation-check.is-selected circle { stroke: #f3e6a0; stroke-width: 3; }
+.wl-campaign-reports { display: grid; gap: 4px; margin: 6px 0; }
+.wl-campaign-report { display: grid; gap: 3px; padding: 6px 7px; border: 1px solid #2b4a3f; border-left: 3px solid #3fb588; border-radius: 3px; background: #0d1c18; }
+.wl-campaign-report strong { color: #9fe2c4; font-size: 9px; overflow-wrap: anywhere; }
+.wl-campaign-report small { color: #7f9c8f; font: 8px/1.4 ui-monospace, monospace; overflow-wrap: anywhere; }
+.wl-validation-refresh { display: inline-block; margin: 8px 6px 0 0; padding: 5px 8px; border: 1px solid #2b4c5b; border-radius: 3px; background: #10232c; color: #b7d7e2; font-size: 9px; cursor: pointer; }
 .wl-validation-list { display: grid; gap: 3px; max-height: 300px; overflow: auto; padding-right: 2px; }
 .wl-validation-row { display: grid; gap: 3px; width: 100%; padding: 6px 7px; border: 1px solid #243945; border-left-width: 3px; border-radius: 3px; background: #0d1922; color: #b9cad3; font-size: 9px; text-align: left; }
 .wl-validation-row:hover { background: #13222c; border-color: #3b5a68; }

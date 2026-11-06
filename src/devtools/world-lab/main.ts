@@ -8,6 +8,7 @@ import { WorldLabDataService } from './WorldLabDataService';
 import { WorldLabSession } from './WorldLabSession';
 import { WorldLabApp } from './ui/WorldLabApp';
 import { authoringChapters, createAuthoringValidationSource } from './authoringValidation';
+import { createLocalReportLoader } from './localReports';
 
 const root = document.querySelector<HTMLElement>('#world-lab-root');
 if (!root) throw new Error('Umbra World Lab root element is missing.');
@@ -33,5 +34,5 @@ const session = new WorldLabSession(new WorldLabDataService({
   validationSource: createAuthoringValidationSource(),
   ...(focusStageId ? { focusStageId } : {}),
 }));
-new WorldLabApp(root, session).start();
+new WorldLabApp(root, session, undefined, undefined, createLocalReportLoader()).start();
 

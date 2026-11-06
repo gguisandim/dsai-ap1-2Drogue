@@ -84,6 +84,7 @@ export interface WorldLabRuntimeValidation {
   readonly variantId?: string;
   readonly scenario?: string;
   readonly seed?: number | null;
+  readonly manifestRevision?: number;
   readonly result: WorldLabValidationStatus;
   readonly checks: readonly WorldLabValidationCheck[];
   readonly observations?: readonly unknown[];
@@ -91,8 +92,64 @@ export interface WorldLabRuntimeValidation {
     readonly screenshots?: readonly string[];
     readonly browser?: string;
     readonly durationMs?: number;
+    readonly generatedAt?: string;
   };
+  readonly generatedAt?: string;
 }
+
+export interface WorldLabCampaignTransitionView {
+  readonly role: string;
+  readonly originStageId: string | null;
+  readonly physicalExitId: string | null;
+  readonly stageExitId: string | null;
+  readonly edgeId: string | null;
+  readonly targetNodeId: string | null;
+  readonly destinationStageId: string | null;
+  readonly expectedDestination: string | null;
+  readonly available: boolean;
+  readonly loadedDestinationStageId: string | null;
+  readonly loaded: boolean;
+  readonly reason: string | null;
+  readonly stateBefore: Readonly<Record<string, unknown>> | null;
+  readonly stateAfter: Readonly<Record<string, unknown>> | null;
+  readonly events: readonly string[];
+}
+
+export interface WorldLabCampaignRuntimeValidation {
+  readonly schemaVersion: 1;
+  readonly kind: 'umbra.campaign-homologation.report';
+  readonly campaignId: string | null;
+  readonly runId: string | null;
+  readonly runSeed: string | number | null;
+  readonly originStageId: string;
+  readonly destinationStageId: string;
+  readonly variantId?: string;
+  readonly manifestRevision?: number;
+  readonly destinationManifestRevision?: number;
+  readonly result: WorldLabValidationStatus;
+  readonly checks: readonly WorldLabValidationCheck[];
+  readonly transitions: readonly WorldLabCampaignTransitionView[];
+  readonly stages?: readonly Readonly<Record<string, unknown>>[];
+  readonly persistence?: Readonly<Record<string, unknown>> | null;
+  readonly observations?: readonly unknown[];
+  readonly evidence?: {
+    readonly screenshots?: readonly string[];
+    readonly browser?: string;
+    readonly durationMs?: number;
+    readonly generatedAt?: string;
+  };
+  readonly generatedAt?: string;
+}
+
+export type WorldLabRuntimeReport = WorldLabRuntimeValidation | WorldLabCampaignRuntimeValidation;
+
+export interface WorldLabLocalReports {
+  readonly reports: readonly WorldLabRuntimeReport[];
+  readonly generatedAt?: string;
+  readonly error?: string;
+}
+
+export type WorldLabReportLoader = () => Promise<WorldLabLocalReports>;
 
 export interface WorldLabDiagnostic {
   readonly code: string;
@@ -362,8 +419,10 @@ export interface WorldLabSessionState {
   readonly diagnostics: readonly WorldLabDiagnostic[];
   readonly selection: WorldLabSelection;
   readonly filters: WorldLabFilters;
-  /** Runtime homologation reports imported by the developer, keyed by stageId. */
+  /** Runtime homologation reports imported by the developer, keyed by stageId/variant. */
   readonly runtimeValidations?: Readonly<Record<string, WorldLabRuntimeValidation>>;
+  /** Campaign runtime reports, keyed by origin/destination/run. */
+  readonly campaignValidations?: Readonly<Record<string, WorldLabCampaignRuntimeValidation>>;
 }
 
 export interface WorldLabPlanSource {

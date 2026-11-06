@@ -6,3 +6,4 @@ export * from './WorldLabProjector';
 export * from './WorldLabSession';
 export * from './WorldLabSnapshot';
 export * from './WorldLabValidation';
+export * from './localReports';

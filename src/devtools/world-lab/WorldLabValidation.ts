@@ -3,6 +3,8 @@ import type {
   StagePlaytestSeedReport,
 } from '../../stages';
 import type {
+  WorldLabCampaignRuntimeValidation,
+  WorldLabCampaignTransitionView,
   WorldLabDiagnostic,
   WorldLabPlanSource,
   WorldLabRuntimeValidation,
@@ -165,6 +167,147 @@ export type RuntimeValidationParseResult =
   | { readonly ok: true; readonly value: WorldLabRuntimeValidation }
   | { readonly ok: false; readonly diagnostics: readonly WorldLabDiagnostic[] };
 
+export type CampaignValidationParseResult =
+  | { readonly ok: true; readonly value: WorldLabCampaignRuntimeValidation }
+  | { readonly ok: false; readonly diagnostics: readonly WorldLabDiagnostic[] };
+
+function campaignFailure(message: string): CampaignValidationParseResult {
+  return Object.freeze({
+    ok: false as const,
+    diagnostics: Object.freeze([Object.freeze({
+      code: 'world-lab.campaign-report.invalid',
+      severity: 'error' as const,
+      origin: 'playtest-runtime' as const,
+      message,
+      path: Object.freeze(['campaign-report']),
+    })]),
+  });
+}
+
+function transitionView(value: unknown): WorldLabCampaignTransitionView | undefined {
+  if (!isRecord(value) || typeof value.role !== 'string') return undefined;
+  const stringOrNull = (field: string): string | null =>
+    typeof value[field] === 'string' ? value[field] as string : null;
+  const recordOrNull = (field: string): Readonly<Record<string, unknown>> | null =>
+    isRecord(value[field]) ? Object.freeze({ ...value[field] as Record<string, unknown> }) : null;
+  return Object.freeze({
+    role: value.role,
+    originStageId: stringOrNull('originStageId'),
+    physicalExitId: stringOrNull('physicalExitId'),
+    stageExitId: stringOrNull('stageExitId'),
+    edgeId: stringOrNull('edgeId'),
+    targetNodeId: stringOrNull('targetNodeId'),
+    destinationStageId: stringOrNull('destinationStageId'),
+    expectedDestination: stringOrNull('expectedDestination'),
+    available: value.available === true,
+    loadedDestinationStageId: stringOrNull('loadedDestinationStageId'),
+    loaded: value.loaded === true,
+    reason: stringOrNull('reason'),
+    stateBefore: recordOrNull('stateBefore'),
+    stateAfter: recordOrNull('stateAfter'),
+    events: Object.freeze(Array.isArray(value.events)
+      ? value.events.filter((item): item is string => typeof item === 'string') : []),
+  });
+}
+
+/** Parses the complementary campaign report produced by the browser homologation. */
+export function parseCampaignValidation(serialized: string): CampaignValidationParseResult {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(serialized);
+  } catch {
+    return campaignFailure('O relatório de campanha não é JSON válido.');
+  }
+  if (!isRecord(parsed) || parsed.schemaVersion !== 1 ||
+    parsed.kind !== 'umbra.campaign-homologation.report') {
+    return campaignFailure('O relatório de campanha não usa umbra.campaign-homologation.report v1.');
+  }
+  if (typeof parsed.originStageId !== 'string' || typeof parsed.destinationStageId !== 'string' ||
+    !isStatus(parsed.result) || !Array.isArray(parsed.checks) || !Array.isArray(parsed.transitions)) {
+    return campaignFailure('O relatório de campanha não contém origem, destino, resultado, checks ou transições válidos.');
+  }
+  const checks = parsed.checks.map(parseCheck);
+  if (checks.some(check => check === undefined)) {
+    return campaignFailure('O relatório de campanha contém um check inválido.');
+  }
+  const transitions = parsed.transitions.map(transitionView);
+  if (transitions.some(transition => transition === undefined)) {
+    return campaignFailure('O relatório de campanha contém uma transição inválida.');
+  }
+  const validChecks = checks.filter((check): check is WorldLabValidationCheck => check !== undefined)
+    .sort((left, right) => compare(left.id, right.id));
+  const validTransitions = transitions
+    .filter((transition): transition is WorldLabCampaignTransitionView => transition !== undefined);
+  const screenshots = isRecord(parsed.evidence) && Array.isArray(parsed.evidence.screenshots)
+    ? parsed.evidence.screenshots.filter((item): item is string => typeof item === 'string')
+    : undefined;
+  const browser = isRecord(parsed.evidence) && typeof parsed.evidence.browser === 'string'
+    ? parsed.evidence.browser : undefined;
+  const durationMs = isRecord(parsed.evidence) && typeof parsed.evidence.durationMs === 'number'
+    ? parsed.evidence.durationMs : undefined;
+  return Object.freeze({
+    ok: true as const,
+    value: Object.freeze({
+      schemaVersion: 1 as const,
+      kind: 'umbra.campaign-homologation.report' as const,
+      campaignId: typeof parsed.campaignId === 'string' ? parsed.campaignId : null,
+      runId: typeof parsed.runId === 'string' ? parsed.runId : null,
+      runSeed: typeof parsed.runSeed === 'string' || typeof parsed.runSeed === 'number'
+        ? parsed.runSeed : null,
+      originStageId: parsed.originStageId,
+      destinationStageId: parsed.destinationStageId,
+      result: parsed.result,
+      checks: Object.freeze(validChecks),
+      transitions: Object.freeze(validTransitions),
+      ...(typeof parsed.variantId === 'string' ? { variantId: parsed.variantId } : {}),
+      ...(typeof parsed.manifestRevision === 'number'
+        ? { manifestRevision: parsed.manifestRevision } : {}),
+      ...(typeof parsed.destinationManifestRevision === 'number'
+        ? { destinationManifestRevision: parsed.destinationManifestRevision } : {}),
+      ...(Array.isArray(parsed.stages) ? { stages: Object.freeze([...parsed.stages]) } : {}),
+      ...(isRecord(parsed.persistence) ? { persistence: Object.freeze({ ...parsed.persistence }) } : {}),
+      ...(Array.isArray(parsed.observations) ? { observations: Object.freeze([...parsed.observations]) } : {}),
+      ...(typeof parsed.generatedAt === 'string' ? { generatedAt: parsed.generatedAt } : {}),
+      ...(screenshots || browser || durationMs !== undefined ? {
+        evidence: Object.freeze({
+          ...(screenshots ? { screenshots: Object.freeze(screenshots) } : {}),
+          ...(browser ? { browser } : {}),
+          ...(durationMs !== undefined ? { durationMs } : {}),
+        }),
+      } : {}),
+    }),
+  });
+}
+
+export function campaignValidationDiagnostics(
+  report: WorldLabCampaignRuntimeValidation,
+): readonly WorldLabDiagnostic[] {
+  return Object.freeze(report.checks
+    .filter(check => check.status !== 'PASS')
+    .map(check => {
+      const destinationCheck = check.id.startsWith('campaign.destination') ||
+        check.id === 'campaign.state.isolated' || check.id === 'campaign.state.preserved';
+      const stageId = destinationCheck ? report.destinationStageId : report.originStageId;
+      return Object.freeze({
+        code: check.code,
+        severity: check.status === 'FAIL' ? 'error' as const : 'warning' as const,
+        origin: 'playtest-runtime' as const,
+        message: check.message,
+        stageId,
+        status: check.status,
+        evidence: 'phaser-runtime' as const,
+        ...(check.location ? { location: Object.freeze({ ...check.location }) } : {}),
+        ...(check.regionId ? { regionId: check.regionId } : {}),
+        checkId: check.id,
+        ...(check.suggestion ? { suggestion: check.suggestion } : {}),
+        path: Object.freeze(['campaign-validation', check.id]),
+      });
+    })
+    .sort((left, right) => compare(
+      `${left.code}|${left.checkId ?? ''}`, `${right.code}|${right.checkId ?? ''}`,
+    )));
+}
+
 function runtimeFailure(message: string): RuntimeValidationParseResult {
   return Object.freeze({
     ok: false as const,
@@ -215,6 +358,8 @@ export function parseRuntimeValidation(serialized: string): RuntimeValidationPar
       stageId: parsed.stageId,
       result: parsed.result,
       checks: Object.freeze(validChecks),
+      ...(typeof parsed.manifestRevision === 'number' ? { manifestRevision: parsed.manifestRevision } : {}),
+      ...(typeof parsed.generatedAt === 'string' ? { generatedAt: parsed.generatedAt } : {}),
       ...(typeof parsed.chapterId === 'string' ? { chapterId: parsed.chapterId } : {}),
       ...(typeof parsed.title === 'string' ? { title: parsed.title } : {}),
       ...(typeof parsed.variantId === 'string' ? { variantId: parsed.variantId } : {}),

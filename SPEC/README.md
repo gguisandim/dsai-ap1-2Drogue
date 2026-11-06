@@ -75,3 +75,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-11-05 | [Geometria panorâmica reutilizável — Etapa 9.11](./2026-11-05-etapa-9-11-geometria-panoramica.md) |
 | 2026-11-05 | [Validação automatizada de jogabilidade — Etapa 9.12](./2026-11-05-etapa-9-12-validacao-automatizada-jogabilidade.md) |
 | 2026-11-05 | [Homologação de runtime e diagnósticos no World Lab — Etapa 9.13](./2026-11-05-etapa-9-13-homologacao-runtime-world-lab.md) |
+| 2026-11-05 | [Homologação integrada de campanhas e automação do World Lab — Etapa 9.14](./2026-11-05-etapa-9-14-homologacao-campanhas-world-lab.md) |

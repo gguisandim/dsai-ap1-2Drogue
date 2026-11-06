@@ -127,6 +127,7 @@ npm run chapter -- plan validate minha-fase
 npm run chapter -- playtest minha-fase
 npm run chapter -- playtest minha-fase --seeds 5 --json
 npm run chapter -- homologate minha-fase --json
+npm run chapter -- homologate --campaign --json
 npm run chapter -- preview minha-fase
 npm run chapter -- preview minha-fase --visual
 npm run dev

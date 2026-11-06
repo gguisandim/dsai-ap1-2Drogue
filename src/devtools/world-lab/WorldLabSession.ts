@@ -1,4 +1,5 @@
 import type {
+  WorldLabCampaignRuntimeValidation,
   WorldLabDiagnostic,
   WorldLabDocument,
   WorldLabFilters,
@@ -12,7 +13,12 @@ import type {
 import { WorldLabDataService } from './WorldLabDataService';
 import type { WorldLabStageOption } from './WorldLabDataService';
 import { WorldLabSnapshotCodec } from './WorldLabSnapshot';
-import { parseRuntimeValidation, type RuntimeValidationParseResult } from './WorldLabValidation';
+import {
+  parseCampaignValidation,
+  parseRuntimeValidation,
+  type CampaignValidationParseResult,
+  type RuntimeValidationParseResult,
+} from './WorldLabValidation';
 
 export interface WorldLabDataSource {
   generate(seed: string): WorldLabGenerationResult;
@@ -41,6 +47,7 @@ function freezeState(state: WorldLabSessionState): WorldLabSessionState {
     selection: freezeSelection(state.selection),
     filters: Object.freeze({ ...state.filters }),
     runtimeValidations: Object.freeze({ ...(state.runtimeValidations ?? {}) }),
+    campaignValidations: Object.freeze({ ...(state.campaignValidations ?? {}) }),
   });
 }
 
@@ -59,6 +66,7 @@ export class WorldLabSession {
       diagnostics: [],
       selection: {},
       runtimeValidations: {},
+      campaignValidations: {},
       filters: {
         showGrid: true,
         showOverlays: true,
@@ -194,16 +202,45 @@ export class WorldLabSession {
     });
   }
 
-  public runtimeValidation(stageId: string): WorldLabRuntimeValidation | undefined {
-    return this.stateValue.runtimeValidations?.[stageId];
+  public runtimeValidation(stageId: string, variantId?: string): WorldLabRuntimeValidation | undefined {
+    const validations = this.stateValue.runtimeValidations ?? {};
+    if (variantId) return validations[`${stageId}|${variantId}`];
+    const fallback = validations[`${stageId}|default`];
+    if (fallback) return fallback;
+    return Object.entries(validations).find(([key]) => key.startsWith(`${stageId}|`))?.[1];
   }
 
-  public validationChecks(stageId: string): readonly WorldLabValidationCheck[] {
+  public campaignValidationsFor(stageId: string): readonly WorldLabCampaignRuntimeValidation[] {
+    return Object.freeze(Object.values(this.stateValue.campaignValidations ?? {})
+      .filter(report => report.originStageId === stageId || report.destinationStageId === stageId)
+      .sort((left, right) => String(right.generatedAt ?? '')
+        .localeCompare(String(left.generatedAt ?? ''))));
+  }
+
+  public validationChecks(stageId: string, variantId?: string): readonly WorldLabValidationCheck[] {
     const stage = this.stateValue.document?.stages.find(candidate => candidate.stageId === stageId);
-    return Object.freeze([
+    const checks = new Map<string, WorldLabValidationCheck>();
+    [
       ...(stage?.validation?.checks ?? []),
-      ...(this.stateValue.runtimeValidations?.[stageId]?.checks ?? []),
-    ]);
+      ...(this.runtimeValidation(stageId, variantId)?.checks ?? []),
+      ...this.campaignValidationsFor(stageId).slice().reverse().flatMap(report => {
+        const isOrigin = report.originStageId === stageId;
+        const isDestination = report.destinationStageId === stageId;
+        if (isOrigin && !isDestination) {
+          return report.checks.filter(check =>
+            !check.id.startsWith('campaign.destination') && check.id !== 'campaign.state.isolated');
+        }
+        if (isDestination && !isOrigin) {
+          return report.checks.filter(check =>
+            check.id.startsWith('campaign.destination') ||
+            check.id === 'campaign.state.isolated' ||
+            check.id === 'campaign.state.preserved' ||
+            check.id === 'campaign.transition.duplicated');
+        }
+        return report.checks;
+      }),
+    ].forEach(check => checks.set(check.id, check));
+    return Object.freeze([...checks.values()]);
   }
 
   /**
@@ -211,14 +248,14 @@ export class WorldLabSession {
    * It never mutates the document or the game state.
    */
   public selectValidationCheck(checkId: string): boolean {
+    const variantId = this.presentationVariantId();
     const selectedStage = this.stateValue.document?.stages.find(stage =>
       stage.nodeId === this.stateValue.selection.nodeId) ??
       this.stateValue.document?.stages.find(stage =>
-        [...(stage.validation?.checks ?? []),
-          ...(this.stateValue.runtimeValidations?.[stage.stageId]?.checks ?? [])]
-          .some(check => check.id === checkId));
+        this.validationChecks(stage.stageId, variantId).some(check => check.id === checkId));
     if (!selectedStage) return false;
-    const check = this.validationChecks(selectedStage.stageId).find(item => item.id === checkId);
+    const check = this.validationChecks(selectedStage.stageId, variantId)
+      .find(item => item.id === checkId);
     if (!check) return false;
     this.replace({
       ...this.stateValue,
@@ -262,13 +299,54 @@ export class WorldLabSession {
     }
     const stage = this.stateValue.document?.stages.find(candidate =>
       candidate.stageId === parsed.value.stageId);
+    const key = `${parsed.value.stageId}|${parsed.value.variantId ?? 'default'}`;
     this.replace({
       ...this.stateValue,
       runtimeValidations: Object.freeze({
         ...(this.stateValue.runtimeValidations ?? {}),
-        [parsed.value.stageId]: parsed.value,
+        [key]: parsed.value,
       }),
       ...(stage ? { selection: { ...this.stateValue.selection, nodeId: stage.nodeId } } : {}),
+    });
+    return parsed;
+  }
+
+  public importCampaignValidation(serialized: string): CampaignValidationParseResult {
+    const parsed = parseCampaignValidation(serialized);
+    if (!parsed.ok) {
+      this.replace({
+        ...this.stateValue,
+        diagnostics: Object.freeze([...this.stateValue.diagnostics, ...parsed.diagnostics]),
+      });
+      return parsed;
+    }
+    const stages = this.stateValue.document?.stages ?? [];
+    const origin = stages.find(stage => stage.stageId === parsed.value.originStageId);
+    const destination = stages.find(stage => stage.stageId === parsed.value.destinationStageId);
+    if (!origin && !destination) {
+      const diagnostic: WorldLabDiagnostic = Object.freeze({
+        code: 'world-lab.campaign-report.unknown-stage',
+        severity: 'error' as const,
+        origin: 'playtest-runtime' as const,
+        message: `O relatório de campanha não corresponde a nenhuma fase do documento: ${parsed.value.originStageId} → ${parsed.value.destinationStageId}.`,
+        stageId: parsed.value.originStageId,
+        path: Object.freeze(['campaign-report', 'originStageId']),
+      });
+      this.replace({
+        ...this.stateValue,
+        diagnostics: Object.freeze([...this.stateValue.diagnostics, diagnostic]),
+      });
+      return Object.freeze({ ok: false as const, diagnostics: Object.freeze([diagnostic]) });
+    }
+    const key = `${parsed.value.originStageId}|${parsed.value.destinationStageId}|${parsed.value.runId ?? 'run'}`;
+    const selected = origin ?? destination;
+    this.replace({
+      ...this.stateValue,
+      campaignValidations: Object.freeze({
+        ...(this.stateValue.campaignValidations ?? {}),
+        [key]: parsed.value,
+      }),
+      ...(selected ? { selection: { ...this.stateValue.selection, nodeId: selected.nodeId } } : {}),
     });
     return parsed;
   }

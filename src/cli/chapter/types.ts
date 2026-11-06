@@ -32,6 +32,10 @@ export interface ChapterCliArguments {
   readonly stageId?: string;
   /** Optional presentation variant for `homologate`. */
   readonly variantId?: string;
+  /** Runs the real macro campaign transition homologation. */
+  readonly campaign?: boolean;
+  readonly macroRunId?: string;
+  readonly macroRunSeed?: string;
   readonly title?: string;
   readonly namespace?: string;
   readonly revision?: number;

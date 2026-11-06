@@ -107,6 +107,9 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
   let seeds: number | undefined;
   let stageId: string | undefined;
   let variantId: string | undefined;
+  let campaign = false;
+  let macroRunId: string | undefined;
+  let macroRunSeed: string | undefined;
   let json = false;
   let visual = false;
   let chaptersDir: string | undefined;
@@ -235,6 +238,26 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
         index += 1;
         continue;
       }
+      if (command === 'homologate' && argument === '--campaign') {
+        campaign = true;
+        continue;
+      }
+      if (command === 'homologate' && argument === '--macro-run') {
+        macroRunId = requireValue(rest, index, argument).trim();
+        if (macroRunId.length === 0) {
+          throw usageError('usage.invalid-run', 'Macro campaign run id cannot be empty.');
+        }
+        index += 1;
+        continue;
+      }
+      if (command === 'homologate' && argument === '--macro-seed') {
+        macroRunSeed = requireValue(rest, index, argument).trim();
+        if (macroRunSeed.length === 0) {
+          throw usageError('usage.invalid-seed', 'Macro campaign seed cannot be empty.');
+        }
+        index += 1;
+        continue;
+      }
       if (command === 'create' && argument === '--regions') {
         regionCount = parseInteger(
           requireValue(rest, index, argument),
@@ -268,16 +291,22 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
   }
 
   if (command === 'homologate') {
-    if (slug !== undefined && stageId !== undefined) {
+    if (campaign) {
+      if (slug !== undefined || stageId !== undefined) {
+        throw usageError(
+          'usage.ambiguous-target',
+          'Campaign homologation does not accept a chapter slug or --stage.',
+        );
+      }
+    } else if (slug !== undefined && stageId !== undefined) {
       throw usageError(
         'usage.ambiguous-target',
         'Use a chapter slug or --stage, not both.',
       );
-    }
-    if (slug === undefined && stageId === undefined) {
+    } else if (slug === undefined && stageId === undefined) {
       throw usageError(
         'usage.missing-chapter',
-        'Command homologate requires a chapter slug or --stage <stageId>.',
+        'Command homologate requires a chapter slug, --stage <stageId> or --campaign.',
       );
     }
   } else if (slug === undefined) {
@@ -307,6 +336,9 @@ export function parseChapterCliArguments(argv: readonly string[]): ChapterCliArg
     ...(regionCount !== undefined ? { regionCount } : {}),
     ...(stageId !== undefined ? { stageId } : {}),
     ...(variantId !== undefined ? { variantId } : {}),
+    ...(campaign ? { campaign } : {}),
+    ...(macroRunId !== undefined ? { macroRunId } : {}),
+    ...(macroRunSeed !== undefined ? { macroRunSeed } : {}),
     ...(chaptersDir !== undefined ? { chaptersDir } : {}),
     json,
     visual,
@@ -327,6 +359,8 @@ Usage:
   npm run chapter -- playtest <slug> [--json] [--seed <n> | --seeds <n>]
   npm run chapter -- homologate <slug> [--json] [--variant <id>]
   npm run chapter -- homologate --stage <stageId> [--json] [--variant <id>]
+  npm run chapter -- homologate --campaign [--json]
+                                   [--macro-run <id>] [--macro-seed <seed>]
 
 Options:
   --chapters-dir <path>  Authoring root inside src/ (default: src/examples/chapters)
@@ -336,6 +370,9 @@ Options:
   --seeds <n>            Evaluate n consecutive seeds from the authored seed (playtest only)
   --stage <stageId>      Production stage for homologate
   --variant <id>         Presentation variant for homologate
+  --campaign             Homologate the real macro campaign flow
+  --macro-run <id>       Macro campaign run id
+  --macro-seed <seed>    Macro campaign seed
   --help, -h             Show this help
 
 Exit codes:

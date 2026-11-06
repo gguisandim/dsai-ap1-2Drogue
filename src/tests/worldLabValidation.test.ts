@@ -17,9 +17,11 @@ import {
   WorldLabDataService,
   WorldLabSession,
   WorldLabSnapshotCodec,
+  createLocalReportLoader,
   type WorldLabDocument,
   type WorldLabGenerationResult,
   type WorldLabPlanSource,
+  type WorldLabReportLoader,
   type WorldLabRuntimeValidation,
   type WorldLabValidationSource,
 } from '../devtools/world-lab';
@@ -273,7 +275,7 @@ describe('Etapa 9.13 World Lab validation integration', () => {
       document: { stages: Array<{ validation?: unknown }> };
     };
     expect(snapshot.document.stages.some(item => item.validation)).toBe(true);
-    expect(session.state().runtimeValidations?.[stage.stageId]).toBeDefined();
+    expect(session.runtimeValidation(stage.stageId)).toBeDefined();
   });
 
   it('rejects an invalid or unknown-stage runtime report without mutating the document', () => {
@@ -363,6 +365,159 @@ describe('Etapa 9.13 World Lab validation integration', () => {
     expect(text).toContain('execução Phaser');
     expect(document.querySelector('[data-diagnostic-code="RUNTIME_EXIT_NOT_TRIGGERED"]')).not.toBeNull();
     expect(document.querySelector('[data-diagnostic-code="OBJECTIVE_UNREACHABLE"]')).toBeNull();
+  });
+
+  it('imports campaign runtime reports and merges their checks for origin and destination', () => {
+    const labDocument = expectDocument(new WorldLabDataService({
+      focusStageId: 'stage.aguas.igapo-das-memorias',
+      validationSource: igapoValidationSource(),
+    }).generate('world-lab-campaign-seed'));
+    const origin = labDocument.stages.find(item =>
+      item.stageId === 'stage.aguas.igapo-das-memorias');
+    if (!origin) throw new Error('Igapó stage is missing.');
+    const session = new WorldLabSession(
+      { generate: (): WorldLabGenerationResult => ({ ok: true, value: labDocument }) },
+      new WorldLabSnapshotCodec(),
+      labDocument.seed,
+    );
+    session.generate();
+    const campaign = {
+      schemaVersion: 1,
+      kind: 'umbra.campaign-homologation.report',
+      campaignId: 'campaign.umbra-trail.independent-routes',
+      runId: 'campaign.test.run',
+      runSeed: 'campaign.test.seed',
+      originStageId: 'stage.aguas.igapo-das-memorias',
+      destinationStageId: 'stage.aguas.coracao-corrompido',
+      result: 'PASS',
+      generatedAt: '2026-11-06T00:00:00.000Z',
+      manifestRevision: 2,
+      destinationManifestRevision: 1,
+      checks: [
+        { id: 'campaign.exit.triggered', code: 'CAMPAIGN_EXIT_TRIGGERED', status: 'PASS', required: true, message: 'Saída acionada.', evidence: 'phaser-runtime' },
+        { id: 'campaign.state.isolated', code: 'CAMPAIGN_STATE_ISOLATED', status: 'PASS', required: true, message: 'Estado isolado.', evidence: 'phaser-runtime' },
+      ],
+      transitions: [{
+        role: 'primary',
+        originStageId: 'stage.aguas.igapo-das-memorias',
+        physicalExitId: 'physical.igapo.coracao',
+        stageExitId: 'exit.aguas.igapo.enter-corrupted-heart',
+        edgeId: 'edge.igapo.coracao',
+        targetNodeId: 'node.coracao',
+        destinationStageId: 'stage.aguas.coracao-corrompido',
+        expectedDestination: 'stage.aguas.coracao-corrompido',
+        available: true,
+        loadedDestinationStageId: 'stage.aguas.coracao-corrompido',
+        loaded: true,
+        reason: 'transition',
+        stateBefore: { visitedNodeIds: ['node.igapo'] },
+        stateAfter: { visitedNodeIds: ['node.igapo', 'node.coracao'] },
+        events: ['transition-confirmed', 'destination-loaded'],
+      }],
+      persistence: { preserved: true, isolated: true, resources: { preserved: true } },
+    };
+    const imported = session.importCampaignValidation(JSON.stringify(campaign));
+    expect(imported.ok).toBe(true);
+    expect(session.campaignValidationsFor('stage.aguas.igapo-das-memorias')).toHaveLength(1);
+    expect(session.campaignValidationsFor('stage.aguas.igapo-das-memorias')[0]).toMatchObject({
+      manifestRevision: 2,
+      destinationManifestRevision: 1,
+    });
+    expect(session.validationChecks('stage.aguas.igapo-das-memorias')
+      .some(check => check.id === 'campaign.exit.triggered')).toBe(true);
+    expect(session.validationChecks('stage.aguas.coracao-corrompido')
+      .some(check => check.id === 'campaign.state.isolated')).toBe(true);
+    expect(session.selectValidationCheck('campaign.exit.triggered')).toBe(true);
+    expect(session.state().selection.validationCheckId).toBe('campaign.exit.triggered');
+
+    const invalid = session.importCampaignValidation(JSON.stringify({ kind: 'other' }));
+    expect(invalid.ok).toBe(false);
+    expect(session.state().diagnostics.some(item =>
+      item.code === 'world-lab.campaign-report.invalid')).toBe(true);
+    const unknown = session.importCampaignValidation(JSON.stringify({
+      ...campaign,
+      originStageId: 'stage.unknown.origin',
+      destinationStageId: 'stage.unknown.destination',
+    }));
+    expect(unknown.ok).toBe(false);
+    expect(session.state().diagnostics.some(item =>
+      item.code === 'world-lab.campaign-report.unknown-stage')).toBe(true);
+  });
+
+  it('renders campaign reports and auto-loads local reports without restarting', async () => {
+    const labDocument = expectDocument(new WorldLabDataService({
+      focusStageId: 'stage.aguas.igapo-das-memorias',
+      validationSource: igapoValidationSource(),
+    }).generate('world-lab-campaign-seed'));
+    const origin = labDocument.stages.find(item =>
+      item.stageId === 'stage.aguas.igapo-das-memorias');
+    if (!origin) throw new Error('Igapó stage is missing.');
+    const campaign = {
+      schemaVersion: 1,
+      kind: 'umbra.campaign-homologation.report',
+      campaignId: 'campaign.umbra-trail.independent-routes',
+      runId: 'campaign.test.run',
+      runSeed: 'campaign.test.seed',
+      originStageId: origin.stageId,
+      destinationStageId: 'stage.aguas.coracao-corrompido',
+      result: 'PASS',
+      generatedAt: '2026-11-06T00:00:00.000Z',
+      manifestRevision: origin.manifestRevision,
+      destinationManifestRevision: 1,
+      checks: [{ id: 'campaign.destination.loaded', code: 'CAMPAIGN_DESTINATION_LOADED', status: 'PASS', required: true, message: 'Destino carregado.', evidence: 'phaser-runtime' }],
+      transitions: [],
+      persistence: { preserved: true, isolated: true, resources: { preserved: true } },
+    };
+    const result: WorldLabGenerationResult = { ok: true, value: labDocument };
+    const session = new WorldLabSession({ generate: () => result }, undefined, labDocument.seed);
+    const root = document.querySelector<HTMLElement>('#root') as HTMLElement;
+    const loader = jest.fn((async () => ({
+      reports: [campaign], generatedAt: '2026-11-06T00:00:00.000Z',
+    })) as unknown as WorldLabReportLoader);
+    const app = new WorldLabApp(root, session, undefined, undefined, loader);
+    app.start();
+    await new Promise(resolve => setTimeout(resolve, 30));
+    document.querySelector<HTMLButtonElement>('[data-role="workspace-stages"]')?.click();
+    const campaignBlock = document.querySelector<HTMLElement>('[data-role="campaign-reports"]');
+    expect(campaignBlock).not.toBeNull();
+    expect(campaignBlock?.textContent).toContain('stage.aguas.coracao-corrompido');
+    expect(campaignBlock?.textContent).toContain('recursos: preservados');
+    expect(campaignBlock?.textContent).toContain('revisão:');
+    expect(document.body.textContent).toContain('Relatórios locais');
+    expect(document.querySelector('[data-role="reload-reports"]')).not.toBeNull();
+    expect(loader).toHaveBeenCalledTimes(1);
+    expect(session.campaignValidationsFor(origin.stageId)).toHaveLength(1);
+  });
+
+  it('loads a local report index and rejects a missing index safely', async () => {
+    const campaign = {
+      kind: 'umbra.campaign-homologation.report', schemaVersion: 1,
+      originStageId: 'stage.a', destinationStageId: 'stage.b', result: 'PASS',
+      checks: [], transitions: [],
+    };
+    const responses = new Map<string, unknown>([
+      ['/reports/index.json', { generatedAt: '2026-11-06T00:00:00.000Z', reports: [{ file: 'campaign.json' }] }],
+      ['/reports/campaign.json', campaign],
+    ]);
+    const fakeFetch = jest.fn(async (url: string) => ({
+      ok: responses.has(url),
+      status: responses.has(url) ? 200 : 404,
+      json: async () => responses.get(url),
+    })) as unknown as typeof fetch;
+    const loader = createLocalReportLoader({ basePath: '/reports', fetchImplementation: fakeFetch });
+    const loaded = await loader();
+    expect(loaded.error).toBeUndefined();
+    expect(loaded.generatedAt).toBe('2026-11-06T00:00:00.000Z');
+    expect(loaded.reports).toHaveLength(1);
+    expect((loaded.reports[0] as { kind?: string }).kind).toBe('umbra.campaign-homologation.report');
+
+    const missing = createLocalReportLoader({
+      basePath: '/missing',
+      fetchImplementation: (async () => ({ ok: false, status: 404, json: async () => ({}) })) as unknown as typeof fetch,
+    });
+    const absent = await missing();
+    expect(absent.reports).toEqual([]);
+    expect(absent.error).toBe('index-404');
   });
 
   it('keeps validation compatible with presentation variants', () => {

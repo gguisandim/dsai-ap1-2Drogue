@@ -15,20 +15,29 @@ import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 
 const REPO = process.cwd();
-const EVIDENCE_ROOT = path.resolve(REPO, '.tmp', 'evidence-913');
+const EVIDENCE_ROOT = path.resolve(REPO, '.tmp', 'evidence-914');
+const REPORTS_ROOT = path.resolve(REPO, 'src', 'devtools', 'world-lab', 'reports');
 const SCHEMA_VERSION = 1;
 const REPORT_KIND = 'umbra.stage-homologation.report';
+const CAMPAIGN_REPORT_KIND = 'umbra.campaign-homologation.report';
 const TILE = 32;
+const CAMPAIGN_HUB_STAGE_ID = 'verse_01_atrium';
+const CAMPAIGN_IGAPO_STAGE_ID = 'stage.aguas.igapo-das-memorias';
+const CAMPAIGN_DESTINATION_STAGE_ID = 'stage.aguas.coracao-corrompido';
 
 function parseArgs(argv) {
   const result = {
-    slug: undefined, stageId: undefined, variantId: undefined, json: false,
+    slug: undefined, stageId: undefined, variantId: undefined, campaign: false,
+    macroRunId: undefined, macroRunSeed: undefined, json: false,
     timeoutMs: 240_000, evidenceDir: EVIDENCE_ROOT, browserPath: undefined,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === '--stage') { result.stageId = argv[++index]; continue; }
     if (value === '--variant') { result.variantId = argv[++index]; continue; }
+    if (value === '--campaign') { result.campaign = true; continue; }
+    if (value === '--macro-run') { result.macroRunId = argv[++index]; continue; }
+    if (value === '--macro-seed') { result.macroRunSeed = argv[++index]; continue; }
     if (value === '--timeout') { result.timeoutMs = Number(argv[++index]); continue; }
     if (value === '--evidence-dir') { result.evidenceDir = path.resolve(REPO, argv[++index]); continue; }
     if (value === '--browser') { result.browserPath = argv[++index]; continue; }
@@ -46,11 +55,15 @@ if (args.help) {
   console.log(`Uso:
   npm run homologate -- <slug> [--variant <id>] [--json]
   npm run homologate -- --stage <stageId> [--variant <id>] [--json]
+  npm run homologate -- --campaign [--macro-run <id>] [--macro-seed <seed>] [--json]
 
 Opções:
   --timeout <ms>        Tempo máximo da execução (padrão 240000)
   --evidence-dir <dir>  Diretório de evidências (padrão .tmp/evidence-913)
   --browser <path>      Navegador Chromium/Edge alternativo
+  --campaign            Homologa o fluxo de campanha macro (hub → Igapó → Coração)
+  --macro-run <id>      Run id da campanha macro
+  --macro-seed <seed>   Seed da campanha macro
 `);
   process.exit(0);
 }
@@ -144,16 +157,61 @@ function reportResult(checks) {
   return 'PASS';
 }
 
-function writeReport(report) {
-  ensureDir(args.evidenceDir);
+function reportFileName(report) {
+  if (report.kind === CAMPAIGN_REPORT_KIND) {
+    const run = String(report.runId ?? 'default').replace(/[^a-z0-9._-]+/gi, '-');
+    return `campaign-${run}-homologation.json`;
+  }
   const suffix = report.variantId
     ? `-${report.variantId.replace(/[^a-z0-9._-]+/gi, '-')}`
     : '';
-  const fileName = report.stageId
+  return report.stageId
     ? `${report.stageId.replace(/[^a-z0-9._-]+/gi, '-')}${suffix}-homologation.json`
     : 'homologation.json';
+}
+
+/**
+ * Copies the report to the development-only directory served by Vite and
+ * updates the index used by the World Lab. Only the known report files are
+ * exposed; no arbitrary filesystem path is made available.
+ */
+function publishReport(report, fileName) {
+  try {
+    ensureDir(REPORTS_ROOT);
+    const reportFile = path.join(REPORTS_ROOT, fileName);
+    fs.writeFileSync(reportFile, JSON.stringify(report, null, 2) + '\n');
+    const indexPath = path.join(REPORTS_ROOT, 'index.json');
+    let index = { schemaVersion: 1, kind: 'umbra.world-lab.report-index', generatedAt: timestamp(), reports: [] };
+    if (fs.existsSync(indexPath)) {
+      try { index = JSON.parse(fs.readFileSync(indexPath, 'utf8')); } catch { /* rebuild the index */ }
+    }
+    const entry = {
+      file: fileName,
+      kind: report.kind,
+      result: report.result,
+      generatedAt: report.generatedAt,
+      ...(report.stageId ? { stageId: report.stageId } : {}),
+      ...(report.variantId ? { variantId: report.variantId } : {}),
+      ...(report.originStageId ? { originStageId: report.originStageId } : {}),
+      ...(report.destinationStageId ? { destinationStageId: report.destinationStageId } : {}),
+    };
+    index.generatedAt = timestamp();
+    index.reports = [...(Array.isArray(index.reports) ? index.reports : [])
+      .filter(item => item?.file !== fileName), entry]
+      .sort((left, right) => String(left.file).localeCompare(String(right.file)));
+    fs.writeFileSync(indexPath, JSON.stringify(index, null, 2) + '\n');
+  } catch {
+    // Publishing to the World Lab is best-effort; the evidence report remains.
+  }
+}
+
+function writeReport(report) {
+  ensureDir(args.evidenceDir);
+  if (!report.generatedAt) report.generatedAt = timestamp();
+  const fileName = reportFileName(report);
   const file = path.join(args.evidenceDir, fileName);
   fs.writeFileSync(file, JSON.stringify(report, null, 2) + '\n');
+  publishReport(report, fileName);
   if (args.json) {
     process.stdout.write(JSON.stringify(report, null, 2) + '\n');
   } else {
@@ -299,8 +357,49 @@ class Driver {
             .filter(enemy => enemy.active)
             .map(enemy => ({
               x: enemy.x, y: enemy.y, hp: enemy.hp, maxHp: enemy.maxHp, type: enemy.enemyType,
+              narrativeEnemyId: enemy.getData?.('narrativeEnemyId') ?? null,
+              narrativeArchetype: enemy.getData?.('narrativeArchetype') ?? null,
             }));
         }
+        const loaded = scene.stageNarrativeStage ?? scene.macroLoadedStage ?? scene.modularLoadedStage;
+        const campaignState = scene.campaignRouter?.state?.();
+        const campaign = scene.campaignNavigation ? {
+          currentNodeId: scene.campaignNavigation.snapshot.currentNodeId,
+          currentStageId: scene.campaignNavigation.snapshot.currentStageId,
+          stageInstanceId: scene.campaignNavigation.snapshot.stageInstanceId,
+          destinations: scene.campaignNavigation.snapshot.destinations.map(destination => ({
+            edgeId: destination.edgeId,
+            physicalExitId: destination.physicalExitId,
+            stageExitId: destination.stageExitId,
+            sourceNodeId: destination.sourceNodeId,
+            sourceStageId: destination.sourceStageId,
+            targetNodeId: destination.targetNodeId,
+            targetStageId: destination.targetStageId,
+            tile: { x: destination.tile.x, y: destination.tile.y },
+            available: destination.available,
+            blockedReason: destination.blockedReason ?? null,
+          })),
+          state: campaignState ? {
+            status: campaignState.status,
+            currentNodeId: campaignState.currentNodeId,
+            visitedNodeIds: campaignState.visitedNodeIds,
+            traversedEdgeIds: campaignState.traversedEdgeIds,
+            confirmedTransitionIds: campaignState.confirmedTransitionIds,
+            rewards: Object.values(campaignState.rewards ?? {}).map(reward => ({
+              transitionId: reward.transitionId, stageId: reward.stageId,
+              stageInstanceId: reward.stageInstanceId, status: reward.status,
+            })),
+            macroProgress: campaignState.macroProgress ? {
+              currentLocation: campaignState.macroProgress.currentLocation,
+              completedMilestoneIds: campaignState.macroProgress.completedMilestoneIds ?? [],
+            } : null,
+            graph: campaignState.graph ? {
+              id: campaignState.graph.id, campaignId: campaignState.graph.campaignId,
+              runId: campaignState.graph.runId, runSeed: campaignState.graph.runSeed,
+            } : null,
+          } : null,
+        } : null;
+        const map = scene.currentLevel?.tileMap ?? [];
         let items = [];
         const itemEntries = scene.items?.children?.entries;
         if (Array.isArray(itemEntries)) {
@@ -311,11 +410,18 @@ class Driver {
         return {
           active: game.scene.isActive('GameScene'),
           sceneKeys: game.scene.getScenes(true).map(item => item.scene.key),
-          stageId: scene.modularLoadedStage?.manifest?.id ?? scene.currentLevel?.id ?? null,
-          chapterId: scene.modularLoadedStage?.manifest?.chapterId ?? null,
-          title: scene.modularLoadedStage?.manifest?.title ?? scene.currentLevel?.name ?? null,
+          stageId: loaded?.manifest?.id ?? scene.currentLevel?.id ?? null,
+          chapterId: loaded?.manifest?.chapterId ?? null,
+          title: loaded?.manifest?.title ?? scene.currentLevel?.name ?? null,
+          currentLevelId: scene.currentLevel?.id ?? null,
+          narrativeStageId: scene.stageNarrativeStage?.manifest?.id ?? null,
+          variantId: loaded?.presentationVariantId ?? null,
+          mapSize: map.length > 0 ? { width: map[0]?.length ?? 0, height: map.length } : null,
+          campaign,
+          storageKeys: (() => { try { return Object.keys(globalThis.localStorage ?? {}).sort(); } catch { return []; } })(),
           player: scene.player ? {
             x: scene.player.x, y: scene.player.y, hp: scene.player.hp, maxHp: scene.player.maxHp,
+            halos: scene.player.halos ?? null, magic: scene.player.magic ?? null,
             classId: scene.player.heroClass?.id ?? null,
             style: scene.player.heroClass?.primaryStyle ?? null,
             attackRange: scene.player.heroClass?.attackRange ?? null,
@@ -337,6 +443,7 @@ class Driver {
           snapshot,
           stageCompletions: session?.stageCompletions?.() ?? [],
           interactionPoints: scene.interactionPoints ?? [],
+          interactionPointIds: (scene.interactionPoints ?? []).map(point => point.id),
         };
       } catch (error) {
         return {
@@ -674,6 +781,64 @@ class Driver {
     };
   }
 
+  async campaignExit(targetStageId) {
+    const before = await this.state();
+    const campaign = before.campaign;
+    if (!campaign) return { ok: false, reason: 'not-campaign', before, after: before };
+    const destinations = Array.isArray(campaign.destinations) ? campaign.destinations : [];
+    const candidates = destinations.filter(item =>
+      item.sourceNodeId === campaign.currentNodeId && item.available);
+    const destination = targetStageId
+      ? candidates.find(item => item.targetStageId === targetStageId)
+      : candidates[0];
+    if (!destination) {
+      return {
+        ok: false, reason: targetStageId ? 'target-unavailable' : 'no-available-destination',
+        before, after: before,
+        destinations: destinations.map(item => ({
+          physicalExitId: item.physicalExitId, stageExitId: item.stageExitId,
+          targetStageId: item.targetStageId, available: item.available,
+          blockedReason: item.blockedReason ?? null,
+        })),
+      };
+    }
+    const target = {
+      x: destination.tile.x * TILE + TILE / 2,
+      y: destination.tile.y * TILE + TILE / 2,
+    };
+    const reached = await this.navigateTo(
+      target, `campaign-exit:${destination.physicalExitId}`, 40_000,
+    );
+    if (!reached) return {
+      ok: false, reason: 'exit-unreachable', before, after: await this.state(), destination,
+    };
+    let after = before;
+    for (let attempt = 0; attempt < 18; attempt += 1) {
+      after = await this.state();
+      const changed = Boolean(after.campaign && before.campaign &&
+        (after.campaign.currentStageId !== before.campaign.currentStageId ||
+         after.campaign.currentNodeId !== before.campaign.currentNodeId ||
+         after.currentLevelId !== before.currentLevelId));
+      if (changed) break;
+      await this.page.press(KEY.interact.key, KEY.interact.code, KEY.interact.vk);
+      await sleep(500);
+    }
+    const settled = await waitFor(async () => {
+      const value = await this.state();
+      const changed = Boolean(value.campaign && before.campaign &&
+        (value.campaign.currentStageId !== before.campaign.currentStageId ||
+         value.currentLevelId !== before.currentLevelId));
+      return changed && value.player ? value : undefined;
+    }, 15_000, 300) ?? after;
+    return {
+      ok: Boolean(settled.campaign && before.campaign &&
+        (settled.campaign.currentStageId !== before.campaign.currentStageId ||
+         settled.currentLevelId !== before.currentLevelId)),
+      reason: 'transition',
+      before, after: settled, destination,
+    };
+  }
+
   cameraSummary() {
     const start = this.startCamera;
     if (!start || this.cameraSamples.length === 0) return { moved: false, inBounds: false };
@@ -703,6 +868,575 @@ async function waitFor(checkFunction, timeoutMs, intervalMs = 250) {
   return undefined;
 }
 
+async function readStageInfo(cdp) {
+  return cdp.evaluate(`(() => {
+    const game = globalThis.__UMBRA_GAME__;
+    const scene = game.scene.getScene('GameScene');
+    const loaded = scene.stageNarrativeStage ?? scene.macroLoadedStage ?? scene.modularLoadedStage;
+    const map = scene.currentLevel?.tileMap ?? [];
+    const tiles = (value) => {
+      const result = [];
+      map.forEach((row, y) => row.forEach((tile, x) => { if (tile === value) result.push({ x, y }); }));
+      return result;
+    };
+    return {
+      manifest: loaded ? {
+        id: loaded.manifest.id, chapterId: loaded.manifest.chapterId,
+        title: loaded.manifest.title, exits: loaded.manifest.exits,
+        completionMissionId: loaded.manifest.completionMissionId,
+        layoutKind: loaded.manifest.layout.kind,
+        revision: loaded.manifest.revision,
+      } : null,
+      levelId: scene.currentLevel?.id ?? null,
+      variantId: loaded?.presentationVariantId ?? null,
+      campaign: scene.campaignNavigation ? {
+        currentNodeId: scene.campaignNavigation.snapshot.currentNodeId,
+        currentStageId: scene.campaignNavigation.snapshot.currentStageId,
+        destinations: scene.campaignNavigation.snapshot.destinations,
+      } : null,
+      npcs: loaded?.npcs?.map(npc => ({ id: npc.id, spawn: npc.spawn, dialogueId: npc.interactionDialogueId })) ?? [],
+      missions: loaded?.missions ?? [],
+      dialogues: loaded?.dialogues ?? [],
+      encounter: loaded?.encounter ? {
+        id: loaded.encounter.id,
+        waves: loaded.encounter.waves.map(wave => ({ id: wave.id, enemies: wave.enemies })),
+      } : null,
+      items: scene.currentLevel?.items?.map(item => ({ type: item.type, x: item.x, y: item.y })) ?? [],
+      spawns: tiles(8), exits: tiles(5),
+      snapshot: scene.modularNarrativeSession?.director?.snapshot?.() ?? null,
+      mapSize: map.length > 0 ? { width: map[0]?.length ?? 0, height: map.length } : null,
+    };
+  })()`);
+}
+
+async function completeCampaignIgapo(driver, stageInfo, checks, screenshots) {
+  const initialDialogue = await driver.closeDialogue();
+  if (initialDialogue.opened) checks.push(check(
+    'campaign.igapo.dialogue', 'CAMPAIGN_DIALOGUE_COMPLETED', 'PASS',
+    'Diálogo de entrada do Igapó foi aberto e percorrido no runtime.',
+    { required: false },
+  ));
+  const completionMissionId = stageInfo.manifest?.completionMissionId;
+  const objectives = (stageInfo.missions ?? [])
+    .filter(mission => mission.id === completionMissionId ||
+      (mission.objectives ?? []).some(objective =>
+        ['npc.interacted', 'encounter.completed', 'enemy.defeated', 'item.collected']
+          .includes(objective.signal)))
+    .flatMap(mission => (mission.objectives ?? []).map(objective => ({ mission, objective })));
+  const npcObjective = objectives.find(entry => entry.objective.signal === 'npc.interacted');
+  if (npcObjective) {
+    const npcId = npcObjective.objective.filter?.field === 'npcId'
+      ? npcObjective.objective.filter.equals : undefined;
+    const npc = (stageInfo.npcs ?? []).find(candidate => candidate.id === npcId) ??
+      (stageInfo.npcs ?? [])[0];
+    if (npc?.spawn?.kind === 'tile') {
+      const interaction = await driver.interactWithNpc({
+        id: npc.id, x: npc.spawn.x, y: npc.spawn.y,
+      });
+      checks.push(check('campaign.igapo.npc',
+        interaction.reached ? 'CAMPAIGN_NPC_REACHED' : 'CAMPAIGN_NPC_UNREACHABLE',
+        interaction.reached ? 'PASS' : 'FAIL',
+        interaction.reached ? `NPC ${npc.id} alcançado no fluxo de campanha.`
+          : `NPC ${npc.id} não foi alcançado no fluxo de campanha.`,
+        { required: true, location: { x: npc.spawn.x, y: npc.spawn.y } }));
+      checks.push(check('campaign.igapo.dialogue.npc',
+        interaction.opened ? 'CAMPAIGN_DIALOGUE_COMPLETED' : 'CAMPAIGN_DIALOGUE_UNVERIFIED',
+        interaction.opened ? (interaction.closed ? 'PASS' : 'FAIL') : 'UNKNOWN',
+        interaction.opened
+          ? (interaction.closed ? 'Diálogo do Vestígio foi concluído.' : 'O diálogo não fechou.')
+          : 'O diálogo do Vestígio não foi observado.',
+        { required: true, location: { x: npc.spawn.x, y: npc.spawn.y } }));
+      screenshots.push(await driver.page.screenshot(args.evidenceDir, 'campaign-02-igapo-npc'));
+    }
+  }
+  const encounterObjective = objectives.find(entry =>
+    entry.objective.signal === 'encounter.completed' || entry.objective.signal === 'enemy.defeated');
+  if (encounterObjective && stageInfo.encounter) {
+    const combat = await driver.fight(60_000);
+    checks.push(check('campaign.igapo.combat',
+      combat.died ? 'CAMPAIGN_COMBAT_DIED' : 'CAMPAIGN_COMBAT_EXERCISED',
+      combat.died ? 'FAIL' : 'PASS',
+      combat.died ? 'O jogador morreu no combate obrigatório do Igapó.'
+        : 'Combate obrigatório do Igapó foi exercitado.',
+      { required: true }));
+  }
+  await sleep(700);
+  const state = await driver.state();
+  const mission = completionMissionId
+    ? state.snapshot?.missionStates?.[completionMissionId] : undefined;
+  const completed = !completionMissionId || mission?.status === 'completed';
+  checks.push(check('campaign.igapo.mission',
+    completed ? 'CAMPAIGN_MISSION_COMPLETED' : 'CAMPAIGN_MISSION_INCOMPLETE',
+    completed ? 'PASS' : 'FAIL',
+    completed
+      ? `Missão ${completionMissionId} concluída no fluxo de campanha.`
+      : `Missão ${completionMissionId} não concluída (${mission?.status ?? 'ausente'}).`,
+    { required: true }));
+  const exit = stageInfo.manifest?.exits?.[0];
+  const flagCondition = exit?.condition?.type === 'flag.equals' ? exit.condition : undefined;
+  if (flagCondition) {
+    const value = state.snapshot?.flags?.[flagCondition.flag];
+    const valid = value === flagCondition.value;
+    checks.push(check('campaign.igapo.flag',
+      valid ? 'CAMPAIGN_FLAG_PRESERVED' : 'CAMPAIGN_FLAG_MISSING',
+      valid ? 'PASS' : 'FAIL',
+      valid ? `Flag ${flagCondition.flag} foi atualizada no runtime.`
+        : `Flag ${flagCondition.flag} não atingiu o valor esperado.`,
+      { required: true }));
+  }
+  return completed;
+}
+
+function campaignStateSummary(state) {
+  const campaign = state?.campaign;
+  if (!campaign) return null;
+  return Object.freeze({
+    currentNodeId: campaign.currentNodeId,
+    currentStageId: campaign.currentStageId,
+    visitedNodeIds: Object.freeze([...(campaign.state?.visitedNodeIds ?? [])]),
+    confirmedTransitionIds: Object.freeze([...(campaign.state?.confirmedTransitionIds ?? [])]),
+    rewards: Object.freeze((campaign.state?.rewards ?? []).map(reward => Object.freeze({ ...reward }))),
+    macroLocation: campaign.state?.macroProgress?.currentLocation ?? null,
+    availableDestinations: Object.freeze((campaign.destinations ?? [])
+      .filter(destination => destination.available)
+      .map(destination => destination.targetStageId)),
+  });
+}
+
+function transitionRecord(transition, expectedDestination, role) {
+  const destination = transition.destination;
+  const beforeCampaign = transition.before?.campaign;
+  const afterCampaign = transition.after?.campaign;
+  return Object.freeze({
+    role,
+    originStageId: beforeCampaign?.currentStageId ?? transition.before?.stageId ?? null,
+    physicalExitId: destination?.physicalExitId ?? null,
+    stageExitId: destination?.stageExitId ?? null,
+    edgeId: destination?.edgeId ?? null,
+    targetNodeId: destination?.targetNodeId ?? null,
+    destinationStageId: destination?.targetStageId ?? null,
+    expectedDestination,
+    available: destination?.available ?? false,
+    loadedDestinationStageId: afterCampaign?.currentStageId ?? transition.after?.stageId ?? null,
+    loaded: Boolean(transition.ok &&
+      (afterCampaign?.currentStageId === expectedDestination ||
+       transition.after?.stageId === expectedDestination)),
+    reason: transition.reason,
+    stateBefore: campaignStateSummary(transition.before),
+    stateAfter: campaignStateSummary(transition.after),
+    events: Object.freeze([
+      ...(transition.ok ? ['transition-confirmed'] : []),
+      ...(afterCampaign?.currentStageId === expectedDestination ? ['destination-loaded'] : []),
+    ]),
+  });
+}
+
+function transitionChecks(transition, expectedDestination, required) {
+  const record = transitionRecord(transition, expectedDestination, 'primary');
+  const resolved = record.destinationStageId === expectedDestination;
+  const loaded = record.loaded;
+  return [
+    check('campaign.exit.triggered',
+      transition.ok ? 'CAMPAIGN_EXIT_TRIGGERED' : 'CAMPAIGN_TRANSITION_TIMEOUT',
+      transition.ok ? 'PASS' : 'FAIL',
+      transition.ok
+        ? `Saída ${record.physicalExitId ?? 'desconhecida'} acionada pelo runtime.`
+        : `A saída não concluiu a transição (${transition.reason ?? 'sem motivo'}).`,
+      { required, ...(record.stageExitId ? { referenceId: record.stageExitId } : {}) }),
+    check('campaign.route.resolved',
+      resolved ? 'CAMPAIGN_ROUTE_RESOLVED' : 'CAMPAIGN_DESTINATION_INVALID',
+      resolved ? 'PASS' : 'FAIL',
+      resolved
+        ? `Rota ${record.edgeId ?? 'desconhecida'} resolveu ${record.originStageId} → ${expectedDestination}.`
+        : `A rota resolveu um destino inesperado: ${record.destinationStageId ?? 'ausente'}.`,
+      { required, ...(record.edgeId ? { referenceId: record.edgeId } : {}) }),
+    check('campaign.destination.loaded',
+      loaded ? 'CAMPAIGN_DESTINATION_LOADED' : 'CAMPAIGN_DESTINATION_INVALID',
+      loaded ? 'PASS' : 'FAIL',
+      loaded
+        ? `Destino ${expectedDestination} carregado no Phaser.`
+        : `Destino não carregado (atual: ${record.loadedDestinationStageId ?? 'nenhum'}).`,
+      { required, ...(record.destinationStageId ? { referenceId: record.destinationStageId } : {}) }),
+  ];
+}
+
+function campaignResultReport(summary) {
+  return Object.freeze({
+    schemaVersion: SCHEMA_VERSION,
+    kind: CAMPAIGN_REPORT_KIND,
+    campaignId: summary.campaignId,
+    runId: summary.runId,
+    runSeed: summary.runSeed,
+    originStageId: summary.originStageId,
+    destinationStageId: summary.destinationStageId,
+    ...(summary.variantId ? { variantId: summary.variantId } : {}),
+    ...(summary.manifestRevision !== undefined
+      ? { manifestRevision: summary.manifestRevision } : {}),
+    ...(summary.destinationManifestRevision !== undefined
+      ? { destinationManifestRevision: summary.destinationManifestRevision } : {}),
+    result: reportResult(summary.checks),
+    checks: summary.checks,
+    transitions: summary.transitions,
+    stages: summary.stages,
+    persistence: summary.persistence,
+    observations: summary.observations.slice(-200),
+    evidence: {
+      screenshots: summary.screenshots,
+      browser: summary.browser,
+      durationMs: summary.durationMs,
+      generatedAt: new Date().toISOString(),
+    },
+    generatedAt: new Date().toISOString(),
+    runtime: { phaser: 'executed', liveExecution: 'executed' },
+  });
+}
+
+async function startMacroCampaign(cdp) {
+  const loaded = await waitFor(async () => {
+    try {
+      return await cdp.evaluate(`Boolean(globalThis.__UMBRA_GAME__)`);
+    } catch { return undefined; }
+  }, 60_000, 500);
+  if (!loaded) throw new Error('O jogo não carregou para iniciar a campanha.');
+  await cdp.evaluate(
+    `(() => { globalThis.__UMBRA_GAME__.scene.start('GameModesScene'); return true; })()`,
+  );
+  const modesActive = await waitFor(async () => {
+    try {
+      return await cdp.evaluate(`globalThis.__UMBRA_GAME__.scene.isActive('GameModesScene')`);
+    } catch { return undefined; }
+  }, 15_000, 300);
+  if (!modesActive) throw new Error('A tela de modos de jogo não ficou ativa.');
+  const click = async (x, y) => {
+    await cdp.send('Input.dispatchMouseEvent', {
+      type: 'mousePressed', x, y, button: 'left', clickCount: 1,
+    });
+    await cdp.send('Input.dispatchMouseEvent', {
+      type: 'mouseReleased', x, y, button: 'left', clickCount: 1,
+    });
+    await sleep(500);
+  };
+  // "CAMPANHA CLÁSSICA" mode button, then "INICIAR CAMPANHA CLÁSSICA".
+  await click(310, 344);
+  await sleep(400);
+  await click(760, 340);
+  let active = await waitFor(async () => {
+    try {
+      return await cdp.evaluate(`globalThis.__UMBRA_GAME__.scene.isActive('GameScene')`);
+    } catch { return undefined; }
+  }, 20_000, 500);
+  if (!active) {
+    // The button may be off-screen in a resized headless viewport; use the
+    // exact scene path the button invokes.
+    await cdp.evaluate(`(() => {
+      const game = globalThis.__UMBRA_GAME__;
+      const scene = game.scene.getScene('GameModesScene');
+      scene.scene.start('GameScene', { macroCampaign: true });
+      return true;
+    })()`);
+    active = await waitFor(async () => {
+      try {
+        return await cdp.evaluate(`globalThis.__UMBRA_GAME__.scene.isActive('GameScene')`);
+      } catch { return undefined; }
+    }, 60_000, 500);
+  }
+  if (!active) throw new Error('A campanha clássica não iniciou a GameScene.');
+  // The normal campaign start shows the controls guide and pauses physics; the
+  // player dismisses it with the same click used by the game.
+  await sleep(900);
+  const guideOpen = await cdp.evaluate(
+    `Boolean(globalThis.__UMBRA_GAME__?.scene?.getScene('GameScene')?.controlsGuideOpen)`,
+  );
+  if (guideOpen) await click(640, 390);
+  await sleep(400);
+  return true;
+}
+
+async function runCampaignFlow({ cdp, driver, startedAt, version, observations, screenshots }) {
+  const checks = [];
+  const transitions = [];
+  const stages = [];
+  let state = await driver.state();
+  await driver.sample('campaign-start', state);
+  const initialCampaign = state.campaign;
+  checks.push(check('campaign.start',
+    initialCampaign ? 'CAMPAIGN_STARTED' : 'CAMPAIGN_START_FAILED',
+    initialCampaign ? 'PASS' : 'FAIL',
+    initialCampaign
+      ? `Campanha macro iniciada em ${initialCampaign.currentStageId}.`
+      : 'Campanha macro não inicializada.',
+    { required: true }));
+  screenshots.push(await cdp.screenshot(args.evidenceDir, 'campaign-01-start'));
+  if (!initialCampaign) {
+    const report = campaignResultReport({
+      campaignId: null, runId: args.macroRunId ?? null, runSeed: args.macroRunSeed ?? null,
+      originStageId: null, destinationStageId: CAMPAIGN_DESTINATION_STAGE_ID,
+      checks, transitions, stages,
+      persistence: { campaign: null, isolated: false, preserved: false },
+      observations, screenshots,
+      browser: `${version.Browser ?? 'Chromium'} (${version['User-Agent'] ?? 'CDP'})`,
+      durationMs: Date.now() - startedAt,
+    });
+    writeReport(report);
+    return 1;
+  }
+  const campaignId = initialCampaign.state?.graph?.campaignId ?? 'campaign.umbra-trail.independent-routes';
+  const runId = initialCampaign.state?.graph?.runId ?? args.macroRunId ?? null;
+  const runSeed = initialCampaign.state?.graph?.runSeed ?? args.macroRunSeed ?? null;
+  let igapoBefore = null;
+  let igapoTransition = null;
+  let igapoInfo = null;
+  let destinationState = null;
+
+  for (let step = 0; step < 4; step += 1) {
+    const current = await driver.state();
+    const stageId = current.campaign?.currentStageId ?? current.stageId;
+    if (!stageId) break;
+    if (stageId === CAMPAIGN_DESTINATION_STAGE_ID) {
+      destinationState = current;
+      break;
+    }
+    if (stageId === CAMPAIGN_IGAPO_STAGE_ID) {
+      const info = await readStageInfo(cdp);
+      igapoInfo = info;
+      const completed = await completeCampaignIgapo(driver, info, checks, screenshots);
+      if (!completed) break;
+      igapoBefore = await driver.state();
+      const transition = await driver.campaignExit(CAMPAIGN_DESTINATION_STAGE_ID);
+      igapoTransition = transition;
+      transitions.push(transitionRecord(transition, CAMPAIGN_DESTINATION_STAGE_ID, 'primary'));
+      checks.push(...transitionChecks(transition, CAMPAIGN_DESTINATION_STAGE_ID, true));
+      state = transition.after;
+      stages.push(Object.freeze({
+        stageId, role: 'origin', loaded: true,
+        player: state.player ? { x: Math.round(state.player.x), y: Math.round(state.player.y) } : null,
+        camera: state.camera ? {
+          width: state.camera.bounds?.width ?? null,
+          height: state.camera.bounds?.height ?? null,
+        } : null,
+      }));
+      continue;
+    }
+    const transition = await driver.campaignExit(CAMPAIGN_IGAPO_STAGE_ID);
+    transitions.push(transitionRecord(transition, CAMPAIGN_IGAPO_STAGE_ID, 'hub'));
+    checks.push(check('campaign.hub.transition',
+      transition.ok ? 'CAMPAIGN_HUB_TRANSITION' : 'CAMPAIGN_TRANSITION_TIMEOUT',
+      transition.ok ? 'PASS' : 'UNKNOWN',
+      transition.ok
+        ? `Hub ${stageId} avançou para ${transition.after?.campaign?.currentStageId ?? 'destino'}.`
+        : `Hub não avançou (${transition.reason ?? 'sem motivo'}).`,
+      { required: false }));
+    state = transition.after;
+    stages.push(Object.freeze({ stageId, role: 'hub', loaded: true }));
+  }
+
+  const destination = destinationState ?? await driver.state();
+  const destinationStageId = destination.campaign?.currentStageId ?? destination.stageId;
+  const destinationLoaded = destinationStageId === CAMPAIGN_DESTINATION_STAGE_ID &&
+    destination.currentLevelId === CAMPAIGN_DESTINATION_STAGE_ID;
+  checks.push(check('campaign.destination.verified',
+    destinationLoaded ? 'CAMPAIGN_DESTINATION_LOADED' : 'CAMPAIGN_DESTINATION_INVALID',
+    destinationLoaded ? 'PASS' : 'FAIL',
+    destinationLoaded
+      ? `Destino ${CAMPAIGN_DESTINATION_STAGE_ID} carregado no Phaser.`
+      : `Destino não carregado (atual: ${destinationStageId ?? 'nenhum'}).`,
+    { required: true, referenceId: CAMPAIGN_DESTINATION_STAGE_ID }));
+  let destinationInfo = null;
+  let spawnValid = false;
+  let spawnDistance = null;
+  let movement = null;
+  let cameraValid = false;
+
+  if (destinationLoaded) {
+    destinationInfo = await readStageInfo(cdp);
+    const spawn = destinationInfo.spawns?.[0];
+    spawnDistance = spawn && destination.player
+      ? Math.hypot(
+          destination.player.x - (spawn.x * TILE + TILE / 2),
+          destination.player.y - (spawn.y * TILE + TILE / 2),
+        )
+      : null;
+    spawnValid = spawnDistance !== null && spawnDistance <= 80;
+    checks.push(check('campaign.destination.spawn',
+      spawnValid ? 'CAMPAIGN_SPAWN_VALID' : 'CAMPAIGN_SPAWN_INVALID',
+      spawnValid ? 'PASS' : 'FAIL',
+      spawnValid
+        ? `Jogador nasceu a ${Math.round(spawnDistance ?? 0)}px do spawn do destino.`
+        : 'O jogador não está próximo do spawn do destino.',
+      { required: true, ...(spawn ? { location: spawn } : {}) }));
+    const moveBefore = await driver.state();
+    await driver.page.key('rawKeyDown', KEY.right.key, KEY.right.code, KEY.right.vk);
+    await sleep(1_200);
+    await driver.page.key('keyUp', KEY.right.key, KEY.right.code, KEY.right.vk);
+    const moveAfter = await driver.state();
+    const moved = Boolean(moveBefore.player && moveAfter.player &&
+      Math.hypot(moveAfter.player.x - moveBefore.player.x, moveAfter.player.y - moveBefore.player.y) > 8);
+    movement = {
+      before: moveBefore.player ? { x: Math.round(moveBefore.player.x), y: Math.round(moveBefore.player.y) } : null,
+      after: moveAfter.player ? { x: Math.round(moveAfter.player.x), y: Math.round(moveAfter.player.y) } : null,
+      moved,
+    };
+    checks.push(check('campaign.destination.movement',
+      moved ? 'CAMPAIGN_PLAYER_MOVED' : 'CAMPAIGN_PLAYER_STUCK',
+      moved ? 'PASS' : 'FAIL',
+      moved ? 'O jogador se movimentou no cenário de destino.'
+        : 'O jogador não se movimentou após a transição.',
+      { required: true }));
+    const expectedWidth = (destinationInfo.mapSize?.width ?? 0) * TILE;
+    const expectedHeight = (destinationInfo.mapSize?.height ?? 0) * TILE;
+    cameraValid = Boolean(moveAfter.camera?.bounds &&
+      moveAfter.camera.bounds.width === expectedWidth &&
+      moveAfter.camera.bounds.height === expectedHeight &&
+      moveAfter.camera.scrollX >= 0 && moveAfter.camera.scrollY >= 0);
+    checks.push(check('campaign.destination.camera',
+      cameraValid ? 'CAMPAIGN_CAMERA_BOUNDS' : 'CAMPAIGN_CAMERA_INVALID',
+      cameraValid ? 'PASS' : 'FAIL',
+      cameraValid
+        ? `Câmera do destino usa limites ${expectedWidth}×${expectedHeight}.`
+        : 'Os limites da câmera não correspondem ao mapa de destino.',
+      { required: true }));
+    screenshots.push(await cdp.screenshot(args.evidenceDir, 'campaign-03-destination'));
+  }
+
+  if (!igapoTransition || !igapoBefore) {
+    checks.push(check('campaign.igapo.transition', 'CAMPAIGN_TRANSITION_TIMEOUT', 'FAIL',
+      'A transição principal Igapó → Coração Corrompido não foi executada.',
+      { required: true }));
+  }
+  const beforeCampaign = campaignStateSummary(igapoTransition?.before);
+  const afterCampaign = campaignStateSummary(destination);
+  const confirmedDelta = beforeCampaign && afterCampaign
+    ? afterCampaign.confirmedTransitionIds.length - beforeCampaign.confirmedTransitionIds.length : null;
+  const preserved = Boolean(beforeCampaign && afterCampaign &&
+    afterCampaign.visitedNodeIds.includes(igapoTransition?.before?.campaign?.currentNodeId) &&
+    confirmedDelta === 1 &&
+    afterCampaign.rewards.some(reward => reward.stageId === CAMPAIGN_IGAPO_STAGE_ID) &&
+    afterCampaign.currentStageId === CAMPAIGN_DESTINATION_STAGE_ID);
+  checks.push(check('campaign.state.preserved',
+    preserved ? 'CAMPAIGN_STATE_PRESERVED' : 'CAMPAIGN_STATE_INCOMPLETE',
+    preserved ? 'PASS' : 'FAIL',
+    preserved
+      ? 'Histórico, recompensas e progresso macro foram preservados após a transição.'
+      : 'O estado de campanha não foi preservado integralmente.',
+    { required: true }));
+  checks.push(check('campaign.transition.duplicated',
+    confirmedDelta === null ? 'CAMPAIGN_TRANSITION_UNVERIFIED'
+      : confirmedDelta === 1 ? 'CAMPAIGN_TRANSITION_UNIQUE' : 'CAMPAIGN_TRANSITION_DUPLICATED',
+    confirmedDelta === null ? 'UNKNOWN' : confirmedDelta === 1 ? 'PASS' : 'FAIL',
+    confirmedDelta === null ? 'Não foi possível comparar as transições confirmadas.'
+      : confirmedDelta === 1 ? 'A transição foi confirmada uma única vez.'
+        : `Foram observadas ${confirmedDelta} confirmações para a mesma transição.`,
+    { required: confirmedDelta !== null }));
+
+  const destinationFlags = Object.keys(destination.snapshot?.flags ?? {});
+  const destinationMissions = Object.keys(destination.snapshot?.missionStates ?? {});
+  const leakedFlags = destinationFlags.filter(flag => flag.startsWith('flag.aguas.igapo.'));
+  const leakedMissions = destinationMissions.filter(mission => mission.startsWith('mission.aguas.igapo.'));
+  const leakedNpc = (destination.interactionPointIds ?? []).includes('npc.aguas.igapo.memory-vestige');
+  const leakedEnemy = (destination.enemies ?? []).some(enemy =>
+    String(enemy.narrativeEnemyId ?? '').includes('igapo'));
+  const isolated = leakedFlags.length === 0 && leakedMissions.length === 0 && !leakedNpc &&
+    !leakedEnemy && destination.currentLevelId === CAMPAIGN_DESTINATION_STAGE_ID;
+  checks.push(check('campaign.state.isolated',
+    isolated ? 'CAMPAIGN_STATE_ISOLATED' : 'CAMPAIGN_STATE_LEAKED',
+    isolated ? 'PASS' : 'FAIL',
+    isolated
+      ? 'Flags, missões, NPCs e inimigos do Igapó não contaminaram o destino.'
+      : `Estado local do Igapó foi encontrado no destino: ${[
+          ...leakedFlags, ...leakedMissions,
+          ...(leakedNpc ? ['npc.aguas.igapo.memory-vestige'] : []),
+          ...(leakedEnemy ? ['enemy.igapo'] : []),
+        ].join(', ')}.`,
+    { required: true }));
+
+  const narrativeOrigin = igapoBefore?.snapshot ? {
+    flags: igapoBefore.snapshot.flags ?? {},
+    missionStates: igapoBefore.snapshot.missionStates ?? {},
+  } : null;
+  const narrativeDestination = destination.snapshot ? {
+    flags: destination.snapshot.flags ?? {},
+    missionStates: destination.snapshot.missionStates ?? {},
+  } : null;
+  const relevantStorageKeys = (destination.storageKeys ?? []).filter(key =>
+    /campaign|igapo|coracao|narrative/i.test(key));
+  const originKeyPresent = relevantStorageKeys.some(key => /igapo/i.test(key));
+  checks.push(check('campaign.persistence.origin-save',
+    originKeyPresent ? 'CAMPAIGN_ORIGIN_SAVE_PRESENT' : 'CAMPAIGN_ORIGIN_SAVE_MISSING',
+    originKeyPresent ? 'PASS' : 'UNKNOWN',
+    originKeyPresent
+      ? 'O save narrativo do Igapó permanece no armazenamento da campanha.'
+      : 'Não foi possível confirmar o save narrativo do Igapó no armazenamento local.',
+    { required: false }));
+
+  const returnDestination = (destination.campaign?.destinations ?? [])
+    .find(item => item.available && item.targetStageId === CAMPAIGN_IGAPO_STAGE_ID);
+  let returnTransition = null;
+  if (returnDestination) {
+    returnTransition = await driver.campaignExit(CAMPAIGN_IGAPO_STAGE_ID);
+    const returned = returnTransition.after?.campaign?.currentStageId === CAMPAIGN_IGAPO_STAGE_ID ||
+      returnTransition.after?.stageId === CAMPAIGN_IGAPO_STAGE_ID;
+    checks.push(check('campaign.return',
+      returned ? 'CAMPAIGN_RETURN_EXECUTED' : 'CAMPAIGN_RETURN_FAILED',
+      returned ? 'PASS' : 'UNKNOWN',
+      returned ? 'Retorno real Coração Corrompido → Igapó executado.'
+        : 'O retorno existente não foi concluído no tempo observado.',
+      { required: false, ...(returnDestination.stageExitId ? { referenceId: returnDestination.stageExitId } : {}) }));
+    if (returnTransition) transitions.push(transitionRecord(returnTransition, CAMPAIGN_IGAPO_STAGE_ID, 'return'));
+  } else {
+    checks.push(check('campaign.return', 'CAMPAIGN_RETURN_UNVERIFIED', 'UNKNOWN',
+      'Nenhuma saída de retorno disponível foi observada no destino.',
+      { required: false }));
+  }
+
+  const resourcesBefore = igapoBefore?.player ?? null;
+  const resourcesAfter = destination.player ?? null;
+  const resourcesPreserved = Boolean(resourcesBefore && resourcesAfter &&
+    typeof resourcesBefore.halos === 'number' && typeof resourcesAfter.halos === 'number' &&
+    resourcesAfter.halos >= resourcesBefore.halos);
+  checks.push(check('campaign.resources',
+    resourcesPreserved ? 'CAMPAIGN_RESOURCES_PRESERVED' : 'CAMPAIGN_RESOURCES_UNVERIFIED',
+    resourcesPreserved ? 'PASS' : 'UNKNOWN',
+    resourcesPreserved
+      ? `Recursos preservados (halos ${resourcesBefore.halos} → ${resourcesAfter.halos}).`
+      : 'Não foi possível confirmar a preservação dos recursos persistentes.',
+    { required: false }));
+  const persistence = Object.freeze({
+    campaign: Object.freeze({ before: beforeCampaign, after: afterCampaign }),
+    narrative: Object.freeze({ origin: narrativeOrigin, destination: narrativeDestination }),
+    resources: Object.freeze({
+      before: resourcesBefore ? { halos: resourcesBefore.halos, magic: resourcesBefore.magic } : null,
+      after: resourcesAfter ? { halos: resourcesAfter.halos, magic: resourcesAfter.magic } : null,
+      preserved: resourcesPreserved,
+    }),
+    relevantStorageKeys: Object.freeze(relevantStorageKeys),
+    preserved,
+    isolated,
+    confirmedDelta,
+  });
+  stages.push(Object.freeze({
+    stageId: CAMPAIGN_DESTINATION_STAGE_ID, role: 'destination', loaded: destinationLoaded,
+    player: destination.player ? { x: Math.round(destination.player.x), y: Math.round(destination.player.y) } : null,
+    spawn: destinationInfo?.spawns?.[0] ?? null,
+    spawnDistance,
+    movement,
+    cameraValid,
+  }));
+  const report = campaignResultReport({
+    campaignId, runId, runSeed,
+    originStageId: CAMPAIGN_IGAPO_STAGE_ID,
+    destinationStageId: CAMPAIGN_DESTINATION_STAGE_ID,
+    variantId: destinationInfo?.variantId ?? null,
+    manifestRevision: igapoInfo?.manifest?.revision,
+    destinationManifestRevision: destinationInfo?.manifest?.revision,
+    checks, transitions, stages, persistence,
+    observations, screenshots,
+    browser: `${version.Browser ?? 'Chromium'} (${version['User-Agent'] ?? 'CDP'})`,
+    durationMs: Date.now() - startedAt,
+  });
+  writeReport(report);
+  return report.result === 'PASS' ? 0 : 1;
+}
+
 async function run() {
   const startedAt = Date.now();
   ensureDir(args.evidenceDir);
@@ -716,12 +1450,14 @@ async function run() {
   }
   const seed = readChapterSeed(args.slug);
   const plan = readStagePlan(args);
-  const scenario = plan?.template ?? (args.stageId?.includes('igapo') ? 'igapo' : 'authored');
+  const scenario = args.campaign
+    ? 'campaign'
+    : plan?.template ?? (args.stageId?.includes('igapo') ? 'igapo' : 'authored');
   const checks = [];
   const observations = [];
   const screenshots = [];
 
-  if (!args.slug && !args.stageId) {
+  if (!args.slug && !args.stageId && !args.campaign) {
     const report = {
       schemaVersion: SCHEMA_VERSION, kind: REPORT_KIND, stageId: 'unknown',
       result: 'UNKNOWN', scenario, checks: [check('runtime.input', 'RUNTIME_INPUT_INVALID', 'UNKNOWN',
@@ -785,7 +1521,11 @@ async function run() {
     }
     await sleep(1_500);
     const query = new URLSearchParams();
-    if (args.slug) query.set('chapterPreview', args.slug);
+    if (args.campaign) {
+      query.set('macroCampaign', '1');
+      if (args.macroRunId) query.set('macroRun', args.macroRunId);
+      if (args.macroRunSeed !== undefined) query.set('macroSeed', String(args.macroRunSeed));
+    } else if (args.slug) query.set('chapterPreview', args.slug);
     else query.set('stagePreview', args.stageId);
     if (args.variantId) query.set('presentationVariant', args.variantId);
     const url = `http://127.0.0.1:${port}/index.html?${query.toString()}`;
@@ -821,6 +1561,15 @@ async function run() {
     await cdp.send('Runtime.enable');
     await cdp.send('Log.enable');
 
+    if (args.campaign) {
+      await startMacroCampaign(cdp);
+      const driver = new Driver(cdp, observations);
+      driver.startedAt = startedAt;
+      return await runCampaignFlow({
+        cdp, driver, startedAt, version, observations, screenshots,
+      });
+    }
+
     let lastPageState;
     const game = await waitFor(async () => {
       try {
@@ -851,34 +1600,7 @@ async function run() {
       initial.active ? `Fase ${initial.stageId} carregada em Phaser.` : 'A GameScene não está ativa.'));
     screenshots.push(await cdp.screenshot(args.evidenceDir, '01-loaded'));
 
-    const stageInfo = await cdp.evaluate(`(() => {
-      const game = globalThis.__UMBRA_GAME__;
-      const scene = game.scene.getScene('GameScene');
-      const loaded = scene.modularLoadedStage;
-      const map = scene.currentLevel?.tileMap ?? [];
-      const tiles = (value) => {
-        const result = [];
-        map.forEach((row, y) => row.forEach((tile, x) => { if (tile === value) result.push({ x, y }); }));
-        return result;
-      };
-      return {
-        manifest: loaded ? {
-          id: loaded.manifest.id, chapterId: loaded.manifest.chapterId,
-          title: loaded.manifest.title, exits: loaded.manifest.exits,
-          completionMissionId: loaded.manifest.completionMissionId,
-        } : null,
-        npcs: loaded?.npcs?.map(npc => ({ id: npc.id, spawn: npc.spawn, dialogueId: npc.interactionDialogueId })) ?? [],
-        missions: loaded?.missions ?? [],
-        dialogues: loaded?.dialogues ?? [],
-        encounter: loaded?.encounter ? {
-          id: loaded.encounter.id,
-          waves: loaded.encounter.waves.map(wave => ({ id: wave.id, enemies: wave.enemies })),
-        } : null,
-        items: scene.currentLevel?.items?.map(item => ({ type: item.type, x: item.x, y: item.y })) ?? [],
-        spawns: tiles(8), exits: tiles(5),
-        snapshot: scene.modularNarrativeSession?.director?.snapshot?.() ?? null,
-      };
-    })()`);
+    const stageInfo = await readStageInfo(cdp);
     const stageId = stageInfo.manifest?.id ?? initial.stageId ?? args.stageId ?? `chapter.${args.slug}`;
 
     const objectives = (stageInfo.missions ?? [])
@@ -1148,6 +1870,8 @@ async function run() {
       chapterId: stageInfo.manifest?.chapterId ?? initial.chapterId ?? null,
       title: stageInfo.manifest?.title ?? initial.title ?? null,
       ...(args.variantId ? { variantId: args.variantId } : {}),
+      ...(stageInfo.manifest?.revision !== undefined
+        ? { manifestRevision: stageInfo.manifest.revision } : {}),
       scenario,
       seed,
       result,

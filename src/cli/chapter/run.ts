@@ -109,18 +109,26 @@ export function runChapterCli(
     }
 
     if (parsed.command === 'homologate') {
-      const canonicalRoot = path.resolve(repoRoot, 'src', 'examples', 'chapters');
-      if (path.resolve(chaptersRoot) !== canonicalRoot) {
-        throw usageError(
-          'usage.homologate-canonical-root',
-          'Browser homologation requires the canonical authoring root src/examples/chapters.',
-        );
+      if (!parsed.campaign) {
+        const canonicalRoot = path.resolve(repoRoot, 'src', 'examples', 'chapters');
+        if (path.resolve(chaptersRoot) !== canonicalRoot) {
+          throw usageError(
+            'usage.homologate-canonical-root',
+            'Browser homologation requires the canonical authoring root src/examples/chapters.',
+          );
+        }
       }
       const script = path.join(repoRoot, 'scripts', 'homologate-chapter.mjs');
       const scriptArgs = [script];
-      if (parsed.slug !== undefined) scriptArgs.push(parsed.slug);
+      if (parsed.campaign) {
+        scriptArgs.push('--campaign');
+        if (parsed.macroRunId !== undefined) scriptArgs.push('--macro-run', parsed.macroRunId);
+        if (parsed.macroRunSeed !== undefined) scriptArgs.push('--macro-seed', parsed.macroRunSeed);
+      } else if (parsed.slug !== undefined) scriptArgs.push(parsed.slug);
       else scriptArgs.push('--stage', parsed.stageId as string);
-      if (parsed.variantId !== undefined) scriptArgs.push('--variant', parsed.variantId);
+      if (!parsed.campaign && parsed.variantId !== undefined) {
+        scriptArgs.push('--variant', parsed.variantId);
+      }
       if (parsed.json) scriptArgs.push('--json');
       try {
         const output = execFileSync(process.execPath, scriptArgs, {

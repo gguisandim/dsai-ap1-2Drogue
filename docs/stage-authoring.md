@@ -675,3 +675,139 @@ A transição real entre fases não é executada no preview individual. O execut
 é pequeno e orientado pelos dados do capítulo; não é um bot genérico. O combate
 pode terminar em morte ou timeout, e isso é reportado como resultado real, não
 como homologação completa.
+
+## 16. Homologação de campanha e relatórios automáticos
+
+A homologação de campanha usa o fluxo real do menu **CAMPANHA CLÁSSICA** e os
+componentes reais `CampaignMacroRouteBinder`, `CampaignRouter`,
+`CampaignExitBinder` e `PhysicalExitResolver`.
+
+```sh
+npm run chapter -- homologate --campaign --json
+npm run chapter -- homologate --campaign --macro-run run.teste \
+  --macro-seed seed.teste --json
+npm run homologate -- --campaign --json
+```
+
+O percurso homologado é:
+
+**hub `verse_01_atrium` → Igapó das Memórias → Coração Corrompido.**
+
+O executor fecha o guia de controles pelo mesmo clique do jogo, usa as saídas
+físicas e confirma que o segundo estágio realmente carrega no Phaser. Não há
+teletransporte, conclusão forçada, alteração de HP ou chamada direta ao
+carregador do destino.
+
+### Relatório de campanha
+
+O relatório complementar é `umbra.campaign-homologation.report` v1. O relatório
+individual `umbra.stage-homologation.report` v1 continua válido e separado.
+
+```json
+{
+  "schemaVersion": 1,
+  "kind": "umbra.campaign-homologation.report",
+  "originStageId": "stage.aguas.igapo-das-memorias",
+  "destinationStageId": "stage.aguas.coracao-corrompido",
+  "manifestRevision": 2,
+  "destinationManifestRevision": 1,
+  "result": "PASS",
+  "checks": [],
+  "transitions": [],
+  "persistence": {
+    "preserved": true,
+    "isolated": true,
+    "resources": { "preserved": true }
+  },
+  "generatedAt": "2026-11-06T00:00:00.000Z"
+}
+```
+
+Cada transição informa origem, saída física, `stageExitId`, aresta, nó e estágio
+de destino, disponibilidade, estágio carregado, estado antes/depois e eventos.
+
+Códigos principais: `CAMPAIGN_STARTED`, `CAMPAIGN_HUB_TRANSITION`,
+`CAMPAIGN_NPC_REACHED`, `CAMPAIGN_MISSION_COMPLETED`,
+`CAMPAIGN_FLAG_PRESERVED`, `CAMPAIGN_EXIT_TRIGGERED`,
+`CAMPAIGN_ROUTE_RESOLVED`, `CAMPAIGN_DESTINATION_LOADED`,
+`CAMPAIGN_SPAWN_VALID`, `CAMPAIGN_PLAYER_MOVED`, `CAMPAIGN_CAMERA_BOUNDS`,
+`CAMPAIGN_STATE_PRESERVED`, `CAMPAIGN_STATE_ISOLATED`,
+`CAMPAIGN_TRANSITION_UNIQUE`, `CAMPAIGN_RESOURCES_PRESERVED`,
+`CAMPAIGN_RETURN_EXECUTED`/`UNVERIFIED`, `CAMPAIGN_DESTINATION_INVALID` e
+`CAMPAIGN_TRANSITION_TIMEOUT`.
+
+Resultado real desta etapa:
+
+| Verificação | Resultado |
+|---|---|
+| Hub → Igapó | PASS |
+| Igapó: NPC, diálogo, missão e flag | PASS |
+| Saída física Igapó → Coração | PASS |
+| Destino carregado, spawn e movimento | PASS |
+| Câmera e limites do destino | PASS |
+| Histórico, recompensas e progresso | PASS |
+| Isolamento de flags/missões/NPCs/inimigos | PASS |
+| Transição única | PASS |
+| Recursos persistentes (halos) | PASS |
+| Retorno Coração → Igapó | UNKNOWN (nenhuma saída de retorno disponível no contexto) |
+
+O retorno é opcional e não converte o PASS em FAIL; a ausência de uma saída
+disponível é registrada como UNKNOWN.
+
+### Persistência e isolamento
+
+O executor compara o `CampaignRunState` antes/depois, incluindo
+`visitedNodeIds`, `confirmedTransitionIds`, recompensas, `macroProgress` e
+halos. O snapshot narrativo do Coração não deve conter flags, missões, NPC ou
+inimigos do Igapó. O save narrativo do Igapó deve permanecer no armazenamento.
+
+Escolhas narrativas não são exercitadas no Igapó porque o diálogo não tem
+escolhas; o contrato existente é preservado. A variante Corrompida foi
+homologada individualmente; o roteamento de campanha usa a apresentação padrão
+e o mesmo `stageExitId` do manifesto.
+
+### World Lab automático
+
+O executor publica cópias dos relatórios em
+`src/devtools/world-lab/reports/`, um diretório de desenvolvimento ignorado pelo
+Git, e atualiza `index.json`. O World Lab usa o loader local:
+
+```sh
+npm run dev
+# http://localhost:5173/world-lab.html?stage=stage.aguas.igapo-das-memorias
+```
+
+Comportamento:
+
+- relatórios compatíveis são carregados automaticamente ao abrir o World Lab;
+- o painel mostra origem local, data, seed, variante, revisão e a indicação
+  quando o relatório está ausente, ignorado ou desatualizado;
+- **Recarregar relatórios locais** busca o índice novamente sem reiniciar o
+  app;
+- **Importar homologação** continua disponível como alternativa manual;
+- relatórios inválidos ou de estágio desconhecido são rejeitados; o conteúdo é
+  JSON interpretado como dados e nunca executa código;
+- o bloco de campanha mostra origem → destino, saída, rota, persistência,
+  isolamento, recursos, revisão e execução;
+- checks de destino não deslocam o mapa da origem.
+
+O diretório não é exposto de forma indiscriminada: somente `index.json` e os
+arquivos listados são buscados sob o caminho fixo do diretório de relatórios.
+
+### Campanhas procedurais
+
+O teste de integração `campaignIntegrationCycle.test.ts` continua percorrendo
+nove fases de uma campanha composta com os mesmos routers/binders, incluindo
+persistência, retomada, conclusão e ausência de transições duplicadas. Nenhum
+fluxo de campanha artificial foi criado.
+
+### Limitações
+
+- O retorno Coração → Igapó depende do contexto macro/camada; quando não
+  disponível, é UNKNOWN.
+- O fluxo composto tem cobertura headless de nove fases, não uma execução
+  Phaser completa.
+- A campanha usa a apresentação padrão; variantes são homologadas
+  individualmente.
+- O World Lab depende do Vite para servir o diretório local.
+- Relatórios anteriores à 9.14 não têm revisão/data e aparecem como tal.

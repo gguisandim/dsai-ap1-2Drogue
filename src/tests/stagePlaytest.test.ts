@@ -560,6 +560,17 @@ describe('Etapa 9.12 automated gameplay validation', () => {
         'homologate', 'minha-fase', '--stage', 'stage.aguas.igapo-das-memorias',
       ])).toThrow(ChapterCliError);
       expect(() => parseChapterCliArguments(['homologate'])).toThrow(ChapterCliError);
+      expect(parseChapterCliArguments([
+        'homologate', '--campaign', '--macro-run', 'run.test', '--macro-seed', 'seed.test', '--json',
+      ])).toMatchObject({
+        command: 'homologate',
+        campaign: true,
+        macroRunId: 'run.test',
+        macroRunSeed: 'seed.test',
+        json: true,
+      });
+      expect(() => parseChapterCliArguments(['homologate', '--campaign', 'minha-fase']))
+        .toThrow(ChapterCliError);
     });
 
     it('declares multi-seed UNKNOWN when the chapter has no seed factory', () => {

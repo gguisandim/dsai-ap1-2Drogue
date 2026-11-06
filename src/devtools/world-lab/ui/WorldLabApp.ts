@@ -2,8 +2,10 @@ import type {
   WorldLabArtAssetPresentation,
   WorldLabDiagnostic,
   WorldLabDocument,
+  WorldLabCampaignRuntimeValidation,
   WorldLabMacroRouteResult,
   WorldLabMacroRouteView,
+  WorldLabReportLoader,
   WorldLabRuntimeValidation,
   WorldLabSessionState,
   WorldLabStageMarker,
@@ -13,7 +15,10 @@ import type {
 } from '../contracts';
 import { WorldLabSession } from '../WorldLabSession';
 import { WorldLabMacroDataService } from '../WorldLabMacroDataService';
-import { runtimeValidationDiagnostics } from '../WorldLabValidation';
+import {
+  campaignValidationDiagnostics,
+  runtimeValidationDiagnostics,
+} from '../WorldLabValidation';
 import { renderCampaignGraph } from './CampaignGraphView';
 import { renderMacroCampaignGraph, type MacroCampaignSelection } from './MacroCampaignGraphView';
 import { renderStageInspector } from './StageInspectorView';
@@ -35,6 +40,10 @@ import {
 
 type Workspace = 'campaign' | 'stages' | 'comparison';
 type CampaignMode = 'procedural' | 'macro';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
 
 function appendField(container: HTMLElement, label: string, value: unknown): void {
   const term = document.createElement('dt');
@@ -257,6 +266,14 @@ export class WorldLabApp {
   private maximized = false;
   private inspectedAssetId?: string;
   private inspectedMarkerId?: string;
+  private localReportStatus?: {
+    readonly loadedAt: string;
+    readonly generatedAt?: string;
+    readonly count: number;
+    readonly skipped: number;
+    readonly error?: string;
+  };
+  private manualReportAt?: string;
   private readonly diagnosticFilters = new Set<WorldLabDiagnostic['severity']>(['error', 'warning', 'info']);
 
   private readonly elements: Record<string, HTMLElement> & {
@@ -273,6 +290,7 @@ export class WorldLabApp {
     private readonly macroSource: { generate(seed: string): WorldLabMacroRouteResult } = new WorldLabMacroDataService(),
     private readonly previewEnabled = ['localhost', '127.0.0.1', '0.0.0.0', '[::1]']
       .includes(globalThis.location?.hostname ?? ''),
+    private readonly reportLoader?: WorldLabReportLoader,
   ) {
     const queryParameters = new URLSearchParams(globalThis.location?.search ?? '');
     const requestedView = queryParameters.get('view');
@@ -317,7 +335,49 @@ export class WorldLabApp {
     this.render(this.session.state());
   }
 
-  public start(): void { this.session.generate(); }
+  public start(): void {
+    this.session.generate();
+    void this.loadLocalReports();
+  }
+
+  /** Loads the local report index produced by the homologation harness. */
+  private async loadLocalReports(): Promise<void> {
+    if (!this.reportLoader) return;
+    try {
+      const result = await this.reportLoader();
+      const documentStages = new Set(
+        (this.session.state().document?.stages ?? []).map(stage => stage.stageId),
+      );
+      let count = 0;
+      let skipped = 0;
+      result.reports.forEach(report => {
+        const compatible = report.kind === 'umbra.campaign-homologation.report'
+          ? documentStages.has(report.originStageId) || documentStages.has(report.destinationStageId)
+          : documentStages.has(report.stageId);
+        if (!compatible) { skipped += 1; return; }
+        const parsed = report.kind === 'umbra.campaign-homologation.report'
+          ? this.session.importCampaignValidation(JSON.stringify(report))
+          : this.session.importRuntimeValidation(JSON.stringify(report));
+        if (parsed.ok) count += 1;
+        else skipped += 1;
+      });
+      this.localReportStatus = {
+        loadedAt: new Date().toISOString(),
+        count,
+        skipped,
+        ...(result.generatedAt ? { generatedAt: result.generatedAt } : {}),
+        ...(result.error ? { error: result.error } : {}),
+      };
+    } catch (error) {
+      this.localReportStatus = {
+        loadedAt: new Date().toISOString(),
+        count: 0,
+        skipped: 0,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+    this.render(this.session.state());
+  }
 
   private template(): string {
     return `
@@ -549,9 +609,11 @@ export class WorldLabApp {
     }
     const runtimeDiagnostics = Object.values(state.runtimeValidations ?? {})
       .flatMap(runtimeValidationDiagnostics);
+    const campaignDiagnostics = Object.values(state.campaignValidations ?? {})
+      .flatMap(campaignValidationDiagnostics);
     const diagnostics = campaign && !procedural
       ? this.macroDiagnostics
-      : [...state.diagnostics, ...runtimeDiagnostics];
+      : [...state.diagnostics, ...runtimeDiagnostics, ...campaignDiagnostics];
     this.renderDiagnostics(diagnostics, diagnostic => {
       if (procedural) this.session.selectDiagnostic(diagnostic);
       this.diagnosticsOpen = true;
@@ -590,7 +652,14 @@ export class WorldLabApp {
 
   private renderStageWorkspace(state: WorldLabSessionState, variants: readonly string[]): void {
     const stage = selectedStage(state); const selectedVariant = this.session.presentationVariantId();
-    const runtimeValidation = stage ? this.session.runtimeValidation(stage.stageId) : undefined;
+    const runtimeValidation = stage
+      ? this.session.runtimeValidation(stage.stageId, selectedVariant) : undefined;
+    const campaignValidations = stage
+      ? this.session.campaignValidationsFor(stage.stageId) : [];
+    const runtimeChecks = [
+      ...(runtimeValidation?.checks ?? []),
+      ...campaignValidations.flatMap(report => report.checks),
+    ];
     this.setSource(stage ? `${T.help.registered} · ${stage.stageId}` : T.empty.stage);
     this.renderExplorer(stage, state);
     if (this.workspace === 'comparison' && stage) renderPhaserPreview(this.elements.stage, {
@@ -602,7 +671,7 @@ export class WorldLabApp {
       selectValidationCheck: id => this.session.selectValidationCheck(id),
     }, { entities: state.filters.showEntities, decorations: state.filters.showDecorations, exits: state.filters.showExits }, {
       ...(stage?.validation ? { static: stage.validation } : {}),
-      ...(runtimeValidation ? { runtimeChecks: runtimeValidation.checks } : {}),
+      ...(runtimeChecks.length > 0 ? { runtimeChecks } : {}),
       ...(state.selection.validationCheckId ? { selectedCheckId: state.selection.validationCheckId } : {}),
     });
     else if (stage) renderPhaserPreview(this.elements.stage, {
@@ -613,7 +682,9 @@ export class WorldLabApp {
     const marker = stage?.markers.find(item => item.id === this.inspectedMarkerId);
     renderAssetInspector(
       this.elements.inspector, stage, asset, marker, selectedVariant, state.selection.diagnosticCode,
-      content => this.renderValidationPanel(content, stage, runtimeValidation),
+      content => this.renderValidationPanel(
+        content, stage, runtimeValidation, campaignValidations, selectedVariant,
+      ),
     );
     this.elements.comparisonVariant.disabled = this.workspace !== 'comparison' || variants.length === 0;
   }
@@ -622,14 +693,13 @@ export class WorldLabApp {
     content: HTMLElement,
     stage: WorldLabStageView | undefined,
     runtime: WorldLabRuntimeValidation | undefined,
+    campaigns: readonly WorldLabCampaignRuntimeValidation[],
+    variantId: string | undefined,
   ): void {
     content.replaceChildren();
     if (!stage) { content.textContent = T.empty.stage; return; }
     const validation: WorldLabStageValidation | undefined = stage.validation;
-    const checks: WorldLabValidationCheck[] = [
-      ...(validation?.checks ?? []),
-      ...(runtime?.checks ?? []),
-    ];
+    const checks: WorldLabValidationCheck[] = [...this.session.validationChecks(stage.stageId, variantId)];
     const statusRank: Readonly<Record<WorldLabValidationCheck['status'], number>> = Object.freeze({
       FAIL: 0, UNKNOWN: 1, PASS: 2,
     });
@@ -644,20 +714,94 @@ export class WorldLabApp {
       ? localizeValidationStatus(validation.result)
       : 'indisponível (fase sem validação estática)');
     if (runtime) appendField(fields, 'Homologação Phaser', localizeValidationStatus(runtime.result));
-    appendField(fields, T.labels.seed, validation?.seed ?? runtime?.seed ?? 'autoral');
-    appendField(fields, T.labels.validationChecks, `${passed} PASS · ${failed} FAIL · ${unknown} UNKNOWN`);
+    if (campaigns.length > 0) {
+      appendField(fields, 'Homologação de campanha',
+        campaigns.map(report => localizeValidationStatus(report.result)).join(' · '));
+    }
+    appendField(fields, T.labels.seed,
+      validation?.seed ?? runtime?.seed ?? campaigns[0]?.runSeed ?? 'autoral');
+    appendField(fields, T.labels.validationChecks,
+      `${passed} PASS · ${failed} FAIL · ${unknown} UNKNOWN`);
     appendField(fields, T.labels.evidence, [...new Set(checks.map(check => check.evidence))]
       .map(localizeEvidence).join(' · ') || 'nenhuma');
     if (validation) {
       appendField(fields, 'Plano', `${validation.plan.source}${validation.plan.planId ? ` · ${validation.plan.planId}` : ''}`);
       appendField(fields, 'Rotas', validation.routes ? 'principal e secundária' : 'não fornecidas');
     }
+    const reportGeneratedAt = runtime?.generatedAt ?? runtime?.evidence?.generatedAt ??
+      campaigns[0]?.generatedAt;
+    if (reportGeneratedAt) appendField(fields, 'Execução', reportGeneratedAt);
+    if (runtime?.manifestRevision !== undefined) {
+      appendField(fields, 'Revisão do relatório', runtime.manifestRevision);
+      if (stage.manifestRevision !== undefined &&
+        runtime.manifestRevision !== stage.manifestRevision) {
+        appendField(fields, 'Situação do relatório',
+          `desatualizado (fase revisão ${stage.manifestRevision})`);
+      }
+    } else if (runtime) {
+      appendField(fields, 'Revisão do relatório', 'não informada (relatório anterior à 9.14)');
+    }
+    if (runtime?.scenario) appendField(fields, 'Cenário', runtime.scenario);
     if (runtime?.evidence?.browser) appendField(fields, 'Navegador', runtime.evidence.browser);
     if (runtime?.evidence?.screenshots?.length) {
       appendField(fields, 'Capturas', runtime.evidence.screenshots.join(', '));
     }
+    if (this.localReportStatus) {
+      appendField(fields, 'Relatórios locais', this.localReportStatus.error
+        ? `indisponíveis (${this.localReportStatus.error})`
+        : `${this.localReportStatus.count} carregado(s)`
+          + `${this.localReportStatus.skipped > 0 ? ` · ${this.localReportStatus.skipped} ignorado(s)` : ''}`
+          + ` · ${this.localReportStatus.generatedAt ?? this.localReportStatus.loadedAt}`);
+    }
+    if (this.manualReportAt) appendField(fields, 'Importação manual', this.manualReportAt);
     content.append(fields);
-    if (!validation && !runtime) {
+
+    if (campaigns.length > 0) {
+      const campaignBlock = document.createElement('div');
+      campaignBlock.className = 'wl-campaign-reports';
+      campaignBlock.dataset.role = 'campaign-reports';
+      campaigns.forEach(report => {
+        const block = document.createElement('div');
+        block.className = 'wl-campaign-report';
+        block.dataset.campaignReport = report.runId ?? 'run';
+        const title = document.createElement('strong');
+        title.textContent = `Campanha: ${report.originStageId} → ${report.destinationStageId}`;
+        const role = report.originStageId === stage.stageId ? 'origem' : 'destino';
+        const persistence = report.persistence as Record<string, unknown> | undefined;
+        const preserved = persistence?.preserved === true ? 'preservado'
+          : persistence?.preserved === false ? 'incompleto' : 'não verificado';
+        const isolated = persistence?.isolated === true ? 'isolado'
+          : persistence?.isolated === false ? 'contaminado' : 'não verificado';
+        const resources = isRecord(persistence?.resources) && persistence.resources.preserved === true
+          ? 'preservados' : 'não verificados';
+        const transition = report.transitions.find(item => item.role === 'primary') ?? report.transitions[0];
+        const expectedRevision = report.originStageId === stage.stageId
+          ? report.manifestRevision : report.destinationManifestRevision;
+        const revision = expectedRevision === undefined
+          ? 'não informada'
+          : stage.manifestRevision !== undefined && expectedRevision !== stage.manifestRevision
+            ? `desatualizada (${expectedRevision} ≠ ${stage.manifestRevision})`
+            : String(expectedRevision);
+        const detail = document.createElement('small');
+        detail.textContent = [
+          `papel: ${role}`,
+          `resultado: ${localizeValidationStatus(report.result)}`,
+          transition?.stageExitId ? `saída: ${transition.stageExitId}` : '',
+          transition?.edgeId ? `rota: ${transition.edgeId}` : '',
+          transition?.destinationStageId ? `destino: ${transition.destinationStageId}` : '',
+          `persistência: ${preserved}`,
+          `isolamento: ${isolated}`,
+          `recursos: ${resources}`,
+          `revisão: ${revision}`,
+          report.generatedAt ? `execução: ${report.generatedAt}` : '',
+        ].filter(Boolean).join(' · ');
+        block.append(title, detail);
+        campaignBlock.append(block);
+      });
+      content.append(campaignBlock);
+    }
+
+    if (!validation && !runtime && campaigns.length === 0) {
       const empty = document.createElement('p');
       empty.className = 'wl-validation-empty';
       empty.textContent = 'A validação estática está disponível para fases autorais. Importe um relatório de homologação para adicionar evidência de runtime.';
@@ -691,6 +835,8 @@ export class WorldLabApp {
           check.regionId ? `${T.labels.region}: ${check.regionId}` : '',
           check.location ? `${check.location.x}, ${check.location.y}` : '',
           localizeEvidence(check.evidence),
+          check.status === 'FAIL' ? 'severidade: erro'
+            : check.status === 'UNKNOWN' ? 'severidade: aviso' : 'severidade: informação',
           check.required ? '' : 'não bloqueante',
         ].filter(Boolean).join(' · ');
         const message = document.createElement('span');
@@ -717,6 +863,15 @@ export class WorldLabApp {
       note.textContent = T.help.validationStructural;
       content.append(note);
     }
+    if (this.reportLoader) {
+      const refresh = document.createElement('button');
+      refresh.type = 'button';
+      refresh.className = 'wl-validation-refresh';
+      refresh.dataset.role = 'reload-reports';
+      refresh.textContent = 'Recarregar relatórios locais';
+      refresh.addEventListener('click', () => { void this.loadLocalReports(); });
+      content.append(refresh);
+    }
     const importLabel = document.createElement('label');
     importLabel.className = 'wl-validation-import';
     importLabel.textContent = T.labels.importRuntime;
@@ -729,7 +884,17 @@ export class WorldLabApp {
       if (!file) return;
       const reader = new FileReader();
       reader.addEventListener('load', () => {
-        const result = this.session.importRuntimeValidation(String(reader.result ?? ''));
+        const text = String(reader.result ?? '');
+        let kind: string | undefined;
+        try {
+          kind = (JSON.parse(text) as { kind?: string } | null)?.kind;
+        } catch {
+          kind = undefined;
+        }
+        const result = kind === 'umbra.campaign-homologation.report'
+          ? this.session.importCampaignValidation(text)
+          : this.session.importRuntimeValidation(text);
+        this.manualReportAt = new Date().toISOString();
         if (!result.ok) this.diagnosticsOpen = true;
         this.render(this.session.state());
       });
