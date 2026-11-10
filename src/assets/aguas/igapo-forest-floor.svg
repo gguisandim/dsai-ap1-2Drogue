@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="32" viewBox="0 0 64 32" shape-rendering="crispEdges">
+  <!-- Igapó das Memórias — dois pisos florestais contínuos (32x32 cada).
+       Apenas manchas pequenas e de baixo contraste; as bordas ficam na cor
+       base para que a repetição do tile não forme grade visível. -->
+  <!-- quadro 0: musgo úmido -->
+  <g>
+    <rect width="32" height="32" fill="#5c7a44"/>
+    <rect x="3" y="4" width="3" height="2" fill="#587541"/>
+    <rect x="9" y="2" width="2" height="3" fill="#648049"/>
+    <rect x="15" y="5" width="4" height="2" fill="#587541"/>
+    <rect x="22" y="3" width="2" height="2" fill="#546f3f"/>
+    <rect x="27" y="6" width="3" height="2" fill="#648049"/>
+    <rect x="5" y="9" width="2" height="3" fill="#648049"/>
+    <rect x="12" y="10" width="4" height="2" fill="#587541"/>
+    <rect x="19" y="9" width="2" height="4" fill="#546f3f"/>
+    <rect x="25" y="11" width="3" height="2" fill="#587541"/>
+    <rect x="2" y="15" width="3" height="2" fill="#546f3f"/>
+    <rect x="8" y="14" width="4" height="2" fill="#6b8a50"/>
+    <rect x="15" y="16" width="2" height="3" fill="#587541"/>
+    <rect x="21" y="15" width="3" height="2" fill="#648049"/>
+    <rect x="27" y="17" width="3" height="2" fill="#587541"/>
+    <rect x="4" y="21" width="4" height="2" fill="#587541"/>
+    <rect x="11" y="20" width="3" height="3" fill="#546f3f"/>
+    <rect x="17" y="22" width="2" height="2" fill="#6b8a50"/>
+    <rect x="23" y="21" width="4" height="2" fill="#587541"/>
+    <rect x="29" y="22" width="2" height="3" fill="#546f3f"/>
+    <rect x="3" y="26" width="2" height="3" fill="#648049"/>
+    <rect x="9" y="27" width="4" height="2" fill="#587541"/>
+    <rect x="16" y="26" width="3" height="2" fill="#648049"/>
+    <rect x="22" y="27" width="2" height="2" fill="#546f3f"/>
+    <rect x="27" y="26" width="3" height="3" fill="#6b8a50"/>
+    <rect x="13" y="6" width="1" height="2" fill="#6e6540"/>
+    <rect x="24" y="19" width="2" height="1" fill="#6e6540"/>
+    <rect x="6" y="24" width="2" height="1" fill="#6e6540"/>
+    <rect x="19" y="4" width="1" height="1" fill="#768d58"/>
+    <rect x="11" y="29" width="1" height="1" fill="#768d58"/>
+  </g>
+  <!-- quadro 1: chão alagado -->
+  <g transform="translate(32 0)">
+    <rect width="32" height="32" fill="#577043"/>
+    <rect x="3" y="4" width="3" height="2" fill="#526b3e"/>
+    <rect x="9" y="2" width="2" height="3" fill="#5d7a48"/>
+    <rect x="15" y="5" width="4" height="2" fill="#526b3e"/>
+    <rect x="22" y="3" width="2" height="2" fill="#4d663c"/>
+    <rect x="27" y="6" width="3" height="2" fill="#5d7a48"/>
+    <rect x="5" y="9" width="2" height="3" fill="#5d7a48"/>
+    <rect x="12" y="10" width="4" height="2" fill="#526b3e"/>
+    <rect x="19" y="9" width="2" height="4" fill="#4d663c"/>
+    <rect x="25" y="11" width="3" height="2" fill="#526b3e"/>
+    <rect x="2" y="15" width="3" height="2" fill="#4d663c"/>
+    <rect x="8" y="14" width="4" height="2" fill="#62804a"/>
+    <rect x="15" y="16" width="2" height="3" fill="#526b3e"/>
+    <rect x="21" y="15" width="3" height="2" fill="#5d7a48"/>
+    <rect x="27" y="17" width="3" height="2" fill="#526b3e"/>
+    <rect x="4" y="21" width="4" height="2" fill="#526b3e"/>
+    <rect x="11" y="20" width="3" height="3" fill="#4d663c"/>
+    <rect x="17" y="22" width="2" height="2" fill="#62804a"/>
+    <rect x="23" y="21" width="4" height="2" fill="#526b3e"/>
+    <rect x="29" y="22" width="2" height="3" fill="#4d663c"/>
+    <rect x="3" y="26" width="2" height="3" fill="#5d7a48"/>
+    <rect x="9" y="27" width="4" height="2" fill="#526b3e"/>
+    <rect x="16" y="26" width="3" height="2" fill="#5d7a48"/>
+    <rect x="22" y="27" width="2" height="2" fill="#4d663c"/>
+    <rect x="27" y="26" width="3" height="3" fill="#62804a"/>
+    <rect x="13" y="6" width="1" height="2" fill="#645c3b"/>
+    <rect x="24" y="19" width="2" height="1" fill="#4f6a5a"/>
+    <rect x="6" y="24" width="2" height="1" fill="#645c3b"/>
+    <rect x="19" y="4" width="1" height="1" fill="#66874f"/>
+    <rect x="11" y="29" width="1" height="1" fill="#4f6a5a"/>
+  </g>
+</svg>

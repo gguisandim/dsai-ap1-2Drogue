@@ -1722,7 +1722,18 @@ async function run() {
     if (args.capture) {
       await sleep(1_200);
       await driver.closeDialogue();
-      const landmarks = [
+      const landmarksByStage = {
+        [CAMPAIGN_IGAPO_STAGE_ID]: [
+          { id: 'margem', title: 'Margem ribeirinha', x: 4, y: 17 },
+          { id: 'lagoa', title: 'Lagoa das Memórias', x: 22, y: 16 },
+          { id: 'vestigio', title: 'Vestígio Submerso', x: 27, y: 16 },
+          { id: 'estreito', title: 'Estreito das Raízes', x: 41, y: 19 },
+          { id: 'clareira', title: 'Clareira de combate', x: 54, y: 16 },
+          { id: 'canal-leste', title: 'Canais do Leste', x: 70, y: 17 },
+          { id: 'nascente', title: 'Bacia da Nascente', x: 88, y: 16 },
+        ],
+      };
+      const landmarks = landmarksByStage[args.stageId] ?? [
         { id: 'entrada', title: 'Entrada da Floresta', x: 5, y: 18 },
         { id: 'trilha', title: 'Trilha dos Vestígios', x: 28, y: 15 },
         { id: 'primeiro-combate', title: 'Primeiro confronto', x: 39, y: 18 },

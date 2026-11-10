@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="128" viewBox="0 0 96 128" shape-rendering="crispEdges">
+  <!-- Igapó das Memórias — árvore emersa original. Base em 96,128. -->
+  <!-- copa de fundo -->
+  <path d="M8 48 14 34 26 30 34 20 46 16 58 20 68 14 80 20 90 32 94 46 88 58 76 64 64 60 52 66 40 62 28 68 16 60z" fill="#16352a"/>
+  <path d="M2 56 6 42 16 36 24 28 30 38 24 50 14 56 8 64z" fill="#1b3f30"/>
+  <path d="M62 12 72 6 84 10 92 22 96 34 88 44 78 38 70 28 64 24z" fill="#1b3f30"/>
+  <!-- copa média -->
+  <path d="M10 46 18 32 30 27 38 18 50 14 62 18 72 13 84 20 90 34 86 46 76 54 64 50 52 58 40 54 28 60 16 54z" fill="#24503a"/>
+  <path d="M20 38 28 28 40 24 50 18 60 22 70 18 80 26 84 38 78 46 66 44 56 50 44 46 34 52 24 46z" fill="#2f6248"/>
+  <path d="M6 58 12 46 22 42 28 50 22 60 12 64z" fill="#24503a"/>
+  <path d="M66 52 74 42 86 42 92 50 88 58 76 60z" fill="#24503a"/>
+  <!-- copa frontal / luz -->
+  <path d="M24 36 34 28 46 26 56 22 64 26 72 22 78 30 76 38 66 40 58 46 48 42 38 48 30 44z" fill="#3f7d57"/>
+  <path d="M32 34 42 30 52 28 60 32 58 38 48 40 40 44 34 40z" fill="#4f9463"/>
+  <path d="M44 30 52 26 60 28 62 34 54 36 46 36z" fill="#6aa869"/>
+  <path d="M36 32 40 30 42 34 38 36z" fill="#9bc57f"/>
+  <path d="M54 30 58 28 60 32 56 34z" fill="#9bc57f"/>
+  <!-- galhos pendentes -->
+  <path d="M16 54 20 62 18 74 22 82 20 92" stroke="#3a2a1d" stroke-width="2" fill="none"/>
+  <path d="M78 54 82 62 80 72 84 84" stroke="#3a2a1d" stroke-width="2" fill="none"/>
+  <path d="M44 56 46 66 44 76" stroke="#4a3322" stroke-width="2" fill="none"/>
+  <!-- troncos -->
+  <path d="M38 92 40 56 44 40 50 38 52 54 50 76 48 96z" fill="#3a2a1d"/>
+  <path d="M42 94 44 58 47 42 50 42 50 60 48 96z" fill="#5b412a"/>
+  <path d="M56 96 58 66 62 44 68 42 70 60 66 82 64 98z" fill="#3a2a1d"/>
+  <path d="M60 96 62 66 65 46 68 46 68 62 65 96z" fill="#5b412a"/>
+  <path d="M46 60 48 44 50 46 49 62z" fill="#7a5a37"/>
+  <path d="M62 62 65 48 67 50 65 66z" fill="#7a5a37"/>
+  <!-- raízes tabulares -->
+  <path d="M4 126 10 112 22 102 34 98 48 100 62 96 76 102 88 112 94 126z" fill="#2b2016"/>
+  <path d="M2 126 12 116 24 108 36 106 46 108 44 118 32 124z" fill="#3a2a1d"/>
+  <path d="M94 126 84 116 72 108 60 106 52 108 54 118 66 124z" fill="#3a2a1d"/>
+  <path d="M30 126 34 114 40 104 48 100 46 112 42 124z" fill="#4a3322"/>
+  <path d="M66 126 62 114 56 104 50 100 52 112 56 124z" fill="#4a3322"/>
+  <path d="M12 118 20 110 28 106 24 116 16 122z" fill="#5b412a"/>
+  <path d="M84 118 76 110 68 106 72 116 80 122z" fill="#5b412a"/>
+  <!-- musgo e detalhes -->
+  <path d="M26 106 32 102 38 106 34 110 28 110z" fill="#5f7f42"/>
+  <path d="M60 104 66 100 72 106 66 110z" fill="#5f7f42"/>
+  <path d="M44 98 48 96 50 100 46 102z" fill="#6d8a45"/>
+  <path d="M18 112 21 110 23 114 20 116z" fill="#88a45a"/>
+  <path d="M76 112 79 110 81 114 78 116z" fill="#88a45a"/>
+  <!-- fungos de memória -->
+  <rect x="10" y="118" width="3" height="2" fill="#4fb9a4"/>
+  <rect x="11" y="116" width="2" height="2" fill="#8ef0d8"/>
+  <rect x="82" y="114" width="3" height="2" fill="#4fb9a4"/>
+  <rect x="83" y="112" width="2" height="2" fill="#8ef0d8"/>
+  <!-- água na base -->
+  <path d="M22 124 30 121 40 122 46 124" stroke="#5f9583" stroke-width="1" fill="none" opacity="0.5"/>
+  <path d="M52 124 60 121 70 122 78 124" stroke="#5f9583" stroke-width="1" fill="none" opacity="0.4"/>
+  <!-- clareiras internas e estrutura de galhos -->
+  <path d="M30 34 36 30 40 34 36 38z" fill="#16352a"/>
+  <path d="M50 26 56 24 60 28 56 32z" fill="#16352a"/>
+  <path d="M64 38 70 36 73 40 69 44z" fill="#16352a"/>
+  <path d="M42 46 47 43 51 47 47 50z" fill="#1b3f30"/>
+  <path d="M20 42 24 40 27 44 23 47z" fill="#1b3f30"/>
+  <path d="M34 42 38 40 40 44 36 46z" fill="#2f6248"/>
+  <path d="M58 34 62 32 64 36 60 38z" fill="#2f6248"/>
+  <path d="M26 28 30 26 32 30 28 32z" fill="#4f9463"/>
+  <path d="M70 32 74 30 76 34 72 36z" fill="#4f9463"/>
+  <path d="M46 20 50 18 52 22 48 24z" fill="#6aa869"/>
+  <path d="M18 52 24 50 27 54 21 56z" fill="#1b3f30"/>
+  <path d="M74 50 80 48 83 52 77 55z" fill="#1b3f30"/>
+  <!-- luz filtrada nas folhas -->
+  <rect x="36" y="30" width="3" height="2" fill="#9bc57f"/>
+  <rect x="44" y="28" width="2" height="2" fill="#b4d896"/>
+  <rect x="56" y="30" width="3" height="2" fill="#9bc57f"/>
+  <rect x="30" y="38" width="2" height="2" fill="#7fbb78"/>
+  <rect x="62" y="40" width="2" height="2" fill="#7fbb78"/>
+  <rect x="48" y="36" width="2" height="2" fill="#b4d896"/>
+  <rect x="24" y="46" width="2" height="2" fill="#6aa869"/>
+  <rect x="70" y="44" width="2" height="2" fill="#6aa869"/>
+</svg>

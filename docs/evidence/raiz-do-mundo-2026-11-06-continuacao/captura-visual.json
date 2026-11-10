@@ -1,0 +1,1002 @@
+{
+  "schemaVersion": 1,
+  "kind": "umbra.stage-homologation.report",
+  "stageId": "stage.raiz-do-mundo.santuario",
+  "result": "PASS",
+  "scenario": "visual-capture",
+  "seed": null,
+  "checks": [
+    {
+      "id": "capture.entrada",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Entrada da Floresta alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 5,
+        "y": 18
+      }
+    },
+    {
+      "id": "capture.trilha",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Trilha dos Vestígios alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 28,
+        "y": 15
+      }
+    },
+    {
+      "id": "capture.primeiro-combate",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Primeiro confronto alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 39,
+        "y": 18
+      }
+    },
+    {
+      "id": "capture.guardiao",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Clareira do Guardião alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 54,
+        "y": 22
+      }
+    },
+    {
+      "id": "capture.aproximacao",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Aproximação do santuário alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 72,
+        "y": 18
+      }
+    },
+    {
+      "id": "capture.santuario",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Coração Ancestral alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 80,
+        "y": 18
+      }
+    },
+    {
+      "id": "capture.saida",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Passagem das Águas alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 104,
+        "y": 18
+      }
+    }
+  ],
+  "observations": [
+    {
+      "atMs": 12723,
+      "label": "capture:entrada",
+      "player": {
+        "x": 176,
+        "y": 592,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 232
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.4392101320049427,
+        "facingY": -0.8983843609192009,
+        "pointerX": 0,
+        "pointerY": 232
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 13417,
+      "label": "capture:trilha",
+      "player": {
+        "x": 176,
+        "y": 592,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 232
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.4392101320049427,
+        "facingY": -0.8983843609192009,
+        "pointerX": 0,
+        "pointerY": 232
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 14433,
+      "label": "capture:trilha",
+      "player": {
+        "x": 283,
+        "y": 488,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 149
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.6385410865808389,
+        "facingY": -0.7695877342760614,
+        "pointerX": 0,
+        "pointerY": 152
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 15476,
+      "label": "capture:trilha",
+      "player": {
+        "x": 457,
+        "y": 510,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 138
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.7723612984678486,
+        "facingY": -0.6351834574585983,
+        "pointerX": 0,
+        "pointerY": 137
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 16604,
+      "label": "capture:trilha",
+      "player": {
+        "x": 631,
+        "y": 510,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 134
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8593287406287099,
+        "facingY": -0.5114236165151892,
+        "pointerX": 0,
+        "pointerY": 133
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 17698,
+      "label": "capture:trilha",
+      "player": {
+        "x": 825,
+        "y": 486,
+        "hp": 6
+      },
+      "camera": {
+        "x": 139,
+        "y": 128
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8863128979510629,
+        "facingY": -0.4630868675805747,
+        "pointerX": 134,
+        "pointerY": 129
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 18995,
+      "label": "capture:primeiro-combate",
+      "player": {
+        "x": 893,
+        "y": 479,
+        "hp": 6
+      },
+      "camera": {
+        "x": 243,
+        "y": 119
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8744947167211518,
+        "facingY": -0.4850350404113007,
+        "pointerX": 243,
+        "pointerY": 119
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 19948,
+      "label": "capture:primeiro-combate",
+      "player": {
+        "x": 1018,
+        "y": 598,
+        "hp": 6
+      },
+      "camera": {
+        "x": 341,
+        "y": 200
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8623778101585667,
+        "facingY": -0.5062652590748401,
+        "pointerX": 337,
+        "pointerY": 196
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 20892,
+      "label": "capture:primeiro-combate",
+      "player": {
+        "x": 1239,
+        "y": 659,
+        "hp": 6
+      },
+      "camera": {
+        "x": 547,
+        "y": 288
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.880153031085507,
+        "facingY": -0.4746900482114561,
+        "pointerX": 542,
+        "pointerY": 287
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 22039,
+      "label": "capture:guardiao",
+      "player": {
+        "x": 1273,
+        "y": 584,
+        "hp": 6
+      },
+      "camera": {
+        "x": 623,
+        "y": 224
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8745242776712396,
+        "facingY": -0.48498173961871666,
+        "pointerX": 623,
+        "pointerY": 224
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 23023,
+      "label": "capture:guardiao",
+      "player": {
+        "x": 1400,
+        "y": 705,
+        "hp": 6
+      },
+      "camera": {
+        "x": 717,
+        "y": 303
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8620472745427001,
+        "facingY": -0.506827876555249,
+        "pointerX": 713,
+        "pointerY": 299
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 23999,
+      "label": "capture:guardiao",
+      "player": {
+        "x": 1567,
+        "y": 733,
+        "hp": 6
+      },
+      "camera": {
+        "x": 882,
+        "y": 359
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8779049496716514,
+        "facingY": -0.4788349395585238,
+        "pointerX": 877,
+        "pointerY": 358
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 25031,
+      "label": "capture:guardiao",
+      "player": {
+        "x": 1736,
+        "y": 725,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1057,
+        "y": 355
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8791415485176065,
+        "facingY": -0.4765607386997642,
+        "pointerX": 1053,
+        "pointerY": 354
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 25863,
+      "label": "capture:aproximacao",
+      "player": {
+        "x": 1743,
+        "y": 740,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1094,
+        "y": 370
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8691517938023775,
+        "facingY": -0.49454540674250475,
+        "pointerX": 1094,
+        "pointerY": 370
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 26893,
+      "label": "capture:aproximacao",
+      "player": {
+        "x": 1873,
+        "y": 616,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1191,
+        "y": 287
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8999966092122986,
+        "facingY": -0.4358968953850959,
+        "pointerX": 1187,
+        "pointerY": 291
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 27917,
+      "label": "capture:aproximacao",
+      "player": {
+        "x": 2051,
+        "y": 580,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1358,
+        "y": 225
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.890042211153048,
+        "facingY": -0.4558781222715048,
+        "pointerX": 1353,
+        "pointerY": 226
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 28823,
+      "label": "capture:aproximacao",
+      "player": {
+        "x": 2191,
+        "y": 587,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1507,
+        "y": 228
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8848522636715044,
+        "facingY": -0.4658717328572472,
+        "pointerX": 1503,
+        "pointerY": 229
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 30751,
+      "label": "capture:santuario",
+      "player": {
+        "x": 2312,
+        "y": 577,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1662,
+        "y": 216
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8743822280960162,
+        "facingY": -0.4852377965388171,
+        "pointerX": 1662,
+        "pointerY": 216
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 31782,
+      "label": "capture:santuario",
+      "player": {
+        "x": 2462,
+        "y": 577,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1755,
+        "y": 224
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8944212885732872,
+        "facingY": -0.44722540015846673,
+        "pointerX": 1748,
+        "pointerY": 225
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 33725,
+      "label": "capture:saida",
+      "player": {
+        "x": 2592,
+        "y": 567,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1942,
+        "y": 207
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8744588184560222,
+        "facingY": -0.48509975760094687,
+        "pointerX": 1942,
+        "pointerY": 207
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 34818,
+      "label": "capture:saida",
+      "player": {
+        "x": 2741,
+        "y": 577,
+        "hp": 6
+      },
+      "camera": {
+        "x": 2028,
+        "y": 223
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8956683637678461,
+        "facingY": -0.4447225901001986,
+        "pointerX": 2020,
+        "pointerY": 224
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 35868,
+      "label": "capture:saida",
+      "player": {
+        "x": 2935,
+        "y": 606,
+        "hp": 6
+      },
+      "camera": {
+        "x": 2221,
+        "y": 227
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8855549852837484,
+        "facingY": -0.46453457141433513,
+        "pointerX": 2213,
+        "pointerY": 225
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 36807,
+      "label": "capture:saida",
+      "player": {
+        "x": 3097,
+        "y": 594,
+        "hp": 6
+      },
+      "camera": {
+        "x": 2403,
+        "y": 237
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8873018614117681,
+        "facingY": -0.4611891225248176,
+        "pointerX": 2398,
+        "pointerY": 238
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 37739,
+      "label": "capture:saida",
+      "player": {
+        "x": 3285,
+        "y": 587,
+        "hp": 6
+      },
+      "camera": {
+        "x": 2432,
+        "y": 226
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.9199538916525163,
+        "facingY": -0.3920265772028607,
+        "pointerX": 2432,
+        "pointerY": 226
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    }
+  ],
+  "evidence": {
+    "screenshots": [
+      "capture-entrada.png",
+      "capture-trilha.png",
+      "capture-primeiro-combate.png",
+      "capture-guardiao.png",
+      "capture-aproximacao.png",
+      "capture-santuario.png",
+      "capture-saida.png"
+    ],
+    "browser": "Edg/157.0.4341.42 (Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0)",
+    "durationMs": 38836
+  },
+  "runtime": {
+    "phaser": "executed",
+    "liveExecution": "executed"
+  },
+  "generatedAt": "2026-11-06T16:10:55.335Z"
+}

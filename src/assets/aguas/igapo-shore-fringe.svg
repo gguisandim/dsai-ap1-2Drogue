@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="32" viewBox="0 0 128 32" shape-rendering="crispEdges">
+  <!-- Igapó das Memórias — folha de 4 franjas de margem (32x32 cada).
+       Conteúdo irregular na borda superior; não forma linha contínua. -->
+  <!-- quadro 0: língua de lama com raízes -->
+  <g>
+    <path d="M1 0 7 2 12 0 18 3 24 1 30 3 32 1 32 7 27 10 24 15 20 12 17 16 13 11 9 14 5 9 2 10z" fill="#4a3c28"/>
+    <path d="M2 1 8 3 13 1 18 4 24 2 29 4 32 2 32 6 26 8 23 12 19 10 16 13 12 9 8 12 4 8 2 8z" fill="#6d5a3a"/>
+    <path d="M5 3 10 5 13 3 17 6 22 4 26 6 29 4" stroke="#8a7448" stroke-width="1" fill="none"/>
+    <path d="M9 2 8 12 10 16 9 20" stroke="#3a2a1d" stroke-width="2" fill="none"/>
+    <path d="M21 3 22 11 20 15 21 19" stroke="#3a2a1d" stroke-width="2" fill="none"/>
+    <path d="M14 3 15 9 18 12" stroke="#4a3322" stroke-width="2" fill="none"/>
+    <rect x="6" y="4" width="3" height="2" fill="#5f7f42"/>
+    <rect x="23" y="5" width="3" height="2" fill="#5f7f42"/>
+    <rect x="17" y="2" width="2" height="2" fill="#7d9a52"/>
+    <path d="M2 9 7 7 10 9" stroke="#256058" stroke-width="1" fill="none" opacity="0.35"/>
+  </g>
+  <!-- quadro 1: emaranhado de raízes -->
+  <g transform="translate(32 0)">
+    <path d="M0 1 5 4 9 1 15 5 20 2 26 5 31 2 32 8 27 10 22 8 17 12 12 9 7 12 3 9 0 10z" fill="#3d3322"/>
+    <path d="M1 2 6 5 10 2 15 6 20 3 25 6 30 3 32 5 29 8 24 7 20 10 15 8 10 11 6 8 2 9z" fill="#5b412a"/>
+    <path d="M4 3 6 10 4 14 6 18" stroke="#3a2a1d" stroke-width="2" fill="none"/>
+    <path d="M11 2 10 9 12 13 10 17" stroke="#4a3322" stroke-width="2" fill="none"/>
+    <path d="M18 3 19 10 17 14 19 18" stroke="#3a2a1d" stroke-width="2" fill="none"/>
+    <path d="M25 2 24 8 26 12" stroke="#4a3322" stroke-width="2" fill="none"/>
+    <path d="M7 6 13 9 19 6 25 8" stroke="#6b4a2c" stroke-width="1" fill="none"/>
+    <rect x="8" y="4" width="3" height="2" fill="#5f7f42"/>
+    <rect x="21" y="4" width="3" height="2" fill="#6d8a45"/>
+    <path d="M1 9 6 8 9 10" stroke="#256058" stroke-width="1" fill="none" opacity="0.3"/>
+  </g>
+  <!-- quadro 2: juncos e lama -->
+  <g transform="translate(64 0)">
+    <path d="M0 1 6 3 11 1 16 5 22 2 27 5 32 2 32 9 26 11 21 9 16 13 11 10 6 12 2 10 0 10z" fill="#4a3c28"/>
+    <path d="M0 2 6 5 12 2 17 6 22 3 27 6 32 3 32 7 26 9 21 7 16 11 11 8 6 10 2 8 0 8z" fill="#6d5a3a"/>
+    <path d="M5 4 4 0 6 3z" fill="#3f7d57"/>
+    <path d="M8 5 8 0 10 4z" fill="#4a8a5c"/>
+    <path d="M12 3 13 0 14 4z" fill="#3f7d57"/>
+    <path d="M16 5 17 1 18 5z" fill="#4a8a5c"/>
+    <path d="M21 4 22 0 23 4z" fill="#3f7d57"/>
+    <path d="M26 4 27 0 28 5z" fill="#4a8a5c"/>
+    <path d="M29 6 31 2 31 7z" fill="#3f7d57"/>
+    <rect x="3" y="6" width="4" height="2" fill="#5f7f42"/>
+    <rect x="14" y="7" width="4" height="2" fill="#6d8a45"/>
+    <rect x="23" y="6" width="4" height="2" fill="#5f7f42"/>
+    <path d="M0 9 6 8 10 10" stroke="#256058" stroke-width="1" fill="none" opacity="0.35"/>
+  </g>
+  <!-- quadro 3: barranco musgoso com seixos -->
+  <g transform="translate(96 0)">
+    <path d="M1 0 8 3 14 1 20 4 26 2 31 4 32 1 32 8 28 12 24 9 20 13 16 10 12 13 8 10 4 12 1 9z" fill="#3d3322"/>
+    <path d="M2 2 8 5 14 3 20 6 26 4 31 6 32 3 32 7 27 9 22 7 18 11 14 8 10 11 6 8 3 10 2 8z" fill="#566b3e"/>
+    <path d="M5 3 8 1 11 4 8 6z" fill="#6d8a45"/>
+    <path d="M14 2 17 0 20 3 17 5z" fill="#7d9a52"/>
+    <path d="M24 3 27 1 30 4 27 6z" fill="#6d8a45"/>
+    <rect x="9" y="6" width="4" height="2" fill="#8fa898"/>
+    <rect x="19" y="7" width="3" height="2" fill="#7c9486"/>
+    <rect x="26" y="6" width="3" height="2" fill="#8fa898"/>
+    <rect x="4" y="11" width="2" height="3" fill="#4a3322"/>
+    <path d="M2 9 7 8 10 10" stroke="#256058" stroke-width="1" fill="none" opacity="0.3"/>
+  </g>
+</svg>

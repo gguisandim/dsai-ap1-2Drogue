@@ -63,22 +63,50 @@ function effectUnit(effectId: string, index: number, channel: string): number {
   return (hash >>> 0) / 0xffffffff;
 }
 
+interface TileVisualContext {
+  readonly shoreline?: boolean;
+  readonly waterBand?: 0 | 1 | 2;
+}
+
 function selectVisual(
   presentation: ResolvedStagePresentation,
   logicalId: StageLogicalTileId,
   x: number,
   y: number,
-  shoreline = false,
+  context: TileVisualContext = {},
 ): ResolvedStageTexture {
   const tile = presentation.tiles[logicalId];
-  if (logicalId === 'floor' && presentation.themeId.startsWith('theme.aguas.igapo')) {
+  const igapo = presentation.themeId.startsWith('theme.aguas.igapo');
+  if (logicalId === 'floor' && igapo) {
     const choices: readonly ResolvedStageTexture[] = [tile, ...tile.variants];
+    // The first half of the Igapó floor variants is dry bank; the second half
+    // is wet mud and leaf litter used on tiles that touch water.
+    if (choices.length >= 6) {
+      if (context.shoreline) {
+        const wet = choices.slice(3);
+        return wet[hashVariant(
+          presentation.themeId, logicalId, Math.floor(x / 2), Math.floor(y / 2),
+        ) % wet.length];
+      }
+      const dry = choices.slice(0, 3);
+      return dry[hashVariant(
+        presentation.themeId, logicalId, Math.floor(x / 3), Math.floor(y / 2),
+      ) % dry.length];
+    }
     return choices[hashVariant(
       presentation.themeId, logicalId, Math.floor(x / 3), Math.floor(y / 2),
     ) % choices.length];
   }
   if (logicalId === 'water' && tile.variants.length > 0) {
-    if (shoreline) return tile.variants[0];
+    if (igapo) {
+      if (context.waterBand === 0) return tile.variants[0];
+      if (context.waterBand === 1) return tile.variants[1] ?? tile;
+      const deep: readonly ResolvedStageTexture[] = [tile, ...tile.variants.slice(2)];
+      return deep[hashVariant(
+        presentation.themeId, logicalId, Math.floor(x / 4), Math.floor(y / 3),
+      ) % deep.length];
+    }
+    if (context.shoreline) return tile.variants[0];
     const patch = hashVariant(presentation.themeId, logicalId, Math.floor(x / 4), Math.floor(y / 3)) % 5;
     return patch === 0 ? tile.variants[2] ?? tile : tile;
   }
@@ -86,13 +114,38 @@ function selectVisual(
   return choices[hashVariant(presentation.themeId, logicalId, x, y) % choices.length];
 }
 
-function isShorelineWater(tileMap: readonly (readonly number[])[], x: number, y: number): boolean {
+function touchesTile(
+  tileMap: readonly (readonly number[])[],
+  x: number,
+  y: number,
+  value: number,
+): boolean {
   for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
     for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
-      if (tileMap[y + offsetY]?.[x + offsetX] === 0) return true;
+      if (tileMap[y + offsetY]?.[x + offsetX] === value) return true;
     }
   }
   return false;
+}
+
+/**
+ * 0 = shallow water touching land, 1 = mid channel two or three tiles away,
+ * 2 = deep channel. Purely visual: collision keeps consuming `water` tiles.
+ */
+function waterBand(
+  tileMap: readonly (readonly number[])[],
+  x: number,
+  y: number,
+): 0 | 1 | 2 {
+  for (let radius = 1; radius <= 3; radius += 1) {
+    for (let offsetY = -radius; offsetY <= radius; offsetY += 1) {
+      for (let offsetX = -radius; offsetX <= radius; offsetX += 1) {
+        if (Math.max(Math.abs(offsetX), Math.abs(offsetY)) !== radius) continue;
+        if (tileMap[y + offsetY]?.[x + offsetX] === 0) return radius === 1 ? 0 : 1;
+      }
+    }
+  }
+  return 2;
 }
 
 function applyVisual<T extends Phaser.GameObjects.Image | Phaser.Physics.Arcade.Sprite>(
@@ -162,7 +215,9 @@ export class StageMapRenderer {
     } else level.tileMap.forEach((row, y) => row.forEach((tileValue, x) => {
       const posX = x * tileSize + tileSize / 2;
       const posY = y * tileSize + tileSize / 2;
-      const floorVisual = selectVisual(presentation, 'floor', x, y);
+      const floorVisual = selectVisual(presentation, 'floor', x, y, {
+        shoreline: touchesTile(level.tileMap, x, y, 3),
+      });
       const floor = addVisualImage(scene, posX, posY, floorVisual)
         .setDisplaySize(tileSize, tileSize)
         .setDepth(-2);
@@ -172,7 +227,9 @@ export class StageMapRenderer {
       if (tileValue >= 1 && tileValue <= 3 && logicalId) {
         const visual = selectVisual(
           presentation, logicalId, x, y,
-          logicalId === 'water' && isShorelineWater(level.tileMap, x, y),
+          logicalId === 'water'
+            ? { waterBand: waterBand(level.tileMap, x, y) }
+            : { shoreline: touchesTile(level.tileMap, x, y, 3) },
         );
         const obstacle = (visual.frame !== undefined
           ? collisionGroup.create(posX, posY, visual.textureKey, visual.frame)
@@ -217,7 +274,8 @@ export class StageMapRenderer {
       image.setDepth(placement.depth ?? (placement.layer ? LAYER_DEPTH[placement.layer] : definition.depth));
       image.setScale(placement.scale ?? definition.defaultScale);
       if (placement.rotation !== undefined) image.setRotation(placement.rotation);
-      if (placement.tint !== undefined) image.setTint(placement.tint);
+      const tint = placement.tint ?? definition.tint;
+      if (tint !== undefined) image.setTint(tint);
       if (placement.alpha !== undefined) image.setAlpha(placement.alpha);
       if (placement.flipX) image.setFlipX(true);
       if (placement.flipY) image.setFlipY(true);
@@ -316,12 +374,16 @@ export class StageMapRenderer {
             const tileValue = level.tileMap[y][x];
             const drawX = localX * tileSize + tileSize / 2;
             const drawY = localY * tileSize + tileSize / 2;
-            draw(target, selectVisual(presentation, 'floor', x, y), drawX, drawY);
+            draw(target, selectVisual(presentation, 'floor', x, y, {
+              shoreline: touchesTile(level.tileMap, x, y, 3),
+            }), drawX, drawY);
             const logicalId = TILE_LOGICAL_IDS[tileValue];
             if (tileValue >= 1 && tileValue <= 3 && logicalId) {
               draw(target, selectVisual(
                 presentation, logicalId, x, y,
-                logicalId === 'water' && isShorelineWater(level.tileMap, x, y),
+                logicalId === 'water'
+                  ? { waterBand: waterBand(level.tileMap, x, y) }
+                  : {},
               ), drawX, drawY);
             } else if (tileValue === 4) {
               draw(target, selectVisual(presentation, 'lava', x, y), drawX, drawY);
@@ -351,7 +413,10 @@ export class StageMapRenderer {
         if (blocked || runStart < 0) continue;
         const runLength = x - runStart;
         const logicalId = TILE_LOGICAL_IDS[row[runStart]];
-        const visual = selectVisual(presentation, logicalId, runStart, y);
+        const visual = selectVisual(
+          presentation, logicalId, runStart, y,
+          logicalId === 'water' ? { waterBand: waterBand(level.tileMap, runStart, y) } : {},
+        );
         const obstacle = (visual.frame !== undefined
           ? collisionGroup.create(
               (runStart + runLength / 2) * tileSize,
@@ -397,7 +462,11 @@ export class StageMapRenderer {
           tile === 3 ? [{ x, y }] : []));
         const maximum = Math.min(effect.count ?? 24, waterTiles.length);
         for (let index = 0; index < maximum; index += 1) {
-          const tile = waterTiles[Math.floor(index * waterTiles.length / Math.max(1, maximum))];
+          // Hash selection avoids the regular screen-space striping produced by
+          // evenly stepping through the water tile list.
+          const tile = waterTiles[
+            Math.floor(effectUnit(effect.id, index, 'tile') * waterTiles.length) % waterTiles.length
+          ];
           const shimmer = scene.add.rectangle(
             tileCenter(tile.x), tileCenter(tile.y), tileSize * 0.72, 2,
             effect.color, effect.alpha * (0.55 + effectUnit(effect.id, index, 'alpha') * 0.45),

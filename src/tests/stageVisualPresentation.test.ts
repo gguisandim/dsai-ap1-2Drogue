@@ -8,6 +8,7 @@ import {
   IGAPO_DAS_MEMORIAS_STAGE,
   IGAPO_AUDIO_PROFILE_ID,
   IGAPO_ENVIRONMENT_ID,
+  IGAPO_SCENERY_IDS,
   IGAPO_VISUAL_THEME_ID,
   IGAPO_VISUAL_TILESET_ID,
   LEGACY_RESOLVED_STAGE_PRESENTATION,
@@ -107,18 +108,24 @@ describe('declarative stage visual presentation', () => {
       tilesetId: IGAPO_VISUAL_TILESET_ID,
       tileSize: 32,
     });
-    expect(Object.keys(loaded.presentation.decorations).sort()).toEqual([
-      'igapo_broad_tree', 'igapo_canopy_high', 'igapo_canopy_shadow',
-      'igapo_coconut_palm', 'igapo_emergent_tree', 'igapo_emergent_tree_dark',
-      'igapo_emergent_tree_variant', 'igapo_landmark_canoe',
-      'igapo_landmark_drowned_tree', 'igapo_landmark_fallen_trunk',
+    const decorationIds = Object.keys(loaded.presentation.decorations);
+    expect(decorationIds.sort()).toEqual(expect.arrayContaining([
+      IGAPO_SCENERY_IDS.floodedTree,
+      IGAPO_SCENERY_IDS.palmCluster,
+      IGAPO_SCENERY_IDS.rootTangle,
+      ...IGAPO_SCENERY_IDS.lily,
+      ...IGAPO_SCENERY_IDS.shore,
+      ...IGAPO_SCENERY_IDS.moss,
+      IGAPO_SCENERY_IDS.canopyBough,
+      IGAPO_SCENERY_IDS.lightShaft,
+      IGAPO_SCENERY_IDS.canopyShadow,
+      'igapo_landmark_canoe', 'igapo_landmark_drowned_tree',
       'igapo_landmark_old_arch', 'igapo_landmark_palm_island',
-      'igapo_landmark_stone_garden', 'igapo_palm', 'igapo_pebble',
-      'igapo_reeds', 'igapo_round_tree', 'igapo_shrub', 'igapo_stone',
       'igapo_waterweed',
-    ].sort());
-    expect(loaded.presentation.decorations.igapo_emergent_tree).toMatchObject({
-      layer: 'foreground', depth: 4.2,
+    ]));
+    expect(decorationIds.length).toBeGreaterThan(20);
+    expect(loaded.presentation.decorations[IGAPO_SCENERY_IDS.floodedTree]).toMatchObject({
+      layer: 'foreground', depth: 4.35,
     });
   });
 
@@ -252,11 +259,11 @@ describe('declarative stage visual presentation', () => {
     const level = {
       ...loaded.level,
       decorations: [
-        { type: 'igapo_emergent_tree', x: 2, y: 2, visible: false },
+        { type: IGAPO_SCENERY_IDS.floodedTree, x: 2, y: 2, visible: false },
         { type: 'igapo_reeds', x: 3, y: 3, layer: 'background' as const },
-        { type: 'igapo_stone', x: 4, y: 4, depth: 9, scale: 1.4, rotation: 0.3 },
+        { type: IGAPO_SCENERY_IDS.lily[0], x: 4, y: 4, depth: 9, scale: 1.4, rotation: 0.3 },
         {
-          type: 'igapo_stone', x: 5, y: 5, depth: 9.5, alpha: 0.72,
+          type: IGAPO_SCENERY_IDS.moss[0], x: 5, y: 5, depth: 9.5, alpha: 0.72,
           flipX: true, flipY: true, originX: 0.25, originY: 0.75,
         },
       ],

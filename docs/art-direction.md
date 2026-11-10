@@ -101,10 +101,34 @@ pedras e raízes escurecidas, água verde-azulada, ambiente `#14343a` e névoa
 `#0a2026`. O clima é mais opressivo, mas saídas, atores e ameaças continuam
 legíveis. Escurecer não significa remover contraste.
 
+### Polimento ambiental de 2026-11-10
+
+A composição passou a ser um arquipélago alagado: a água domina o interior, as
+ilhas têm margens erodidas por ruído determinístico e a rota principal é uma
+passarela natural entre canais. A direção completa está em
+`SPEC/2026-11-10-polimento-ambiental-igapo-das-memorias.md`.
+
+- O piso usa dois tiles contínuos (musgo seco e chão alagado) de baixo
+  contraste; o renderer escolhe o tile molhado apenas nos tiles que tocam água.
+- A água é dividida em três faixas visuais (rasa, média e profunda) e nenhuma
+  delas altera colisão ou passabilidade.
+- A emenda ortogonal é coberta por franjas de margem, raízes e vegetação
+  aquática em camadas de terreno, sem física.
+- Árvores emersas, moitas de palmeiras, troncos submersos, palafitas, estelas,
+  vitórias-régias e galhos de primeiro plano são SVGs originais do projeto,
+  documentados em `src/assets/aguas/README.md`. O pack Puny permanece para
+  acentos, juncos, pedras e árvores de copa intermediária.
+- A variante Sombrio reutiliza as mesmas silhuetas com tint frio declarado na
+  definição da decoração; o mapa, os pontos de gameplay e as colisões são os
+  mesmos da variante Ribeirinho.
+
 ### Assets e licença
 
 - **Puny World (16×16)**, Shade, CC0 — terreno, água, árvores, raízes,
   vegetação e arco. Fonte: <https://opengameart.org/content/16x16-puny-world-tileset>.
+- **Arte original do Igapó** — SVGs autorais listados em
+  `src/assets/aguas/README.md`, com dimensões, uso e SHA-256; nenhum asset de
+  terceiro foi adicionado para o polimento ambiental.
 - **Puny Characters (free edition)**, Shade, CC0 — NPC e fontes dos inimigos.
   Fonte: <https://opengameart.org/content/puny-characters>.
 

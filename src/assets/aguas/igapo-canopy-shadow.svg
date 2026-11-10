@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="48" viewBox="0 0 96 48">
+  <!-- Igapó das Memórias — sombra suave de copa. Sobreposição no terreno. -->
+  <defs>
+    <radialGradient id="shade" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#0b1f18" stop-opacity="0.5"/>
+      <stop offset="0.55" stop-color="#0b1f18" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#0b1f18" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="48" cy="24" rx="46" ry="22" fill="url(#shade)"/>
+  <ellipse cx="34" cy="20" rx="20" ry="10" fill="url(#shade)" opacity="0.5"/>
+  <ellipse cx="64" cy="28" rx="22" ry="10" fill="url(#shade)" opacity="0.45"/>
+</svg>

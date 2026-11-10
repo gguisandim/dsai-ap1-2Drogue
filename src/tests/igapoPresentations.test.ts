@@ -16,6 +16,7 @@ import {
   IGAPO_CANOA_TEXTURE_ID,
   IGAPO_CANOA_TEXTURE_KEY,
   IGAPO_LANDMARK_DECORATION_IDS,
+  IGAPO_SCENERY_IDS,
   IGAPO_SOMBRIO_EFFECTS,
 } from '../stages/chapters/aguas/igapoVisuals';
 
@@ -51,6 +52,8 @@ interface FakeVisual {
   setScale(): this;
   setRotation(): this;
   setOrigin(): this;
+  setFlipX(): this;
+  setFlipY(): this;
   setPosition(x: number, y: number): this;
   setTexture(textureKey: string, frame?: number): this;
   clearTint(): this;
@@ -75,6 +78,8 @@ function renderSurface(level: Parameters<StageMapRenderer['render']>[1],
       setScale() { return this; },
       setRotation() { return this; },
       setOrigin() { return this; },
+      setFlipX() { return this; },
+      setFlipY() { return this; },
       setPosition(nextX, nextY) { this.x = nextX; this.y = nextY; return this; },
       setTexture(nextTextureKey, nextFrame) {
         this.textureKey = nextTextureKey; this.frame = nextFrame; return this;
@@ -207,28 +212,71 @@ describe('Igapó A/B presentations over one logical stage', () => {
     });
     expect(placements.filter(item =>
       item.type === IGAPO_LANDMARK_DECORATION_IDS.stoneGarden)).toHaveLength(5);
-    const landmarkTreeTypes = new Set([
-      'igapo_emergent_tree', 'igapo_emergent_tree_variant', 'igapo_emergent_tree_dark',
-      'igapo_round_tree', 'igapo_broad_tree',
-    ]);
-    expect(placements.filter(item =>
-      landmarkTreeTypes.has(item.type) && item.x >= 16 && item.x <= 19 &&
-      item.y >= 16 && item.y <= 20)).toHaveLength(4);
-    expect(placements.filter(item => item.type === 'igapo_palm' ||
-      item.type === 'igapo_coconut_palm').length).toBeLessThan(20);
+
+    // The flooded-forest scenery is present in every depth plane.
+    const scenery = [
+      IGAPO_SCENERY_IDS.floodedTree,
+      IGAPO_SCENERY_IDS.palmCluster,
+      IGAPO_SCENERY_IDS.rootTangle,
+      ...IGAPO_SCENERY_IDS.lily,
+      ...IGAPO_SCENERY_IDS.shore,
+      ...IGAPO_SCENERY_IDS.moss,
+      IGAPO_SCENERY_IDS.canopyBough,
+      IGAPO_SCENERY_IDS.lightShaft,
+      IGAPO_SCENERY_IDS.canopyShadow,
+    ];
+    scenery.forEach(id => {
+      expect(ribeirinho.presentation?.decorations[id]).toBeDefined();
+      const resolvedId = sombrio.presentation?.decorationOverrides?.[id] ?? id;
+      expect(sombrio.presentation?.decorations[resolvedId]).toBeDefined();
+    });
+    scenery.forEach(id => expect(placements.some(item => item.type === id)).toBe(true));
+
+    const map = ribeirinho.level.tileMap;
+    const flat = map.flat();
+    expect(flat.filter(value => value === 3).length).toBeGreaterThan(1_300);
+    const interior = map.slice(1, -1).flat();
+    expect(interior.filter(value => value === 3).length / interior.length)
+      .toBeGreaterThanOrEqual(0.5);
+    expect(flat.filter(value => value === 2).length).toBeGreaterThan(20);
+
     expect(placements.some(item => item.type === 'igapo_waterweed')).toBe(true);
     const markedPollution = placements.filter(item =>
       item.type === 'igapo_waterweed' && item.scale === 3.1);
     expect(markedPollution).toHaveLength(4);
     markedPollution.forEach(item => {
-      expect(ribeirinho.level.tileMap[item.y][item.x]).toBe(3);
+      expect(map[item.y][item.x]).toBe(3);
     });
     expect(sombrio.presentation?.decorationOverrides?.igapo_waterweed)
       .toBe('igapo_sombrio_oil_slick');
     expect(IGAPO_SOMBRIO_EFFECTS.some(effect => effect.id === 'effect.aguas.sombrio.smoke'))
       .toBe(true);
-    expect(placements.length).toBeLessThan(250);
-    placements.forEach(item => {
+    expect(placements.length).toBeLessThan(1_100);
+
+    // Low ground cover and overlays may sit near a clearing; silhouettes that
+    // could hide an actor or an interaction may not.
+    const tallTypes = new Set([
+      IGAPO_SCENERY_IDS.floodedTree,
+      IGAPO_SCENERY_IDS.palmCluster,
+      IGAPO_SCENERY_IDS.rootTangle,
+      IGAPO_SCENERY_IDS.submergedTrunk,
+      IGAPO_SCENERY_IDS.canopyShadow,
+      IGAPO_SCENERY_IDS.canopyBough,
+      IGAPO_SCENERY_IDS.stiltHut,
+      IGAPO_SCENERY_IDS.memoryStela,
+      'igapo_emergent_tree', 'igapo_emergent_tree_variant', 'igapo_emergent_tree_dark',
+      'igapo_round_tree', 'igapo_broad_tree', 'igapo_palm', 'igapo_coconut_palm',
+      'igapo_shrub',
+      IGAPO_LANDMARK_DECORATION_IDS.drownedTree,
+      IGAPO_LANDMARK_DECORATION_IDS.oldArch,
+      IGAPO_LANDMARK_DECORATION_IDS.palmIsland,
+      IGAPO_LANDMARK_DECORATION_IDS.fallenTrunk,
+      IGAPO_LANDMARK_DECORATION_IDS.stiltHut,
+      IGAPO_LANDMARK_DECORATION_IDS.memoryStela,
+      IGAPO_LANDMARK_DECORATION_IDS.submergedTrunk,
+      IGAPO_LANDMARK_DECORATION_IDS.emergentGiant,
+    ]);
+    placements.filter(item => tallTypes.has(item.type)).forEach(item => {
       expect(clearings.some(([x, y]) =>
         Math.abs(item.x - x) <= 4 && Math.abs(item.y - y) <= 4)).toBe(false);
     });
@@ -248,20 +296,37 @@ describe('Igapó A/B presentations over one logical stage', () => {
     ]?.textureKey).toBe(IGAPO_CANOA_TEXTURE_KEY);
   });
 
-  it('renders coherent shallow shoreline and deeper channel water without changing collision geometry', () => {
+  it('renders shallow, mid and deep water plus wet banks without changing collision geometry', () => {
     const loaded = load(IGAPO_RIBEIRINHO_VARIANT_ID);
     const { level, presentation } = loaded;
     const map = level.tileMap;
-    let shoreline: { x: number; y: number } | undefined;
-    let channel: { x: number; y: number } | undefined;
+    const tileWithin = (x: number, y: number, radius: number, value: number): boolean => {
+      for (let offsetY = -radius; offsetY <= radius; offsetY += 1) {
+        for (let offsetX = -radius; offsetX <= radius; offsetX += 1) {
+          if (map[y + offsetY]?.[x + offsetX] === value) return true;
+        }
+      }
+      return false;
+    };
+    let shallow: { x: number; y: number } | undefined;
+    let mid: { x: number; y: number } | undefined;
+    let deep: { x: number; y: number } | undefined;
+    let wetBank: { x: number; y: number } | undefined;
+    let dryBank: { x: number; y: number } | undefined;
     map.forEach((row, y) => row.forEach((tile, x) => {
-      if (tile !== 3) return;
-      const touchesLand = [-1, 0, 1].some(offsetY =>
-        [-1, 0, 1].some(offsetX => map[y + offsetY]?.[x + offsetX] === 0));
-      if (touchesLand && !shoreline) shoreline = { x, y };
-      if (!touchesLand && !channel) channel = { x, y };
+      if (tile === 3) {
+        if (tileWithin(x, y, 1, 0) && !shallow) shallow = { x, y };
+        if (!tileWithin(x, y, 1, 0) && tileWithin(x, y, 3, 0) && !mid) mid = { x, y };
+        if (!tileWithin(x, y, 3, 0) && !deep) deep = { x, y };
+      }
+      if (tile === 0) {
+        if (tileWithin(x, y, 1, 3) && !wetBank) wetBank = { x, y };
+        if (!tileWithin(x, y, 3, 3) && !dryBank) dryBank = { x, y };
+      }
     }));
-    if (!shoreline || !channel || !presentation) throw new Error('Igapó shoreline samples are missing.');
+    if (!shallow || !mid || !deep || !wetBank || !dryBank || !presentation) {
+      throw new Error('Igapó water/floor samples are missing.');
+    }
 
     const logicalMap = map.map(row => [...row]);
     const rendered = renderSurface(level, presentation, true);
@@ -270,19 +335,24 @@ describe('Igapó A/B presentations over one logical stage', () => {
         .filter(item => item.x === point.x * 32 + 16 && item.y === point.y * 32 + 16);
       return tiles[tiles.length - 1];
     };
-    expect(visualAt(shoreline)?.frame).toBe(presentation.tiles.water.variants[0].frame);
-    expect(visualAt(channel)?.frame).not.toBe(presentation.tiles.water.variants[0].frame);
-    let floorPatch: { x: number; y: number } | undefined;
-    for (let y = 0; y < map.length && !floorPatch; y += 1) {
-      for (let x = 0; x < map[y].length - 1; x += 1) {
-        if (map[y][x] === 0 && map[y][x + 1] === 0 && Math.floor(x / 3) === Math.floor((x + 1) / 3)) {
-          floorPatch = { x, y };
-          break;
-        }
-      }
-    }
-    if (!floorPatch) throw new Error('Igapó floor patch samples are missing.');
-    expect(visualAt(floorPatch)?.frame).toBe(visualAt({ x: floorPatch.x + 1, y: floorPatch.y })?.frame);
+    expect(visualAt(shallow)?.frame).toBe(presentation.tiles.water.variants[0].frame);
+    expect(visualAt(mid)?.frame).toBe(presentation.tiles.water.variants[1].frame);
+    expect(visualAt(deep)?.frame).not.toBe(presentation.tiles.water.variants[0].frame);
+    expect(visualAt(deep)?.frame).not.toBe(presentation.tiles.water.variants[1].frame);
+
+    const wetFrames = new Set([
+      presentation.tiles.floor.variants[2].frame,
+      presentation.tiles.floor.variants[3].frame,
+      presentation.tiles.floor.variants[4].frame,
+    ]);
+    const dryFrames = new Set([
+      presentation.tiles.floor.frame,
+      presentation.tiles.floor.variants[0].frame,
+      presentation.tiles.floor.variants[1].frame,
+    ]);
+    expect(wetFrames.has(visualAt(wetBank)?.frame)).toBe(true);
+    expect(dryFrames.has(visualAt(dryBank)?.frame)).toBe(true);
+
     expect(level.tileMap).toEqual(logicalMap);
     expect(rendered.result.pendingExitTiles).toEqual([{ x: 91 * 32 + 16, y: 16 * 32 + 16 }]);
   });
@@ -295,7 +365,11 @@ describe('Igapó A/B presentations over one logical stage', () => {
     expect(batched.renderTextures).toHaveLength(12 * 4);
     expect(batched.result.pendingExitTiles).toEqual(legacy.result.pendingExitTiles);
     expect(batched.batchDrawCount).toBeGreaterThan(loaded.level.tileMap.length * loaded.level.tileMap[0].length);
-    expect(batched.result.images.length).toBeLessThan(legacy.result.images.length / 4);
+    // Tile images collapse into 48 cullable render textures; decorations remain
+    // individual display objects.
+    expect(batched.result.images.length)
+      .toBeLessThan(48 + loaded.level.decorations.length + 8);
+    expect(legacy.result.images.length).toBeGreaterThan(2_000);
     expect(batched.obstacles.length).toBeLessThan(legacy.obstacles.length / 4);
     expect(batched.obstacles.every(item => item.displaySize?.[1] === 32)).toBe(true);
     const covered = new Set<string>();

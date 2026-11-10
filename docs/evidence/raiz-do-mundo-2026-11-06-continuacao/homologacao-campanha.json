@@ -1,0 +1,3150 @@
+{
+  "schemaVersion": 1,
+  "kind": "umbra.campaign-homologation.report",
+  "campaignId": "campaign.umbra-trail.independent-routes",
+  "runId": "root-art-final-20261106",
+  "runSeed": "campaign.umbra-trail.route-slice.default-seed",
+  "originStageId": "stage.aguas.igapo-das-memorias",
+  "destinationStageId": "stage.aguas.coracao-corrompido",
+  "manifestRevision": 2,
+  "destinationManifestRevision": 1,
+  "result": "PASS",
+  "checks": [
+    {
+      "id": "campaign.start",
+      "code": "CAMPAIGN_STARTED",
+      "status": "PASS",
+      "required": true,
+      "message": "Campanha macro iniciada em stage.raiz-do-mundo.santuario.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.forest.trail",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Trilha dos Vestígios alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 28,
+        "y": 15
+      }
+    },
+    {
+      "id": "campaign.forest.first-combat",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Primeiro confronto alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 39,
+        "y": 18
+      }
+    },
+    {
+      "id": "campaign.forest.npc",
+      "code": "CAMPAIGN_NPC_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "NPC npc.raiz-do-mundo.keeper alcançado em Floresta das Raízes.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 54,
+        "y": 22
+      }
+    },
+    {
+      "id": "campaign.forest.dialogue.npc",
+      "code": "CAMPAIGN_DIALOGUE_COMPLETED",
+      "status": "PASS",
+      "required": true,
+      "message": "Diálogo de Floresta das Raízes foi concluído.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 54,
+        "y": 22
+      }
+    },
+    {
+      "id": "campaign.forest.combat",
+      "code": "CAMPAIGN_COMBAT_EXERCISED",
+      "status": "PASS",
+      "required": true,
+      "message": "Combate obrigatório de Floresta das Raízes foi exercitado.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.forest.mission",
+      "code": "CAMPAIGN_MISSION_COMPLETED",
+      "status": "PASS",
+      "required": true,
+      "message": "Missão mission.raiz-do-mundo.ouvir-raizes concluída no fluxo de campanha.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.forest.flag",
+      "code": "CAMPAIGN_FLAG_PRESERVED",
+      "status": "PASS",
+      "required": true,
+      "message": "Flag flag.raiz-do-mundo.passagem-das-aguas-aberta foi atualizada no runtime.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.forest.sanctuary-approach",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "A aproximação do santuário foi alcançada.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 72,
+        "y": 18
+      }
+    },
+    {
+      "id": "campaign.forest.ancestral-tree",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "A grande árvore ancestral foi alcançada.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 80,
+        "y": 18
+      }
+    },
+    {
+      "id": "campaign.forest.waters-passage",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "A passagem das águas foi alcançada.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 104,
+        "y": 18
+      }
+    },
+    {
+      "id": "campaign.hub.transition",
+      "code": "CAMPAIGN_HUB_TRANSITION",
+      "status": "PASS",
+      "required": true,
+      "message": "Hub stage.raiz-do-mundo.santuario avançou para stage.aguas.igapo-das-memorias.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.igapo.npc",
+      "code": "CAMPAIGN_NPC_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "NPC npc.aguas.igapo.memory-vestige alcançado em Igapó das Memórias.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 28,
+        "y": 16
+      }
+    },
+    {
+      "id": "campaign.igapo.dialogue.npc",
+      "code": "CAMPAIGN_DIALOGUE_COMPLETED",
+      "status": "PASS",
+      "required": true,
+      "message": "Diálogo de Igapó das Memórias foi concluído.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 28,
+        "y": 16
+      }
+    },
+    {
+      "id": "campaign.igapo.mission",
+      "code": "CAMPAIGN_MISSION_COMPLETED",
+      "status": "PASS",
+      "required": true,
+      "message": "Missão mission.aguas.igapo.trace-corruption concluída no fluxo de campanha.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.igapo.flag",
+      "code": "CAMPAIGN_FLAG_PRESERVED",
+      "status": "PASS",
+      "required": true,
+      "message": "Flag flag.aguas.igapo.corruption-found foi atualizada no runtime.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.exit.triggered",
+      "code": "CAMPAIGN_EXIT_TRIGGERED",
+      "status": "PASS",
+      "required": true,
+      "message": "Saída physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main acionada pelo runtime.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.route.resolved",
+      "code": "CAMPAIGN_ROUTE_RESOLVED",
+      "status": "PASS",
+      "required": true,
+      "message": "Rota edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main resolveu stage.aguas.igapo-das-memorias → stage.aguas.coracao-corrompido.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.destination.loaded",
+      "code": "CAMPAIGN_DESTINATION_LOADED",
+      "status": "PASS",
+      "required": true,
+      "message": "Destino stage.aguas.coracao-corrompido carregado no Phaser.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.destination.verified",
+      "code": "CAMPAIGN_DESTINATION_LOADED",
+      "status": "PASS",
+      "required": true,
+      "message": "Destino stage.aguas.coracao-corrompido carregado no Phaser.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.destination.spawn",
+      "code": "CAMPAIGN_SPAWN_VALID",
+      "status": "PASS",
+      "required": true,
+      "message": "Jogador nasceu a 0px do spawn do destino.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 4,
+        "y": 16
+      }
+    },
+    {
+      "id": "campaign.destination.movement",
+      "code": "CAMPAIGN_PLAYER_MOVED",
+      "status": "PASS",
+      "required": true,
+      "message": "O jogador se movimentou no cenário de destino.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.destination.camera",
+      "code": "CAMPAIGN_CAMERA_BOUNDS",
+      "status": "PASS",
+      "required": true,
+      "message": "Câmera do destino usa limites 2816×960.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.state.preserved",
+      "code": "CAMPAIGN_STATE_PRESERVED",
+      "status": "PASS",
+      "required": true,
+      "message": "Histórico, recompensas e progresso macro foram preservados após a transição.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.transition.duplicated",
+      "code": "CAMPAIGN_TRANSITION_UNIQUE",
+      "status": "PASS",
+      "required": true,
+      "message": "A transição foi confirmada uma única vez.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.state.isolated",
+      "code": "CAMPAIGN_STATE_ISOLATED",
+      "status": "PASS",
+      "required": true,
+      "message": "Flags, missões, NPCs e inimigos do Igapó não contaminaram o destino.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.persistence.origin-save",
+      "code": "CAMPAIGN_ORIGIN_SAVE_PRESENT",
+      "status": "PASS",
+      "required": false,
+      "message": "O save narrativo do Igapó permanece no armazenamento da campanha.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.return",
+      "code": "CAMPAIGN_RETURN_UNVERIFIED",
+      "status": "UNKNOWN",
+      "required": false,
+      "message": "Nenhuma saída de retorno disponível foi observada no destino.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "campaign.resources",
+      "code": "CAMPAIGN_RESOURCES_PRESERVED",
+      "status": "PASS",
+      "required": false,
+      "message": "Recursos preservados (halos 5511 → 5610).",
+      "evidence": "phaser-runtime"
+    }
+  ],
+  "transitions": [
+    {
+      "role": "hub",
+      "originStageId": "stage.raiz-do-mundo.santuario",
+      "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+      "stageExitId": "exit.raiz-do-mundo.to-igapo",
+      "edgeId": "edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+      "targetNodeId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+      "destinationStageId": "stage.aguas.igapo-das-memorias",
+      "expectedDestination": "stage.aguas.igapo-das-memorias",
+      "available": true,
+      "loadedDestinationStageId": "stage.aguas.igapo-das-memorias",
+      "loaded": true,
+      "reason": "transition",
+      "stateBefore": {
+        "currentNodeId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main",
+        "currentStageId": "stage.raiz-do-mundo.santuario",
+        "visitedNodeIds": [
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main"
+        ],
+        "confirmedTransitionIds": [],
+        "rewards": [],
+        "macroLocation": {
+          "hubId": "hub.floresta-das-raizes",
+          "kind": "hub"
+        },
+        "availableDestinations": [
+          "stage.aguas.igapo-das-memorias"
+        ]
+      },
+      "stateAfter": {
+        "currentNodeId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+        "currentStageId": "stage.aguas.igapo-das-memorias",
+        "visitedNodeIds": [
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main",
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main"
+        ],
+        "confirmedTransitionIds": [
+          "transition.de0db98b"
+        ],
+        "rewards": [
+          {
+            "transitionId": "transition.de0db98b",
+            "stageId": "stage.raiz-do-mundo.santuario",
+            "stageInstanceId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main",
+            "status": "applied"
+          }
+        ],
+        "macroLocation": {
+          "kind": "route",
+          "regionId": "region.aguas.igapo",
+          "routeId": "route.aguas"
+        },
+        "availableDestinations": []
+      },
+      "events": [
+        "transition-confirmed",
+        "destination-loaded"
+      ]
+    },
+    {
+      "role": "primary",
+      "originStageId": "stage.aguas.igapo-das-memorias",
+      "physicalExitId": "physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "stageExitId": "exit.aguas.igapo.enter-corrupted-heart",
+      "edgeId": "edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "targetNodeId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "destinationStageId": "stage.aguas.coracao-corrompido",
+      "expectedDestination": "stage.aguas.coracao-corrompido",
+      "available": true,
+      "loadedDestinationStageId": "stage.aguas.coracao-corrompido",
+      "loaded": true,
+      "reason": "transition",
+      "stateBefore": {
+        "currentNodeId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+        "currentStageId": "stage.aguas.igapo-das-memorias",
+        "visitedNodeIds": [
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main",
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main"
+        ],
+        "confirmedTransitionIds": [
+          "transition.de0db98b"
+        ],
+        "rewards": [
+          {
+            "transitionId": "transition.de0db98b",
+            "stageId": "stage.raiz-do-mundo.santuario",
+            "stageInstanceId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main",
+            "status": "applied"
+          }
+        ],
+        "macroLocation": {
+          "kind": "route",
+          "regionId": "region.aguas.igapo",
+          "routeId": "route.aguas"
+        },
+        "availableDestinations": [
+          "stage.aguas.coracao-corrompido"
+        ]
+      },
+      "stateAfter": {
+        "currentNodeId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+        "currentStageId": "stage.aguas.coracao-corrompido",
+        "visitedNodeIds": [
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main",
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main"
+        ],
+        "confirmedTransitionIds": [
+          "transition.de0db98b",
+          "transition.60b24737"
+        ],
+        "rewards": [
+          {
+            "transitionId": "transition.60b24737",
+            "stageId": "stage.aguas.igapo-das-memorias",
+            "stageInstanceId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+            "status": "applied"
+          },
+          {
+            "transitionId": "transition.de0db98b",
+            "stageId": "stage.raiz-do-mundo.santuario",
+            "stageInstanceId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main",
+            "status": "applied"
+          }
+        ],
+        "macroLocation": {
+          "kind": "route",
+          "regionId": "region.aguas.igapo",
+          "routeId": "route.aguas"
+        },
+        "availableDestinations": []
+      },
+      "events": [
+        "transition-confirmed",
+        "destination-loaded"
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "stageId": "stage.raiz-do-mundo.santuario",
+      "role": "hub",
+      "loaded": true
+    },
+    {
+      "stageId": "stage.aguas.igapo-das-memorias",
+      "role": "origin",
+      "loaded": true,
+      "player": {
+        "x": 144,
+        "y": 528
+      },
+      "camera": {
+        "width": 2816,
+        "height": 960
+      }
+    },
+    {
+      "stageId": "stage.aguas.coracao-corrompido",
+      "role": "destination",
+      "loaded": true,
+      "player": {
+        "x": 144,
+        "y": 528
+      },
+      "spawn": {
+        "x": 4,
+        "y": 16
+      },
+      "spawnDistance": 0,
+      "movement": {
+        "before": {
+          "x": 144,
+          "y": 528
+        },
+        "after": {
+          "x": 397,
+          "y": 528
+        },
+        "moved": true
+      },
+      "cameraValid": true
+    }
+  ],
+  "persistence": {
+    "campaign": {
+      "before": {
+        "currentNodeId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+        "currentStageId": "stage.aguas.igapo-das-memorias",
+        "visitedNodeIds": [
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main",
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main"
+        ],
+        "confirmedTransitionIds": [
+          "transition.de0db98b"
+        ],
+        "rewards": [
+          {
+            "transitionId": "transition.de0db98b",
+            "stageId": "stage.raiz-do-mundo.santuario",
+            "stageInstanceId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main",
+            "status": "applied"
+          }
+        ],
+        "macroLocation": {
+          "kind": "route",
+          "regionId": "region.aguas.igapo",
+          "routeId": "route.aguas"
+        },
+        "availableDestinations": [
+          "stage.aguas.coracao-corrompido"
+        ]
+      },
+      "after": {
+        "currentNodeId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+        "currentStageId": "stage.aguas.coracao-corrompido",
+        "visitedNodeIds": [
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main",
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+          "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main"
+        ],
+        "confirmedTransitionIds": [
+          "transition.de0db98b",
+          "transition.60b24737"
+        ],
+        "rewards": [
+          {
+            "transitionId": "transition.60b24737",
+            "stageId": "stage.aguas.igapo-das-memorias",
+            "stageInstanceId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+            "status": "applied"
+          },
+          {
+            "transitionId": "transition.de0db98b",
+            "stageId": "stage.raiz-do-mundo.santuario",
+            "stageInstanceId": "node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main",
+            "status": "applied"
+          }
+        ],
+        "macroLocation": {
+          "kind": "route",
+          "regionId": "region.aguas.igapo",
+          "routeId": "route.aguas"
+        },
+        "availableDestinations": []
+      }
+    },
+    "narrative": {
+      "origin": {
+        "flags": {
+          "flag.aguas.igapo.corruption-found": true,
+          "flag.aguas.igapo.eco-das-aguas-seen": true
+        },
+        "missionStates": {
+          "mission.aguas.igapo.trace-corruption": {
+            "status": "completed",
+            "objectives": {
+              "objective.aguas.igapo.reach-vestige": 1
+            }
+          }
+        }
+      },
+      "destination": {
+        "flags": {
+          "flag.aguas.coracao-corrompido.cleansed": false
+        },
+        "missionStates": {
+          "mission.aguas.coracao-corrompido.break-the-source": {
+            "status": "active",
+            "objectives": {
+              "objective.aguas.coracao-corrompido.clear-encounter": 0
+            }
+          }
+        }
+      }
+    },
+    "resources": {
+      "before": {
+        "halos": 5511,
+        "magic": 100
+      },
+      "after": {
+        "halos": 5610,
+        "magic": 100
+      },
+      "preserved": true
+    },
+    "relevantStorageKeys": [
+      "umbra-trail-campaign-v1:root-art-final-20261106:chapter.aguas:stage.aguas.coracao-corrompido",
+      "umbra-trail-campaign-v1:root-art-final-20261106:chapter.aguas:stage.aguas.igapo-das-memorias",
+      "umbra-trail-campaign-v1:root-art-final-20261106:chapter.raiz-do-mundo:stage.raiz-do-mundo.santuario"
+    ],
+    "preserved": true,
+    "isolated": true,
+    "confirmedDelta": 1
+  },
+  "observations": [
+    {
+      "atMs": 39159,
+      "label": "campaign-start",
+      "player": {
+        "x": 176,
+        "y": 592,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 232
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": 0.9836422152792298,
+        "facingY": 0.18013326267119414,
+        "pointerX": 655.6999074826881,
+        "pointerY": 679.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 42242,
+      "label": "forest:trail",
+      "player": {
+        "x": 176,
+        "y": 592,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 232
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": 0.9836422152792298,
+        "facingY": 0.18013326267119414,
+        "pointerX": 655.6999074826881,
+        "pointerY": 679.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 43254,
+      "label": "forest:trail",
+      "player": {
+        "x": 320,
+        "y": 486,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 137
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": 0.9590858870330565,
+        "facingY": 0.28311527916030127,
+        "pointerX": 655.6999074826881,
+        "pointerY": 586.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 44287,
+      "label": "forest:trail",
+      "player": {
+        "x": 456,
+        "y": 493,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 135
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": 0.9162786633007132,
+        "facingY": 0.40054139758564083,
+        "pointerX": 655.6999074826881,
+        "pointerY": 583.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 45331,
+      "label": "forest:trail",
+      "player": {
+        "x": 632,
+        "y": 508,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 130
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": 0.3487020098563305,
+        "facingY": 0.9372336466016121,
+        "pointerX": 655.6999074826881,
+        "pointerY": 576.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 46380,
+      "label": "forest:trail",
+      "player": {
+        "x": 808,
+        "y": 486,
+        "hp": 6
+      },
+      "camera": {
+        "x": 124,
+        "y": 128
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.3003932172816358,
+        "facingY": 0.9538154512331973,
+        "pointerX": 775.6999074826881,
+        "pointerY": 576.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 47820,
+      "label": "forest:first-combat",
+      "player": {
+        "x": 922,
+        "y": 486,
+        "hp": 6
+      },
+      "camera": {
+        "x": 272,
+        "y": 126
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": 0.06710291788517415,
+        "facingY": 0.997746059080814,
+        "pointerX": 927.6999074826881,
+        "pointerY": 573.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 48880,
+      "label": "forest:first-combat",
+      "player": {
+        "x": 1071,
+        "y": 597,
+        "hp": 6
+      },
+      "camera": {
+        "x": 384,
+        "y": 213
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.4249852058613924,
+        "facingY": 0.9052002954037022,
+        "pointerX": 1034.699907482688,
+        "pointerY": 658.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 50171,
+      "label": "npc:npc.raiz-do-mundo.keeper",
+      "player": {
+        "x": 1261,
+        "y": 597,
+        "hp": 6
+      },
+      "camera": {
+        "x": 611,
+        "y": 228
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": 0.05976831568778279,
+        "facingY": 0.998212276241805,
+        "pointerX": 1265.699907482688,
+        "pointerY": 675.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 51182,
+      "label": "npc:npc.raiz-do-mundo.keeper",
+      "player": {
+        "x": 1471,
+        "y": 714,
+        "hp": 6
+      },
+      "camera": {
+        "x": 779,
+        "y": 349
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.4377095054103112,
+        "facingY": 0.8991164490061679,
+        "pointerX": 1429.699907482688,
+        "pointerY": 796.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 52188,
+      "label": "npc:npc.raiz-do-mundo.keeper",
+      "player": {
+        "x": 1652,
+        "y": 704,
+        "hp": 6
+      },
+      "camera": {
+        "x": 957,
+        "y": 349
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.3690249022820952,
+        "facingY": 0.9294195078088742,
+        "pointerX": 1607.699907482688,
+        "pointerY": 797.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 56576,
+      "label": "combat",
+      "player": {
+        "x": 1735,
+        "y": 733,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1086,
+        "y": 364
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": 0.08138293726811477,
+        "facingY": 0.9966829072085135,
+        "pointerX": 1741.699907482688,
+        "pointerY": 811.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 56603,
+      "label": "combat-approach",
+      "player": {
+        "x": 1735,
+        "y": 733,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1086,
+        "y": 364
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": 0.08138293726811477,
+        "facingY": 0.9966829072085135,
+        "pointerX": 1741.699907482688,
+        "pointerY": 811.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 57707,
+      "label": "combat-approach",
+      "player": {
+        "x": 1570,
+        "y": 704,
+        "hp": 6
+      },
+      "camera": {
+        "x": 974,
+        "y": 331
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": 0.6206011200545918,
+        "facingY": 0.7841264246197716,
+        "pointerX": 1634.699907482688,
+        "pointerY": 777.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 58749,
+      "label": "combat-approach",
+      "player": {
+        "x": 1373,
+        "y": 725,
+        "hp": 5
+      },
+      "camera": {
+        "x": 768,
+        "y": 362
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": 0.5530559224196583,
+        "facingY": 0.8331441331945758,
+        "pointerX": 1427.699907482688,
+        "pointerY": 810.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 59056,
+      "label": "combat",
+      "player": {
+        "x": 1414,
+        "y": 678,
+        "hp": 5
+      },
+      "camera": {
+        "x": 755,
+        "y": 337
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": 0.02625746612922251,
+        "facingY": 0.9996552132973012,
+        "pointerX": 1409.699907482688,
+        "pointerY": 787.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 59088,
+      "label": "combat-approach",
+      "player": {
+        "x": 1414,
+        "y": 678,
+        "hp": 5
+      },
+      "camera": {
+        "x": 756,
+        "y": 335
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.027333421378210404,
+        "facingY": 0.9996263722390286,
+        "pointerX": 1410.699907482688,
+        "pointerY": 784.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 60170,
+      "label": "combat-approach",
+      "player": {
+        "x": 1397,
+        "y": 712,
+        "hp": 5
+      },
+      "camera": {
+        "x": 717,
+        "y": 359
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.21484956455780052,
+        "facingY": 0.9766471546107752,
+        "pointerX": 1368.699907482688,
+        "pointerY": 807.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 60227,
+      "label": "combat",
+      "player": {
+        "x": 1410,
+        "y": 712,
+        "hp": 5
+      },
+      "camera": {
+        "x": 725,
+        "y": 357
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.2739934887052275,
+        "facingY": 0.9617315468191416,
+        "pointerX": 1376.699907482688,
+        "pointerY": 805.8468899521531
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 61308,
+      "label": "combat",
+      "player": {
+        "x": 1265,
+        "y": 773,
+        "hp": 5
+      },
+      "camera": {
+        "x": 646,
+        "y": 400
+      },
+      "enemies": 1,
+      "enemyHp": [
+        0.4000000000000128
+      ],
+      "aim": {
+        "facingX": 0.3912731926134271,
+        "facingY": 0.9202745724739416,
+        "pointerX": 1309.2932518433372,
+        "pointerY": 876.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 61340,
+      "label": "combat-approach",
+      "player": {
+        "x": 1265,
+        "y": 773,
+        "hp": 5
+      },
+      "camera": {
+        "x": 643,
+        "y": 401
+      },
+      "enemies": 1,
+      "enemyHp": [
+        0.4000000000000128
+      ],
+      "aim": {
+        "facingX": 0.36530558411678304,
+        "facingY": 0.9308876571386558,
+        "pointerX": 1306.2932518433372,
+        "pointerY": 877.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 62405,
+      "label": "combat-approach",
+      "player": {
+        "x": 1266,
+        "y": 773,
+        "hp": 5
+      },
+      "camera": {
+        "x": 625,
+        "y": 420
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.1553001907042332,
+        "facingY": 0.9878673244759281,
+        "pointerX": 1285.2932518433372,
+        "pointerY": 898.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 63512,
+      "label": "combat-approach",
+      "player": {
+        "x": 1266,
+        "y": 785,
+        "hp": 5
+      },
+      "camera": {
+        "x": 625,
+        "y": 425
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.17027574544654472,
+        "facingY": 0.9853964534706948,
+        "pointerX": 1285.2932518433372,
+        "pointerY": 903.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 64578,
+      "label": "combat-approach",
+      "player": {
+        "x": 1266,
+        "y": 792,
+        "hp": 5
+      },
+      "camera": {
+        "x": 625,
+        "y": 419
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.1766673736086168,
+        "facingY": 0.9842706127393185,
+        "pointerX": 1285.2932518433372,
+        "pointerY": 895.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 65488,
+      "label": "combat-approach",
+      "player": {
+        "x": 1266,
+        "y": 785,
+        "hp": 5
+      },
+      "camera": {
+        "x": 625,
+        "y": 425
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.1717424778015532,
+        "facingY": 0.98514187877614,
+        "pointerX": 1285.2932518433372,
+        "pointerY": 902.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 66374,
+      "label": "combat-approach-fallback",
+      "player": {
+        "x": 1266,
+        "y": 780,
+        "hp": 5
+      },
+      "camera": {
+        "x": 625,
+        "y": 421
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.16046775302060964,
+        "facingY": 0.9870410833600173,
+        "pointerX": 1285.2932518433372,
+        "pointerY": 899.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 67405,
+      "label": "combat-approach-fallback",
+      "player": {
+        "x": 1291,
+        "y": 737,
+        "hp": 5
+      },
+      "camera": {
+        "x": 630,
+        "y": 372
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": 0.020584701086899655,
+        "facingY": 0.9997881125924447,
+        "pointerX": 1288.2932518433372,
+        "pointerY": 849.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 68020,
+      "label": "combat",
+      "player": {
+        "x": 1370,
+        "y": 767,
+        "hp": 5
+      },
+      "camera": {
+        "x": 696,
+        "y": 398
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": -0.1562308407768009,
+        "facingY": 0.9877205699944565,
+        "pointerX": 1353.2932518433372,
+        "pointerY": 875.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 68049,
+      "label": "combat-approach",
+      "player": {
+        "x": 1370,
+        "y": 767,
+        "hp": 5
+      },
+      "camera": {
+        "x": 699,
+        "y": 398
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": -0.12899331018401647,
+        "facingY": 0.9916454638265483,
+        "pointerX": 1356.2932518433372,
+        "pointerY": 875.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 69030,
+      "label": "combat-approach",
+      "player": {
+        "x": 1485,
+        "y": 644,
+        "hp": 5
+      },
+      "camera": {
+        "x": 807,
+        "y": 312
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": -0.11859226607854857,
+        "facingY": 0.992943036848718,
+        "pointerX": 1463.2932518433372,
+        "pointerY": 793.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 69948,
+      "label": "combat-approach",
+      "player": {
+        "x": 1629,
+        "y": 653,
+        "hp": 5
+      },
+      "camera": {
+        "x": 940,
+        "y": 284
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": -0.24547475315154393,
+        "facingY": 0.969402984091337,
+        "pointerX": 1595.2932518433372,
+        "pointerY": 760.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 71021,
+      "label": "combat-approach",
+      "player": {
+        "x": 1814,
+        "y": 639,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1130,
+        "y": 287
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": -0.19763896992078367,
+        "facingY": 0.9802748785767447,
+        "pointerX": 1786.2932518433372,
+        "pointerY": 766.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 71996,
+      "label": "combat-approach",
+      "player": {
+        "x": 2002,
+        "y": 658,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1307,
+        "y": 289
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": -0.2945968496674201,
+        "facingY": 0.955621628138476,
+        "pointerX": 1961.2932518433372,
+        "pointerY": 766.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 72961,
+      "label": "combat-approach",
+      "player": {
+        "x": 2225,
+        "y": 658,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1554,
+        "y": 289
+      },
+      "enemies": 2,
+      "enemyHp": [
+        134.8,
+        130
+      ],
+      "aim": {
+        "facingX": -0.13157423789894582,
+        "facingY": 0.991306319924024,
+        "pointerX": 2214.293251843337,
+        "pointerY": 764.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 73176,
+      "label": "combat-approach-fallback",
+      "player": {
+        "x": 2181,
+        "y": 658,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1552,
+        "y": 289
+      },
+      "enemies": 2,
+      "enemyHp": [
+        134.8,
+        130
+      ],
+      "aim": {
+        "facingX": 0.2690591480082921,
+        "facingY": 0.9631236550272514,
+        "pointerX": 2214.293251843337,
+        "pointerY": 766.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 74197,
+      "label": "combat-approach-fallback",
+      "player": {
+        "x": 2223,
+        "y": 658,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1614,
+        "y": 289
+      },
+      "enemies": 2,
+      "enemyHp": [
+        109.60000000000001,
+        130
+      ],
+      "aim": {
+        "facingX": 0.40836537192267225,
+        "facingY": 0.9128185597447378,
+        "pointerX": 2278.293251843337,
+        "pointerY": 766.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 74260,
+      "label": "combat",
+      "player": {
+        "x": 2213,
+        "y": 658,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1606,
+        "y": 289
+      },
+      "enemies": 2,
+      "enemyHp": [
+        109.60000000000001,
+        130
+      ],
+      "aim": {
+        "facingX": 0.4239649550069576,
+        "facingY": 0.9056785947155582,
+        "pointerX": 2270.293251843337,
+        "pointerY": 766.7033492822966
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 75341,
+      "label": "combat",
+      "player": {
+        "x": 2355,
+        "y": 522,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1678,
+        "y": 190
+      },
+      "enemies": 1,
+      "enemyHp": [
+        130
+      ],
+      "aim": {
+        "facingX": 0.09511559210481005,
+        "facingY": 0.9954662345547192,
+        "pointerX": 2361.853318007233,
+        "pointerY": 590.1722488038278
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 75386,
+      "label": "combat-approach",
+      "player": {
+        "x": 2355,
+        "y": 522,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1681,
+        "y": 187
+      },
+      "enemies": 1,
+      "enemyHp": [
+        130
+      ],
+      "aim": {
+        "facingX": 0.16212421845949926,
+        "facingY": 0.9867703571697402,
+        "pointerX": 2365.853318007233,
+        "pointerY": 586.1722488038278
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 76364,
+      "label": "combat-approach",
+      "player": {
+        "x": 2419,
+        "y": 603,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1785,
+        "y": 246
+      },
+      "enemies": 1,
+      "enemyHp": [
+        27
+      ],
+      "aim": {
+        "facingX": 0.8135962950428975,
+        "facingY": 0.5814301924500227,
+        "pointerX": 2473.853318007233,
+        "pointerY": 643.1722488038278
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 76643,
+      "label": "combat",
+      "player": {
+        "x": 2381,
+        "y": 557,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1764,
+        "y": 225
+      },
+      "enemies": 1,
+      "enemyHp": [
+        27
+      ],
+      "aim": {
+        "facingX": 0.7724800081664035,
+        "facingY": 0.6350390830360232,
+        "pointerX": 2454.853318007233,
+        "pointerY": 625.1722488038278
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "active",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 0,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 77619,
+      "label": "combat",
+      "player": {
+        "x": 2522,
+        "y": 692,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1830,
+        "y": 280
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.9063350646255776,
+        "facingY": 0.4225597598330321,
+        "pointerX": 2526.633351089181,
+        "pointerY": 694.1387559808612
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "completed",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 1,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": true
+      },
+      "unlockedExitIds": [
+        "exit.raiz-do-mundo.to-igapo"
+      ]
+    },
+    {
+      "atMs": 79179,
+      "label": "forest:sanctuary-approach",
+      "player": {
+        "x": 2522,
+        "y": 692,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1873,
+        "y": 323
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.723290776244533,
+        "facingY": 0.6905435923962954,
+        "pointerX": 2574.633351089181,
+        "pointerY": 742.1387559808612
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "completed",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 1,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": true
+      },
+      "unlockedExitIds": [
+        "exit.raiz-do-mundo.to-igapo"
+      ]
+    },
+    {
+      "atMs": 80265,
+      "label": "forest:sanctuary-approach",
+      "player": {
+        "x": 2370,
+        "y": 581,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1769,
+        "y": 234
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.8090933378725167,
+        "facingY": 0.587680160129904,
+        "pointerX": 2475.633351089181,
+        "pointerY": 655.1387559808612
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "completed",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 1,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": true
+      },
+      "unlockedExitIds": [
+        "exit.raiz-do-mundo.to-igapo"
+      ]
+    },
+    {
+      "atMs": 81401,
+      "label": "forest:ancestral-tree",
+      "player": {
+        "x": 2327,
+        "y": 617,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1687,
+        "y": 247
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.7784385259028685,
+        "facingY": 0.6277208467066944,
+        "pointerX": 2388.633351089181,
+        "pointerY": 666.1387559808612
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "completed",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 1,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": true
+      },
+      "unlockedExitIds": [
+        "exit.raiz-do-mundo.to-igapo"
+      ]
+    },
+    {
+      "atMs": 82410,
+      "label": "forest:ancestral-tree",
+      "player": {
+        "x": 2502,
+        "y": 585,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1807,
+        "y": 225
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.1209875792905942,
+        "facingY": 0.9926540211258916,
+        "pointerX": 2502.633351089181,
+        "pointerY": 644.1387559808612
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "completed",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 1,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": true
+      },
+      "unlockedExitIds": [
+        "exit.raiz-do-mundo.to-igapo"
+      ]
+    },
+    {
+      "atMs": 83615,
+      "label": "forest:waters-passage",
+      "player": {
+        "x": 2584,
+        "y": 585,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1935,
+        "y": 225
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.6648954599020301,
+        "facingY": 0.7469364279519831,
+        "pointerX": 2636.633351089181,
+        "pointerY": 644.1387559808612
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "completed",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 1,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": true
+      },
+      "unlockedExitIds": [
+        "exit.raiz-do-mundo.to-igapo"
+      ]
+    },
+    {
+      "atMs": 84554,
+      "label": "forest:waters-passage",
+      "player": {
+        "x": 2759,
+        "y": 585,
+        "hp": 5
+      },
+      "camera": {
+        "x": 2062,
+        "y": 225
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.10011502368981808,
+        "facingY": 0.9949758700750422,
+        "pointerX": 2757.633351089181,
+        "pointerY": 644.1387559808612
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "completed",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 1,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": true
+      },
+      "unlockedExitIds": [
+        "exit.raiz-do-mundo.to-igapo"
+      ]
+    },
+    {
+      "atMs": 85621,
+      "label": "forest:waters-passage",
+      "player": {
+        "x": 2974,
+        "y": 585,
+        "hp": 5
+      },
+      "camera": {
+        "x": 2279,
+        "y": 225
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.07208272112781226,
+        "facingY": 0.9973986571651328,
+        "pointerX": 2974.633351089181,
+        "pointerY": 644.1387559808612
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "completed",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 1,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": true
+      },
+      "unlockedExitIds": [
+        "exit.raiz-do-mundo.to-igapo"
+      ]
+    },
+    {
+      "atMs": 86677,
+      "label": "forest:waters-passage",
+      "player": {
+        "x": 3196,
+        "y": 585,
+        "hp": 5
+      },
+      "camera": {
+        "x": 2432,
+        "y": 225
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": -0.7073790131837961,
+        "facingY": 0.7068344443411899,
+        "pointerX": 3133.633351089181,
+        "pointerY": 644.1387559808612
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "completed",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 1,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": true
+      },
+      "unlockedExitIds": [
+        "exit.raiz-do-mundo.to-igapo"
+      ]
+    },
+    {
+      "atMs": 88113,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+      "player": {
+        "x": 3346,
+        "y": 585,
+        "hp": 5
+      },
+      "camera": {
+        "x": 2432,
+        "y": 225
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": -0.963823580658313,
+        "facingY": 0.2665410012868352,
+        "pointerX": 3133.633351089181,
+        "pointerY": 644.1387559808612
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "completed",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 1,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": true
+      },
+      "unlockedExitIds": [
+        "exit.raiz-do-mundo.to-igapo"
+      ]
+    },
+    {
+      "atMs": 89023,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.entry.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main",
+      "player": {
+        "x": 3517,
+        "y": 585,
+        "hp": 5
+      },
+      "camera": {
+        "x": 2432,
+        "y": 225
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": -0.988032852699746,
+        "facingY": 0.15424358004792904,
+        "pointerX": 3133.633351089181,
+        "pointerY": 644.1387559808612
+      },
+      "missionStates": {
+        "mission.raiz-do-mundo.ouvir-raizes": {
+          "status": "completed",
+          "objectives": {
+            "objective.raiz-do-mundo.acalmar-raizes": 1,
+            "objective.raiz-do-mundo.ouvir-guardiao": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.raiz-do-mundo.entrada-observada": true,
+        "flag.raiz-do-mundo.passagem-das-aguas-aberta": true
+      },
+      "unlockedExitIds": [
+        "exit.raiz-do-mundo.to-igapo"
+      ]
+    },
+    {
+      "atMs": 91281,
+      "label": "npc:npc.aguas.igapo.memory-vestige",
+      "player": {
+        "x": 144,
+        "y": 560,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 200
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": 0.9944233655710398,
+        "facingY": 0.10546169923894541,
+        "pointerX": 701.6333510891811,
+        "pointerY": 619.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "active",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": false,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 92271,
+      "label": "npc:npc.aguas.igapo.memory-vestige",
+      "player": {
+        "x": 295,
+        "y": 533,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 164
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": 0.9927139243258364,
+        "facingY": 0.12049508060330741,
+        "pointerX": 701.6333510891811,
+        "pointerY": 583.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "active",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": false,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 93293,
+      "label": "npc:npc.aguas.igapo.memory-vestige",
+      "player": {
+        "x": 507,
+        "y": 533,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 164
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": 0.9698200961378892,
+        "facingY": 0.24382161743187405,
+        "pointerX": 701.6333510891811,
+        "pointerY": 583.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "active",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": false,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 94322,
+      "label": "npc:npc.aguas.igapo.memory-vestige",
+      "player": {
+        "x": 719,
+        "y": 533,
+        "hp": 6
+      },
+      "camera": {
+        "x": 45,
+        "y": 164
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": 0.48951142771649947,
+        "facingY": 0.8719968819525415,
+        "pointerX": 743.6333510891811,
+        "pointerY": 583.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "active",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": false,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 98221,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 907,
+        "y": 533,
+        "hp": 6
+      },
+      "camera": {
+        "x": 258,
+        "y": 164
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": 0.7265974064638123,
+        "facingY": 0.6870634678980259,
+        "pointerX": 959.6333510891811,
+        "pointerY": 583.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "atMs": 99279,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 1109,
+        "y": 533,
+        "hp": 6
+      },
+      "camera": {
+        "x": 432,
+        "y": 164
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": 0.44071400874205935,
+        "facingY": 0.8976475714324103,
+        "pointerX": 1129.6333510891811,
+        "pointerY": 583.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "atMs": 100191,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 1266,
+        "y": 533,
+        "hp": 6
+      },
+      "camera": {
+        "x": 597,
+        "y": 164
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": 0.513408461225487,
+        "facingY": 0.8581443654432962,
+        "pointerX": 1295.6333510891811,
+        "pointerY": 583.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "atMs": 101106,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 1291,
+        "y": 582,
+        "hp": 6
+      },
+      "camera": {
+        "x": 630,
+        "y": 218
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        130
+      ],
+      "aim": {
+        "facingX": 0.5996972193930655,
+        "facingY": 0.800226995953164,
+        "pointerX": 1329.6333510891811,
+        "pointerY": 637.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "atMs": 102315,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 1523,
+        "y": 449,
+        "hp": 6
+      },
+      "camera": {
+        "x": 820,
+        "y": 133
+      },
+      "enemies": 2,
+      "enemyHp": [
+        134.6488,
+        130
+      ],
+      "aim": {
+        "facingX": 0.0582761153516636,
+        "facingY": 0.9983005030448093,
+        "pointerX": 1515.6333510891811,
+        "pointerY": 558.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "atMs": 103241,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 1675,
+        "y": 538,
+        "hp": 6
+      },
+      "camera": {
+        "x": 997,
+        "y": 161
+      },
+      "enemies": 2,
+      "enemyHp": [
+        134.6488,
+        130
+      ],
+      "aim": {
+        "facingX": 0.49010132300128495,
+        "facingY": 0.8716654709189703,
+        "pointerX": 1694.6333510891811,
+        "pointerY": 579.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "atMs": 104297,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 1844,
+        "y": 525,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1167,
+        "y": 152
+      },
+      "enemies": 2,
+      "enemyHp": [
+        134.6488,
+        130
+      ],
+      "aim": {
+        "facingX": 0.4532337470176353,
+        "facingY": 0.8913917043389815,
+        "pointerX": 1864.6333510891811,
+        "pointerY": 570.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "atMs": 105338,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 2058,
+        "y": 530,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1373,
+        "y": 161
+      },
+      "enemies": 2,
+      "enemyHp": [
+        134.6488,
+        130
+      ],
+      "aim": {
+        "facingX": 0.31440207134306697,
+        "facingY": 0.9492899122687385,
+        "pointerX": 2070.633351089181,
+        "pointerY": 580.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "atMs": 106405,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 2276,
+        "y": 530,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1591,
+        "y": 161
+      },
+      "enemies": 2,
+      "enemyHp": [
+        134.6488,
+        130
+      ],
+      "aim": {
+        "facingX": 0.3028914816905134,
+        "facingY": 0.9530250523041487,
+        "pointerX": 2288.633351089181,
+        "pointerY": 580.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "atMs": 107411,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 2485,
+        "y": 530,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1792,
+        "y": 161
+      },
+      "enemies": 2,
+      "enemyHp": [
+        134.6488,
+        130
+      ],
+      "aim": {
+        "facingX": 0.3028914816906713,
+        "facingY": 0.9530250523040985,
+        "pointerX": 2493.633351089181,
+        "pointerY": 580.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "atMs": 108312,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 2666,
+        "y": 530,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1792,
+        "y": 161
+      },
+      "enemies": 2,
+      "enemyHp": [
+        134.6488,
+        130
+      ],
+      "aim": {
+        "facingX": -0.9590033682230332,
+        "facingY": 0.2833946713275981,
+        "pointerX": 2493.633351089181,
+        "pointerY": 580.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    },
+    {
+      "atMs": 109371,
+      "label": "campaign-exit:physical.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.edge.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.intermediate.main.node.campaign.umbra-trail.independent-routes.root-art-final-20261106.act-1.milestone.main",
+      "player": {
+        "x": 2881,
+        "y": 530,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1792,
+        "y": 161
+      },
+      "enemies": 2,
+      "enemyHp": [
+        134.6488,
+        130
+      ],
+      "aim": {
+        "facingX": -0.9916779644590089,
+        "facingY": 0.12874321266162614,
+        "pointerX": 2493.633351089181,
+        "pointerY": 580.1387559808612
+      },
+      "missionStates": {
+        "mission.aguas.igapo.trace-corruption": {
+          "status": "completed",
+          "objectives": {
+            "objective.aguas.igapo.reach-vestige": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.aguas.igapo.corruption-found": true,
+        "flag.aguas.igapo.eco-das-aguas-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.aguas.igapo.enter-corrupted-heart"
+      ]
+    }
+  ],
+  "evidence": {
+    "screenshots": [
+      "campaign-01-start.png",
+      "campaign-forest-01-entry.png",
+      "campaign-forest-02-trail.png",
+      "campaign-forest-03-first-combat.png",
+      "campaign-forest-03-npc.png",
+      "campaign-forest-04-combat.png",
+      "campaign-forest-05-approach.png",
+      "campaign-forest-06-tree.png",
+      "campaign-forest-07-exit.png",
+      "campaign-forest-08-igapo-transition.png",
+      "campaign-igapo-03-npc.png",
+      "campaign-03-destination.png"
+    ],
+    "browser": "Edg/157.0.4341.42 (Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0)",
+    "durationMs": 111868,
+    "generatedAt": "2026-11-06T16:13:36.719Z"
+  },
+  "generatedAt": "2026-11-06T16:13:36.719Z",
+  "runtime": {
+    "phaser": "executed",
+    "liveExecution": "executed"
+  }
+}

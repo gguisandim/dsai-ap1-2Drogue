@@ -81,12 +81,12 @@ describe('World Lab visual presentation inspection', () => {
     });
     expect(visual?.artAssets).toEqual(expect.arrayContaining([
       expect.objectContaining({
-        id: 'floor', category: 'tile', sourceDimensions: { width: 432, height: 1040 },
-        frameDimensions: { width: 16, height: 16 }, renderedDimensions: { width: 32, height: 32 },
+        id: 'floor', category: 'tile', sourceDimensions: { width: 64, height: 32 },
+        frameDimensions: { width: 32, height: 32 }, renderedDimensions: { width: 32, height: 32 },
         compatibility: 'compatible',
       }),
       expect.objectContaining({
-        id: 'igapo_emergent_tree', category: 'decoration', scaleClass: 'oversized',
+        id: 'igapo_flooded_emergent_tree', category: 'decoration', scaleClass: 'oversized',
         compatibility: 'compatible', warnings: [],
       }),
     ]));
@@ -98,13 +98,15 @@ describe('World Lab visual presentation inspection', () => {
     expect(visual?.variantId).toBe(IGAPO_SOMBRIO_VARIANT_ID);
     expect(visual?.themeId).toBe('theme.aguas.igapo-sombrio');
     expect(visual?.tiles?.find(tile => tile.logicalId === 'water')?.frame).toBe(295);
-    expect(visual?.environment?.fog?.opacity).toBe(0.12);
+    expect(visual?.environment?.fog?.opacity).toBe(0.16);
     expect(visual?.decorations?.map(decoration => decoration.id).sort())
       .toEqual(expect.arrayContaining([
         'igapo_landmark_canoe',
-        'igapo_sombrio_cut_stump',
+        'igapo_sombrio_flooded_tree',
+        'igapo_sombrio_palm_cluster',
+        'igapo_sombrio_root_tangle',
+        'igapo_sombrio_shore_0',
         'igapo_sombrio_reeds',
-        'igapo_sombrio_stump_cluster',
         'igapo_sombrio_oil_slick',
         'igapo_sombrio_waste',
       ]));

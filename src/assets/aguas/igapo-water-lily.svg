@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="32" viewBox="0 0 128 32" shape-rendering="crispEdges">
+  <!-- Igapó das Memórias — folha de 4 variantes de vitórias-régias (32x32 cada). -->
+  <!-- quadro 0: par de folhas com flor -->
+  <g>
+    <ellipse cx="12" cy="18" rx="9" ry="6" fill="#2f6248"/>
+    <ellipse cx="12" cy="17" rx="9" ry="6" fill="#3f7d57"/>
+    <path d="M12 11 12 17 6 18 9 13z" fill="#256058"/>
+    <ellipse cx="22" cy="22" rx="6" ry="4" fill="#356f48"/>
+    <path d="M22 18 22 22 18 23 20 19z" fill="#256058"/>
+    <rect x="10" y="16" width="4" height="2" fill="#6aa869"/>
+    <rect x="10" y="9" width="3" height="3" fill="#d9c7e8"/>
+    <rect x="12" y="7" width="3" height="2" fill="#f0e6f7"/>
+    <rect x="16" y="8" width="2" height="2" fill="#d9a85a"/>
+    <path d="M4 24 10 22" stroke="#5f9583" stroke-width="1" fill="none" opacity="0.5"/>
+    <path d="M18 26 26 24" stroke="#5f9583" stroke-width="1" fill="none" opacity="0.4"/>
+  </g>
+  <!-- quadro 1: folha grande isolada -->
+  <g transform="translate(32 0)">
+    <ellipse cx="16" cy="17" rx="12" ry="8" fill="#2f6248"/>
+    <ellipse cx="16" cy="16" rx="12" ry="8" fill="#4a8a5c"/>
+    <path d="M16 8 16 16 6 17 10 11z" fill="#256058"/>
+    <rect x="10" y="15" width="7" height="2" fill="#6aa869"/>
+    <rect x="14" y="19" width="5" height="2" fill="#5f9d68"/>
+    <rect x="20" y="12" width="3" height="2" fill="#7fbb78"/>
+    <path d="M2 25 8 23" stroke="#5f9583" stroke-width="1" fill="none" opacity="0.5"/>
+    <path d="M20 27 30 25" stroke="#5f9583" stroke-width="1" fill="none" opacity="0.45"/>
+  </g>
+  <!-- quadro 2: três folhas pequenas -->
+  <g transform="translate(64 0)">
+    <ellipse cx="9" cy="14" rx="6" ry="4" fill="#356f48"/>
+    <path d="M9 10 9 14 5 15 7 11z" fill="#256058"/>
+    <ellipse cx="20" cy="12" rx="5" ry="3.5" fill="#3f7d57"/>
+    <path d="M20 8 20 12 16 13 18 9z" fill="#256058"/>
+    <ellipse cx="15" cy="23" rx="6" ry="4" fill="#2f6248"/>
+    <path d="M15 19 15 23 11 24 13 20z" fill="#1f504b"/>
+    <rect x="7" y="12" width="3" height="2" fill="#6aa869"/>
+    <rect x="18" y="10" width="3" height="2" fill="#7fbb78"/>
+    <rect x="13" y="21" width="3" height="2" fill="#5f9d68"/>
+    <path d="M2 28 10 26" stroke="#5f9583" stroke-width="1" fill="none" opacity="0.4"/>
+  </g>
+  <!-- quadro 3: folhas alongadas e botão -->
+  <g transform="translate(96 0)">
+    <ellipse cx="10" cy="20" rx="8" ry="4" fill="#2f6248"/>
+    <path d="M10 16 10 20 4 21 7 17z" fill="#1f504b"/>
+    <ellipse cx="22" cy="15" rx="7" ry="4" fill="#3f7d57"/>
+    <path d="M22 11 22 15 16 16 19 12z" fill="#256058"/>
+    <ellipse cx="25" cy="24" rx="4" ry="3" fill="#356f48"/>
+    <rect x="8" y="18" width="4" height="2" fill="#5f9d68"/>
+    <rect x="20" y="13" width="4" height="2" fill="#6aa869"/>
+    <rect x="24" y="7" width="3" height="4" fill="#d9c7e8"/>
+    <rect x="26" y="5" width="2" height="3" fill="#f0e6f7"/>
+    <path d="M4 27 12 25" stroke="#5f9583" stroke-width="1" fill="none" opacity="0.4"/>
+    <path d="M20 28 28 26" stroke="#5f9583" stroke-width="1" fill="none" opacity="0.35"/>
+  </g>
+</svg>

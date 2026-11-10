@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="64" viewBox="0 0 96 64" shape-rendering="crispEdges">
+  <!-- Igapó das Memórias — massa de raízes expostas. Centro em 48,32. -->
+  <!-- sombra de contato -->
+  <ellipse cx="48" cy="42" rx="40" ry="14" fill="#10241f" opacity="0.45"/>
+  <!-- raízes traseiras -->
+  <path d="M4 34 14 26 24 30 34 22 46 28 56 20 68 26 80 20 92 28 90 36 78 32 68 38 56 32 46 40 34 34 24 42 12 38z" fill="#2b2016"/>
+  <!-- raízes principais -->
+  <path d="M2 30 12 24 20 28 28 20 40 26 48 18 58 26 66 20 78 26 90 22 92 30 80 34 68 28 58 36 48 30 38 38 28 32 18 38 8 34z" fill="#4a3322"/>
+  <path d="M6 33 14 28 22 32 30 25 40 30 48 23 58 30 66 25 78 30 88 27 88 33 78 36 66 32 58 40 48 34 40 42 30 36 22 42 14 38z" fill="#5b412a"/>
+  <!-- raízes cruzadas -->
+  <path d="M10 44 22 36 32 40 44 32 54 40 66 32 78 40 90 34" stroke="#6b4a2c" stroke-width="4" fill="none"/>
+  <path d="M8 50 20 44 30 50 42 42 52 50 64 42 76 50 88 44" stroke="#4a3322" stroke-width="4" fill="none"/>
+  <path d="M6 40 18 34 26 38 36 30 46 38 56 30 66 38 78 32 88 38" stroke="#7a5a37" stroke-width="2" fill="none"/>
+  <path d="M12 48 24 42 34 46 46 38 56 46 68 38 80 46" stroke="#5b412a" stroke-width="2" fill="none"/>
+  <!-- nós e saliências -->
+  <rect x="20" y="26" width="6" height="5" fill="#3a2a1d"/>
+  <rect x="44" y="24" width="7" height="5" fill="#3a2a1d"/>
+  <rect x="68" y="26" width="6" height="5" fill="#3a2a1d"/>
+  <rect x="32" y="38" width="6" height="5" fill="#3a2a1d"/>
+  <rect x="56" y="38" width="7" height="5" fill="#3a2a1d"/>
+  <!-- musgo -->
+  <path d="M14 30 20 28 24 32 18 34z" fill="#5f7f42"/>
+  <path d="M50 26 56 24 60 28 54 30z" fill="#6d8a45"/>
+  <path d="M74 34 80 32 84 36 78 38z" fill="#5f7f42"/>
+  <path d="M28 44 34 42 38 46 32 48z" fill="#6d8a45"/>
+  <rect x="40" y="30" width="3" height="2" fill="#88a45a"/>
+  <rect x="62" y="30" width="3" height="2" fill="#88a45a"/>
+  <!-- samambaias -->
+  <path d="M16 44 12 38 16 40 20 44z" fill="#4a9a5e"/>
+  <path d="M16 44 22 40 22 44 18 48z" fill="#3f8554"/>
+  <path d="M80 44 84 38 84 44 82 48z" fill="#4a9a5e"/>
+  <path d="M80 44 76 40 76 46 78 48z" fill="#3f8554"/>
+  <!-- água entre raízes -->
+  <rect x="26" y="50" width="8" height="2" fill="#256058" opacity="0.7"/>
+  <rect x="46" y="52" width="10" height="2" fill="#256058" opacity="0.6"/>
+  <rect x="64" y="50" width="8" height="2" fill="#256058" opacity="0.6"/>
+</svg>

@@ -124,8 +124,11 @@ final de existência.
 
 Registre também, quando conhecidos, `sourceWidth`/`sourceHeight`, região visível,
 `pixelArt`, perspectiva e origem. Sprites e decorações podem declarar âncora e
-classe de escala; colisão é metadado de inspeção e nunca configura física. As
-regras globais e a referência do Igapó estão em [art-direction.md](./art-direction.md).
+classe de escala; colisão é metadado de inspeção e nunca configura física. A
+definição de decoração pode declarar `tint` de tema; o `tint` opcional da
+colocação tem precedência, o que permite reutilizar a mesma silhueta em outra
+apresentação sem duplicar o asset. As regras globais e a referência do Igapó
+estão em [art-direction.md](./art-direction.md).
 
 ### Substituir placeholders
 

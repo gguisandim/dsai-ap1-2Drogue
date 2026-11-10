@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="64" viewBox="0 0 128 64" shape-rendering="crispEdges">
+  <!-- Igapó das Memórias — tronco caído meio submerso. Centro em 64,32. -->
+  <!-- reflexo e água -->
+  <ellipse cx="64" cy="40" rx="56" ry="16" fill="#183f3d" opacity="0.55"/>
+  <path d="M6 38 26 32 48 36 70 30 94 36 118 30 124 38 104 44 82 40 60 46 38 42 18 46z" fill="#1f504b" opacity="0.6"/>
+  <!-- sombra sob o tronco -->
+  <path d="M10 40 34 34 60 38 86 32 112 38 116 42 92 46 66 42 40 48 16 44z" fill="#10241f" opacity="0.5"/>
+  <!-- tronco principal -->
+  <path d="M4 30 16 22 40 20 64 24 88 20 112 24 124 32 112 38 88 34 64 40 40 34 16 38z" fill="#3a2a1d"/>
+  <path d="M6 28 18 21 40 19 64 23 88 19 110 23 120 30 108 35 86 31 64 36 42 31 18 35z" fill="#5b412a"/>
+  <path d="M10 26 22 21 40 20 52 23 46 27 28 28 14 31z" fill="#7a5a37"/>
+  <path d="M70 21 88 19 104 22 110 27 92 27 76 26z" fill="#7a5a37"/>
+  <!-- casca rachada -->
+  <path d="M26 22 28 34" stroke="#2b2016" stroke-width="2"/>
+  <path d="M50 24 52 37" stroke="#2b2016" stroke-width="2"/>
+  <path d="M84 22 86 33" stroke="#2b2016" stroke-width="2"/>
+  <path d="M106 24 108 32" stroke="#2b2016" stroke-width="2"/>
+  <!-- galhos quebrados -->
+  <path d="M38 22 36 10 40 12 42 20z" fill="#4a3322"/>
+  <path d="M38 12 30 6 34 10 40 14z" fill="#3a2a1d"/>
+  <path d="M92 22 96 8 100 10 96 22z" fill="#4a3322"/>
+  <path d="M96 10 104 4 102 10 97 14z" fill="#3a2a1d"/>
+  <!-- musgo e folhas -->
+  <path d="M18 24 26 22 30 26 22 28z" fill="#5f7f42"/>
+  <path d="M58 24 70 22 74 26 62 28z" fill="#6d8a45"/>
+  <path d="M96 24 108 22 112 26 100 28z" fill="#5f7f42"/>
+  <rect x="34" y="26" width="4" height="3" fill="#88a45a"/>
+  <rect x="78" y="25" width="4" height="3" fill="#88a45a"/>
+  <rect x="112" y="27" width="4" height="3" fill="#88a45a"/>
+  <!-- linha d'água e espuma -->
+  <path d="M8 36 20 33 34 36 48 32 62 37 78 32 94 36 110 33 122 36" stroke="#5f9583" stroke-width="2" fill="none"/>
+  <path d="M14 39 26 37 36 39" stroke="#8fc2ab" stroke-width="1" fill="none" opacity="0.7"/>
+  <path d="M54 40 68 38 78 40" stroke="#8fc2ab" stroke-width="1" fill="none" opacity="0.6"/>
+  <path d="M96 39 108 37 118 39" stroke="#8fc2ab" stroke-width="1" fill="none" opacity="0.6"/>
+  <!-- vitórias-régias junto ao tronco -->
+  <ellipse cx="24" cy="44" rx="6" ry="3" fill="#3f7d57"/>
+  <ellipse cx="24" cy="44" rx="6" ry="3" fill="#4f9463" opacity="0.6"/>
+  <rect x="24" y="43" width="3" height="2" fill="#3f7d57"/>
+  <ellipse cx="98" cy="45" rx="5" ry="2.5" fill="#3f7d57"/>
+  <rect x="98" y="44" width="3" height="2" fill="#356f48"/>
+</svg>

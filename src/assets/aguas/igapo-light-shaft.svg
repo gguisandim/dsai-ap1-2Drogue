@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="192" viewBox="0 0 96 192">
+  <!-- Igapó das Memórias — feixe de luz filtrada. Sobreposição suave. -->
+  <defs>
+    <linearGradient id="shaft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9f7c4" stop-opacity="0.55"/>
+      <stop offset="0.45" stop-color="#b8e6b0" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#8fc9b4" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="shaftCore" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2ffd9" stop-opacity="0.35"/>
+      <stop offset="0.5" stop-color="#e0ffcf" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#bff0d8" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path d="M30 0 54 0 92 192 58 192z" fill="url(#shaft)"/>
+  <path d="M38 0 50 0 74 192 56 192z" fill="url(#shaftCore)"/>
+  <!-- poeira e partículas -->
+  <rect x="40" y="30" width="2" height="2" fill="#f2ffd9" opacity="0.6"/>
+  <rect x="52" y="52" width="1" height="3" fill="#e0ffcf" opacity="0.5"/>
+  <rect x="46" y="76" width="2" height="2" fill="#f2ffd9" opacity="0.45"/>
+  <rect x="60" y="98" width="2" height="2" fill="#e0ffcf" opacity="0.4"/>
+  <rect x="54" y="124" width="1" height="3" fill="#d9f7c4" opacity="0.35"/>
+  <rect x="66" y="148" width="2" height="2" fill="#e0ffcf" opacity="0.3"/>
+</svg>

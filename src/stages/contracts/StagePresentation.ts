@@ -120,6 +120,8 @@ export interface StageDecorationVisualDefinition {
   readonly depth: number;
   readonly defaultScale?: number;
   readonly frame?: number;
+  /** Theme-level tint applied before an optional placement tint. */
+  readonly tint?: number;
   readonly anchor?: StageVisualAnchor;
   readonly scaleClass?: StageVisualScaleClass;
 }
@@ -231,6 +233,7 @@ export interface ResolvedStageDecorationVisual {
   readonly layer: StageVisualLayer;
   readonly depth: number;
   readonly defaultScale: number;
+  readonly tint?: number;
   readonly frame?: number;
   readonly frameWidth?: number;
   readonly frameHeight?: number;

@@ -489,6 +489,7 @@ export class StageVisualRegistry {
           layer: definition.layer,
           depth: definition.depth,
           defaultScale: definition.defaultScale ?? 1,
+          ...(definition.tint !== undefined ? { tint: definition.tint } : {}),
           ...(definition.frame !== undefined ? { frame: definition.frame } : {}),
           ...(texture.frameWidth !== undefined ? { frameWidth: texture.frameWidth } : {}),
           ...(texture.frameHeight !== undefined ? { frameHeight: texture.frameHeight } : {}),
@@ -719,6 +720,10 @@ export class StageVisualRegistry {
         [...path, 'defaultScale'], undefined, value.id,
       ));
     }
+    if (!validTint(value.tint)) diagnostics.push(this.diagnostic(
+      'stage.visual.decoration.tint-invalid', 'Decoration tint must be an RGB integer.',
+      [...path, 'tint'], undefined, value.id,
+    ));
     this.validateFrame(value.frame, value.textureId, diagnostics, [...path, 'frame']);
     if (!validAnchor(value.anchor)) diagnostics.push(this.diagnostic(
       'stage.visual.decoration.anchor-invalid', 'Decoration anchor values must be between 0 and 1.',

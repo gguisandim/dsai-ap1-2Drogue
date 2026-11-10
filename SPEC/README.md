@@ -78,3 +78,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-11-05 | [Homologação integrada de campanhas e automação do World Lab — Etapa 9.14](./2026-11-05-etapa-9-14-homologacao-campanhas-world-lab.md) |
 | 2026-11-05 | [Fase 1 — Floresta das Raízes](./2026-11-05-fase-1-floresta-das-raizes.md) |
 | 2026-11-06 | [Refinamento artístico da Floresta das Raízes](./2026-11-06-refinamento-artistico-floresta-das-raizes.md) |
+| 2026-11-10 | [Polimento ambiental e direção de arte do Igapó das Memórias](./2026-11-10-polimento-ambiental-igapo-das-memorias.md) |

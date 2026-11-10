@@ -27,9 +27,11 @@ describe('World Lab POI projection', () => {
     expect(decorationMarkers.length).toBeGreaterThan(100);
     expect([...new Set(authoredDecorations.map(decoration => decoration.type))])
       .toEqual(expect.arrayContaining([
-        'igapo_emergent_tree',
+        'igapo_flooded_emergent_tree',
+        'igapo_flooded_palm_cluster',
+        'igapo_flooded_root_tangle',
+        'igapo_flooded_shore_0',
         'igapo_reeds',
-        'igapo_coconut_palm',
       ]));
     expect(igapo?.visualPresentation).toMatchObject({
       themeId: 'theme.aguas.igapo',
@@ -57,8 +59,8 @@ describe('World Lab POI projection', () => {
     expect(igapo?.visualPresentation?.environment).toEqual({
       id: 'environment.aguas.forgotten-waters',
       ambientColor: 0x1d4a3f,
-      lightIntensity: 0.72,
-      fog: { color: 0x1b4f4a, opacity: 0.1, depth: 4 },
+      lightIntensity: 0.64,
+      fog: { color: 0x173f3c, opacity: 0.14, depth: 4 },
     });
     expect(result.value.catalog.entries.find(item =>
       item.stageId === IGAPO_DAS_MEMORIAS_STAGE_ID)).toMatchObject({
