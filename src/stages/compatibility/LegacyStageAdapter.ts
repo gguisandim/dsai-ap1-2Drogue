@@ -15,9 +15,14 @@ interface LegacyChapterDefinition {
   readonly levels: readonly LevelDefinition[];
 }
 
+/** IDs whose canonical module is now owned by an authored campaign chapter. */
+export const MIGRATED_LEGACY_STAGE_IDS = Object.freeze(['level_08_paradiso']);
+const migratedLegacyStageIds = new Set<string>(MIGRATED_LEGACY_STAGE_IDS);
+const UNMIGRATED_LEGACY_LEVELS = ALL_LEVELS.filter(level => !migratedLegacyStageIds.has(level.id));
+
 const LEGACY_CHAPTER_DEFINITIONS: readonly LegacyChapterDefinition[] = [
   { id: 'legacy.verse', title: 'Legacy Verse Sections', levels: VERSE_SECTIONS },
-  { id: 'legacy.levels', title: 'Legacy Authored Levels', levels: ALL_LEVELS },
+  { id: 'legacy.levels', title: 'Legacy Authored Levels', levels: UNMIGRATED_LEGACY_LEVELS },
   { id: 'legacy.corridor', title: 'Legacy Forgotten Passage', levels: [CORRIDOR_LEVEL] },
 ];
 

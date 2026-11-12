@@ -1,0 +1,1894 @@
+{
+  "schemaVersion": 1,
+  "kind": "umbra.stage-homologation.report",
+  "stageId": "level_08_paradiso",
+  "chapterId": "chapter.floresta.flores-veladas",
+  "title": "Jardins das Flores Veladas",
+  "manifestRevision": 1,
+  "scenario": "authored",
+  "seed": null,
+  "result": "PASS",
+  "checks": [
+    {
+      "id": "runtime.load",
+      "code": "RUNTIME_STAGE_LOADED",
+      "status": "PASS",
+      "required": true,
+      "message": "Fase level_08_paradiso carregada em Phaser.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "runtime.npc.reached",
+      "code": "RUNTIME_NPC_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "NPC npc.floresta.flores-veladas.iarai alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 24,
+        "y": 14
+      },
+      "suggestion": "Verifique o caminho até o NPC."
+    },
+    {
+      "id": "runtime.dialogue.npc",
+      "code": "RUNTIME_DIALOGUE_OPENED",
+      "status": "PASS",
+      "required": true,
+      "message": "Diálogo do NPC foi aberto, percorrido e fechado.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 24,
+        "y": 14
+      }
+    },
+    {
+      "id": "runtime.encounter.started",
+      "code": "RUNTIME_ENCOUNTER_STARTED",
+      "status": "PASS",
+      "required": true,
+      "message": "Encontro encounter.floresta.flores-veladas.pollinators iniciou com 2 inimigo(s).",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "runtime.combat.damage",
+      "code": "RUNTIME_COMBAT_DAMAGE",
+      "status": "PASS",
+      "required": true,
+      "message": "Dano real foi aplicado a inimigos.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "runtime.combat.player-damage",
+      "code": "RUNTIME_PLAYER_DAMAGED",
+      "status": "PASS",
+      "required": false,
+      "message": "O jogador recebeu dano real (6 → mínimo 4).",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "runtime.encounter.completed",
+      "code": "RUNTIME_ENCOUNTER_COMPLETED",
+      "status": "PASS",
+      "required": true,
+      "message": "Todos os inimigos do encontro foram derrotados.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "runtime.exit.unlocked",
+      "code": "RUNTIME_EXIT_UNLOCKED",
+      "status": "PASS",
+      "required": true,
+      "message": "Saída exit.floresta.flores-veladas.complete foi desbloqueada pelo runtime.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 116,
+        "y": 19
+      }
+    },
+    {
+      "id": "runtime.exit.reached",
+      "code": "RUNTIME_EXIT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Saída exit.floresta.flores-veladas.complete alcançada.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 116,
+        "y": 19
+      }
+    },
+    {
+      "id": "runtime.exit.triggered",
+      "code": "RUNTIME_EXIT_TRIGGERED",
+      "status": "PASS",
+      "required": true,
+      "message": "A saída acionou o evento de conclusão.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 116,
+        "y": 19
+      }
+    },
+    {
+      "id": "runtime.transition",
+      "code": "RUNTIME_TRANSITION_UNVERIFIED",
+      "status": "UNKNOWN",
+      "required": false,
+      "message": "A conclusão foi registrada, mas a transição de cena não foi observada (preview individual).",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "runtime.mission",
+      "code": "RUNTIME_MISSION_COMPLETED",
+      "status": "PASS",
+      "required": true,
+      "message": "Missão mission.floresta.flores-veladas.reacender-coro concluída no runtime.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "runtime.flag",
+      "code": "RUNTIME_FLAG_UPDATED",
+      "status": "PASS",
+      "required": true,
+      "message": "Flag flag.floresta.flores-veladas.coro-restaurado foi atualizada pelo runtime.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "runtime.camera.follow",
+      "code": "RUNTIME_CAMERA_FOLLOW",
+      "status": "PASS",
+      "required": true,
+      "message": "Câmera acompanhou o deslocamento (0,264 → 2560,261).",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "runtime.camera.bounds",
+      "code": "RUNTIME_CAMERA_BOUNDS",
+      "status": "PASS",
+      "required": false,
+      "message": "A câmera permaneceu dentro dos limites do mundo.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "runtime.movement",
+      "code": "RUNTIME_PLAYER_MOVED",
+      "status": "PASS",
+      "required": true,
+      "message": "O personagem se deslocou com entradas reais.",
+      "evidence": "phaser-runtime"
+    }
+  ],
+  "observations": [
+    {
+      "atMs": 12078,
+      "label": "loaded",
+      "player": {
+        "x": 144,
+        "y": 624,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 264
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.37139067635410367,
+        "facingY": -0.9284766908852592,
+        "pointerX": 0,
+        "pointerY": 264
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 12391,
+      "label": "npc:npc.floresta.flores-veladas.iarai",
+      "player": {
+        "x": 144,
+        "y": 624,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 264
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.37139067635410367,
+        "facingY": -0.9284766908852592,
+        "pointerX": 0,
+        "pointerY": 264
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 13352,
+      "label": "npc:npc.floresta.flores-veladas.iarai",
+      "player": {
+        "x": 244,
+        "y": 527,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 185
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.5761676865795161,
+        "facingY": -0.817331509818145,
+        "pointerX": 0,
+        "pointerY": 187
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 14605,
+      "label": "npc:npc.floresta.flores-veladas.iarai",
+      "player": {
+        "x": 306,
+        "y": 547,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 155
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.6151138427194236,
+        "facingY": -0.7884383048120788,
+        "pointerX": 0,
+        "pointerY": 152
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 15524,
+      "label": "npc:npc.floresta.flores-veladas.iarai",
+      "player": {
+        "x": 370,
+        "y": 486,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 126
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.7166228742226248,
+        "facingY": -0.6974608635191685,
+        "pointerX": 0,
+        "pointerY": 126
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 16426,
+      "label": "npc:npc.floresta.flores-veladas.iarai",
+      "player": {
+        "x": 422,
+        "y": 518,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 158
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.7586506618510275,
+        "facingY": -0.6514976387317133,
+        "pointerX": 0,
+        "pointerY": 158
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 17326,
+      "label": "npc:npc.floresta.flores-veladas.iarai",
+      "player": {
+        "x": 562,
+        "y": 472,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 103
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.8343546313819581,
+        "facingY": -0.5512280372871801,
+        "pointerX": 0,
+        "pointerY": 103
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 18271,
+      "label": "npc:npc.floresta.flores-veladas.iarai",
+      "player": {
+        "x": 711,
+        "y": 467,
+        "hp": 6
+      },
+      "camera": {
+        "x": 44,
+        "y": 94
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.873430512701388,
+        "facingY": -0.48694880581246974,
+        "pointerX": 42,
+        "pointerY": 93
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 22574,
+      "label": "combat",
+      "player": {
+        "x": 783,
+        "y": 440,
+        "hp": 6
+      },
+      "camera": {
+        "x": 133,
+        "y": 79
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.8743350067249029,
+        "facingY": -0.48532287810834146,
+        "pointerX": 133,
+        "pointerY": 79
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 22591,
+      "label": "combat-approach",
+      "player": {
+        "x": 783,
+        "y": 440,
+        "hp": 6
+      },
+      "camera": {
+        "x": 133,
+        "y": 79
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.8743350067249029,
+        "facingY": -0.48532287810834146,
+        "pointerX": 133,
+        "pointerY": 79
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 23641,
+      "label": "combat-approach",
+      "player": {
+        "x": 925,
+        "y": 582,
+        "hp": 6
+      },
+      "camera": {
+        "x": 258,
+        "y": 195
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.8647969699764022,
+        "facingY": -0.5021216991125099,
+        "pointerX": 255,
+        "pointerY": 192
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 24641,
+      "label": "combat-approach",
+      "player": {
+        "x": 1070,
+        "y": 673,
+        "hp": 6
+      },
+      "camera": {
+        "x": 403,
+        "y": 292
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.8687502303125257,
+        "facingY": -0.49525047938586936,
+        "pointerX": 400,
+        "pointerY": 290
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 25697,
+      "label": "combat-approach",
+      "player": {
+        "x": 1273,
+        "y": 651,
+        "hp": 6
+      },
+      "camera": {
+        "x": 596,
+        "y": 291
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.8824529545703583,
+        "facingY": -0.4704006621700752,
+        "pointerX": 593,
+        "pointerY": 291
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 26707,
+      "label": "combat-approach",
+      "player": {
+        "x": 1481,
+        "y": 651,
+        "hp": 6
+      },
+      "camera": {
+        "x": 804,
+        "y": 291
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.8825732030468637,
+        "facingY": -0.47017501131344647,
+        "pointerX": 801,
+        "pointerY": 291
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 27725,
+      "label": "combat-approach-fallback",
+      "player": {
+        "x": 1689,
+        "y": 651,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1013,
+        "y": 291
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.882693278586728,
+        "facingY": -0.46994954616193974,
+        "pointerX": 1009,
+        "pointerY": 291
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 28791,
+      "label": "combat-approach-fallback",
+      "player": {
+        "x": 1835,
+        "y": 646,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1168,
+        "y": 286
+      },
+      "enemies": 2,
+      "enemyHp": [
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.8802752949297279,
+        "facingY": -0.47446328112550595,
+        "pointerX": 1165,
+        "pointerY": 286
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 29612,
+      "label": "combat",
+      "player": {
+        "x": 2081,
+        "y": 619,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1364,
+        "y": 259
+      },
+      "enemies": 2,
+      "enemyHp": [
+        134.8,
+        160
+      ],
+      "aim": {
+        "facingX": -0.8931837121992051,
+        "facingY": -0.4496919570795631,
+        "pointerX": 1356,
+        "pointerY": 259
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 30501,
+      "label": "combat-approach",
+      "player": {
+        "x": 1950,
+        "y": 747,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1315,
+        "y": 372
+      },
+      "enemies": 2,
+      "enemyHp": [
+        92.80000000000001,
+        160
+      ],
+      "aim": {
+        "facingX": 0.5392664683884987,
+        "facingY": 0.8421351887148503,
+        "pointerX": 1979.7382601138243,
+        "pointerY": 793.5837320574162
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 31424,
+      "label": "combat-approach",
+      "player": {
+        "x": 2063,
+        "y": 718,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1436,
+        "y": 358
+      },
+      "enemies": 2,
+      "enemyHp": [
+        52.80000000000001,
+        94.8
+      ],
+      "aim": {
+        "facingX": 0.4866493396686582,
+        "facingY": 0.8735974016674152,
+        "pointerX": 2101.7382601138243,
+        "pointerY": 780.5837320574162
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 31638,
+      "label": "combat",
+      "player": {
+        "x": 2019,
+        "y": 718,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1406,
+        "y": 358
+      },
+      "enemies": 2,
+      "enemyHp": [
+        52.80000000000001,
+        94.8
+      ],
+      "aim": {
+        "facingX": 0.5994355632898469,
+        "facingY": 0.8004230165752256,
+        "pointerX": 2072.7382601138243,
+        "pointerY": 780.5837320574162
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 33194,
+      "label": "combat",
+      "player": {
+        "x": 1976,
+        "y": 588,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1367,
+        "y": 228
+      },
+      "enemies": 3,
+      "enemyHp": [
+        130,
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": 0.924257314422609,
+        "facingY": 0.38177010979947923,
+        "pointerX": 2038.1832683843113,
+        "pointerY": 613.8373205741627
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 33213,
+      "label": "combat-approach",
+      "player": {
+        "x": 1976,
+        "y": 588,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1363,
+        "y": 228
+      },
+      "enemies": 3,
+      "enemyHp": [
+        130,
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": 0.9148777063909624,
+        "facingY": 0.40373107676869774,
+        "pointerX": 2034.1832683843113,
+        "pointerY": 613.8373205741627
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 34210,
+      "label": "combat-approach",
+      "player": {
+        "x": 2125,
+        "y": 636,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1453,
+        "y": 260
+      },
+      "enemies": 3,
+      "enemyHp": [
+        130,
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.4418991039546361,
+        "facingY": 0.8970647590470208,
+        "pointerX": 2117.1832683843113,
+        "pointerY": 644.8373205741627
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 35178,
+      "label": "combat-approach",
+      "player": {
+        "x": 2288,
+        "y": 615,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1613,
+        "y": 254
+      },
+      "enemies": 3,
+      "enemyHp": [
+        130,
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.2854111206828962,
+        "facingY": 0.9584051816379819,
+        "pointerX": 2277.1832683843113,
+        "pointerY": 639.8373205741627
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 36169,
+      "label": "combat-approach",
+      "player": {
+        "x": 2447,
+        "y": 617,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1779,
+        "y": 260
+      },
+      "enemies": 3,
+      "enemyHp": [
+        130,
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": -0.0025498610635747393,
+        "facingY": 0.9999967490989939,
+        "pointerX": 2444.1832683843113,
+        "pointerY": 646.8373205741627
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 37157,
+      "label": "combat-approach",
+      "player": {
+        "x": 2527,
+        "y": 647,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1899,
+        "y": 299
+      },
+      "enemies": 3,
+      "enemyHp": [
+        130,
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": 0.7165598658342005,
+        "facingY": 0.6975255971472821,
+        "pointerX": 2568.1832683843113,
+        "pointerY": 686.8373205741627
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 37192,
+      "label": "combat",
+      "player": {
+        "x": 2522,
+        "y": 642,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1895,
+        "y": 295
+      },
+      "enemies": 3,
+      "enemyHp": [
+        130,
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": 0.716358560261469,
+        "facingY": 0.6977323363153777,
+        "pointerX": 2564.1832683843113,
+        "pointerY": 682.8373205741627
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 37209,
+      "label": "combat-approach",
+      "player": {
+        "x": 2522,
+        "y": 642,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1893,
+        "y": 293
+      },
+      "enemies": 3,
+      "enemyHp": [
+        130,
+        160,
+        160
+      ],
+      "aim": {
+        "facingX": 0.7162610883244737,
+        "facingY": 0.6978323963189446,
+        "pointerX": 2562.1832683843113,
+        "pointerY": 680.8373205741627
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 38116,
+      "label": "combat-approach",
+      "player": {
+        "x": 2601,
+        "y": 725,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1970,
+        "y": 374
+      },
+      "enemies": 3,
+      "enemyHp": [
+        130,
+        109.6,
+        160
+      ],
+      "aim": {
+        "facingX": 0.725525656311513,
+        "facingY": 0.6881951191586207,
+        "pointerX": 2639.1832683843113,
+        "pointerY": 761.8373205741627
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 38346,
+      "label": "combat",
+      "player": {
+        "x": 2555,
+        "y": 720,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1938,
+        "y": 360
+      },
+      "enemies": 3,
+      "enemyHp": [
+        130,
+        109.6,
+        160
+      ],
+      "aim": {
+        "facingX": 0.877172168914359,
+        "facingY": 0.4801759949040341,
+        "pointerX": 2608.1832683843113,
+        "pointerY": 745.8373205741627
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 39243,
+      "label": "combat-approach",
+      "player": {
+        "x": 2686,
+        "y": 848,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2024,
+        "y": 467
+      },
+      "enemies": 2,
+      "enemyHp": [
+        130,
+        160
+      ],
+      "aim": {
+        "facingX": 0.2501139814118366,
+        "facingY": 0.9682163995214702,
+        "pointerX": 2702.9633014662595,
+        "pointerY": 913.9952153110048
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 40180,
+      "label": "combat-approach",
+      "player": {
+        "x": 2813,
+        "y": 725,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2145,
+        "y": 382
+      },
+      "enemies": 2,
+      "enemyHp": [
+        130,
+        120
+      ],
+      "aim": {
+        "facingX": 0.12847009603874454,
+        "facingY": 0.9917133832029271,
+        "pointerX": 2823.9633014662595,
+        "pointerY": 833.9952153110048
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 40920,
+      "label": "combat",
+      "player": {
+        "x": 2769,
+        "y": 663,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2111,
+        "y": 283
+      },
+      "enemies": 2,
+      "enemyHp": [
+        130,
+        120
+      ],
+      "aim": {
+        "facingX": 0.28579092696838015,
+        "facingY": 0.9582919941555151,
+        "pointerX": 2789.9633014662595,
+        "pointerY": 729.9952153110048
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 41735,
+      "label": "combat-approach",
+      "player": {
+        "x": 2908,
+        "y": 531,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2237,
+        "y": 192
+      },
+      "enemies": 1,
+      "enemyHp": [
+        130
+      ],
+      "aim": {
+        "facingX": 0.805501083828907,
+        "facingY": 0.5925942996270348,
+        "pointerX": 2962.0450811629144,
+        "pointerY": 570.5023923444976
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 42786,
+      "label": "combat-approach",
+      "player": {
+        "x": 2681,
+        "y": 531,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2045,
+        "y": 171
+      },
+      "enemies": 1,
+      "enemyHp": [
+        67
+      ],
+      "aim": {
+        "facingX": 0.987209170651403,
+        "facingY": 0.15943040294049657,
+        "pointerX": 2774.0450811629144,
+        "pointerY": 546.5023923444976
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 43055,
+      "label": "combat",
+      "player": {
+        "x": 2736,
+        "y": 531,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2067,
+        "y": 171
+      },
+      "enemies": 1,
+      "enemyHp": [
+        67
+      ],
+      "aim": {
+        "facingX": 0.9675058674954964,
+        "facingY": 0.25284856408883727,
+        "pointerX": 2792.0450811629144,
+        "pointerY": 546.5023923444976
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "active",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 0,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": false,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 43957,
+      "label": "combat",
+      "player": {
+        "x": 2602,
+        "y": 403,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1970,
+        "y": 52
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": 0.10994298685634836,
+        "facingY": 0.993937895263635,
+        "pointerX": 2605.8815217696038,
+        "pointerY": 440.9856459330143
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "completed",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 1,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": true,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.floresta.flores-veladas.complete"
+      ]
+    },
+    {
+      "atMs": 44218,
+      "label": "exit:exit.floresta.flores-veladas.complete",
+      "player": {
+        "x": 2602,
+        "y": 403,
+        "hp": 4
+      },
+      "camera": {
+        "x": 1961,
+        "y": 43
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": -0.24933819330641585,
+        "facingY": 0.9684164730934167,
+        "pointerX": 2594.8815217696038,
+        "pointerY": 429.9856459330143
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "completed",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 1,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": true,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.floresta.flores-veladas.complete"
+      ]
+    },
+    {
+      "atMs": 45125,
+      "label": "exit:exit.floresta.flores-veladas.complete",
+      "player": {
+        "x": 2726,
+        "y": 524,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2058,
+        "y": 137
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": -0.9997163349966737,
+        "facingY": -0.023817001087846092,
+        "pointerX": 2689.8815217696038,
+        "pointerY": 520.9856459330143
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "completed",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 1,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": true,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.floresta.flores-veladas.complete"
+      ]
+    },
+    {
+      "atMs": 46189,
+      "label": "exit:exit.floresta.flores-veladas.complete",
+      "player": {
+        "x": 2901,
+        "y": 631,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2225,
+        "y": 261
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": -0.9208066470280795,
+        "facingY": 0.39001938258105345,
+        "pointerX": 2855.8815217696038,
+        "pointerY": 647.9856459330143
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "completed",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 1,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": true,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.floresta.flores-veladas.complete"
+      ]
+    },
+    {
+      "atMs": 47189,
+      "label": "exit:exit.floresta.flores-veladas.complete",
+      "player": {
+        "x": 3106,
+        "y": 631,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2429,
+        "y": 261
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": -0.9240984114729061,
+        "facingY": 0.3821545837920198,
+        "pointerX": 3059.8815217696038,
+        "pointerY": 647.9856459330143
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "completed",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 1,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": true,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.floresta.flores-veladas.complete"
+      ]
+    },
+    {
+      "atMs": 48199,
+      "label": "exit:exit.floresta.flores-veladas.complete",
+      "player": {
+        "x": 3311,
+        "y": 631,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2560,
+        "y": 261
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": -0.988299154867675,
+        "facingY": 0.15252796624829032,
+        "pointerX": 3193.8815217696038,
+        "pointerY": 647.9856459330143
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "completed",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 1,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": true,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.floresta.flores-veladas.complete"
+      ]
+    },
+    {
+      "atMs": 49206,
+      "label": "exit:exit.floresta.flores-veladas.complete",
+      "player": {
+        "x": 3519,
+        "y": 631,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2560,
+        "y": 261
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": -0.9985266267262094,
+        "facingY": 0.05426394492457451,
+        "pointerX": 3193.8815217696038,
+        "pointerY": 647.9856459330143
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "completed",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 1,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": true,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.floresta.flores-veladas.complete"
+      ]
+    },
+    {
+      "atMs": 50211,
+      "label": "exit:exit.floresta.flores-veladas.complete",
+      "player": {
+        "x": 3717,
+        "y": 631,
+        "hp": 4
+      },
+      "camera": {
+        "x": 2560,
+        "y": 261
+      },
+      "enemies": 0,
+      "enemyHp": [],
+      "aim": {
+        "facingX": -0.9993877510233283,
+        "facingY": 0.034987470679284385,
+        "pointerX": 3193.8815217696038,
+        "pointerY": 647.9856459330143
+      },
+      "missionStates": {
+        "mission.floresta.flores-veladas.reacender-coro": {
+          "status": "completed",
+          "objectives": {
+            "objective.floresta.flores-veladas.acalmar-jardim": 1,
+            "objective.floresta.flores-veladas.encontrar-tucum": 0,
+            "objective.floresta.flores-veladas.ouvir-iarai": 1
+          }
+        }
+      },
+      "flags": {
+        "flag.floresta.flores-veladas.coro-restaurado": true,
+        "flag.floresta.flores-veladas.entry-seen": true
+      },
+      "unlockedExitIds": [
+        "exit.floresta.flores-veladas.complete"
+      ]
+    }
+  ],
+  "evidence": {
+    "screenshots": [
+      "01-loaded.png",
+      "02-npc-dialogue.png",
+      "03-combat.png",
+      "05-exit.png"
+    ],
+    "browser": "Edg/157.0.4341.46 (Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0)",
+    "durationMs": 50447
+  },
+  "runtime": {
+    "phaser": "executed",
+    "liveExecution": "executed"
+  },
+  "generatedAt": "2026-11-12T16:32:49.250Z"
+}

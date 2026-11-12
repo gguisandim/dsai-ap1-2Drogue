@@ -18,6 +18,9 @@ const PRESENTATIONS = Object.freeze({
   igapo: Object.freeze({
     id: 'forgotten-igapo', label: 'Igapó dos Esquecidos', accent: '#38bdf8', surface: '#123448',
   }),
+  flowers: Object.freeze({
+    id: 'veiled-flowers', label: 'Jardins das Flores Veladas', accent: '#f0a6d2', surface: '#234936',
+  }),
   fungi: Object.freeze({
     id: 'fungal-garden', label: 'Jardim dos Fungos', accent: '#c084fc', surface: '#38204d',
   }),
@@ -40,7 +43,7 @@ const FIXTURE_REGIONS: readonly FixtureRegion[] = Object.freeze([
   { id: 'fixture.port', stageId: 'level_05_clocktower', biomeId: 'clocktower', presentation: PRESENTATIONS.port },
   { id: 'fixture.palace', stageId: 'level_06_inferno', biomeId: 'inferno', presentation: PRESENTATIONS.palace },
   { id: 'fixture.roots-deep', stageId: 'level_07_witches_crypt', biomeId: 'crypt', presentation: PRESENTATIONS.roots },
-  { id: 'fixture.igapo-light', stageId: 'level_08_paradiso', biomeId: 'garden', presentation: PRESENTATIONS.igapo },
+  { id: 'fixture.igapo-light', stageId: 'level_08_paradiso', biomeId: 'garden', presentation: PRESENTATIONS.flowers },
   { id: 'fixture.fungi-void', stageId: 'level_09_limbo', biomeId: 'void', presentation: PRESENTATIONS.fungi },
   { id: 'fixture.palace-summit', stageId: 'level_10_ithavoll', biomeId: 'celestial', presentation: PRESENTATIONS.palace },
 ]);

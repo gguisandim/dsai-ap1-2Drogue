@@ -3,15 +3,18 @@ import { ALL_LEVELS, LevelDefinition } from '../data/LevelData';
 import { VERSE_SECTIONS } from '../data/VerseLevelData';
 import {
   ChapterManifest,
+  MIGRATED_LEGACY_STAGE_IDS,
   StageLoader,
   StageModule,
   StageRegistry,
   registerLegacyStages,
 } from '../stages';
 
+const UNMIGRATED_LEVELS = ALL_LEVELS.filter(level => !MIGRATED_LEGACY_STAGE_IDS.includes(level.id));
+
 const LEGACY_CATALOGUES: ReadonlyArray<readonly [string, readonly LevelDefinition[]]> = [
   ['legacy.verse', VERSE_SECTIONS],
-  ['legacy.levels', ALL_LEVELS],
+  ['legacy.levels', UNMIGRATED_LEVELS],
   ['legacy.corridor', [CORRIDOR_LEVEL]],
 ];
 
@@ -28,7 +31,7 @@ function registerSingle(registry: StageRegistry, module: StageModule): void {
 }
 
 describe('StageLoader legacy compatibility', () => {
-  it('resolves all fourteen legacy stages with the same ids, order and LevelDefinition data', () => {
+  it('resolves all thirteen unmigrated legacy stages with the same ids, order and LevelDefinition data', () => {
     const registry = new StageRegistry();
     registerLegacyStages(registry);
     const loader = new StageLoader(registry);
@@ -49,7 +52,7 @@ describe('StageLoader legacy compatibility', () => {
       });
     });
 
-    expect(resolved).toBe(14);
+    expect(resolved).toBe(13);
   });
 
   it('reports known legacy placement anomalies as diagnostics without changing their data', () => {

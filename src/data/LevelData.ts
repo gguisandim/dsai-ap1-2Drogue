@@ -1,4 +1,5 @@
 // src/data/LevelData.ts
+import { createVeiledGardensLevelDefinition } from '../stages/chapters/flores-veladas/veiledGardensMap';
 // Hand-crafted level definitions for the Bayonetta-inspired roguelike.
 // Each level has a tile map (40 wide × 25 tall), enemy placements, item placements,
 // decorations, and metadata.
@@ -842,78 +843,9 @@ export const LEVEL_07_WITCHES_CRYPT: LevelDefinition = {
 };
 
 // ═══════════════════════════════════════════════════════════════════
-// LEVEL 8 — PARADISO GARDENS (Boss: Fortitudo)
+// LEVEL 8 — JARDINS DAS FLORES VELADAS (converted from Paradiso Gardens)
 // ═══════════════════════════════════════════════════════════════════
-export const LEVEL_08_PARADISO: LevelDefinition = {
-  id: 'level_08_paradiso',
-  name: 'Paradiso Gardens',
-  description: 'The celestial gardens of Paradiso, a realm of blinding light and divine cruelty. Fortitudo awaits.',
-  theme: 'paradiso_garden',
-  music: 'ost_paradiso',
-  ambientColor: 0xffeedd,
-  fogColor: 0xffffee,
-  fogDensity: 0.2,
-  lightIntensity: 1.0,
-  tileMap: [
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3,0,0,0,0,1],
-    [1,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3,0,0,0,0,1],
-    [1,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3,0,0,0,0,1],
-    [1,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3,0,0,0,0,1],
-    [1,0,0,0,0,3,3,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  ],
-  enemies: [],
-  items: [
-    { type: 'mega_health_herb', x: 5, y: 20, quantity: 2 },
-    { type: 'mega_health_herb', x: 35, y: 20, quantity: 2 },
-    { type: 'lollipop_purple', x: 3, y: 3, quantity: 1 },
-    { type: 'lollipop_green', x: 37, y: 3, quantity: 1 },
-  ],
-  decorations: [
-    { type: 'golden_tree', x: 7, y: 6, scale: 2.5 },
-    { type: 'golden_tree', x: 33, y: 6, scale: 2.5 },
-    { type: 'golden_tree', x: 7, y: 16, scale: 2.5 },
-    { type: 'golden_tree', x: 33, y: 16, scale: 2.5 },
-    { type: 'heavenly_fountain', x: 20, y: 12, scale: 3.0 },
-    { type: 'marble_arch', x: 20, y: 3, scale: 2.0 },
-    { type: 'marble_arch', x: 20, y: 21, scale: 2.0 },
-    { type: 'divine_light_beam', x: 12, y: 10, scale: 1.0 },
-    { type: 'divine_light_beam', x: 28, y: 10, scale: 1.0 },
-    { type: 'divine_light_beam', x: 12, y: 14, scale: 1.0 },
-    { type: 'divine_light_beam', x: 28, y: 14, scale: 1.0 },
-    { type: 'cloud_platform', x: 5, y: 12, scale: 2.0 },
-    { type: 'cloud_platform', x: 35, y: 12, scale: 2.0 },
-    { type: 'angelic_statue', x: 15, y: 3, scale: 1.5 },
-    { type: 'angelic_statue', x: 25, y: 3, scale: 1.5 },
-    { type: 'angelic_statue', x: 15, y: 21, scale: 1.5 },
-    { type: 'angelic_statue', x: 25, y: 21, scale: 1.5 },
-    { type: 'rose_petals', x: 20, y: 8, scale: 0.5 },
-    { type: 'rose_petals', x: 20, y: 15, scale: 0.5 },
-  ],
-  bossId: 'fortitudo',
-  parTime: 600,
-  difficulty: 8,
-};
-
+export const LEVEL_08_PARADISO: LevelDefinition = createVeiledGardensLevelDefinition();
 // ═══════════════════════════════════════════════════════════════════
 // LEVEL 9 — LIMBO CROSSING
 // ═══════════════════════════════════════════════════════════════════

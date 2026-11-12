@@ -2,10 +2,13 @@ import { CORRIDOR_LEVEL } from '../data/CorridorLevelData';
 import { ALL_LEVELS, LevelDefinition } from '../data/LevelData';
 import { VERSE_SECTIONS } from '../data/VerseLevelData';
 import {
+  MIGRATED_LEGACY_STAGE_IDS,
   StageRegistry,
   createLegacyStageModule,
   registerLegacyStages,
 } from '../stages';
+
+const UNMIGRATED_LEVELS = ALL_LEVELS.filter(level => !MIGRATED_LEGACY_STAGE_IDS.includes(level.id));
 
 function expectLegacyChapter(
   registry: StageRegistry,
@@ -49,11 +52,11 @@ describe('legacy stage registration compatibility', () => {
     registerLegacyStages(registry);
 
     expectLegacyChapter(registry, 'legacy.verse', VERSE_SECTIONS);
-    expectLegacyChapter(registry, 'legacy.levels', ALL_LEVELS);
+    expectLegacyChapter(registry, 'legacy.levels', UNMIGRATED_LEVELS);
     expectLegacyChapter(registry, 'legacy.corridor', [CORRIDOR_LEVEL]);
   });
 
-  it('keeps all fourteen legacy ids unique and validates the complete registry', () => {
+  it('keeps the thirteen unmigrated legacy ids unique and validates the complete registry', () => {
     const registry = new StageRegistry();
     registerLegacyStages(registry);
     const ids = [
@@ -62,8 +65,9 @@ describe('legacy stage registration compatibility', () => {
       ...registry.listChapter('legacy.corridor'),
     ].map(manifest => manifest.id);
 
-    expect(ids).toHaveLength(14);
-    expect(new Set(ids).size).toBe(14);
+    expect(ids).toHaveLength(13);
+    expect(new Set(ids).size).toBe(13);
+    expect(ids).not.toContain('level_08_paradiso');
     expect(registry.validate()).toEqual([]);
   });
 });

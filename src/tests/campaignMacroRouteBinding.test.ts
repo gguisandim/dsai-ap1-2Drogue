@@ -13,6 +13,7 @@ import {
   IGAPO_DAS_MEMORIAS_STAGE_ID,
   StageLoader,
   StageRegistry,
+  VEILED_GARDENS_STAGE_ID,
   WORLD_ROOT_STAGE_ID,
   registerCampaignChapters,
   registerLegacyStages,
@@ -95,7 +96,7 @@ class ToggleStorage implements SaveStoragePort {
 }
 
 describe('CampaignMacroRouteBinder vertical slice', () => {
-  it('uses Floresta das Raízes as the authored hub and keeps Igapó authored', () => {
+  it('uses Floresta das Raízes as the authored hub and keeps Igapó and Flores authored', () => {
     expect(UMBRA_CAMPAIGN_ROUTE_SLICE.revision).toBe(5);
     expect(UMBRA_CAMPAIGN_ROUTE_SLICE.hub.content).toMatchObject({
       kind: 'stage', stageId: WORLD_ROOT_STAGE_ID, minimumManifestRevision: 2,
@@ -107,7 +108,15 @@ describe('CampaignMacroRouteBinder vertical slice', () => {
     });
     expect(regions.find(region => region.id === 'region.aguas.igapo')?.content)
       .not.toHaveProperty('placeholder');
-    expect(regions.filter(region => region.id !== 'region.aguas.igapo')
+    expect(regions.find(region => region.id === 'region.floresta.flores')?.content).toMatchObject({
+      kind: 'stage', stageId: VEILED_GARDENS_STAGE_ID,
+    });
+    expect(regions.find(region => region.id === 'region.floresta.flores')?.content)
+      .not.toHaveProperty('placeholder');
+    expect(regions.filter(region => ![
+      'region.aguas.igapo',
+      'region.floresta.flores',
+    ].includes(region.id))
       .every(region => region.content.kind === 'planned')).toBe(true);
   });
 

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "kind": "umbra.stage-plan",
+  "id": "plan.floresta.jardins-flores-veladas",
+  "chapterId": "chapter.floresta.flores-veladas",
+  "stageId": "level_08_paradiso",
+  "title": "Jardins das Flores Veladas",
+  "summary": "Travessia panorâmica para restaurar o diálogo entre flores e polinizadores.",
+  "progression": "linear",
+  "visualDirection": "Floresta amazônica florida, úmida e estratificada; bromélias, helicônias, orquídeas, copas monumentais, luz filtrada e flora mística responsiva.",
+  "startRegionId": "region.floresta.flores.portal-folhas",
+  "exitRegionIds": ["region.floresta.flores.passagem-perfume"],
+  "regions": [
+    { "id": "region.floresta.flores.portal-folhas", "title": "Portal das Folhas", "role": "start", "anchor": { "x": 4, "y": 19 }, "connections": ["region.floresta.flores.alameda-bromelias"] },
+    { "id": "region.floresta.flores.alameda-bromelias", "title": "Alameda das Bromélias", "role": "exploration", "anchor": { "x": 24, "y": 14 }, "connections": ["region.floresta.flores.portal-folhas", "region.floresta.flores.arco-heliconias", "region.floresta.flores.ninho-polinizadores"] },
+    { "id": "region.floresta.flores.arco-heliconias", "title": "Arco das Helicônias", "role": "objective", "anchor": { "x": 51, "y": 25 }, "connections": ["region.floresta.flores.alameda-bromelias", "region.floresta.flores.ninho-polinizadores"] },
+    { "id": "region.floresta.flores.ninho-polinizadores", "title": "Ninho dos Polinizadores", "role": "combat", "anchor": { "x": 66, "y": 19 }, "connections": ["region.floresta.flores.alameda-bromelias", "region.floresta.flores.arco-heliconias", "region.floresta.flores.clareira-sem-voz"] },
+    { "id": "region.floresta.flores.clareira-sem-voz", "title": "Clareira Sem Voz", "role": "combat", "anchor": { "x": 84, "y": 18 }, "connections": ["region.floresta.flores.ninho-polinizadores", "region.floresta.flores.arvore-mil-petalas"] },
+    { "id": "region.floresta.flores.arvore-mil-petalas", "title": "Árvore das Mil Pétalas", "role": "objective", "anchor": { "x": 100, "y": 11 }, "connections": ["region.floresta.flores.clareira-sem-voz", "region.floresta.flores.passagem-perfume"] },
+    { "id": "region.floresta.flores.passagem-perfume", "title": "Passagem do Perfume", "role": "exit", "anchor": { "x": 116, "y": 19 }, "connections": ["region.floresta.flores.arvore-mil-petalas"] }
+  ],
+  "objectives": [
+    { "id": "objective.floresta.flores-veladas.ouvir-iarai", "title": "Ouvir Iaraí", "regionId": "region.floresta.flores.alameda-bromelias", "missionId": "mission.floresta.flores-veladas.reacender-coro" },
+    { "id": "objective.floresta.flores-veladas.encontrar-tucum", "title": "Encontrar Tucum", "regionId": "region.floresta.flores.arco-heliconias", "missionId": "mission.floresta.flores-veladas.reacender-coro", "dependsOn": ["objective.floresta.flores-veladas.ouvir-iarai"] },
+    { "id": "objective.floresta.flores-veladas.acalmar-jardim", "title": "Restaurar o ritmo do jardim", "regionId": "region.floresta.flores.clareira-sem-voz", "missionId": "mission.floresta.flores-veladas.reacender-coro", "dependsOn": ["objective.floresta.flores-veladas.encontrar-tucum"], "unlocksExitIds": ["exit.floresta.flores-veladas.complete"] }
+  ],
+  "exitConditions": [
+    { "exitId": "exit.floresta.flores-veladas.complete", "regionId": "region.floresta.flores.passagem-perfume", "requiresObjectiveIds": ["objective.floresta.flores-veladas.acalmar-jardim"] }
+  ],
+  "encounters": [
+    { "id": "encounter.floresta.flores-veladas.pollinators", "regionId": "region.floresta.flores.ninho-polinizadores", "archetypes": ["affinity", "applaud"], "waveCount": 2 }
+  ],
+  "interactions": [
+    { "id": "npc.floresta.flores-veladas.iarai", "kind": "npc", "regionId": "region.floresta.flores.alameda-bromelias", "referenceId": "npc.floresta.flores-veladas.iarai" },
+    { "id": "npc.floresta.flores-veladas.tucum", "kind": "npc", "regionId": "region.floresta.flores.arco-heliconias", "referenceId": "npc.floresta.flores-veladas.tucum" },
+    { "id": "dialogue.floresta.flores-veladas.iarai", "kind": "dialogue", "regionId": "region.floresta.flores.alameda-bromelias", "referenceId": "dialogue.floresta.flores-veladas.iarai" },
+    { "id": "dialogue.floresta.flores-veladas.tucum", "kind": "dialogue", "regionId": "region.floresta.flores.arco-heliconias", "referenceId": "dialogue.floresta.flores-veladas.tucum" }
+  ],
+  "capabilities": [
+    { "id": "navigation.authored-map", "category": "navigation", "minimumVersion": 1, "requirement": "required" },
+    { "id": "navigation.physical-exit", "category": "navigation", "minimumVersion": 1, "requirement": "required" },
+    { "id": "biome.garden", "category": "biome", "minimumVersion": 1, "requirement": "required" },
+    { "id": "interaction.npc-dialogue", "category": "interaction", "minimumVersion": 1, "requirement": "required" },
+    { "id": "narrative.mission", "category": "narrative", "minimumVersion": 1, "requirement": "required" },
+    { "id": "encounter.declarative", "category": "encounter", "minimumVersion": 1, "requirement": "required" }
+  ]
+}

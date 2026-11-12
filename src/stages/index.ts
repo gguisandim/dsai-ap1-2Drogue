@@ -208,6 +208,7 @@ export type { CampaignCompositionIdentityParts } from './runtime/CampaignComposi
 export { PhysicalExitResolver } from './runtime/PhysicalExitResolver';
 export { CampaignExitBinder } from './runtime/CampaignExitBinder';
 export { createLegacyStageModule, registerLegacyStages } from './compatibility/LegacyStageAdapter';
+export { MIGRATED_LEGACY_STAGE_IDS } from './compatibility/LegacyStageAdapter';
 export { LegacyLevelAdapter } from './compatibility/LegacyLevelAdapter';
 export { ProceduralStageAdapter } from './compatibility/ProceduralStageAdapter';
 export { StageLoader } from './runtime/StageLoader';
@@ -345,3 +346,37 @@ export {
   createWorldRootDecorations,
   createWorldRootMap,
 } from './chapters/raiz-do-mundo';
+export {
+  VEILED_GARDENS_AUDIO_PROFILE_ID,
+  VEILED_GARDENS_CHAPTER_ENTRY,
+  VEILED_GARDENS_CHAPTER_ID,
+  VEILED_GARDENS_CHAPTER_MANIFEST,
+  VEILED_GARDENS_CHAPTER_STAGES,
+  VEILED_GARDENS_CLEARING,
+  VEILED_GARDENS_COMPLETION_EVENT_ID,
+  VEILED_GARDENS_EFFECTS,
+  VEILED_GARDENS_ENCOUNTER_ID,
+  VEILED_GARDENS_ENVIRONMENT_ID,
+  VEILED_GARDENS_EXIT,
+  VEILED_GARDENS_EXIT_ID,
+  VEILED_GARDENS_HEIGHT,
+  VEILED_GARDENS_IARAI,
+  VEILED_GARDENS_IARAI_DIALOGUE_ID,
+  VEILED_GARDENS_IARAI_ID,
+  VEILED_GARDENS_MISSION_ID,
+  VEILED_GARDENS_PRESENTATION,
+  VEILED_GARDENS_RESTORED_FLAG,
+  VEILED_GARDENS_SPAWN,
+  VEILED_GARDENS_STAGE,
+  VEILED_GARDENS_STAGE_ID,
+  VEILED_GARDENS_THEME_ID,
+  VEILED_GARDENS_TILESET_ID,
+  VEILED_GARDENS_TUCUM,
+  VEILED_GARDENS_TUCUM_DIALOGUE_ID,
+  VEILED_GARDENS_TUCUM_ID,
+  VEILED_GARDENS_VISUAL_RESOURCES,
+  VEILED_GARDENS_WIDTH,
+  createVeiledGardensDecorations,
+  createVeiledGardensLevelDefinition,
+  createVeiledGardensMap,
+} from './chapters/flores-veladas';

@@ -7,6 +7,7 @@ import { createMageCastTexture } from '../utils/MageCastTexture';
 import { createPunyAnimations, preloadPunyAssets } from '../presentation/assets/bootPunyAssets';
 import { preloadIgapoAssets } from '../presentation/assets/bootIgapoAssets';
 import { preloadWorldRootAssets } from '../presentation/assets/bootWorldRootAssets';
+import { preloadFloresAssets } from '../presentation/assets/bootFloresAssets';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -40,6 +41,7 @@ export class BootScene extends Phaser.Scene {
     preloadPunyAssets(this);
     preloadIgapoAssets(this);
     preloadWorldRootAssets(this);
+    preloadFloresAssets(this);
   }
 
   create() {
