@@ -15,7 +15,7 @@ export * from './visuals';
 export const VEILED_GARDENS_CHAPTER_MANIFEST: ChapterManifest = Object.freeze({
   schemaVersion: 1 as const,
   id: VEILED_GARDENS_CHAPTER_ID,
-  revision: 1,
+  revision: 2,
   title: 'Rota da Floresta — Jardins das Flores Veladas',
   stageIds: Object.freeze([VEILED_GARDENS_STAGE_ID]),
   entryStageId: VEILED_GARDENS_STAGE_ID,
@@ -31,7 +31,7 @@ export const VEILED_GARDENS_CHAPTER_ENTRY = Object.freeze({
   regions: Object.freeze([Object.freeze({
     regionId: 'region.floresta.flores',
     stageId: VEILED_GARDENS_STAGE_ID,
-    minimumManifestRevision: 1,
+    minimumManifestRevision: 2,
     title: 'Jardins das Flores Veladas',
     dialogueIds: Object.freeze([VEILED_GARDENS_IARAI_DIALOGUE_ID]),
     eventIds: Object.freeze([VEILED_GARDENS_COMPLETION_EVENT_ID]),

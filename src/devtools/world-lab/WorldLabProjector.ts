@@ -22,6 +22,11 @@ import {
   worldRootAssetOriginById,
   worldRootTextureByKey,
 } from '../../presentation/assets/worldRootAssetCatalog';
+import {
+  FLORES_GENERATED_ASSET_ORIGIN,
+  floresAssetByTextureKey,
+  floresAssetOriginById,
+} from '../../presentation/assets/floresAssetCatalog';
 
 export interface WorldLabStageProjectionInput {
   readonly node: CampaignNode;
@@ -278,6 +283,23 @@ function projectStage(input: WorldLabStageProjectionInput): WorldLabStageView {
         license: origin.license,
         sourceUrl: origin.sourceUrl,
         modifications: Object.freeze([...original.modifications]),
+      })]);
+      return;
+    }
+    const flores = floresAssetByTextureKey(tile.textureKey);
+    if (flores) {
+      const origin = floresAssetOriginById(flores.originId);
+      if (!origin) throw new Error(`Missing origin metadata for asset ${flores.id}.`);
+      assetOriginEntries.push([flores.textureKey, Object.freeze({
+        assetId: flores.id,
+        textureKey: flores.textureKey,
+        pack: origin.pack,
+        author: origin.author,
+        license: origin.license,
+        sourceUrl: origin.sourceUrl,
+        modifications: Object.freeze(flores.originId === FLORES_GENERATED_ASSET_ORIGIN.id
+          ? ['Gerado com OpenAI ImageGen em fundo transparente.', 'Reduzido localmente com alpha preservado.']
+          : ['SVG autoral criado para o projeto.']),
       })]);
     }
   });

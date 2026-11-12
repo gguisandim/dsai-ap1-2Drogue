@@ -120,6 +120,11 @@ export function createVeiledGardensMap(): number[][] {
 
 export function createVeiledGardensDecorations(): DecorationPlacement[] {
   const placements: DecorationPlacement[] = [
+    { type: 'flores_pictorial_canopy', x: 14, y: 20, scale: 0.5, depth: 2.18, layer: 'background' },
+    { type: 'flores_pictorial_canopy', x: 42, y: 19, scale: 0.46, flipX: true, depth: 2.18, layer: 'background' },
+    { type: 'flores_pictorial_canopy', x: 73, y: 17, scale: 0.46, flipX: true, depth: 2.18, layer: 'background' },
+    { type: 'flores_pictorial_canopy', x: 108, y: 20, scale: 0.44, depth: 2.18, layer: 'background' },
+    { type: 'flores_heart_bloom', x: 84, y: 18, scale: 0.43, depth: 3.15, layer: 'background' },
     { type: 'flores_heliconia_arch', x: 19, y: 16, scale: 0.92, depth: 4.1 },
     { type: 'flores_bromeliad_cluster', x: 23, y: 11, scale: 1.05, depth: 4.4 },
     { type: 'flores_orchid_veil', x: 31, y: 13, scale: 0.9, depth: 7.7, layer: 'foreground' },

@@ -8,7 +8,10 @@ import {
   VEILED_GARDENS_STAGE_ID,
   VEILED_GARDENS_TUCUM,
 } from './veiledGardensMap';
-import { VEILED_GARDENS_PRESENTATION } from './visuals';
+import {
+  VEILED_GARDENS_PRESENTATION,
+  VEILED_GARDENS_PRESENTATION_VARIANTS,
+} from './visuals';
 
 export const VEILED_GARDENS_CHAPTER_ID = 'chapter.floresta.flores-veladas';
 export const VEILED_GARDENS_EXIT_ID = 'exit.floresta.flores-veladas.complete';
@@ -27,13 +30,14 @@ export const VEILED_GARDENS_STAGE: StageModule = Object.freeze({
   manifest: Object.freeze({
     schemaVersion: 1 as const,
     id: VEILED_GARDENS_STAGE_ID,
-    revision: 1,
+    revision: 2,
     chapterId: VEILED_GARDENS_CHAPTER_ID,
     order: 0,
     title: 'Jardins das Flores Veladas',
-    summary: 'Restaure o diálogo entre flores e polinizadores em uma travessia amazônica panorâmica.',
+    summary: 'Atravesse o jardim vivo ou sua mutação corrompida e restaure o diálogo entre raiz, flor e asa.',
     layout: Object.freeze({ kind: 'authored' as const }),
     presentation: VEILED_GARDENS_PRESENTATION,
+    presentationVariants: VEILED_GARDENS_PRESENTATION_VARIANTS,
     exits: Object.freeze([Object.freeze({
       id: VEILED_GARDENS_EXIT_ID,
       anchor: Object.freeze({ kind: 'tile' as const, ...VEILED_GARDENS_EXIT }),
@@ -115,23 +119,25 @@ export const VEILED_GARDENS_STAGE: StageModule = Object.freeze({
     Object.freeze({ id: VEILED_GARDENS_TUCUM_ID, displayName: 'Tucum, Observador de Asas', role: 'ambient' as const, presentationId: 'environment.floresta.flores.tucum', spawn: Object.freeze({ kind: 'tile' as const, ...VEILED_GARDENS_TUCUM }), interactionDialogueId: VEILED_GARDENS_TUCUM_DIALOGUE_ID }),
   ]),
   dialogues: Object.freeze([
-    Object.freeze({ id: VEILED_GARDENS_ENTRY_DIALOGUE_ID, startNodeId: 'perfume-still', nodes: Object.freeze([Object.freeze({ id: 'perfume-still', speakerId: 'narrator' as const, text: 'O perfume chega antes das flores. Adiante, folhas imóveis aguardam um som que não vem.' })]) }),
+    Object.freeze({ id: VEILED_GARDENS_ENTRY_DIALOGUE_ID, startNodeId: 'perfume-still', nodes: Object.freeze([Object.freeze({ id: 'perfume-still', speakerId: 'narrator' as const, text: 'O perfume chega antes das flores. Sob a trilha viva, uma veia ferida devolve o canto das raízes fora de fase.' })]) }),
     Object.freeze({ id: VEILED_GARDENS_IARAI_DIALOGUE_ID, startNodeId: 'iarai-greeting', nodes: Object.freeze([
       Object.freeze({ id: 'iarai-greeting', speakerId: VEILED_GARDENS_IARAI_ID, text: 'Fale baixo. O jardim está escutando até o que esquecemos de dizer.', nextNodeId: 'player-asks-silence' }),
       Object.freeze({ id: 'player-asks-silence', speakerId: 'player' as const, text: 'As flores se fecharam por causa do silêncio?', nextNodeId: 'iarai-explains' }),
-      Object.freeze({ id: 'iarai-explains', speakerId: VEILED_GARDENS_IARAI_ID, text: 'Elas florescem em resposta. Às asas, aos passos, ao chamado umas das outras. Quando os polinizadores se assustaram, cada espécie tentou cantar sozinha.', nextNodeId: 'iarai-mission' }),
-      Object.freeze({ id: 'iarai-mission', speakerId: VEILED_GARDENS_IARAI_ID, text: 'Procure Tucum junto ao ninho. Observe antes de combater. Depois, leve o pulso de volta à clareira sem voz.' }),
+      Object.freeze({ id: 'iarai-explains', speakerId: VEILED_GARDENS_IARAI_ID, text: 'Elas florescem em resposta: às asas, aos passos, ao chamado umas das outras. A ferida sob a clareira repetiu esses chamados até cada espécie disputar luz e som.', nextNodeId: 'iarai-mission' }),
+      Object.freeze({ id: 'iarai-mission', speakerId: VEILED_GARDENS_IARAI_ID, text: 'Procure Tucum junto ao ninho. Observe o pólen antes de combater; as criaturas defendem sinais que já não reconhecem.', nextNodeId: 'iarai-source' }),
+      Object.freeze({ id: 'iarai-source', speakerId: VEILED_GARDENS_IARAI_ID, text: 'Depois, leve o pulso de raiz, flor e asa de volta à Clareira Sem Voz. O jardim precisa reaprender a responder, não apenas silenciar.' }),
     ]) }),
     Object.freeze({ id: VEILED_GARDENS_TUCUM_DIALOGUE_ID, startNodeId: 'tucum-listens', nodes: Object.freeze([
-      Object.freeze({ id: 'tucum-listens', speakerId: VEILED_GARDENS_TUCUM_ID, text: 'Ouça entre um zumbido e outro: as flores estão respondendo fora de tempo.', nextNodeId: 'tucum-clue' }),
-      Object.freeze({ id: 'tucum-clue', speakerId: VEILED_GARDENS_TUCUM_ID, text: 'Não persiga as criaturas. Abra espaço no caminho e o ninho retomará o ritmo. A clareira saberá que não está sozinha.' }),
+      Object.freeze({ id: 'tucum-listens', speakerId: VEILED_GARDENS_TUCUM_ID, text: 'Ouça entre um zumbido e outro: as flores estão respondendo fora de tempo.', nextNodeId: 'tucum-pollen' }),
+      Object.freeze({ id: 'tucum-pollen', speakerId: VEILED_GARDENS_TUCUM_ID, text: 'Este pólen mineralizado imita o chamado das flores. As asas o seguem, recebem outro sinal e voltam contra tudo que se move.', nextNodeId: 'tucum-clue' }),
+      Object.freeze({ id: 'tucum-clue', speakerId: VEILED_GARDENS_TUCUM_ID, text: 'Não persiga as criaturas. Abra espaço no caminho, quebre o falso ritmo e o ninho voltará a reconhecer a clareira.' }),
     ]) }),
-    Object.freeze({ id: VEILED_GARDENS_RESTORED_DIALOGUE_ID, startNodeId: 'garden-answers', nodes: Object.freeze([Object.freeze({ id: 'garden-answers', speakerId: 'narrator' as const, text: 'O primeiro acorde nasce sob os pés. Orquídeas se abrem em sequência, e a passagem do perfume reaparece entre as copas.' })]) }),
+    Object.freeze({ id: VEILED_GARDENS_RESTORED_DIALOGUE_ID, startNodeId: 'garden-answers', nodes: Object.freeze([Object.freeze({ id: 'garden-answers', speakerId: 'narrator' as const, text: 'O primeiro acorde nasce sob os pés. Raiz, flor e asa voltam a responder umas às outras; o pólen perde o brilho falso e a passagem do perfume reaparece.' })]) }),
   ]),
   missions: Object.freeze([Object.freeze({
     id: VEILED_GARDENS_MISSION_ID,
     title: 'Reacender o coro',
-    description: 'Reconecte flores e polinizadores para devolver o pulso à Clareira Sem Voz.',
+    description: 'Rompa o falso ritmo do pólen contaminado e reconecte raiz, flor e asa na Clareira Sem Voz.',
     scope: 'stage' as const,
     start: 'stage-enter' as const,
     objectives: Object.freeze([

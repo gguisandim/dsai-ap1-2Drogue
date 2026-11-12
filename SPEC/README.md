@@ -80,3 +80,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-11-06 | [Refinamento artístico da Floresta das Raízes](./2026-11-06-refinamento-artistico-floresta-das-raizes.md) |
 | 2026-11-10 | [Polimento ambiental e direção de arte do Igapó das Memórias](./2026-11-10-polimento-ambiental-igapo-das-memorias.md) |
 | 2026-11-12 | [Conversão de Paradiso Gardens em Jardins das Flores Veladas](./2026-11-12-conversao-paradiso-jardins-flores-veladas.md) |
+| 2026-11-12 | [Refinamento agressivo de Jardins das Flores Veladas](./2026-11-12-refinamento-agressivo-jardins-flores-veladas.md) |

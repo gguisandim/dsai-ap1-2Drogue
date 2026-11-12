@@ -5,9 +5,9 @@
   "chapterId": "chapter.floresta.flores-veladas",
   "stageId": "level_08_paradiso",
   "title": "Jardins das Flores Veladas",
-  "summary": "Travessia panorâmica para restaurar o diálogo entre flores e polinizadores.",
+  "summary": "Travessia panorâmica para romper o falso ritmo do pólen e restaurar o diálogo entre raiz, flor e asa.",
   "progression": "linear",
-  "visualDirection": "Floresta amazônica florida, úmida e estratificada; bromélias, helicônias, orquídeas, copas monumentais, luz filtrada e flora mística responsiva.",
+  "visualDirection": "Duas apresentações do mesmo jardim amazônico: Natural exuberante, úmida e luminosa; Corrompida com raízes angulares, flores invertidas, fungos, pólen mineralizado, névoa violeta e silhuetas mais densas. Pixel art mantém a leitura jogável; PNG e SVG formam as camadas ilustradas.",
   "startRegionId": "region.floresta.flores.portal-folhas",
   "exitRegionIds": ["region.floresta.flores.passagem-perfume"],
   "regions": [

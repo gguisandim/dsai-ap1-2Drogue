@@ -93,7 +93,7 @@ describe('Jardins das Flores Veladas', () => {
     const projected = applyCampaignRegionBindings(UMBRA_CAMPAIGN_SKELETON, CAMPAIGN_CHAPTER_CATALOG);
     const route = projected.routes.find(item => item.id === 'route.floresta')!;
     expect(route.regions.find(item => item.id === 'region.floresta.flores')?.content).toEqual({
-      kind: 'stage', stageId: VEILED_GARDENS_STAGE_ID, minimumManifestRevision: 1,
+      kind: 'stage', stageId: VEILED_GARDENS_STAGE_ID, minimumManifestRevision: 2,
     });
     expect(route.regions.filter(item => item.content.kind === 'planned').map(item => item.id)).toEqual([
       'region.floresta.fungos', 'region.floresta.copas',
@@ -137,11 +137,17 @@ describe('Jardins das Flores Veladas', () => {
     expect(source.kind === 'authored-waves' ? source.waves.map(wave => wave.enemies.length) : []).toEqual([2, 3]);
   });
 
-  it('keeps every original SVG dimensioned, hashed and documented', () => {
+  it('keeps every authored SVG/PNG dimensioned, hashed and documented', () => {
     const readme = readFileSync(join(__dirname, '..', 'assets', 'flores', 'README.md'), 'utf8');
     FLORES_ASSETS.forEach(asset => {
-      const source = readFileSync(join(__dirname, '..', 'assets', 'flores', asset.fileName), 'utf8');
-      expect(source).toContain(`width="${asset.width}" height="${asset.height}"`);
+      const source = readFileSync(join(__dirname, '..', 'assets', 'flores', asset.fileName));
+      if (asset.fileName.endsWith('.svg')) {
+        expect(source.toString('utf8')).toContain(`width="${asset.width}" height="${asset.height}"`);
+      } else {
+        expect(source.subarray(1, 4).toString('ascii')).toBe('PNG');
+        expect(source.readUInt32BE(16)).toBe(asset.width);
+        expect(source.readUInt32BE(20)).toBe(asset.height);
+      }
       expect(createHash('sha256').update(source).digest('hex')).toBe(asset.sha256);
       expect(readme).toContain(asset.sha256);
     });
