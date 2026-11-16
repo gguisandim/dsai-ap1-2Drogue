@@ -81,3 +81,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-11-10 | [Polimento ambiental e direção de arte do Igapó das Memórias](./2026-11-10-polimento-ambiental-igapo-das-memorias.md) |
 | 2026-11-12 | [Conversão de Paradiso Gardens em Jardins das Flores Veladas](./2026-11-12-conversao-paradiso-jardins-flores-veladas.md) |
 | 2026-11-12 | [Refinamento agressivo de Jardins das Flores Veladas](./2026-11-12-refinamento-agressivo-jardins-flores-veladas.md) |
+| 2026-11-16 | [Modernização do Menu do Umbra Trail — Etapa 9.15](./2026-11-16-etapa-9-15-modernizacao-menu.md) |
