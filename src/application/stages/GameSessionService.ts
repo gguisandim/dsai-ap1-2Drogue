@@ -32,6 +32,7 @@ import type {
   CampaignRunSaveFailure,
   CampaignRunState,
 } from './CampaignNavigation';
+import { CAMPAIGN_RUN_SAVE_STORAGE_KEY } from './CampaignNavigation';
 import { CampaignRouter, createCampaignRunState } from './CampaignRouter';
 import { CampaignRunSaveService } from './CampaignRunSaveService';
 import { GameStageCompositionRoot } from './GameStageCompositionRoot';
@@ -79,6 +80,14 @@ export interface GameSavedCampaignView {
   readonly assignments: readonly CampaignCompositionSlotSelection[];
 }
 
+export interface GameSavedClassicCampaignView {
+  readonly campaignId: string;
+  readonly runId: string;
+  readonly runSeed: string | number;
+  readonly currentStageId?: string;
+  readonly status: 'active' | 'completed';
+}
+
 export interface GameCompositionPolicyView {
   readonly policyId: CampaignCompositionPolicyId;
   readonly enabled: boolean;
@@ -106,6 +115,8 @@ export interface GameSessionMenuState {
   readonly individualStages: readonly GameIndividualStageView[];
   readonly savedCampaign?: GameSavedCampaignView;
   readonly savedCampaignError?: string;
+  readonly savedClassicCampaign?: GameSavedClassicCampaignView;
+  readonly savedClassicCampaignError?: string;
 }
 
 export interface GameComposedSession {
@@ -370,6 +381,7 @@ export class GameSessionService {
     ]);
     const individualStages = this.individualStages();
     const saved = this.savedCampaign();
+    const savedClassic = this.savedClassicCampaign();
     return Object.freeze({
       catalogReady: this.catalog !== undefined,
       catalogDiagnostics: Object.freeze([...this.catalogDiagnostics]),
@@ -406,6 +418,8 @@ export class GameSessionService {
       individualStages,
       ...(saved.view ? { savedCampaign: saved.view } : {}),
       ...(saved.error ? { savedCampaignError: saved.error } : {}),
+      ...(savedClassic.view ? { savedClassicCampaign: savedClassic.view } : {}),
+      ...(savedClassic.error ? { savedClassicCampaignError: savedClassic.error } : {}),
     });
   }
 
@@ -507,6 +521,31 @@ export class GameSessionService {
       ...(entry.difficulty ? { difficulty: entry.difficulty } : {}),
       enabled,
       ...(reason ? { reason } : {}),
+    });
+  }
+
+  private savedClassicCampaign(): {
+    readonly view?: GameSavedClassicCampaignView;
+    readonly error?: string;
+  } {
+    if (!this.campaignStorage) return Object.freeze({});
+    const loaded = new CampaignRunSaveService({
+      storage: this.campaignStorage,
+      storageKey: CAMPAIGN_RUN_SAVE_STORAGE_KEY,
+    }).load();
+    if (!loaded.ok) return Object.freeze({ error: `${loaded.error.code}: ${loaded.error.message}` });
+    if (loaded.value.status === 'empty') return Object.freeze({});
+
+    const state = loaded.value.envelope.state;
+    const currentNode = state.graph.nodes.find(node => node.id === state.currentNodeId);
+    return Object.freeze({
+      view: Object.freeze({
+        campaignId: state.graph.campaignId,
+        runId: state.graph.runId,
+        runSeed: state.graph.runSeed,
+        ...(currentNode?.stageId ? { currentStageId: currentNode.stageId } : {}),
+        status: state.status,
+      }),
     });
   }
 

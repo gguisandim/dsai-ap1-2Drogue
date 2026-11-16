@@ -16,14 +16,18 @@ describe('Game mode menu wiring', () => {
   const game = source('scenes', 'GameScene.ts');
   const main = source('main.ts');
 
-  it('routes the main menu to the game modes scene and registers it', () => {
-    expect(menu).toContain("this.scene.start('GameModesScene')");
+  it('routes the main menu to game modes and the dedicated phase selector', () => {
+    expect(menu).toContain("this.transitionTo('GameModesScene')");
+    expect(menu).toContain("this.transitionTo('StageSelectScene')");
     expect(main).toContain("import { GameModesScene } from './scenes/GameModesScene'");
+    expect(main).toContain("import { StageSelectScene } from './scenes/StageSelectScene'");
     expect(main).toContain('GameModesScene');
+    expect(main).toContain('StageSelectScene');
   });
 
   it('starts classic, composed and individual sessions through the existing scene', () => {
-    expect(modes).toContain("this.scene.start('GameScene', { macroCampaign: true })");
+    expect(modes).toContain("this.scene.start('GameScene', saved && isUmbraSave");
+    expect(modes).toContain('macroCampaign: true');
     expect(modes).toContain("this.scene.start('GameScene', { campaignRuntime: runtime })");
     expect(modes).toContain("this.scene.start('GameScene', {");
     expect(modes).toContain('individualRuntime');

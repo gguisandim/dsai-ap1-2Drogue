@@ -698,7 +698,14 @@ describe('legacy progression and persistence characterization', () => {
 
     try {
       const appearance = { ...DEFAULT_APPEARANCE, hair: 3 };
-      const settings = { ...DEFAULT_SETTINGS, showControls: false };
+      const settings = {
+        ...DEFAULT_SETTINGS,
+        showControls: false,
+        masterVolume: 0.37,
+        musicVolume: 0.52,
+        effectsVolume: 0.81,
+        fullscreen: true,
+      };
       const progression = createProgressionState(777);
       progression.currency = 91;
 
@@ -715,6 +722,9 @@ describe('legacy progression and persistence characterization', () => {
       expect(loadAppearance()).toEqual(appearance);
       expect(loadSettings()).toEqual(settings);
       expect(storage.load()).toEqual(progression);
+
+      localStorage.setItem('umbra-trail-settings', JSON.stringify({ sound: false }));
+      expect(loadSettings()).toEqual({ ...DEFAULT_SETTINGS, sound: false });
     } finally {
       if (previousDescriptor) Object.defineProperty(globalThis, 'localStorage', previousDescriptor);
       else delete (globalThis as SceneInternals).localStorage;

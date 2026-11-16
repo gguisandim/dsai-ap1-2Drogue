@@ -104,7 +104,9 @@ export class BootScene extends Phaser.Scene {
         repeat: 0,
       });
     });
-    SoundManager.setEnabled(loadSettings().sound);
+    const settings = loadSettings();
+    SoundManager.setEnabled(settings.sound);
+    SoundManager.setVolumeLevels(settings.masterVolume, settings.musicVolume, settings.effectsVolume);
     const developmentHost = globalThis.location?.hostname === '127.0.0.1' ||
       globalThis.location?.hostname === 'localhost';
     const search = globalThis.location?.search ?? '';

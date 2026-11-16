@@ -16,6 +16,7 @@ import type { ResolvedStageAudioProfile } from '../stages';
 class FakeParam {
   public values: number[] = [];
   public setValueAtTime(value: number): void { this.values.push(value); }
+  public setTargetAtTime(value: number): void { this.values.push(value); }
   public exponentialRampToValueAtTime(value: number): void { this.values.push(value); }
   public cancelScheduledValues(): void {}
 }
@@ -33,7 +34,8 @@ class FakeOscillator {
 
 class FakeGain {
   public gain = new FakeParam();
-  public connect(): void {}
+  public destination?: unknown;
+  public connect(destination: unknown): void { this.destination = destination; }
   public disconnect(): void {}
 }
 
@@ -102,6 +104,24 @@ describe('stage audio and environment presentation', () => {
   afterAll(() => {
     SoundManager.stopStageAudio();
     (globalThis as any).window = previousWindow;
+  });
+
+  it('routes music and effects through independent persisted volume buses', async () => {
+    const profile = loadIgapo().presentation.audio!;
+    SoundManager.setVolumeLevels(0.5, 0.4, 0.3);
+    await SoundManager.applyStageAudio(profile);
+
+    const [master, music, effects] = context.gains;
+    expect(master.gain.values[master.gain.values.length - 1]).toBe(0.5);
+    expect(music.gain.values[music.gain.values.length - 1]).toBe(0.4);
+    expect(effects.gain.values[effects.gain.values.length - 1]).toBe(0.3);
+    expect(master.destination).toBe(context.destination);
+    expect(music.destination).toBe(master);
+    expect(effects.destination).toBe(master);
+    expect(context.gains[3].destination).toBe(music);
+
+    expect(SoundManager.playStageEvent('npc.interacted')).toBe(true);
+    expect(context.gains[context.gains.length - 1].destination).toBe(effects);
   });
 
   it('resolves music, ambient/event sounds, light and fog from chapter data', () => {

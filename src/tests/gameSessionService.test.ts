@@ -6,6 +6,7 @@ import {
   COMPOSED_CAMPAIGN_ID,
   COMPOSED_CAMPAIGN_RUN_STORAGE_KEY,
   CampaignRunSaveService,
+  GameStageCompositionRoot,
   GameSessionService,
   campaignStageNarrativeSaveKey,
   composedCampaignRunId,
@@ -214,6 +215,52 @@ function legacyCompositionSnapshot(
 }
 
 describe('GameSessionService', () => {
+  it('reads the classic run for continuation without writing and only replaces a valid save on request', () => {
+    const storage = new MemorySaveStorage();
+    const service = new GameSessionService({ storage });
+
+    expect(service.menuState().savedClassicCampaign).toBeUndefined();
+    expect(storage.read(CAMPAIGN_RUN_SAVE_STORAGE_KEY)).toBeUndefined();
+
+    const root = new GameStageCompositionRoot({ campaignStorage: storage });
+    const first = root.createMacroCampaign({ runId: 'run.menu.first', runSeed: 'seed.menu.first' });
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    const previousBytes = storage.read(CAMPAIGN_RUN_SAVE_STORAGE_KEY);
+    const menuState = service.menuState();
+    expect(menuState.savedClassicCampaign).toMatchObject({
+      campaignId: first.value.adapter.campaignId(),
+      runId: 'run.menu.first',
+      runSeed: 'seed.menu.first',
+      status: 'active',
+    });
+    expect(storage.read(CAMPAIGN_RUN_SAVE_STORAGE_KEY)).toBe(previousBytes);
+
+    const replacement = root.createMacroCampaign({
+      runId: 'run.menu.second',
+      runSeed: 'seed.menu.second',
+      replaceExistingRun: true,
+    });
+    expect(replacement.ok).toBe(true);
+    if (!replacement.ok) return;
+    expect(replacement.value.adapter.state().graph.runId).toBe('run.menu.second');
+    expect(replacement.value.adapter.state().currentNodeId)
+      .toBe(replacement.value.graph.entryNodeId);
+
+    const invalidStorage = new MemorySaveStorage({
+      [CAMPAIGN_RUN_SAVE_STORAGE_KEY]: '{invalid',
+    });
+    const invalidBefore = invalidStorage.read(CAMPAIGN_RUN_SAVE_STORAGE_KEY);
+    const failed = new GameStageCompositionRoot({ campaignStorage: invalidStorage })
+      .createMacroCampaign({
+        runId: 'run.menu.invalid-replacement',
+        runSeed: 'seed.menu.invalid-replacement',
+        replaceExistingRun: true,
+      });
+    expect(failed.ok).toBe(false);
+    expect(invalidStorage.read(CAMPAIGN_RUN_SAVE_STORAGE_KEY)).toBe(invalidBefore);
+  });
+
   it('reports the real catalog as insufficient for random/custom while keeping classic and individual', () => {
     const service = new GameSessionService();
     const state = service.menuState();

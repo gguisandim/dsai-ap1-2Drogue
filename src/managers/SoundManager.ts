@@ -9,7 +9,14 @@ export type StageAudioApplyStatus = 'started' | 'unchanged' | 'blocked' | 'disab
 
 export class SoundManager {
   private static ctx: AudioContext | null = null;
+  private static busContext: AudioContext | null = null;
+  private static masterBus?: GainNode;
+  private static musicBus?: GainNode;
+  private static effectsBus?: GainNode;
   private static enabled: boolean = true;
+  private static masterVolume = 0.8;
+  private static musicVolume = 0.65;
+  private static effectsVolume = 0.9;
   private static desiredStageProfile?: ResolvedStageAudioProfile;
   private static activeStageProfileId?: string;
   private static stageLoops: Array<{ oscillator: OscillatorNode; gain: GainNode }> = [];
@@ -18,6 +25,22 @@ export class SoundManager {
   public static setEnabled(enabled: boolean): void {
     this.enabled = enabled;
     if (!enabled) this.stopStageAudio();
+    this.applyBusVolumes();
+  }
+
+  public static setVolumeLevels(master: number, music: number, effects: number): void {
+    this.masterVolume = this.clampVolume(master);
+    this.musicVolume = this.clampVolume(music);
+    this.effectsVolume = this.clampVolume(effects);
+    this.applyBusVolumes();
+  }
+
+  public static volumeLevels(): Readonly<{ master: number; music: number; effects: number }> {
+    return Object.freeze({
+      master: this.masterVolume,
+      music: this.musicVolume,
+      effects: this.effectsVolume,
+    });
   }
 
   private static getContext(requestResume = true): AudioContext {
@@ -25,10 +48,38 @@ export class SoundManager {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new AudioCtx();
     }
+    this.ensureBuses(this.ctx);
     if (requestResume && this.ctx.state === 'suspended') {
       void this.ctx.resume().catch(() => undefined);
     }
     return this.ctx;
+  }
+
+  private static ensureBuses(context: AudioContext): void {
+    if (this.busContext !== context) {
+      this.masterBus = context.createGain();
+      this.musicBus = context.createGain();
+      this.effectsBus = context.createGain();
+      this.musicBus.connect(this.masterBus);
+      this.effectsBus.connect(this.masterBus);
+      this.masterBus.connect(context.destination);
+      this.busContext = context;
+    }
+    this.applyBusVolumes();
+  }
+
+  private static applyBusVolumes(): void {
+    const now = this.ctx?.currentTime ?? 0;
+    const setValue = (gain: GainNode | undefined, value: number): void => {
+      if (gain) gain.gain.setTargetAtTime(value, now, 0.025);
+    };
+    setValue(this.masterBus, this.enabled ? this.masterVolume : 0);
+    setValue(this.musicBus, this.musicVolume);
+    setValue(this.effectsBus, this.effectsVolume);
+  }
+
+  private static clampVolume(value: number): number {
+    return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
   }
 
   public static async applyStageAudio(profile?: ResolvedStageAudioProfile): Promise<StageAudioApplyStatus> {
@@ -79,7 +130,7 @@ export class SoundManager {
       gain.gain.setValueAtTime(sound.volume * this.desiredStageProfile.masterVolume, context.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.22);
       oscillator.connect(gain);
-      gain.connect(context.destination);
+      gain.connect(this.effectsBus ?? context.destination);
       oscillator.onended = () => {
         oscillator.disconnect();
         gain.disconnect();
@@ -121,7 +172,7 @@ export class SoundManager {
     oscillator.frequency.setValueAtTime(sound.frequency, context.currentTime);
     gain.gain.setValueAtTime(sound.volume * masterVolume, context.currentTime);
     oscillator.connect(gain);
-    gain.connect(context.destination);
+    gain.connect(this.musicBus ?? context.destination);
     oscillator.start();
     return { oscillator, gain };
   }
@@ -178,7 +229,7 @@ export class SoundManager {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.effectsBus ?? ctx.destination);
 
       osc.start();
       osc.stop(ctx.currentTime + 0.08);
@@ -202,7 +253,7 @@ export class SoundManager {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.effectsBus ?? ctx.destination);
 
       osc.start();
       osc.stop(ctx.currentTime + 0.12);
@@ -227,7 +278,7 @@ export class SoundManager {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.effectsBus ?? ctx.destination);
 
       osc.start();
       osc.stop(ctx.currentTime + 1.2);
@@ -251,7 +302,7 @@ export class SoundManager {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.effectsBus ?? ctx.destination);
 
       osc.start();
       osc.stop(ctx.currentTime + 0.4);
@@ -275,7 +326,7 @@ export class SoundManager {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.effectsBus ?? ctx.destination);
 
       osc.start();
       osc.stop(ctx.currentTime + 0.2);
@@ -299,7 +350,7 @@ export class SoundManager {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.effectsBus ?? ctx.destination);
 
       osc.start();
       osc.stop(ctx.currentTime + 0.15);
@@ -323,7 +374,7 @@ export class SoundManager {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.effectsBus ?? ctx.destination);
 
       osc.start();
       osc.stop(ctx.currentTime + 0.35);

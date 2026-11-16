@@ -8,13 +8,45 @@
 - Esforço: `desconhecido`
 - SPEC: `SPEC/2026-11-16-etapa-9-15-modernizacao-menu.md`
 - Commit: `pendente`
-- Execução: `SPEC criada antes da implementação; validações pendentes`
+- Execução: `implementação concluída; fechamento executado; uma falha preexistente de hash SVG permanece`
 
 ## Arquivos modificados
 
 - `SPEC/2026-11-16-etapa-9-15-modernizacao-menu.md`
 - `SPEC/README.md`
 - `prompts/70-etapa-9-15-modernizacao-menu.md`
+- `src/application/stages/CampaignMacroRouteBinder.ts`
+- `src/application/stages/GameSessionService.ts`
+- `src/application/stages/UmbraCampaignRouteSlice.ts`
+- `src/data/PlayerProfile.ts`
+- `src/main.ts`
+- `src/managers/SoundManager.ts`
+- `src/presentation/ForestMenuBackdrop.ts`
+- `src/presentation/MenuNavigation.ts`
+- `src/presentation/StageSelectionPresentation.ts`
+- `src/scenes/BootScene.ts`
+- `src/scenes/CreditsScene.ts`
+- `src/scenes/GameModesScene.ts`
+- `src/scenes/GameScene.ts`
+- `src/scenes/MenuScene.ts`
+- `src/scenes/SettingsScene.ts`
+- `src/scenes/StageSelectScene.ts`
+- `src/tests/gameModesMenu.test.ts`
+- `src/tests/gameSessionService.test.ts`
+- `src/tests/menuNavigation.test.ts`
+- `src/tests/stageAmbientPresentation.test.ts`
+- `src/tests/stageCharacterization.test.ts`
+- `src/tests/stageSelectionPresentation.test.ts`
+
+## Validações executadas
+
+- `npm run check:gates`: aprovado.
+- `npm run build`: aprovado (typecheck e build Vite).
+- Testes dirigidos de menu, navegação, catálogo e sessões: 4 suítes, 36 testes aprovados.
+- `npm test -- --runInBand`: 96 de 97 suítes e 1190 de 1191 testes aprovados. A única falha é o hash de `src/assets/aguas/igapo-forest-floor.svg` em `src/tests/igapoAssets.test.ts`: o catálogo espera os bytes CRLF, enquanto o arquivo no worktree está LF (`core.autocrlf=true`; sem atributo Git específico para SVG). A correção relacionada está na PR #1, sem reviews nem check runs, e não foi incorporada nem alterada neste escopo.
+- Validação visual/interativa no navegador em 1920×1080, 1366×768 e 900×600: menu, seletor, prévia, fase individual isolada, configurações, persistência de volume, tela cheia/janela, créditos, campanha nova, continuação salva e cancelamento/confirmação de sobrescrita.
+- `git diff --check`: aprovado.
+- Auditoria de segredos do registro de prompt: nenhum segredo conhecido encontrado.
 
 ## Prompt efetivamente recebido
 

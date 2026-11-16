@@ -15,6 +15,10 @@ export interface CharacterAppearance {
 export interface GameSettings {
   sound: boolean;
   showControls: boolean;
+  masterVolume: number;
+  musicVolume: number;
+  effectsVolume: number;
+  fullscreen: boolean;
 }
 
 export const HAIR_COLORS = [0x3a2418, 0xf2b632, 0x16131f, 0xb83b5e, 0xd9d2c3];
@@ -36,6 +40,10 @@ export const DEFAULT_APPEARANCE: CharacterAppearance = {
 export const DEFAULT_SETTINGS: GameSettings = {
   sound: true,
   showControls: true,
+  masterVolume: 0.8,
+  musicVolume: 0.65,
+  effectsVolume: 0.9,
+  fullscreen: false,
 };
 
 const PROFILE_KEY = 'umbra-trail-profile';
@@ -59,9 +67,34 @@ export function saveAppearance(appearance: CharacterAppearance): void {
 }
 
 export function loadSettings(): GameSettings {
-  return load(SETTINGS_KEY, DEFAULT_SETTINGS);
+  const settings = load(SETTINGS_KEY, DEFAULT_SETTINGS);
+  return {
+    sound: typeof settings.sound === 'boolean' ? settings.sound : DEFAULT_SETTINGS.sound,
+    showControls: typeof settings.showControls === 'boolean'
+      ? settings.showControls
+      : DEFAULT_SETTINGS.showControls,
+    masterVolume: volumeValue(settings.masterVolume, DEFAULT_SETTINGS.masterVolume),
+    musicVolume: volumeValue(settings.musicVolume, DEFAULT_SETTINGS.musicVolume),
+    effectsVolume: volumeValue(settings.effectsVolume, DEFAULT_SETTINGS.effectsVolume),
+    fullscreen: typeof settings.fullscreen === 'boolean'
+      ? settings.fullscreen
+      : DEFAULT_SETTINGS.fullscreen,
+  };
 }
 
 export function saveSettings(settings: GameSettings): void {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+    sound: settings.sound,
+    showControls: settings.showControls,
+    masterVolume: volumeValue(settings.masterVolume, DEFAULT_SETTINGS.masterVolume),
+    musicVolume: volumeValue(settings.musicVolume, DEFAULT_SETTINGS.musicVolume),
+    effectsVolume: volumeValue(settings.effectsVolume, DEFAULT_SETTINGS.effectsVolume),
+    fullscreen: settings.fullscreen,
+  }));
+}
+
+function volumeValue(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(0, Math.min(1, value))
+    : fallback;
 }
