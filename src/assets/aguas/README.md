@@ -15,8 +15,8 @@ Igapó. SHA-256:
 
 | Arquivo | Dimensões | Uso | SHA-256 |
 |---|---|---|---|
-| `igapo-forest-floor.svg` | 64×32 | dois pisos contínuos de musgo e lama (32×32) | `ca61b09f7130cd362a2efff7687dda339dccc73f180ddf68fb6a32bb42d927ed` |
-| `igapo-emergent-tree.svg` | 96×128 | árvore emersa com raízes tabulares, copa e fungos de memória | `27021d1383881d9b35337a3a0c2e68112379033e9e8fe1d892becd4e76c1c160` |
+| `igapo-forest-floor.svg` | 64×32 | dois pisos contínuos de musgo e lama (32×32) | `176249d02810cb5359ef2081fe25f6ee24ed1f62cf060a1df49e818441afd00b` |
+| `igapo-emergent-tree.svg` | 96×128 | árvore emersa com raízes tabulares, copa e fungos de memória | `87a15495ad340e4ff864d31a4b8bdf27da9a2270db889c8841c9989e570f3b16` |
 | `igapo-palm-cluster.svg` | 96×112 | moita de palmeiras de igapó para ilhas e margens | `bc23308c4502370796fb7e094e47933eaf4795bda3a7fb56a3dc8fb48ae7e4cd` |
 | `igapo-root-tangle.svg` | 96×64 | massa de raízes expostas sobre terra e margem | `d465b2b8727dc0b437b672d14172f4de52734d916786438a087afd12ad956460` |
 | `igapo-submerged-trunk.svg` | 128×64 | tronco caído meio submerso, linha d’água e espuma | `128ab5cf7397bcd87433c2b1d60e33f20ff6791e94c073427f6cdd21471df14e` |
