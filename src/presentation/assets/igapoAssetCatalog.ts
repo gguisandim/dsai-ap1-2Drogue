@@ -34,7 +34,7 @@ export const IGAPO_ASSETS: Readonly<Record<string, IgapoAssetEntry>> = Object.fr
     frameWidth: 32,
     frameHeight: 32,
     frameCount: 2,
-    sha256: 'ca61b09f7130cd362a2efff7687dda339dccc73f180ddf68fb6a32bb42d927ed',
+    sha256: '176249d02810cb5359ef2081fe25f6ee24ed1f62cf060a1df49e818441afd00b',
     usage: 'Dois pisos contínuos: musgo úmido e chão alagado.',
   }),
   emergentTree: Object.freeze({
@@ -43,7 +43,7 @@ export const IGAPO_ASSETS: Readonly<Record<string, IgapoAssetEntry>> = Object.fr
     fileName: 'igapo-emergent-tree.svg',
     width: 96,
     height: 128,
-    sha256: '27021d1383881d9b35337a3a0c2e68112379033e9e8fe1d892becd4e76c1c160',
+    sha256: '87a15495ad340e4ff864d31a4b8bdf27da9a2270db889c8841c9989e570f3b16',
     usage: 'Árvore emersa com raízes tabulares, copa e fungos de memória.',
   }),
   palmCluster: Object.freeze({
