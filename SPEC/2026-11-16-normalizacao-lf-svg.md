@@ -3,7 +3,7 @@
 **Data:** 2026-11-16  
 **Estado:** correção de normalização de texto no Git  
 **Escopo:** manter os bytes dos SVGs estáveis no worktree Windows e Linux, sem
-alterar desenhos ou hashes declarados nos catálogos.
+alterar desenhos.
 
 ## Contexto
 
@@ -17,10 +17,13 @@ diferentes dos hashes registrados.
 1. `.gitattributes` declara SVGs como texto com `eol=lf`, prevalecendo sobre
    `core.autocrlf` local.
 2. Os 32 SVGs versionados permanecem LF no índice e no worktree do Windows,
-   sem alterações de conteúdo artístico ou dos hashes catalogados.
-3. `stageLoader` ou outros dados de fase não mudam; os testes de hash das fases
+   sem alterações de conteúdo artístico.
+3. Hashes SHA-256 em catálogos e inventários correspondem aos bytes LF dos
+   arquivos; quando uma divergência preexistente for encontrada, corrigir
+   somente os metadados do hash, não o desenho.
+4. `stageLoader` ou outros dados de fase não mudam; os testes de hash das fases
    Floresta das Raízes, Jardins das Flores Veladas e Igapó passam.
-4. A suíte completa passa e não há alterações pendentes nos SVGs depois da
+5. A suíte completa passa e não há alterações pendentes nos SVGs depois da
    normalização do checkout.
 
 ## Verificações

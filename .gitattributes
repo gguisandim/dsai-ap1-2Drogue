@@ -7,3 +7,6 @@ prompts/sessoes/*.gz binary
 prompts/*.md text eol=lf
 prompts/sessoes/*.md text eol=lf
 scripts/*.ps1 text eol=lf
+
+# SVG hashes and content must remain stable across platforms.
+*.svg text eol=lf
