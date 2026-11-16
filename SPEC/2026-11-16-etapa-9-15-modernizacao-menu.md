@@ -29,9 +29,11 @@ configurações e ferramentas já existentes.
   procedurais/experimentais e bloqueadas. Só inicia uma fase que o serviço
   consiga carregar; o caminho individual existente mantém o isolamento de
   save e progressão da campanha.
-- Quando a fase carregada declara decoração de fundo e a textura correspondente
-  está disponível, a seleção usa essa textura como prévia. A ausência de prévia
-  não impede navegação nem execução.
+- A prévia da fase usa, em ordem, uma decoração de fundo declarada e disponível
+  ou o tile de chão declarado (incluindo variantes) se disponível. A ausência de
+  textura continua sem impedir navegação nem execução.
+- IDs de bioma e região são apresentados como rótulos legíveis; os IDs e dados
+  persistentes do catálogo não são alterados nem duplicados.
 - Configurações ampliam aditivamente `umbra-trail-settings`: mantêm `sound` e
   `showControls`, acrescentam volumes geral/música/efeitos e preferência de
   tela cheia. Valores antigos recebem defaults; áudio aplica os volumes por
@@ -79,8 +81,9 @@ configurações e ferramentas já existentes.
    agrupa por capítulo/região e mostra corretamente tipo e disponibilidade.
 4. Fase bloqueada/incompatível não inicia; fase jogável inicia pelo serviço
    existente e não altera save nem progressão da campanha.
-5. Prévia usa somente uma textura existente declarada pela apresentação da fase;
-   sem textura disponível é exibido estado sem prévia.
+5. Prévia usa uma decoração de fundo declarada e disponível ou, como alternativa,
+   o tile de chão/variante declarado pela apresentação da fase; sem textura
+   disponível é exibido estado sem prévia.
 6. Menu e seleção de fases podem ser percorridos por mouse e teclado; foco,
    hover, seleção, desabilitado e retorno funcionam sem perder progresso.
 7. Volume geral, música e efeitos alteram seus respectivos barramentos; os
@@ -101,6 +104,8 @@ configurações e ferramentas já existentes.
   substituição segura de save, incluindo save inválido e conflito de escrita.
 - Testes de seleção e disponibilidade usando o catálogo real/fixtures existentes,
   isolamento de fase individual e navegação/foco com itens desabilitados.
+- Testes da escolha de textura de prévia e da apresentação legível dos metadados
+  existentes no catálogo.
 - Testes de migração aditiva, persistência de volumes/tela cheia e aplicação dos
   níveis de áudio.
 - Testes dirigidos para as cenas e APIs alteradas.
