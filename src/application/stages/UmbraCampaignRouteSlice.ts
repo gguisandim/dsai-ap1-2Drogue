@@ -186,6 +186,7 @@ class RouteSliceStageLoader implements StageLoaderPort {
 export interface UmbraCampaignRouteSliceRequest {
   readonly runId: string;
   readonly runSeed: string | number;
+  readonly replaceExistingRun?: boolean;
 }
 
 export type UmbraCampaignRouteSliceFailure =
@@ -282,6 +283,7 @@ export class UmbraCampaignRouteSliceFactory {
     });
     const saves = this.storage ? new CampaignRunSaveService({ storage: this.storage }) : undefined;
     let state = createCampaignRunState(generated.value);
+    let initialExpectedState: CampaignRunState | undefined;
     let persistence: 'created' | 'restored' | 'volatile' = 'volatile';
     if (saves) {
       const loaded = saves.load();
@@ -291,35 +293,40 @@ export class UmbraCampaignRouteSliceFactory {
       });
       if (loaded.value.status === 'loaded') {
         const previous = loaded.value.envelope.state;
-        const compatible = previous.graph.campaignId === generated.value.campaignId &&
-          previous.graph.runId === generated.value.runId &&
-          previous.graph.runSeed === generated.value.runSeed &&
-          previous.graph.id === generated.value.id &&
-          (previous.graph.campaignRevision === generated.value.campaignRevision ||
-            previous.graph.campaignRevision === 2 || previous.graph.campaignRevision === 3 ||
-            previous.graph.campaignRevision === 4);
-        if (!compatible) {
-          const rejected = saves.load({
-            campaignId: generated.value.campaignId,
-            campaignRevision: generated.value.campaignRevision,
-            runId: generated.value.runId,
-            runSeed: generated.value.runSeed,
-            graphId: generated.value.id,
-          });
-          if (!rejected.ok) return Object.freeze({
-            ok: false as const,
-            error: Object.freeze({ code: 'save-failed' as const, error: rejected.error }),
-          });
+        if (request.replaceExistingRun) {
+          initialExpectedState = previous;
+          persistence = 'created';
+        } else {
+          const compatible = previous.graph.campaignId === generated.value.campaignId &&
+            previous.graph.runId === generated.value.runId &&
+            previous.graph.runSeed === generated.value.runSeed &&
+            previous.graph.id === generated.value.id &&
+            (previous.graph.campaignRevision === generated.value.campaignRevision ||
+              previous.graph.campaignRevision === 2 || previous.graph.campaignRevision === 3 ||
+              previous.graph.campaignRevision === 4);
+          if (!compatible) {
+            const rejected = saves.load({
+              campaignId: generated.value.campaignId,
+              campaignRevision: generated.value.campaignRevision,
+              runId: generated.value.runId,
+              runSeed: generated.value.runSeed,
+              graphId: generated.value.id,
+            });
+            if (!rejected.ok) return Object.freeze({
+              ok: false as const,
+              error: Object.freeze({ code: 'save-failed' as const, error: rejected.error }),
+            });
+          }
+          state = migrateMacroRevision(migrateRouteSliceRevision(previous, generated.value));
+          if (JSON.stringify(state) !== JSON.stringify(previous)) {
+            const migrated = saves.save(state, previous);
+            if (!migrated.ok) return Object.freeze({
+              ok: false as const,
+              error: Object.freeze({ code: 'save-failed' as const, error: migrated.error }),
+            });
+          }
+          persistence = 'restored';
         }
-        state = migrateMacroRevision(migrateRouteSliceRevision(previous, generated.value));
-        if (JSON.stringify(state) !== JSON.stringify(previous)) {
-          const migrated = saves.save(state, previous);
-          if (!migrated.ok) return Object.freeze({
-            ok: false as const,
-            error: Object.freeze({ code: 'save-failed' as const, error: migrated.error }),
-          });
-        }
-        persistence = 'restored';
       } else persistence = 'created';
     }
     const bound = CampaignMacroRouteBinder.create(
@@ -331,6 +338,7 @@ export class UmbraCampaignRouteSliceFactory {
         resolver: new PhysicalExitResolver(),
         binder: new CampaignExitBinder(),
         ...(saves ? { saves } : {}),
+        ...(initialExpectedState ? { initialExpectedState } : {}),
       },
       UMBRA_ROUTE_SLICE_HUB_CONTEXT,
     );

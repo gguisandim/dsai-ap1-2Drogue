@@ -90,6 +90,7 @@ export type CampaignMacroRouteBindingResult<T> =
 export interface CampaignMacroRouteBinderDependencies
   extends Omit<CampaignRouterDependencies, 'saves'> {
   readonly saves?: CampaignRunSavePort;
+  readonly initialExpectedState?: CampaignRunState;
 }
 
 interface PendingMacroNavigation {
@@ -203,7 +204,10 @@ export class CampaignMacroRouteBinder {
       parkedGraphContexts: progressed.parkedGraphContexts ?? {},
     });
     if (dependencies.saves && JSON.stringify(candidate) !== JSON.stringify(run)) {
-      const saved = dependencies.saves.save(candidate, run);
+      const saved = dependencies.saves.save(
+        candidate,
+        dependencies.initialExpectedState ?? run,
+      );
       if (!saved.ok) return this.failureStatic(
         'persistence-failed', 'Macro route binding initialization was rolled back.', undefined,
         {

@@ -4,6 +4,7 @@ import {
   COMPOSED_CAMPAIGN_REQUIRED_STAGE_COUNT,
   GameSessionService,
   createBrowserCampaignSaveStorage,
+  UMBRA_CAMPAIGN_ROUTE_SLICE,
   type GameComposedSession,
   type GameIndividualStageView,
   type GameSessionFailure,
@@ -70,7 +71,7 @@ export class GameModesScene extends Phaser.Scene {
     super('GameModesScene');
   }
 
-  public create(): void {
+  public create(data?: { readonly continueSavedCampaign?: boolean }): void {
     this.service = new GameSessionService({ storage: createBrowserCampaignSaveStorage() });
     this.menuState = this.service.menuState();
     const savedCampaign = this.menuState.savedCampaign;
@@ -121,6 +122,11 @@ export class GameModesScene extends Phaser.Scene {
 
     this.syncModeButtons();
     this.renderContent();
+    if (data?.continueSavedCampaign && savedCampaign?.status === 'active') {
+      this.policy = savedCampaign.policyId;
+      this.seed = savedCampaign.seed;
+      this.startSelectedCampaign();
+    }
   }
 
   private syncModeButtons(): void {
@@ -479,17 +485,30 @@ export class GameModesScene extends Phaser.Scene {
 
   private renderClassic(): void {
     this.panelTitle('CAMPANHA CLÁSSICA');
+    const saved = this.menuState.savedClassicCampaign;
+    const isUmbraSave = saved?.campaignId === UMBRA_CAMPAIGN_ROUTE_SLICE.id;
+    const unavailable = this.menuState.savedClassicCampaignError !== undefined ||
+      (saved !== undefined && (!isUmbraSave || saved.status !== 'active'));
     this.track(this.add.text(760, 190, [
       'Fluxo macro legado preservado.',
       'Usa o hub, as rotas e os saves existentes.',
       'Não compartilha snapshot com a campanha composta.',
+      unavailable ? 'Save existente indisponível para retomada; use Nova Campanha no menu.' : '',
     ].join('\n'), {
       fontFamily: 'Courier New, monospace', fontSize: '15px', color: '#b89dc7',
       align: 'center', lineSpacing: 6,
     }).setOrigin(0.5, 0));
-    this.button(760, 340, 'INICIAR CAMPANHA CLÁSSICA', () => {
-      this.scene.start('GameScene', { macroCampaign: true });
-    });
+    this.button(760, 340, saved && isUmbraSave
+      ? 'RETOMAR CAMPANHA CLÁSSICA'
+      : 'INICIAR CAMPANHA CLÁSSICA', () => {
+        this.scene.start('GameScene', saved && isUmbraSave
+          ? {
+              macroCampaign: true,
+              macroRunId: saved.runId,
+              macroRunSeed: saved.runSeed,
+            }
+          : { macroCampaign: true });
+      }, !unavailable);
     this.renderFeedback(760, 430);
   }
 }

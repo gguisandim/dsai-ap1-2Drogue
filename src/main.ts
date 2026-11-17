@@ -4,6 +4,8 @@ import { GameScene } from './scenes/GameScene';
 import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
 import { GameModesScene } from './scenes/GameModesScene';
+import { StageSelectScene } from './scenes/StageSelectScene';
+import { CreditsScene } from './scenes/CreditsScene';
 import { CharacterCreatorScene } from './scenes/CharacterCreatorScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { CatalogScene } from './scenes/CatalogScene';
@@ -21,7 +23,18 @@ const config: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene, MenuScene, GameModesScene, CharacterCreatorScene, SettingsScene, CatalogScene, EditorScene, GameScene],
+  scene: [
+    BootScene,
+    MenuScene,
+    GameModesScene,
+    StageSelectScene,
+    CreditsScene,
+    CharacterCreatorScene,
+    SettingsScene,
+    CatalogScene,
+    EditorScene,
+    GameScene,
+  ],
   physics: {
     default: 'arcade',
     arcade: {

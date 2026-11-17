@@ -101,6 +101,7 @@ export interface GameSceneInitData {
   macroCampaign?: boolean;
   macroRunId?: string;
   macroRunSeed?: string | number;
+  macroReplaceExistingRun?: boolean;
   macroRecoveryAttempt?: number;
   campaignRuntime?: GameSceneCampaignRuntime;
   campaignRecoveryAttempt?: number;
@@ -211,6 +212,7 @@ export class GameScene extends Phaser.Scene {
   private macroCampaign = false;
   private macroRunId = UMBRA_ROUTE_SLICE_RUN_ID;
   private macroRunSeed: string | number = UMBRA_ROUTE_SLICE_SEED;
+  private macroReplaceExistingRun = false;
   private macroStageSource: 'legacy' | 'campaign' | 'rollback' = 'legacy';
   private macroCampaignAdapter?: GameMacroCampaignAdapter;
   private campaignRouter?: GameCampaignNavigationPort;
@@ -253,6 +255,7 @@ export class GameScene extends Phaser.Scene {
     this.macroRunId = data?.macroRunId?.trim() ||
       query?.get('macroRun')?.trim() || UMBRA_ROUTE_SLICE_RUN_ID;
     this.macroRunSeed = data?.macroRunSeed ?? query?.get('macroSeed') ?? UMBRA_ROUTE_SLICE_SEED;
+    this.macroReplaceExistingRun = data?.macroReplaceExistingRun === true;
     this.branchingCampaign = !this.injectedCampaignRuntime && !this.individualMode && !this.macroCampaign &&
       (data?.branchingCampaign === true || query?.get('branchingCampaign') === '1');
     this.branchingRunId = data?.branchingRunId?.trim() ||
@@ -351,6 +354,7 @@ export class GameScene extends Phaser.Scene {
     const created = composition.createMacroCampaign({
       runId: this.macroRunId,
       runSeed: this.macroRunSeed,
+      replaceExistingRun: this.macroReplaceExistingRun,
     });
     if (!created.ok) {
       this.macroStageSource = 'rollback';
