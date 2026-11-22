@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "umbra.stage-plan",
+  "id": "plan.corrupted.minas",
+  "chapterId": "chapter.corrupted.minas",
+  "stageId": "stage.corrupted.minas",
+  "title": "Minas Corrompidas",
+  "summary": "Descida panorâmica da floresta à Mina Açu para reconstruir sua história, interromper o Coração de Lastro e recuperar a prova que conduz ao Credor.",
+  "progression": "linear",
+  "visualDirection": "Pixel art para terreno e entidades; dois panoramas PNG autorais para profundidade; SVGs autorais para suportes, trilhos, raízes, arumã, fungos, maquinário e selo. Abandonada privilegia água, madeira e retomada vegetal; Corrompida muda silhuetas, raízes mineralizadas, fungos, névoa, luz e maquinário incorporado.",
+  "startRegionId": "region.corrupted.minas.floresta",
+  "exitRegionIds": ["region.corrupted.minas.revelacao"],
+  "regions": [
+    { "id": "region.corrupted.minas.floresta", "title": "Floresta sobre a mina", "role": "start", "anchor": { "x": 5, "y": 14 }, "connections": ["region.corrupted.minas.acampamento"] },
+    { "id": "region.corrupted.minas.acampamento", "title": "Acampamento abandonado", "role": "objective", "anchor": { "x": 30, "y": 20 }, "connections": ["region.corrupted.minas.floresta", "region.corrupted.minas.galerias"] },
+    { "id": "region.corrupted.minas.galerias", "title": "Galerias de extração", "role": "exploration", "anchor": { "x": 52, "y": 24 }, "connections": ["region.corrupted.minas.acampamento", "region.corrupted.minas.cavernas"] },
+    { "id": "region.corrupted.minas.cavernas", "title": "Cavernas invadidas pela floresta", "role": "exploration", "anchor": { "x": 76, "y": 29 }, "connections": ["region.corrupted.minas.galerias", "region.corrupted.minas.contaminadas"] },
+    { "id": "region.corrupted.minas.contaminadas", "title": "Galerias contaminadas", "role": "combat", "anchor": { "x": 104, "y": 32 }, "connections": ["region.corrupted.minas.cavernas", "region.corrupted.minas.nucleo"] },
+    { "id": "region.corrupted.minas.nucleo", "title": "Núcleo de extração", "role": "combat", "anchor": { "x": 132, "y": 30 }, "connections": ["region.corrupted.minas.contaminadas", "region.corrupted.minas.revelacao"] },
+    { "id": "region.corrupted.minas.revelacao", "title": "Câmara de revelação", "role": "exit", "anchor": { "x": 158, "y": 22 }, "connections": ["region.corrupted.minas.nucleo"] }
+  ],
+  "objectives": [
+    { "id": "objective.corrupted.minas.hear-maira", "title": "Conhecer o pacto original", "regionId": "region.corrupted.minas.acampamento", "missionId": "mission.corrupted.minas.subsolo-da-divida" },
+    { "id": "objective.corrupted.minas.find-nilo", "title": "Encontrar o vestígio de Nilo", "regionId": "region.corrupted.minas.galerias", "missionId": "mission.corrupted.minas.subsolo-da-divida", "dependsOn": ["objective.corrupted.minas.hear-maira"] },
+    { "id": "objective.corrupted.minas.read-aquifer", "title": "Examinar o aquífero alterado", "regionId": "region.corrupted.minas.cavernas", "missionId": "mission.corrupted.minas.subsolo-da-divida", "dependsOn": ["objective.corrupted.minas.find-nilo"] },
+    { "id": "objective.corrupted.minas.still-core", "title": "Interromper o Coração de Lastro", "regionId": "region.corrupted.minas.nucleo", "missionId": "mission.corrupted.minas.subsolo-da-divida", "dependsOn": ["objective.corrupted.minas.read-aquifer"] },
+    { "id": "objective.corrupted.minas.read-ledger", "title": "Registrar a prova sobre o Credor", "regionId": "region.corrupted.minas.revelacao", "missionId": "mission.corrupted.minas.subsolo-da-divida", "dependsOn": ["objective.corrupted.minas.still-core"], "unlocksExitIds": ["exit.corrupted.minas.to-surface"] }
+  ],
+  "exitConditions": [
+    { "exitId": "exit.corrupted.minas.to-surface", "regionId": "region.corrupted.minas.revelacao", "requiresObjectiveIds": ["objective.corrupted.minas.read-ledger"] }
+  ],
+  "encounters": [
+    { "id": "encounter.corrupted.minas.core", "regionId": "region.corrupted.minas.nucleo", "archetypes": ["affinity", "applaud", "ranged", "miniboss", "boss"], "waveCount": 4 }
+  ],
+  "interactions": [
+    { "id": "interaction.corrupted.minas.maira", "kind": "npc", "regionId": "region.corrupted.minas.acampamento", "referenceId": "npc.corrupted.minas.maira" },
+    { "id": "interaction.corrupted.minas.nilo", "kind": "npc", "regionId": "region.corrupted.minas.galerias", "referenceId": "npc.corrupted.minas.nilo-vestige" },
+    { "id": "interaction.corrupted.minas.aquifer", "kind": "npc", "regionId": "region.corrupted.minas.cavernas", "referenceId": "npc.corrupted.minas.aquifer-evidence" },
+    { "id": "interaction.corrupted.minas.ledger", "kind": "npc", "regionId": "region.corrupted.minas.revelacao", "referenceId": "npc.corrupted.minas.creditor-ledger" }
+  ],
+  "capabilities": [
+    { "id": "navigation.authored-map", "category": "navigation", "minimumVersion": 1, "requirement": "required" },
+    { "id": "navigation.physical-exit", "category": "navigation", "minimumVersion": 1, "requirement": "required" },
+    { "id": "biome.crypt", "category": "biome", "minimumVersion": 1, "requirement": "required" },
+    { "id": "interaction.npc-dialogue", "category": "interaction", "minimumVersion": 1, "requirement": "required" },
+    { "id": "narrative.mission", "category": "narrative", "minimumVersion": 1, "requirement": "required" },
+    { "id": "encounter.declarative", "category": "encounter", "minimumVersion": 1, "requirement": "required" }
+  ]
+}
+

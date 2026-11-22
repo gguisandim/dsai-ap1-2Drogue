@@ -12,6 +12,7 @@ import { preloadIgapoAssets } from '../presentation/assets/bootIgapoAssets';
 import { preloadWorldRootAssets } from '../presentation/assets/bootWorldRootAssets';
 import { preloadFloresAssets } from '../presentation/assets/bootFloresAssets';
 import { createPalacioAnimations, preloadPalacioAssets } from '../presentation/assets/bootPalacioAssets';
+import { createMinasAnimations, preloadMinasAssets } from '../presentation/assets/bootMinasAssets';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -31,6 +32,7 @@ export class BootScene extends Phaser.Scene {
     preloadWorldRootAssets(this);
     preloadFloresAssets(this);
     preloadPalacioAssets(this);
+    preloadMinasAssets(this);
   }
 
   create() {
@@ -38,6 +40,7 @@ export class BootScene extends Phaser.Scene {
     createPunyAnimations(this);
     createPlayerClassAnimations(this);
     createPalacioAnimations(this);
+    createMinasAnimations(this);
 
     ['enemy_melee_anim', 'enemy_ranged_anim', 'boss_guardian_anim'].forEach(key => {
       this.anims.create({
