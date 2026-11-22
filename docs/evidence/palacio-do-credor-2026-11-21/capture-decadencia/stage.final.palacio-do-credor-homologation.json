@@ -1,0 +1,1234 @@
+{
+  "schemaVersion": 1,
+  "kind": "umbra.stage-homologation.report",
+  "stageId": "stage.final.palacio-do-credor",
+  "result": "PASS",
+  "scenario": "visual-capture",
+  "seed": null,
+  "checks": [
+    {
+      "id": "capture.aproximacao",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Aproximação pela floresta degradada alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 5,
+        "y": 23
+      }
+    },
+    {
+      "id": "capture.entrada",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Entrada monumental alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 39,
+        "y": 23
+      }
+    },
+    {
+      "id": "capture.jardins-externos",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Jardins e estruturas abandonadas alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 54,
+        "y": 24
+      }
+    },
+    {
+      "id": "capture.galerias",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Galerias e salões internos alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 84,
+        "y": 20
+      }
+    },
+    {
+      "id": "capture.camara-revelacao",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Câmara de revelação alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 104,
+        "y": 22
+      }
+    },
+    {
+      "id": "capture.antessala",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Antessala do confronto alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 118,
+        "y": 22
+      }
+    },
+    {
+      "id": "capture.arena",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Arena do Credor alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 128,
+        "y": 22
+      }
+    },
+    {
+      "id": "capture.resolucao",
+      "code": "CAMPAIGN_WAYPOINT_REACHED",
+      "status": "PASS",
+      "required": true,
+      "message": "Resolução e saída alcançado com o corpo real.",
+      "evidence": "phaser-runtime",
+      "location": {
+        "x": 142,
+        "y": 22
+      }
+    }
+  ],
+  "observations": [
+    {
+      "atMs": 27643,
+      "label": "capture:aproximacao",
+      "player": {
+        "x": 176,
+        "y": 752,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 392
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.4392101320049427,
+        "facingY": -0.8983843609192009,
+        "pointerX": 0,
+        "pointerY": 392
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 28084,
+      "label": "capture:entrada",
+      "player": {
+        "x": 176,
+        "y": 752,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 392
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.4392101320049427,
+        "facingY": -0.8983843609192009,
+        "pointerX": 0,
+        "pointerY": 392
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 29023,
+      "label": "capture:entrada",
+      "player": {
+        "x": 340,
+        "y": 752,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 392
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.6792250699180058,
+        "facingY": -0.733930040531712,
+        "pointerX": 0,
+        "pointerY": 392
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 30001,
+      "label": "capture:entrada",
+      "player": {
+        "x": 525,
+        "y": 752,
+        "hp": 6
+      },
+      "camera": {
+        "x": 0,
+        "y": 392
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8209913924721671,
+        "facingY": -0.5709405691371143,
+        "pointerX": 0,
+        "pointerY": 392
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 30922,
+      "label": "capture:entrada",
+      "player": {
+        "x": 723,
+        "y": 752,
+        "hp": 6
+      },
+      "camera": {
+        "x": 44,
+        "y": 392
+      },
+      "enemies": 1,
+      "enemyHp": [
+        160
+      ],
+      "aim": {
+        "facingX": -0.8835742455598633,
+        "facingY": -0.46829109812521347,
+        "pointerX": 40,
+        "pointerY": 392
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 31949,
+      "label": "capture:entrada",
+      "player": {
+        "x": 1009,
+        "y": 752,
+        "hp": 6
+      },
+      "camera": {
+        "x": 272,
+        "y": 392
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8992302436410499,
+        "facingY": -0.4374756780910891,
+        "pointerX": 262,
+        "pointerY": 392
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 32867,
+      "label": "capture:jardins-externos",
+      "player": {
+        "x": 1256,
+        "y": 752,
+        "hp": 5
+      },
+      "camera": {
+        "x": 580,
+        "y": 392
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8835540369740156,
+        "facingY": -0.4683292258090665,
+        "pointerX": 577,
+        "pointerY": 392
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 33842,
+      "label": "capture:jardins-externos",
+      "player": {
+        "x": 1387,
+        "y": 779,
+        "hp": 5
+      },
+      "camera": {
+        "x": 704,
+        "y": 418
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8845377352617665,
+        "facingY": -0.46646864299541607,
+        "pointerX": 700,
+        "pointerY": 418
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 34834,
+      "label": "capture:jardins-externos",
+      "player": {
+        "x": 1606,
+        "y": 779,
+        "hp": 5
+      },
+      "camera": {
+        "x": 911,
+        "y": 418
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8880271954868881,
+        "facingY": -0.45979093083236444,
+        "pointerX": 906,
+        "pointerY": 418
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 35971,
+      "label": "capture:galerias",
+      "player": {
+        "x": 1763,
+        "y": 779,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1099,
+        "y": 418
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8793850379212653,
+        "facingY": -0.4761112843445475,
+        "pointerX": 1097,
+        "pointerY": 418
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 36964,
+      "label": "capture:galerias",
+      "player": {
+        "x": 1891,
+        "y": 658,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1205,
+        "y": 333
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.9038576864299813,
+        "facingY": -0.427833241674185,
+        "pointerX": 1200,
+        "pointerY": 338
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 38167,
+      "label": "capture:galerias",
+      "player": {
+        "x": 2085,
+        "y": 631,
+        "hp": 5
+      },
+      "camera": {
+        "x": 1381,
+        "y": 280
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8954661111022723,
+        "facingY": -0.4451296933112563,
+        "pointerX": 1374,
+        "pointerY": 281
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 39119,
+      "label": "capture:galerias",
+      "player": {
+        "x": 2229,
+        "y": 651,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1541,
+        "y": 290
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8857669517713931,
+        "facingY": -0.46413026958992315,
+        "pointerX": 1536,
+        "pointerY": 291
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 40022,
+      "label": "capture:galerias",
+      "player": {
+        "x": 2413,
+        "y": 651,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1719,
+        "y": 290
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8873028728424669,
+        "facingY": -0.4611871765839816,
+        "pointerX": 1713,
+        "pointerY": 290
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 41082,
+      "label": "capture:galerias",
+      "player": {
+        "x": 2632,
+        "y": 651,
+        "hp": 6
+      },
+      "camera": {
+        "x": 1943,
+        "y": 290
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8855609826579313,
+        "facingY": -0.46452313827614583,
+        "pointerX": 1938,
+        "pointerY": 290
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 42056,
+      "label": "capture:camara-revelacao",
+      "player": {
+        "x": 2714,
+        "y": 651,
+        "hp": 6
+      },
+      "camera": {
+        "x": 2062,
+        "y": 290
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8754783845926354,
+        "facingY": -0.4832572794186032,
+        "pointerX": 2061,
+        "pointerY": 290
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 43120,
+      "label": "capture:camara-revelacao",
+      "player": {
+        "x": 2853,
+        "y": 728,
+        "hp": 6
+      },
+      "camera": {
+        "x": 2168,
+        "y": 361
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8791300239936297,
+        "facingY": -0.47658199809997026,
+        "pointerX": 2163,
+        "pointerY": 361
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 44123,
+      "label": "capture:camara-revelacao",
+      "player": {
+        "x": 3039,
+        "y": 723,
+        "hp": 6
+      },
+      "camera": {
+        "x": 2346,
+        "y": 354
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8830166463045911,
+        "facingY": -0.46934166909511943,
+        "pointerX": 2341,
+        "pointerY": 354
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 45029,
+      "label": "capture:camara-revelacao",
+      "player": {
+        "x": 3223,
+        "y": 723,
+        "hp": 6
+      },
+      "camera": {
+        "x": 2528,
+        "y": 354
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8830399910040031,
+        "facingY": -0.46929774587957523,
+        "pointerX": 2522,
+        "pointerY": 354
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 46036,
+      "label": "capture:antessala",
+      "player": {
+        "x": 3360,
+        "y": 723,
+        "hp": 6
+      },
+      "camera": {
+        "x": 2696,
+        "y": 354
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.874658243928442,
+        "facingY": -0.4847400915212336,
+        "pointerX": 2694,
+        "pointerY": 354
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 47033,
+      "label": "capture:antessala",
+      "player": {
+        "x": 3514,
+        "y": 723,
+        "hp": 6
+      },
+      "camera": {
+        "x": 2804,
+        "y": 354
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8863343299649507,
+        "facingY": -0.46304584602993887,
+        "pointerX": 2797,
+        "pointerY": 354
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 48024,
+      "label": "capture:antessala",
+      "player": {
+        "x": 3729,
+        "y": 723,
+        "hp": 6
+      },
+      "camera": {
+        "x": 3010,
+        "y": 354
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8899290854907821,
+        "facingY": -0.456098917777208,
+        "pointerX": 3002,
+        "pointerY": 354
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 49568,
+      "label": "capture:arena",
+      "player": {
+        "x": 3797,
+        "y": 723,
+        "hp": 6
+      },
+      "camera": {
+        "x": 3135,
+        "y": 354
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.874142317989088,
+        "facingY": -0.4856698548403681,
+        "pointerX": 3133,
+        "pointerY": 354
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 50740,
+      "label": "capture:arena",
+      "player": {
+        "x": 3944,
+        "y": 723,
+        "hp": 6
+      },
+      "camera": {
+        "x": 3243,
+        "y": 354
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8846808494800362,
+        "facingY": -0.4661971627576486,
+        "pointerX": 3237,
+        "pointerY": 354
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 52255,
+      "label": "capture:resolucao",
+      "player": {
+        "x": 4142,
+        "y": 723,
+        "hp": 6
+      },
+      "camera": {
+        "x": 3456,
+        "y": 354
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.8807446929094332,
+        "facingY": -0.47359137018305997,
+        "pointerX": 3456,
+        "pointerY": 354
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 53274,
+      "label": "capture:resolucao",
+      "player": {
+        "x": 4317,
+        "y": 723,
+        "hp": 6
+      },
+      "camera": {
+        "x": 3456,
+        "y": 354
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.9184892011156378,
+        "facingY": -0.3954460613458645,
+        "pointerX": 3456,
+        "pointerY": 354
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    },
+    {
+      "atMs": 54201,
+      "label": "capture:resolucao",
+      "player": {
+        "x": 4501,
+        "y": 723,
+        "hp": 6
+      },
+      "camera": {
+        "x": 3456,
+        "y": 354
+      },
+      "enemies": 1,
+      "enemyHp": [
+        134.8
+      ],
+      "aim": {
+        "facingX": -0.9425946441617087,
+        "facingY": -0.33393912139439746,
+        "pointerX": 3456,
+        "pointerY": 354
+      },
+      "missionStates": {
+        "mission.final.palacio.ultimo-pacto": {
+          "status": "active",
+          "objectives": {
+            "objective.final.palacio.derrotar-credor": 0,
+            "objective.final.palacio.encontrar-arua": 0,
+            "objective.final.palacio.ouvir-eco": 0,
+            "objective.final.palacio.ouvir-sentinela": 0
+          }
+        }
+      },
+      "flags": {
+        "flag.final.palacio.aproximacao-vista": true,
+        "flag.final.palacio.credor-derrotado": false,
+        "flag.final.palacio.pacto-aceito": false,
+        "flag.final.palacio.pacto-recusado": false
+      },
+      "unlockedExitIds": []
+    }
+  ],
+  "evidence": {
+    "screenshots": [
+      "capture-aproximacao.png",
+      "capture-entrada.png",
+      "capture-jardins-externos.png",
+      "capture-galerias.png",
+      "capture-camara-revelacao.png",
+      "capture-antessala.png",
+      "capture-arena.png",
+      "capture-resolucao.png"
+    ],
+    "browser": "Edg/158.0.4370.33 (Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/158.0.0.0 Safari/537.36 Edg/158.0.0.0)",
+    "durationMs": 55069
+  },
+  "runtime": {
+    "phaser": "executed",
+    "liveExecution": "executed"
+  },
+  "generatedAt": "2026-11-22T04:05:02.917Z"
+}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="224" height="160" viewBox="0 0 224 160">
+<path d="M 12 156 L 56 40 L 168 40 L 212 156 Z" fill="#241d31"/>
+<path d="M 30 156 L 68 56 L 156 56 L 194 156 Z" fill="#332844"/>
+<path d="M 50 156 L 82 72 L 142 72 L 174 156 Z" fill="#4a3c5e"/>
+<rect x="82" y="72" width="60" height="6" fill="#6a5b7e"/>
+<rect x="48" y="104" width="20" height="4" fill="#6f5327" opacity="0.55"/>
+<rect x="40" y="132" width="24" height="4" fill="#6f5327" opacity="0.4"/>
+<rect x="80" y="104" width="20" height="4" fill="#6f5327" opacity="0.55"/>
+<rect x="74" y="132" width="24" height="4" fill="#6f5327" opacity="0.4"/>
+<rect x="112" y="104" width="20" height="4" fill="#6f5327" opacity="0.55"/>
+<rect x="108" y="132" width="24" height="4" fill="#6f5327" opacity="0.4"/>
+<rect x="144" y="104" width="20" height="4" fill="#6f5327" opacity="0.55"/>
+<rect x="142" y="132" width="24" height="4" fill="#6f5327" opacity="0.4"/>
+<rect x="176" y="104" width="20" height="4" fill="#6f5327" opacity="0.55"/>
+<rect x="176" y="132" width="24" height="4" fill="#6f5327" opacity="0.4"/>
+<circle cx="112" cy="82" r="10" fill="#b58a3f" opacity="0.35"/>
+</svg>

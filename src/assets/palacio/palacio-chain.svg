@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="256" viewBox="0 0 96 256">
+<ellipse cx="48" cy="12" rx="12" ry="16" fill="none" stroke="#6f5327" stroke-width="4" transform="rotate(18 48 12)" opacity="0.9"/>
+<ellipse cx="48" cy="38" rx="12" ry="16" fill="none" stroke="#6a5b7e" stroke-width="4" transform="rotate(-18 48 38)" opacity="0.9"/>
+<ellipse cx="48" cy="64" rx="12" ry="16" fill="none" stroke="#6f5327" stroke-width="4" transform="rotate(18 48 64)" opacity="0.9"/>
+<ellipse cx="48" cy="90" rx="12" ry="16" fill="none" stroke="#6a5b7e" stroke-width="4" transform="rotate(-18 48 90)" opacity="0.9"/>
+<ellipse cx="48" cy="116" rx="12" ry="16" fill="none" stroke="#6f5327" stroke-width="4" transform="rotate(18 48 116)" opacity="0.9"/>
+<ellipse cx="48" cy="142" rx="12" ry="16" fill="none" stroke="#6a5b7e" stroke-width="4" transform="rotate(-18 48 142)" opacity="0.9"/>
+<ellipse cx="48" cy="168" rx="12" ry="16" fill="none" stroke="#6f5327" stroke-width="4" transform="rotate(18 48 168)" opacity="0.9"/>
+<ellipse cx="48" cy="194" rx="12" ry="16" fill="none" stroke="#6a5b7e" stroke-width="4" transform="rotate(-18 48 194)" opacity="0.9"/>
+<ellipse cx="48" cy="220" rx="12" ry="16" fill="none" stroke="#6f5327" stroke-width="4" transform="rotate(18 48 220)" opacity="0.9"/>
+<circle cx="48" cy="250" r="9" fill="#b58a3f" opacity="0.5"/>
+</svg>

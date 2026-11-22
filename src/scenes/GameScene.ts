@@ -1150,12 +1150,13 @@ export class GameScene extends Phaser.Scene {
         ? e.type
         : 'affinity';
     const visual = this.activeStagePresentation.enemySprites[logicalArchetype];
+    const authoredHp = 'hp' in e && typeof e.hp === 'number' ? e.hp : undefined;
     if (e.type === 'ranged' || e.type === 'applaud') {
       enemy = new RangedEnemy(this, px, py, this.enemyBullets, visual.textureKey, visual.animations);
     } else if (e.type === 'boss' || e.type === 'fortitudo') {
-      enemy = new BossEnemy(this, px, py, 'Fortitudo', visual.textureKey, 1600, 1, visual.animations);
+      enemy = new BossEnemy(this, px, py, 'Fortitudo', visual.textureKey, authoredHp ?? 1600, 1, visual.animations);
     } else if (e.type === 'miniboss') {
-      enemy = new BossEnemy(this, px, py, 'Sevido', visual.textureKey, 700, 0.6, visual.animations);
+      enemy = new BossEnemy(this, px, py, 'Sevido', visual.textureKey, authoredHp ?? 700, 0.6, visual.animations);
     } else {
       enemy = new Enemy(this, px, py, visual.textureKey, visual.animations);
     }
@@ -1276,15 +1277,17 @@ export class GameScene extends Phaser.Scene {
       fontStyle: 'bold',
     }).setScrollFactor(0).setDepth(960);
 
-    this.weaponHudText = this.add.text(650, 15, "CLASSE: CAVALEIRO", {
+    this.weaponHudText = this.add.text(610, 6, "CLASSE: GUARDIÃO", {
       fontFamily: 'Courier, monospace',
-      fontSize: '16px',
-      color: '#ffffff'
+      fontSize: '12px',
+      color: '#ffffff',
+      lineSpacing: -1,
+      wordWrap: { width: 285, useAdvancedWrap: true },
     }).setScrollFactor(0).setDepth(960);
 
-    this.comboHudText = this.add.text(910, 15, "ESPECIAL: -", {
+    this.comboHudText = this.add.text(920, 10, "ESPECIAL: -", {
       fontFamily: 'Courier, monospace',
-      fontSize: '16px',
+      fontSize: '13px',
       color: '#ffcc00',
       fontStyle: 'bold'
     }).setScrollFactor(0).setDepth(960);
@@ -2075,7 +2078,7 @@ export class GameScene extends Phaser.Scene {
       wordWrap: { width: 610 },
     }).setOrigin(0.5);
     const commands = this.add.text(0, 15,
-      'WASD / SETAS   MOVER\nMOUSE           MIRAR\nBOTÃO ESQUERDO  ATACAR / SEGURAR\nBOTÃO DIREITO   ULTIMATE\nJ               ATACAR   •   K ULTIMATE\nESPAÇO          ESQUIVAR E ATRAVESSAR INIMIGOS\nMAGA            SEGURE PARA DISPARAR ATÉ A MANA ACABAR\nLADINO          SEGURE PARA AUMENTAR O ALCANCE DA FACA\nB               LOJA   •   ESC MENU', {
+      'WASD / SETAS   MOVER\nMOUSE           MIRAR\nBOTÃO ESQUERDO  ATACAR / SEGURAR\nBOTÃO DIREITO   ULTIMATE\nJ               ATACAR   •   K ULTIMATE\nESPAÇO          ESQUIVAR E ATRAVESSAR INIMIGOS\nCONDUTOR        SEGURE PARA DISPARAR ATÉ A MANA ACABAR\nLÂMINA          SEGURE PARA AUMENTAR O ALCANCE DO ARREMESSO\nB               LOJA   •   ESC MENU', {
       fontFamily: 'Courier New, monospace', fontSize: '18px', color: '#ffffff', lineSpacing: 8, align: 'left',
     }).setOrigin(0.5);
     const hint = this.add.text(0, 140, 'CLIQUE PARA COMEÇAR', {

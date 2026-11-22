@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "kind": "umbra.player-class-showcase.report",
+  "generatedAt": "2026-11-18T20:10:17.137Z",
+  "stageId": "stage.aguas.igapo-das-memorias",
+  "playerClass": "knight",
+  "gender": "woman",
+  "result": "PASS",
+  "checks": [
+    {
+      "id": "player.class",
+      "code": "PLAYER_CLASS_LOADED",
+      "status": "PASS",
+      "required": true,
+      "message": "Classe solicitada knight; runtime carregou knight.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "player.geometry",
+      "code": "PLAYER_GEOMETRY_PRESERVED",
+      "status": "PASS",
+      "required": true,
+      "message": "Display 86x76; corpo-fonte 42x58 offset 43,48.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "player.walk",
+      "code": "PLAYER_WALK_ANIMATED",
+      "status": "PASS",
+      "required": true,
+      "message": "Animação observada: anim_knight_woman_walk.",
+      "evidence": "phaser-runtime"
+    },
+    {
+      "id": "player.attack",
+      "code": "PLAYER_ATTACK_ANIMATED",
+      "status": "PASS",
+      "required": true,
+      "message": "Animação observada: anim_knight_woman_attack.",
+      "evidence": "phaser-runtime"
+    }
+  ],
+  "evidence": {
+    "screenshots": [
+      "01-idle.png",
+      "02-walk.png",
+      "03-attack.png",
+      "04-selection.png"
+    ],
+    "browser": "Edg/157.0.4341.60 (Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0)",
+    "durationMs": 17246
+  },
+  "runtime": {
+    "phaser": "executed",
+    "liveExecution": "executed"
+  }
+}

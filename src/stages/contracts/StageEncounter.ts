@@ -9,6 +9,11 @@ export interface StageEncounterEnemyPlacement {
   readonly x: number;
   readonly y: number;
   readonly level: number;
+  /**
+   * Optional authored health for a specific boss or miniboss placement. When
+   * absent, the existing entity defaults remain in force.
+   */
+  readonly hp?: number;
   readonly patrol?: readonly Readonly<{ x: number; y: number }>[];
   readonly dropTable?: readonly Readonly<{ itemId: string; chance: number }>[];
 }

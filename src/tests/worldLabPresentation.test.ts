@@ -119,6 +119,8 @@ describe('World Lab visual presentation inspection', () => {
     expect(project().service.presentationVariants()).toEqual([
       'variant.aguas.igapo-ribeirinho',
       'variant.aguas.igapo-sombrio',
+      'variant.final.palacio.corrompido',
+      'variant.final.palacio.decadencia',
       'variant.floresta.flores-veladas.corrupted',
       'variant.floresta.flores-veladas.natural',
     ]);

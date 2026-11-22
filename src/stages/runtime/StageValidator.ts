@@ -551,6 +551,11 @@ export class StageValidator {
           `${STAGE_ENCOUNTER_ENEMY_LEVEL_RANGE.maximum}.`,
           [...enemyPath, 'level'],
         );
+        if (enemy.hp !== undefined && (!Number.isInteger(enemy.hp) || enemy.hp < 1 || enemy.hp > 9999)) add(
+          'stage.encounter.enemy-hp.invalid',
+          'Encounter enemy hp must be an integer from 1 to 9999 when present.',
+          [...enemyPath, 'hp'],
+        );
       });
     });
   }

@@ -184,7 +184,10 @@ Em `encounter.ts`, use `schemaVersion: 1` e:
 Em `authored-waves`, a primeira onda usa `delayBeforeMs: 0`; cada inimigo usa um
 arquétipo publicado (`affinity`, `applaud`, `fortitudo`, `ranged`, `boss`,
 `miniboss`), coordenadas inteiras não negativas e nível de 1 a 10. Cada onda
-aceita no máximo 64 inimigos. `patrol` e `dropTable` são opcionais.
+aceita no máximo 64 inimigos. `patrol` e `dropTable` são opcionais. `hp` é
+opcional (inteiro de 1 a 9999) e permite que a fase declare a resistência de um
+chefe ou miniboss específico; quando ausente, valem os padrões da entidade
+(`BossEnemy` continua sendo o executor e nenhum outro arquétipo é afetado).
 
 ## 7. Apresentação
 
