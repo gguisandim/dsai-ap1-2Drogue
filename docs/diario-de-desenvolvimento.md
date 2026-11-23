@@ -15,13 +15,21 @@
 - Título HTML e metadados do pacote alinhados à identidade Umbra Trail.
 - Créditos históricos, referências em registros arquivados e o remoto `upstream`
   foram preservados.
+- Após a criação da PR, `origin/main` avançou com SPECs e conteúdo autoral de
+  fases. Com autorização, a branch integrou o novo `main` sem reescrever
+  histórico e preservou todas as entradas do índice de SPEC.
 - A SPEC foi registrada antes da implementação em
   `SPEC/2026-11-18-etapa-9-16-identidade-repositorio.md`.
-- Validações: `npm run check:gates` aprovado; `npm run build` aprovado; `npm test
-  -- --runInBand` aprovado (97 suítes, 1.191 testes); `git diff --check` aprovado.
-- Integridade: HTML da build usa bundle relativo; os 35 recursos do manifesto
+- Validações após integrar o `main`: `npm run check:gates` aprovado;
+  `npm run build` aprovado; `npm test -- --runInBand` aprovado (100 suítes,
+  1.221 testes); `git diff --check` aprovado.
+- `git diff --check --cached` ao integrar `main` apontou espaços finais somente
+  em arquivos vindos dos commits upstream; esses arquivos foram preservados sem
+  alteração. O diff desta etapa permanece sem erros de whitespace.
+- Integridade: HTML da build usa bundle relativo; os 82 recursos do manifesto
   Vite resolvem para arquivos da build ou URLs `data:` incorporadas. O teste
   automatizado teve uma primeira execução afetada por fixtures temporárias
   remanescentes de uma execução interrompida; após remover apenas esses
-  resíduos, a suíte completa passou. Build emite avisos de API CJS obsoleta e
-  bundle principal acima de 500 kB, sem falhar.
+  resíduos, a suíte completa passou. A suíte final também informou que um
+  worker foi finalizado à força após todos os testes passarem. A build emite
+  avisos de API CJS obsoleta e bundle principal acima de 500 kB, sem falhar.

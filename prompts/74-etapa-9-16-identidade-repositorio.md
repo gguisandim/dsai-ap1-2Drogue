@@ -8,11 +8,13 @@
 - Esforço: `desconhecido`
 - SPEC: `SPEC/2026-11-18-etapa-9-16-identidade-repositorio.md`
 - Commit: `pendente`
-- Execução: `npm run check:gates`, `npm run build`, `npm test -- --runInBand`
-  (97 suítes, 1.191 testes), `git diff --check`, auditoria de segredos e
-  verificação do manifesto de assets da build aprovados. Primeira execução da
-  suíte completa falhou por fixtures temporárias remanescentes de execução
-  interrompida; após limpeza específica, a repetição passou.
+- Execução: após integrar o `main` com autorização, `npm run check:gates`,
+  `npm run build`, `npm test -- --runInBand` (100 suítes, 1.221 testes),
+  `git diff --check`, auditoria de segredos e verificação de 82 recursos
+  relativos/inline da build aprovados. Uma execução anterior à atualização do
+  `main` falhou por fixtures temporárias remanescentes de execução interrompida;
+  após limpeza específica, a repetição passou. Na suíte final, todos os testes
+  passaram, embora um worker tenha sido finalizado à força após a execução.
 
 ## Arquivos modificados
 
@@ -24,7 +26,6 @@
 - `src/index.html`
 - `docs/diario-de-desenvolvimento.md`
 - `prompts/74-etapa-9-16-identidade-repositorio.md`
-- `SPEC/README.md`
 
 ## Prompt efetivamente recebido
 
