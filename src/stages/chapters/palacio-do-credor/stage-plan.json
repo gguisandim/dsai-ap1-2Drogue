@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "kind": "umbra.stage-plan",
+  "id": "plan.final.palacio-do-credor",
+  "chapterId": "chapter.final.palacio-do-credor",
+  "stageId": "stage.final.palacio-do-credor",
+  "title": "Palácio do Credor",
+  "summary": "Travessia panorâmica da floresta degradada à arena do Credor, com revelação, escolha, confronto e epílogo.",
+  "progression": "linear",
+  "visualDirection": "Palácio monumental em duas apresentações: Decadência com pedra fria, ouro gasto, vitrais e vegetação retorcida; Corrompido com portão, torre, arcada, trono e selo substituídos por silhuetas deformadas, raízes agressivas, esporos, névoa violeta e luz opressiva. Pixel art no piso, SVG autoral na arquitetura e folha PNG própria do Credor.",
+  "startRegionId": "region.final.palacio.aproximacao",
+  "exitRegionIds": ["region.final.palacio.resolucao"],
+  "regions": [
+    { "id": "region.final.palacio.aproximacao", "title": "Aproximação pela floresta degradada", "role": "start", "anchor": { "x": 5, "y": 23 }, "connections": ["region.final.palacio.entrada"] },
+    { "id": "region.final.palacio.entrada", "title": "Entrada monumental", "role": "combat", "anchor": { "x": 39, "y": 23 }, "connections": ["region.final.palacio.aproximacao", "region.final.palacio.jardins-externos"] },
+    { "id": "region.final.palacio.jardins-externos", "title": "Jardins e estruturas abandonadas", "role": "exploration", "anchor": { "x": 54, "y": 24 }, "connections": ["region.final.palacio.entrada", "region.final.palacio.galerias"] },
+    { "id": "region.final.palacio.galerias", "title": "Galerias e salões internos", "role": "combat", "anchor": { "x": 84, "y": 20 }, "connections": ["region.final.palacio.jardins-externos", "region.final.palacio.camara-revelacao"] },
+    { "id": "region.final.palacio.camara-revelacao", "title": "Câmara de revelação", "role": "objective", "anchor": { "x": 104, "y": 22 }, "connections": ["region.final.palacio.galerias", "region.final.palacio.antessala"] },
+    { "id": "region.final.palacio.antessala", "title": "Antessala do confronto", "role": "exploration", "anchor": { "x": 118, "y": 22 }, "connections": ["region.final.palacio.camara-revelacao", "region.final.palacio.arena"] },
+    { "id": "region.final.palacio.arena", "title": "Arena do Credor", "role": "combat", "anchor": { "x": 128, "y": 22 }, "connections": ["region.final.palacio.antessala", "region.final.palacio.resolucao"] },
+    { "id": "region.final.palacio.resolucao", "title": "Resolução e saída", "role": "exit", "anchor": { "x": 142, "y": 22 }, "connections": ["region.final.palacio.arena"] }
+  ],
+  "objectives": [
+    { "id": "objective.final.palacio.encontrar-arua", "title": "Revelar a origem do Credor com Aruã", "regionId": "region.final.palacio.camara-revelacao", "missionId": "mission.final.palacio.ultimo-pacto" },
+    { "id": "objective.final.palacio.ouvir-eco", "title": "Escutar o Eco do Último Pacto", "regionId": "region.final.palacio.jardins-externos", "missionId": "mission.final.palacio.ultimo-pacto" },
+    { "id": "objective.final.palacio.ouvir-sentinela", "title": "Escutar a Sentinela do Último Selo", "regionId": "region.final.palacio.antessala", "missionId": "mission.final.palacio.ultimo-pacto" },
+    { "id": "objective.final.palacio.derrotar-credor", "title": "Derrotar o Credor", "regionId": "region.final.palacio.arena", "missionId": "mission.final.palacio.ultimo-pacto", "dependsOn": ["objective.final.palacio.encontrar-arua"], "unlocksExitIds": ["exit.final.palacio-do-credor.complete"] }
+  ],
+  "exitConditions": [
+    { "exitId": "exit.final.palacio-do-credor.complete", "regionId": "region.final.palacio.resolucao", "requiresObjectiveIds": ["objective.final.palacio.encontrar-arua", "objective.final.palacio.derrotar-credor"] }
+  ],
+  "encounters": [
+    { "id": "encounter.final.palacio.credor", "regionId": "region.final.palacio.arena", "archetypes": ["affinity", "applaud", "miniboss", "boss"], "waveCount": 4 }
+  ],
+  "interactions": [
+    { "id": "npc.final.palacio.arua", "kind": "npc", "regionId": "region.final.palacio.camara-revelacao", "referenceId": "npc.final.palacio.arua" },
+    { "id": "npc.final.palacio.eco", "kind": "npc", "regionId": "region.final.palacio.jardins-externos", "referenceId": "npc.final.palacio.eco" },
+    { "id": "npc.final.palacio.sentinela", "kind": "npc", "regionId": "region.final.palacio.antessala", "referenceId": "npc.final.palacio.sentinela" },
+    { "id": "dialogue.final.palacio.arua", "kind": "dialogue", "regionId": "region.final.palacio.camara-revelacao", "referenceId": "dialogue.final.palacio.arua" },
+    { "id": "dialogue.final.palacio.eco", "kind": "dialogue", "regionId": "region.final.palacio.jardins-externos", "referenceId": "dialogue.final.palacio.eco" },
+    { "id": "dialogue.final.palacio.sentinela", "kind": "dialogue", "regionId": "region.final.palacio.antessala", "referenceId": "dialogue.final.palacio.sentinela" }
+  ],
+  "capabilities": [
+    { "id": "navigation.authored-map", "category": "navigation", "minimumVersion": 1, "requirement": "required" },
+    { "id": "navigation.physical-exit", "category": "navigation", "minimumVersion": 1, "requirement": "required" },
+    { "id": "biome.cathedral", "category": "biome", "minimumVersion": 1, "requirement": "required" },
+    { "id": "interaction.npc-dialogue", "category": "interaction", "minimumVersion": 1, "requirement": "required" },
+    { "id": "narrative.mission", "category": "narrative", "minimumVersion": 1, "requirement": "required" },
+    { "id": "encounter.declarative", "category": "encounter", "minimumVersion": 1, "requirement": "required" }
+  ]
+}

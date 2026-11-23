@@ -39,13 +39,14 @@ export class CharacterCreatorScene extends Phaser.Scene {
       fontFamily: 'Courier New, monospace', fontSize: '15px', color: '#766281',
     }).setOrigin(0.5);
 
-    this.classNameText = this.add.text(340, 480, '', {
-      fontFamily: 'Courier New, monospace', fontSize: '21px', color: '#f6d77a', fontStyle: 'bold',
+    this.classNameText = this.add.text(340, 452, '', {
+      fontFamily: 'Courier New, monospace', fontSize: '18px', color: '#f6d77a', fontStyle: 'bold',
+      align: 'center', wordWrap: { width: 340 },
     }).setOrigin(0.5);
-    this.classDetailText = this.add.text(340, 525, '', {
-      fontFamily: 'Courier New, monospace', fontSize: '13px', color: '#cbb8d4', align: 'center',
-      wordWrap: { width: 330 }, lineSpacing: 4,
-    }).setOrigin(0.5);
+    this.classDetailText = this.add.text(340, 480, '', {
+      fontFamily: 'Courier New, monospace', fontSize: '11px', color: '#cbb8d4', align: 'center',
+      wordWrap: { width: 330, useAdvancedWrap: true }, lineSpacing: 2,
+    }).setOrigin(0.5, 0);
 
     this.createClassSelector(650, 165);
 
@@ -131,7 +132,7 @@ export class CharacterCreatorScene extends Phaser.Scene {
   private refreshPreview(): void {
     this.preview?.destroy();
     const texture = generateDetailedCharacterTexture(this, this.appearance, 'creator_character');
-    this.preview = this.add.image(340, 325, texture).setDisplaySize(300, 300);
+    this.preview = this.add.image(340, 300, texture).setDisplaySize(260, 260);
     const heroClass = CLASS_DATABASE[this.appearance.classId];
     this.classNameText?.setText(`${heroClass.name} - ${heroClass.title}`);
     this.classDetailText?.setText(

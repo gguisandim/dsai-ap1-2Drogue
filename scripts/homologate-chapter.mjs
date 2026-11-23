@@ -29,6 +29,7 @@ function parseArgs(argv) {
   const result = {
     slug: undefined, stageId: undefined, variantId: undefined, campaign: false,
     macroRunId: undefined, macroRunSeed: undefined, json: false, capture: false,
+    playerShowcase: false, playerClass: undefined, gender: 'woman',
     timeoutMs: 240_000, evidenceDir: EVIDENCE_ROOT, browserPath: undefined,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -43,6 +44,9 @@ function parseArgs(argv) {
     if (value === '--browser') { result.browserPath = argv[++index]; continue; }
     if (value === '--json') { result.json = true; continue; }
     if (value === '--capture') { result.capture = true; continue; }
+    if (value === '--player-showcase') { result.playerShowcase = true; continue; }
+    if (value === '--player-class') { result.playerClass = argv[++index]; continue; }
+    if (value === '--gender') { result.gender = argv[++index]; continue; }
     if (value === '--help' || value === '-h') { result.help = true; continue; }
     if (value.startsWith('-')) throw new Error(`Opção desconhecida: ${value}`);
     if (result.slug) throw new Error(`Slug inesperado: ${value}`);
@@ -52,17 +56,29 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv.slice(2));
+const PLAYER_CLASSES = new Set(['knight', 'mage', 'ranger', 'rogue']);
+const PLAYER_GENDERS = new Set(['woman', 'man']);
+if (args.playerShowcase && !PLAYER_CLASSES.has(args.playerClass)) {
+  throw new Error('--player-showcase requer --player-class knight|mage|ranger|rogue.');
+}
+if (!PLAYER_GENDERS.has(args.gender)) {
+  throw new Error('--gender deve ser woman ou man.');
+}
 if (args.help) {
   console.log(`Uso:
   npm run homologate -- <slug> [--variant <id>] [--json]
   npm run homologate -- --stage <stageId> [--variant <id>] [--json]
   npm run homologate -- --stage <stageId> --capture [--json]
+  npm run homologate -- --stage <stageId> --player-showcase --player-class <id> [--gender woman|man]
   npm run homologate -- --campaign [--macro-run <id>] [--macro-seed <seed>] [--json]
 
 Opções:
   --timeout <ms>        Tempo máximo da execução (padrão 240000)
   --evidence-dir <dir>  Diretório de evidências (padrão .tmp/evidence-913)
   --browser <path>      Navegador Chromium/Edge alternativo
+  --player-showcase     Captura seleção, caminhada e ataque da classe no Phaser real
+  --player-class <id>   knight, mage, ranger ou rogue (obrigatório no showcase)
+  --gender <id>         woman ou man (padrão woman)
   --campaign            Homologa o fluxo de campanha macro (hub → Igapó → Coração)
   --macro-run <id>      Run id da campanha macro
   --macro-seed <seed>   Seed da campanha macro
@@ -118,16 +134,23 @@ function readStagePlan({ slug, stageId }) {
     if (!fs.existsSync(file)) return undefined;
     return JSON.parse(fs.readFileSync(file, 'utf8'));
   }
-  const root = path.join(REPO, 'src', 'examples', 'chapters');
-  if (!fs.existsSync(root)) return undefined;
-  for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
-    if (!entry.isDirectory() || entry.name.startsWith('.tmp-')) continue;
-    const file = path.join(root, entry.name, 'stage-plan.json');
-    if (!fs.existsSync(file)) continue;
-    try {
-      const plan = JSON.parse(fs.readFileSync(file, 'utf8'));
-      if (plan.stageId === stageId) return plan;
-    } catch { /* ignore malformed authoring plans */ }
+  // Authoring plans live under examples; production chapters live under
+  // src/stages/chapters. Both are read-only inputs for visual captures.
+  const roots = [
+    path.join(REPO, 'src', 'examples', 'chapters'),
+    path.join(REPO, 'src', 'stages', 'chapters'),
+  ];
+  for (const root of roots) {
+    if (!fs.existsSync(root)) continue;
+    for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name.startsWith('.tmp-')) continue;
+      const file = path.join(root, entry.name, 'stage-plan.json');
+      if (!fs.existsSync(file)) continue;
+      try {
+        const plan = JSON.parse(fs.readFileSync(file, 'utf8'));
+        if (plan.stageId === stageId) return plan;
+      } catch { /* ignore malformed authoring plans */ }
+    }
   }
   return undefined;
 }
@@ -339,6 +362,7 @@ class Driver {
     this.down = new Set();
     this.startCamera = undefined;
     this.cameraSamples = [];
+    this.bossScreenshot = undefined;
   }
 
   async state() {
@@ -656,6 +680,7 @@ class Driver {
     let attackAt = 0;
     let dodgeAt = 0;
     let ultimateAt = 0;
+    let bossShot = false;
     while (Date.now() - started < timeoutMs) {
       const state = await this.state();
       if (!state.active || !state.player) break;
@@ -664,6 +689,15 @@ class Driver {
       if (state.player.hp < initialHp) playerDamaged = true;
       if (state.enemies.some(enemy => enemy.hp < enemy.maxHp)) enemyDamaged = true;
       await this.sample('combat', state);
+      const visibleBoss = state.enemies.find(enemy =>
+        (enemy.narrativeArchetype === 'boss' || enemy.maxHp >= 600) &&
+        Math.abs(enemy.x - state.player.x) <= 420 &&
+        Math.abs(enemy.y - state.player.y) <= 300);
+      if (!bossShot && visibleBoss) {
+        bossShot = true;
+        this.bossScreenshot = '03b-boss-fight.png';
+        await this.page.screenshot(args.evidenceDir, '03b-boss-fight');
+      }
       if (state.player.hp <= 0) {
         await this.releaseAll();
         return { died: true, playerDamaged, enemyDamaged, initialHp, minimumHp };
@@ -686,7 +720,13 @@ class Driver {
         continue;
       }
       if (state.player.hp <= 3 && Array.isArray(state.items)) {
-        const heal = state.items.find(item => item.type === 'item_potion');
+        const heal = state.items
+          .filter(item => item.type === 'item_potion')
+          .map(item => ({
+            item,
+            distance: Math.hypot(item.x - state.player.x, item.y - state.player.y),
+          }))
+          .sort((left, right) => left.distance - right.distance)[0]?.item;
         if (heal) {
           await this.navigateTo({ x: heal.x, y: heal.y }, 'heal-item', 8_000);
           continue;
@@ -1619,7 +1659,7 @@ async function run() {
 
   const port = await freePort();
   const cdpPort = await freePort();
-  const profileDir = path.join(args.evidenceDir, `profile-${process.pid}-${Date.now()}`);
+  const profileDir = path.join(REPO, '.tmp', 'browser-profiles', `profile-${process.pid}-${Date.now()}`);
   let viteServer;
   let browserProcess;
   let cdp;
@@ -1635,7 +1675,6 @@ async function run() {
     // Warm the entry graph before opening the browser. A cold optimize pass can
     // take longer than the page-load budget on slower machines.
     try {
-      await viteServer.warmupRequest('/index.html');
       await viteServer.warmupRequest('/main.ts');
     } catch {
       // Warmup is an optimization; the page load still works without it.
@@ -1682,6 +1721,28 @@ async function run() {
     await cdp.send('Runtime.enable');
     await cdp.send('Log.enable');
 
+    if (args.playerShowcase) {
+      const originReady = await waitFor(async () => {
+        try {
+          return await cdp.evaluate(`globalThis.location?.origin?.startsWith('http://127.0.0.1:')`) || undefined;
+        } catch { return undefined; }
+      }, 30_000);
+      if (!originReady) throw new Error('A origem local não ficou pronta para configurar o perfil visual.');
+      await cdp.evaluate(`(() => {
+        localStorage.setItem('umbra-trail-profile', JSON.stringify({
+          classId: ${JSON.stringify(args.playerClass)},
+          gender: ${JSON.stringify(args.gender)},
+          skin: 0, hair: 1, eyes: 0, outfit: 0, shoes: 0,
+        }));
+        localStorage.setItem('umbra-trail-settings', JSON.stringify({
+          sound: false, showControls: false, masterVolume: 0,
+          musicVolume: 0, effectsVolume: 0, fullscreen: false,
+        }));
+        return true;
+      })()`);
+      await cdp.send('Page.reload', { ignoreCache: true });
+    }
+
     if (args.campaign) {
       await startMacroCampaign(cdp);
       const driver = new Driver(cdp, observations);
@@ -1715,6 +1776,113 @@ async function run() {
     const driver = new Driver(cdp, observations);
     driver.startedAt = startedAt;
 
+    if (args.playerShowcase) {
+      ensureDir(args.evidenceDir);
+      await sleep(1_200);
+      await driver.closeDialogue();
+      const inspectPlayer = () => cdp.evaluate(`(() => {
+        const scene = globalThis.__UMBRA_GAME__?.scene?.getScene('GameScene');
+        const player = scene?.player;
+        const body = player?.body;
+        return player ? {
+          classId: player.heroClass?.id,
+          textureKey: player.texture?.key,
+          displayWidth: player.displayWidth,
+          displayHeight: player.displayHeight,
+          body: body ? {
+            width: body.width, height: body.height,
+            sourceWidth: body.width / Math.abs(player.scaleX || 1),
+            sourceHeight: body.height / Math.abs(player.scaleY || 1),
+            offsetX: body.offset?.x, offsetY: body.offset?.y,
+          } : null,
+          animationKey: player.anims?.currentAnim?.key ?? null,
+          frame: player.anims?.currentFrame?.index ?? null,
+          bowReleaseActive: (player.bowReleaseUntil ?? 0) > (scene?.time?.now ?? 0),
+          articulatedBowVisible: Boolean(player.archerBow?.visible),
+          articulatedBowReleasing: Boolean(player.archerBow?.releasing),
+        } : null;
+      })()`);
+
+      const initial = await inspectPlayer();
+      screenshots.push(await cdp.screenshot(args.evidenceDir, '01-idle'));
+
+      await cdp.key('rawKeyDown', KEY.right.key, KEY.right.code, KEY.right.vk);
+      await sleep(260);
+      const walking = await inspectPlayer();
+      screenshots.push(await cdp.screenshot(args.evidenceDir, '02-walk'));
+      await cdp.key('keyUp', KEY.right.key, KEY.right.code, KEY.right.vk);
+      await sleep(120);
+
+      await cdp.press(KEY.attack.key, KEY.attack.code, KEY.attack.vk, 25);
+      await sleep(20);
+      const attacking = await inspectPlayer();
+      screenshots.push(await cdp.screenshot(args.evidenceDir, '03-attack'));
+
+      await cdp.evaluate(`(() => {
+        const game = globalThis.__UMBRA_GAME__;
+        game.scene.stop('GameScene');
+        game.scene.start('CharacterCreatorScene');
+        return true;
+      })()`);
+      await sleep(900);
+      screenshots.push(await cdp.screenshot(args.evidenceDir, '04-selection'));
+
+      const attackObserved = args.playerClass === 'ranger'
+        ? !initial?.articulatedBowReleasing && Boolean(attacking?.articulatedBowReleasing)
+        : Boolean(attacking?.animationKey?.endsWith('_attack'));
+      const checks = [
+        check('player.class', initial?.classId === args.playerClass
+          ? 'PLAYER_CLASS_LOADED' : 'PLAYER_CLASS_MISMATCH',
+        initial?.classId === args.playerClass ? 'PASS' : 'FAIL',
+        `Classe solicitada ${args.playerClass}; runtime carregou ${initial?.classId ?? 'nenhuma'}.`),
+        check('player.geometry', initial?.displayWidth === 86 && initial?.displayHeight === 76 &&
+          Math.abs((initial?.body?.sourceWidth ?? 0) - 42) < 0.001 &&
+          Math.abs((initial?.body?.sourceHeight ?? 0) - 58) < 0.001 &&
+          initial?.body?.offsetX === 43 && initial?.body?.offsetY === 48
+          ? 'PLAYER_GEOMETRY_PRESERVED' : 'PLAYER_GEOMETRY_CHANGED',
+        initial?.displayWidth === 86 && initial?.displayHeight === 76 &&
+          Math.abs((initial?.body?.sourceWidth ?? 0) - 42) < 0.001 &&
+          Math.abs((initial?.body?.sourceHeight ?? 0) - 58) < 0.001 &&
+          initial?.body?.offsetX === 43 && initial?.body?.offsetY === 48 ? 'PASS' : 'FAIL',
+        `Display ${initial?.displayWidth}x${initial?.displayHeight}; corpo-fonte ` +
+          `${initial?.body?.sourceWidth}x${initial?.body?.sourceHeight} ` +
+          `offset ${initial?.body?.offsetX},${initial?.body?.offsetY}.`),
+        check('player.walk', walking?.animationKey?.endsWith('_walk')
+          ? 'PLAYER_WALK_ANIMATED' : 'PLAYER_WALK_MISSING',
+        walking?.animationKey?.endsWith('_walk') ? 'PASS' : 'FAIL',
+        `Animação observada: ${walking?.animationKey ?? 'nenhuma'}.`),
+        check('player.attack', attackObserved
+          ? 'PLAYER_ATTACK_ANIMATED' : 'PLAYER_ATTACK_MISSING',
+        attackObserved ? 'PASS' : 'FAIL',
+        args.playerClass === 'ranger'
+          ? `Soltura articulada: active=${Boolean(attacking?.bowReleaseActive)}, ` +
+            `visible=${Boolean(attacking?.articulatedBowVisible)}, releasing=${Boolean(attacking?.articulatedBowReleasing)}.`
+          : `Animação observada: ${attacking?.animationKey ?? 'nenhuma'}.`),
+      ];
+      const result = reportResult(checks);
+      const report = {
+        schemaVersion: 1,
+        kind: 'umbra.player-class-showcase.report',
+        generatedAt: timestamp(),
+        stageId: args.stageId,
+        playerClass: args.playerClass,
+        gender: args.gender,
+        result,
+        checks,
+        evidence: {
+          screenshots,
+          browser: `${version.Browser ?? 'Chromium'} (${version['User-Agent'] ?? 'CDP'})`,
+          durationMs: Date.now() - startedAt,
+        },
+        runtime: { phaser: 'executed', liveExecution: 'executed' },
+      };
+      const reportFile = path.join(args.evidenceDir, 'player-showcase.json');
+      fs.writeFileSync(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+      console.log(`Vitrine ${args.playerClass}/${args.gender}: ${result}`);
+      console.log(`Relatório: ${reportFile}`);
+      return result === 'PASS' ? 0 : 1;
+    }
+
     // Visual capture mode: navigate the real Phaser stage with the real body
     // and screenshot fixed landmarks. It never changes gameplay state, so it is
     // evidence for the art direction, not a replacement for the runtime
@@ -1733,7 +1901,18 @@ async function run() {
           { id: 'nascente', title: 'Bacia da Nascente', x: 88, y: 16 },
         ],
       };
-      const landmarks = landmarksByStage[args.stageId] ?? [
+      const plan = readStagePlan({ stageId: args.stageId });
+      const planLandmarks = Array.isArray(plan?.regions)
+        ? plan.regions
+          .filter(region => region?.anchor && Number.isInteger(region.anchor.x) && Number.isInteger(region.anchor.y))
+          .map(region => ({
+            id: String(region.id).split('.').pop() ?? String(region.id),
+            title: String(region.title ?? region.id),
+            x: region.anchor.x,
+            y: region.anchor.y,
+          }))
+        : [];
+      const landmarks = landmarksByStage[args.stageId] ?? (planLandmarks.length > 0 ? planLandmarks : [
         { id: 'entrada', title: 'Entrada da Floresta', x: 5, y: 18 },
         { id: 'trilha', title: 'Trilha dos Vestígios', x: 28, y: 15 },
         { id: 'primeiro-combate', title: 'Primeiro confronto', x: 39, y: 18 },
@@ -1741,7 +1920,7 @@ async function run() {
         { id: 'aproximacao', title: 'Aproximação do santuário', x: 72, y: 18 },
         { id: 'santuario', title: 'Coração Ancestral', x: 80, y: 18 },
         { id: 'saida', title: 'Passagem das Águas', x: 104, y: 18 },
-      ];
+      ]);
       for (const landmark of landmarks) {
         const reached = await driver.navigateTo(
           { x: landmark.x * TILE + TILE / 2, y: landmark.y * TILE + TILE / 2 },
@@ -1760,6 +1939,7 @@ async function run() {
       const report = {
         schemaVersion: SCHEMA_VERSION, kind: REPORT_KIND,
         stageId: args.stageId ?? `chapter.${args.slug}`,
+        ...(args.variantId ? { variantId: args.variantId } : {}),
         result, scenario: 'visual-capture',
         seed,
         checks,
@@ -1881,8 +2061,11 @@ async function run() {
         enemies > 0 ? `Encontro ${stageInfo.encounter.id} iniciou com ${enemies} inimigo(s).`
           : 'Nenhum inimigo ativo foi observado no início.',
         { required: true }));
-      combat = await driver.fight(Math.min(90_000,
+      // Final bosses legitimately take longer than a regular encounter. The
+      // authored stage is still fought with the real player, damage and AI.
+      combat = await driver.fight(Math.min(300_000,
         Math.max(30_000, args.timeoutMs - (Date.now() - startedAt))));
+      if (driver.bossScreenshot) screenshots.push(driver.bossScreenshot);
       const afterFight = await driver.state();
       checks.push(check('runtime.combat.damage',
         combat.enemyDamaged ? 'RUNTIME_COMBAT_DAMAGE' : 'RUNTIME_COMBAT_UNVERIFIED',

@@ -17,6 +17,8 @@ import {
   WORLD_ROOT_CHAPTER_STAGES,
 } from './raiz-do-mundo';
 import { VEILED_GARDENS_CHAPTER_ENTRY } from './flores-veladas';
+import { PALACIO_DO_CREDOR_CHAPTER_ENTRY } from './palacio-do-credor';
+import { MINAS_CORROMPIDAS_CHAPTER_ENTRY } from './minas-corrompidas';
 
 /**
  * Declarative link between a campaign chapter and the macro region it fills.
@@ -69,6 +71,8 @@ export const CAMPAIGN_CHAPTER_CATALOG: readonly CampaignChapterEntry[] = Object.
     ]),
   }),
   VEILED_GARDENS_CHAPTER_ENTRY,
+  MINAS_CORROMPIDAS_CHAPTER_ENTRY,
+  PALACIO_DO_CREDOR_CHAPTER_ENTRY,
   Object.freeze({
     chapter: WORLD_ROOT_CHAPTER_MANIFEST,
     stages: WORLD_ROOT_CHAPTER_STAGES,
