@@ -6,7 +6,7 @@ Umbra Trail é um RPG de ação 2D top-down em pixel art, jogável no navegador.
 
 O projeto está em desenvolvimento ativo. As fases autorais atuais cobrem a **Floresta das Raízes**, o **Igapó das Memórias** e o **Coração Corrompido**; o restante da campanha usa o esqueleto macro e as fases legadas preservadas durante a migração.
 
-[**Jogar no navegador**](https://icspingu.github.io/dsai-ap1-2Drogue/) · [**Especificações**](./SPEC/README.md) · [**Autoria de fases**](./docs/stage-authoring.md) · [**World Lab**](#world-lab)
+[**Jogar no navegador (publicação pendente)**](https://gguisandim.github.io/dsai-ap1-2Drogue/) · [**Especificações**](./SPEC/README.md) · [**Autoria de fases**](./docs/stage-authoring.md) · [**World Lab**](#world-lab)
 
 ![Floresta das Raízes](docs/screenshots/floresta-das-raizes.png)
 
@@ -154,11 +154,11 @@ Saves desconhecidos ou parcialmente incompatíveis preservam os dados reconhecid
 
 ### No navegador
 
-A versão publicada da branch `main` fica em:
+A URL de publicação do fork é:
 
-[https://icspingu.github.io/dsai-ap1-2Drogue/](https://icspingu.github.io/dsai-ap1-2Drogue/)
+[https://gguisandim.github.io/dsai-ap1-2Drogue/](https://gguisandim.github.io/dsai-ap1-2Drogue/)
 
-A publicação é feita pelo workflow [Publicar jogo no GitHub Pages](./.github/workflows/publicar-pages.yml) a cada push na `main`.
+**Status verificado em 2026-11-18:** a URL ainda não está publicada (HTTP 404); a configuração de Pages não foi encontrada e o workflow não tem execuções ou deployments. Para disponibilizar o jogo, configure **Settings → Pages → Build and deployment → GitHub Actions** no repositório e execute [Publicar jogo no GitHub Pages](./.github/workflows/publicar-pages.yml) manualmente ou faça push na `main`. O link só estará funcional após uma publicação bem-sucedida.
 
 ### Localmente
 
