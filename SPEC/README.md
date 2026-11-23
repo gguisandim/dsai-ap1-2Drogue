@@ -88,3 +88,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-11-18 | [Atualização de identidade e desvinculação do repositório original — Etapa 9.16](./2026-11-18-etapa-9-16-identidade-repositorio.md) |
 | 2026-11-21 | [Palácio do Credor — fase final autoral](./2026-11-21-palacio-do-credor.md) |
 | 2026-11-22 | [Minas Corrompidas — O Subsolo da Dívida](./2026-11-22-minas-corrompidas.md) |
+| 2026-11-23 | [Ajustes do menu e pré-visualização das fases — Etapa 9.17](./2026-11-23-etapa-9-17-menu-preview-fases.md) |

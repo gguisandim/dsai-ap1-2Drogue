@@ -5,7 +5,6 @@ import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
 import { GameModesScene } from './scenes/GameModesScene';
 import { StageSelectScene } from './scenes/StageSelectScene';
-import { CreditsScene } from './scenes/CreditsScene';
 import { CharacterCreatorScene } from './scenes/CharacterCreatorScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { CatalogScene } from './scenes/CatalogScene';
@@ -28,7 +27,6 @@ const config: Phaser.Types.Core.GameConfig = {
     MenuScene,
     GameModesScene,
     StageSelectScene,
-    CreditsScene,
     CharacterCreatorScene,
     SettingsScene,
     CatalogScene,

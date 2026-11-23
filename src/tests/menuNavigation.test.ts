@@ -1,8 +1,20 @@
 import { DEFAULT_SETTINGS, loadSettings, saveSettings } from '../data/PlayerProfile';
 import { SoundManager } from '../managers/SoundManager';
 import { firstFocusableIndex, moveFocus } from '../presentation/MenuNavigation';
+import fs from 'node:fs';
+import path from 'node:path';
 
 describe('menu navigation and preferences', () => {
+  it('uses Novo Jogo and removes the main-menu credits navigation', () => {
+    const menuSource = fs.readFileSync(path.resolve(__dirname, '../scenes/MenuScene.ts'), 'utf8');
+    const mainSource = fs.readFileSync(path.resolve(__dirname, '../main.ts'), 'utf8');
+
+    expect(menuSource).toContain("label: 'NOVO JOGO'");
+    expect(menuSource).not.toContain("label: 'NOVA CAMPANHA'");
+    expect(menuSource).not.toContain("label: 'CRÉDITOS'");
+    expect(mainSource).not.toContain('CreditsScene');
+  });
+
   it('wraps focus while skipping disabled entries', () => {
     const items = [true, false, true];
     expect(firstFocusableIndex([false, true])).toBe(1);

@@ -33,3 +33,29 @@
   resíduos, a suíte completa passou. A suíte final também informou que um
   worker foi finalizado à força após todos os testes passarem. A build emite
   avisos de API CJS obsoleta e bundle principal acima de 500 kB, sem falhar.
+
+## 2026-11-23 — Etapa 9.17: ajustes do menu e pré-visualização das fases
+
+- `main` e a árvore de trabalho foram confirmados antes da alteração; a
+  `origin/main` foi integrada por fast-forward e a branch
+  `fix/menu-preview-fases` foi criada.
+- O diagnóstico mostrou que o seletor resolve a prévia pelo primeiro fundo
+  disponível ou pelo piso. O fundo pode ser o tile genérico `puny_world`,
+  enquanto fases com piso próprio ou panorama não são priorizadas como resumo.
+- A mudança preserva ações de novo jogo, continuação e seleção de fase; remove
+  apenas o botão e registro de navegação de Créditos do menu principal.
+- A solução reutiliza os panoramas, canopies e pisos já existentes. Fases
+  legadas continuam sem arte própria e usam o tile legado existente.
+- SPEC registrada antes da implementação em
+  `SPEC/2026-11-23-etapa-9-17-menu-preview-fases.md`.
+- Implementação: o menu usa `NOVO JOGO`, remove o botão e o registro do menu
+  para `CRÉDITOS`, e o seletor ignora `puny_world` como fundo genérico ao
+  escolher uma arte temática disponível.
+- Validações dirigidas: 30 testes passaram em menu, prévia e sessão de jogo.
+- Validação completa com `NODE_OPTIONS=--max-old-space-size=4096`:
+  `npm run check:gates`, `npm run build` e `npm test -- --runInBand` aprovados;
+  a suíte final passou com 100 suítes e 1.223 testes.
+- Verificação visual local: Novo Jogo visível, Créditos ausente, Minas com
+  panorama, Flores com canopy, Igapó e Raiz com piso próprio e Palácio com sua
+  canopy escura já existente. Fases legadas não possuem panorama próprio;
+  usam o tile legado `tile_floor` como prévia reutilizada.
