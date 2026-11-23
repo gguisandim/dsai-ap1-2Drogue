@@ -85,5 +85,6 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-11-16 | [Auditoria técnica e plano de modernização de fases e menu](./2026-11-16-auditoria-fases-menu.md) |
 | 2026-11-16 | [Normalização LF de SVGs entre plataformas](./2026-11-16-normalizacao-lf-svg.md) |
 | 2026-11-18 | [Redesign autoral das classes jogáveis em fantasia amazônica](./2026-11-18-redesign-classes-amazonicas.md) |
+| 2026-11-18 | [Atualização de identidade e desvinculação do repositório original — Etapa 9.16](./2026-11-18-etapa-9-16-identidade-repositorio.md) |
 | 2026-11-21 | [Palácio do Credor — fase final autoral](./2026-11-21-palacio-do-credor.md) |
 | 2026-11-22 | [Minas Corrompidas — O Subsolo da Dívida](./2026-11-22-minas-corrompidas.md) |
