@@ -1,6 +1,6 @@
 # Ajustes do menu e pré-visualização das fases — Etapa 9.17
 
-**Data:** 2026-11-23  
+**Data:** 2026-11-23
 **Estado:** especificação anterior à implementação.
 
 ## Objetivo

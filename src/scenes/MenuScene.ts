@@ -90,7 +90,7 @@ export class MenuScene extends Phaser.Scene {
       : cannotSafelyReplace
         ? `SAVE NÃO VALIDADO: ${this.menuState.savedClassicCampaignError}`
         : hasExistingClassicSave
-          ? 'SAVE EXISTENTE  ·  NOVA CAMPANHA SUBSTITUIRÁ ESTA TRAVESSIA'
+          ? 'SAVE EXISTENTE  ·  NOVO JOGO SUBSTITUIRÁ ESTA TRAVESSIA'
           : 'A FLORESTA AGUARDA SUA ESCOLHA', {
       fontFamily: 'Georgia, serif',
       fontSize: '12px',
@@ -103,7 +103,7 @@ export class MenuScene extends Phaser.Scene {
     const options: Array<{ label: string; enabled: boolean; action: () => void }> = [
       { label: 'CONTINUAR', enabled: canContinue, action: () => this.continueCampaign() },
       {
-        label: 'NOVA CAMPANHA',
+        label: 'NOVO JOGO',
         enabled: !cannotSafelyReplace,
         action: () => hasExistingClassicSave
           ? this.openOverwriteConfirmation()
@@ -114,7 +114,6 @@ export class MenuScene extends Phaser.Scene {
       { label: 'PERSONAGEM', enabled: true, action: () => this.transitionTo('CharacterCreatorScene') },
       { label: 'FORJA DE FASES', enabled: true, action: () => this.transitionTo('EditorScene') },
       { label: 'CONFIGURAÇÕES', enabled: true, action: () => this.transitionTo('SettingsScene') },
-      { label: 'CRÉDITOS', enabled: true, action: () => this.transitionTo('CreditsScene') },
       { label: 'CATÁLOGO', enabled: true, action: () => this.transitionTo('CatalogScene') },
     ];
     options.forEach((option, index) => this.createButton(option, 852, 222 + index * 49, index));

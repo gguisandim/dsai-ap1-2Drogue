@@ -11,13 +11,19 @@ export function resolveStagePreview(
   textureExists: (textureKey: string) => boolean,
 ): StagePreview | undefined {
   if (!presentation) return undefined;
+  const genericTextureKeys = new Set(['puny_world']);
+  const summaryTexture = (textureKey: string): number =>
+    /(?:panorama|canopy|trail|sanctuary|grove|entrance|passage)/i.test(textureKey) ? 0 : 1;
   const background = Object.values(presentation.decorations)
-    .filter(item => item.layer === 'background')
-    .sort((left, right) => left.depth - right.depth)
-    .find(item => textureExists(item.textureKey));
-  if (background) return {
-    textureKey: background.textureKey,
-    ...(background.frame !== undefined ? { frame: background.frame } : {}),
+    .filter(item => item.layer === 'background' &&
+      !genericTextureKeys.has(item.textureKey) &&
+      textureExists(item.textureKey))
+    .sort((left, right) =>
+      summaryTexture(left.textureKey) - summaryTexture(right.textureKey) ||
+      left.depth - right.depth);
+  if (background.length > 0) return {
+    textureKey: background[0].textureKey,
+    ...(background[0].frame !== undefined ? { frame: background[0].frame } : {}),
     tiled: false,
   };
 

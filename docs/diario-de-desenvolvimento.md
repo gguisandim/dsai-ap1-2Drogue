@@ -48,4 +48,14 @@
   legadas continuam sem arte própria e usam o tile legado existente.
 - SPEC registrada antes da implementação em
   `SPEC/2026-11-23-etapa-9-17-menu-preview-fases.md`.
-- Validações finais: pendentes.
+- Implementação: o menu usa `NOVO JOGO`, remove o botão e o registro do menu
+  para `CRÉDITOS`, e o seletor ignora `puny_world` como fundo genérico ao
+  escolher uma arte temática disponível.
+- Validações dirigidas: 30 testes passaram em menu, prévia e sessão de jogo.
+- Validação completa com `NODE_OPTIONS=--max-old-space-size=4096`:
+  `npm run check:gates`, `npm run build` e `npm test -- --runInBand` aprovados;
+  a suíte final passou com 100 suítes e 1.223 testes.
+- Verificação visual local: Novo Jogo visível, Créditos ausente, Minas com
+  panorama, Flores com canopy, Igapó e Raiz com piso próprio e Palácio com sua
+  canopy escura já existente. Fases legadas não possuem panorama próprio;
+  usam o tile legado `tile_floor` como prévia reutilizada.

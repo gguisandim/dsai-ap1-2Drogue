@@ -493,7 +493,7 @@ export class GameModesScene extends Phaser.Scene {
       'Fluxo macro legado preservado.',
       'Usa o hub, as rotas e os saves existentes.',
       'Não compartilha snapshot com a campanha composta.',
-      unavailable ? 'Save existente indisponível para retomada; use Nova Campanha no menu.' : '',
+      unavailable ? 'Save existente indisponível para retomada; use Novo Jogo no menu.' : '',
     ].join('\n'), {
       fontFamily: 'Courier New, monospace', fontSize: '15px', color: '#b89dc7',
       align: 'center', lineSpacing: 6,

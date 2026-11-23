@@ -8,7 +8,11 @@
 - Esforço: `desconhecido`
 - SPEC: `SPEC/2026-11-23-etapa-9-17-menu-preview-fases.md`
 - Commit: `pendente`
-- Execução: `pendente`
+- Execução: `npm run check:gates` aprovado; `npm run build` aprovado;
+  testes dirigidos aprovados (30 testes); validação completa aprovada com
+  `NODE_OPTIONS=--max-old-space-size=4096` (100 suítes, 1.223 testes);
+  `git diff --check` aprovado; verificação visual local aprovada no menu e em
+  Minas, Flores, Igapó, Raiz e Palácio.
 
 ## Arquivos modificados
 
@@ -16,6 +20,12 @@
 - `SPEC/2026-11-23-etapa-9-17-menu-preview-fases.md`
 - `docs/diario-de-desenvolvimento.md`
 - `prompts/75-etapa-9-17-menu-preview-fases.md`
+- `src/main.ts`
+- `src/scenes/MenuScene.ts`
+- `src/scenes/GameModesScene.ts`
+- `src/presentation/StageSelectionPresentation.ts`
+- `src/tests/menuNavigation.test.ts`
+- `src/tests/stageSelectionPresentation.test.ts`
 
 ## Prompt efetivamente recebido
 
