@@ -75,9 +75,8 @@ contratos compartilhados ou o seletor de fases.
 - Testes dirigidos de `src/tests/minasCorrompidas.test.ts` para cobertura e
   alinhamento dos panoramas, spritesheets e animações reais, integridade dos
   assets e invariantes do estágio.
-- `npm run chapter -- plan validate minas-corrompidas`,
-  `npm run chapter -- validate minas-corrompidas` e
-  `npm run chapter -- playtest minas-corrompidas`.
+- Testes dirigidos do capítulo validando o plano de produção, manifesto,
+  referências, mapa, rota e spritesheets através dos validadores reais.
 - `npm run homologate -- minas-corrompidas --json`.
 - Homologação visual Phaser a 1280×720 de entrada, interior e saída, com
   capturas antes/depois e as duas variantes.
