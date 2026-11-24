@@ -158,7 +158,9 @@ A URL de publicação do fork é:
 
 [https://gguisandim.github.io/dsai-ap1-2Drogue/](https://gguisandim.github.io/dsai-ap1-2Drogue/)
 
-**Status verificado em 2026-11-18:** a URL ainda não está publicada (HTTP 404); a configuração de Pages não foi encontrada e o workflow não tem execuções ou deployments. Para disponibilizar o jogo, configure **Settings → Pages → Build and deployment → GitHub Actions** no repositório e execute [Publicar jogo no GitHub Pages](./.github/workflows/publicar-pages.yml) manualmente ou faça push na `main`. O link só estará funcional após uma publicação bem-sucedida.
+A publicação é feita pelo workflow [Publicar jogo no GitHub Pages](./.github/workflows/publicar-pages.yml) a cada push na `main`, independentemente do autor do commit. O workflow instala o lockfile com `npm ci`, executa gates, testes, build e validação dos assets, envia somente `dist` e publica o artefato aprovado. Se qualquer validação falhar, a última versão publicada permanece ativa; o grupo `pages` impede deploys simultâneos e cancela execuções obsoletas.
+
+Para uma execução manual, abra **Actions → Publicar jogo no GitHub Pages → Run workflow** e selecione a branch `main`. O repositório deve manter **Settings → Pages → Build and deployment → Source** configurado como **GitHub Actions**. Ao renomear o repositório, atualize também `GITHUB_PAGES_BASE` em `vite.config.ts`, a URL acima e a SPEC de entrega.
 
 ### Localmente
 

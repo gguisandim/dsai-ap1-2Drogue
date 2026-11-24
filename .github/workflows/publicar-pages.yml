@@ -16,12 +16,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  publicar:
-    name: Compilar e publicar
+  compilar:
+    name: Validar e compilar
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.publicacao.outputs.page_url }}
 
     steps:
       - name: Baixar repositório
@@ -45,14 +42,26 @@ jobs:
       - name: Validar e compilar
         run: npm run build
 
+      - name: Validar artefato e caminhos do Pages
+        run: npm run validate:pages
+
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
 
       - name: Preparar artefato
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: dist
 
+  publicar:
+    name: Publicar artefato aprovado
+    needs: compilar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicacao.outputs.page_url }}
+
+    steps:
       - name: Publicar
         id: publicacao
         uses: actions/deploy-pages@v4

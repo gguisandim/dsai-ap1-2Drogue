@@ -36,6 +36,15 @@ describe('World Lab Phaser preview', () => {
     expect(value.searchParams.get('worldLabEmbed')).toBe('1');
   });
 
+  it('preserves a repository base path when the World Lab is served below the domain root', () => {
+    const value = new URL(createWorldLabPreviewUrl(
+      'https://gguisandim.github.io/dsai-ap1-2Drogue/world-lab.html', stage.stageId,
+    ));
+    expect(value.origin).toBe('https://gguisandim.github.io');
+    expect(value.pathname).toBe('/dsai-ap1-2Drogue/');
+    expect(value.searchParams.get('stagePreview')).toBe(stage.stageId);
+  });
+
   it('renders two sandboxed frames with equal viewport treatment and an optional inspection grid', () => {
     const root = document.querySelector<HTMLElement>('#preview') as HTMLElement;
     renderPhaserPreview(root, {

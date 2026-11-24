@@ -2,9 +2,11 @@
 import { defineConfig } from 'vite';
 import path from 'path';
 
-export default defineConfig({
+export const GITHUB_PAGES_BASE = '/dsai-ap1-2Drogue/';
+
+export default defineConfig(({ command, isPreview }) => ({
   root: path.resolve(__dirname, 'src'),
-  base: './',
+  base: command === 'build' || isPreview ? GITHUB_PAGES_BASE : '/',
   build: {
     outDir: path.resolve(__dirname, 'dist'),
     emptyOutDir: true,
@@ -15,4 +17,4 @@ export default defineConfig({
   server: {
     open: true,
   },
-});
+}));

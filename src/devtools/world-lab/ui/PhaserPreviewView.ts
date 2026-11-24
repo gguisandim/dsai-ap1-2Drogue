@@ -28,12 +28,13 @@ export interface PhaserPreviewOptions {
 }
 
 export function createWorldLabPreviewUrl(
-  origin: string,
+  pageUrl: string,
   stageId: string,
   variantId?: string,
 ): string {
-  const base = new URL('/', origin);
-  if (base.origin !== new URL(origin).origin) throw new Error('A prévia do World Lab deve usar a origem atual.');
+  const current = new URL(pageUrl);
+  const base = new URL('./', current);
+  if (base.origin !== current.origin) throw new Error('A prévia do World Lab deve usar a origem atual.');
   base.searchParams.set('stagePreview', stageId);
   if (variantId) base.searchParams.set('presentationVariant', variantId);
   base.searchParams.set('worldLabEmbed', '1');
@@ -177,7 +178,7 @@ export function renderPhaserPreview(container: HTMLElement, options: PhaserPrevi
     container.append(message);
     return;
   }
-  const origin = options.origin ?? globalThis.location.origin;
+  const origin = options.origin ?? globalThis.location.href;
   const preview = document.createElement('div');
   preview.className = `wl-phaser-preview wl-phaser-preview--${options.mode}`;
   preview.dataset.stageId = options.stage.stageId;

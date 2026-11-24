@@ -14,6 +14,7 @@
     "check:gates": "npm run check:architecture && npm run check:traceability",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",
+    "validate:pages": "node scripts/validate-pages-build.mjs",
     "preview": "vite preview",
     "test": "jest",
     "chapter": "ts-node --project tsconfig.cli.json src/cli/chapter-cli.ts",

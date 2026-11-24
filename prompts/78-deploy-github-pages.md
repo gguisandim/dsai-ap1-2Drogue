@@ -8,16 +8,23 @@
 - Esforço: `desconhecido`
 - SPEC: `SPEC/2026-10-06-entrega-documentacao-deploy.md`
 - Commit: `pendente`
-- Execução: `pendente`
+- Execução: testes dirigidos PASS (2 suítes, 11 testes); `npm run
+  check:gates` OK (954 arquivos, 3.481 dependências; 77 registros v1 e 8
+  legados); `npm run build` OK (870 módulos); `npm test -- --runInBand` PASS
+  (101 suítes, 1.229 testes); `npm run validate:pages` OK (64 arquivos, 63
+  assets e 62 URLs verificadas); `git diff --check` OK.
 
 ## Arquivos modificados
 
 - `SPEC/2026-10-06-entrega-documentacao-deploy.md`
 - `prompts/78-deploy-github-pages.md`
 - `.github/workflows/publicar-pages.yml`
+- `package.json`
+- `scripts/validate-pages-build.mjs`
 - `vite.config.ts`
 - `src/devtools/world-lab/ui/PhaserPreviewView.ts`
-- `src/tests/worldLab.test.ts`
+- `src/tests/githubPagesDeploy.test.ts`
+- `src/tests/worldLabVisualPreview.test.ts`
 - `README.md`
 
 ## Prompt efetivamente recebido
