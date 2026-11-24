@@ -94,7 +94,8 @@ onda final e `all-waves-defeated` é a condição observável de vitória.
 A apresentação híbrida usa:
 
 - pixel art para os dez tiles lógicos, NPCs e inimigos;
-- PNG pictórico autoral para paredes profundas e câmaras monumentais;
+- PNGs pictóricos autorais mantidos nas outras regiões, fora do piloto de
+  entrada e sujeitos a revisão própria;
 - SVG autoral para cristais, trilhos, elevador, raízes, fungos, bombas,
   maquinário e o selo do Credor.
 
@@ -103,6 +104,18 @@ raízes recuperando galerias e luz natural escassa. A Corrompida troca tileset,
 ambiente, áudio, efeitos e silhuetas por minerais deformados, raízes
 mineralizadas, fungos anômalos, névoa e maquinário incorporado. Os overrides de
 decoração substituem composições e formas, não apenas tintas.
+
+### Piloto de composição — entrada da mina
+
+Na região `region.corrupted.minas.floresta`, o PNG panorâmico não compõe a
+superfície caminhável: sua perspectiva lateral e borda retangular contradizem
+o mapa top-down. A entrada usa o piso pixel art como base e compõe raízes,
+suportes, trilhos, arumã e fungos existentes como acentos em escala comparável
+ao herói e com profundidade de fundo, terreno e primeiro plano. As
+decorações ficam fora da rota mais legível ou a acompanham sem sugerir
+colisões. Os overrides existentes continuam dando formas distintas às
+variantes Abandonada e Corrompida. Os panoramas das outras regiões permanecem
+fora deste piloto.
 
 ## Integração
 
@@ -133,7 +146,13 @@ IA, progressão central, saves e o esqueleto macro não mudam.
    e SVGs são usados em placements reais.
 10. O World Lab lista as duas variantes e a homologaçao Phaser executa ambas,
     com capturas reais dos marcos disponíveis.
-11. Após a última alteração passam validação do plano e capítulo, preview,
+11. Na entrada, nenhuma decoração panorâmica PNG se sobrepõe à rota; a
+    composição usa SVGs existentes com dimensões visuais máximas de quatro tiles,
+    profundidades separadas e as formas próprias de cada variante.
+12. Capturas Phaser reais da entrada Abandonada e Corrompida, antes e depois,
+    usam resolução e marco equivalentes e permitem inspecionar escala,
+    perspectiva, bordas, oclusão e leitura da rota.
+13. Após a última alteração passam validação do plano e capítulo, preview,
     testes dirigidos, `npm run check:gates`, `npm run build`,
     `npm test -- --runInBand` e `git diff --check`.
 

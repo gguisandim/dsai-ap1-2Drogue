@@ -40,6 +40,7 @@ import {
   MINAS_CORRUPTED_ENVIRONMENT_ID,
   MINAS_CORRUPTED_THEME_ID,
   MINAS_CORRUPTED_VARIANT_ID,
+  createMinasCorrompidasDecorations,
   createMinasCorrompidasMap,
 } from '../stages';
 import { CAMPAIGN_CHAPTER_CATALOG } from '../stages/chapters/CampaignChapterCatalog';
@@ -352,6 +353,34 @@ describe('Minas Corrompidas', () => {
       mina_machinery: 'mina_machinery_corrupted',
       mina_seal: 'mina_seal_corrupted',
     });
+  });
+
+  it('composes the entrance with compact layered props instead of a panoramic overlay', () => {
+    const entranceDecorations = createMinasCorrompidasDecorations()
+      .filter(decoration => decoration.x <= 30);
+    expect(entranceDecorations.some(decoration => decoration.type.includes('panorama'))).toBe(false);
+    expect(entranceDecorations.map(decoration => decoration.type)).toEqual([
+      'mina_roots',
+      'mina_timber',
+      'mina_rails',
+      'mina_crystals',
+      'mina_fungi',
+    ]);
+    expect(new Set(entranceDecorations.map(decoration => decoration.layer))).toEqual(
+      new Set(['background', 'terrain', 'foreground']),
+    );
+
+    for (const variantId of [MINAS_ABANDONED_VARIANT_ID, MINAS_CORRUPTED_VARIANT_ID]) {
+      const presentation = load(variantId).presentation;
+      if (!presentation) throw new Error('Minas presentation was not resolved.');
+      for (const placement of entranceDecorations) {
+        const decorationId = presentation.decorationOverrides?.[placement.type] ?? placement.type;
+        const definition = presentation.decorations[decorationId];
+        const scale = placement.scale ?? definition.defaultScale;
+        expect(Math.max(definition.sourceWidth ?? 0, definition.sourceHeight ?? 0) * scale)
+          .toBeLessThanOrEqual(128);
+      }
+    }
   });
 
   it('declares real walk/attack/hurt animations for every enemy sprite', () => {

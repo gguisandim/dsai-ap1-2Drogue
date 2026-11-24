@@ -122,10 +122,11 @@ export function createMinasCorrompidasMap(): number[][] {
 
 export function createMinasCorrompidasDecorations(): DecorationPlacement[] {
   return [
-    { type: 'mina_panorama', x: 14, y: 13, scale: 0.34, depth: 1.4, layer: 'background' },
-    { type: 'mina_roots', x: 9, y: 9, scale: 0.8, depth: 4.2 },
-    { type: 'mina_rails', x: 18, y: 18, scale: 0.8, depth: 3.7 },
-    { type: 'mina_timber', x: 27, y: 17, scale: 0.82, depth: 4.5 },
+    { type: 'mina_roots', x: 12, y: 11, scale: 0.48, depth: -1.2, layer: 'background' },
+    { type: 'mina_timber', x: 15, y: 12, scale: 0.48, depth: 2.4, layer: 'terrain', originY: 1 },
+    { type: 'mina_rails', x: 18, y: 21, scale: 0.42, rotation: 0.28, depth: 3.7, layer: 'terrain' },
+    { type: 'mina_crystals', x: 8, y: 18, scale: 0.42, depth: 4.1, layer: 'terrain', originY: 1 },
+    { type: 'mina_fungi', x: 21, y: 12, scale: 0.4, depth: 12, layer: 'foreground', originY: 1 },
     { type: 'mina_seal', x: 34, y: 18, scale: 0.55, depth: 4.7 },
     { type: 'mina_panorama', x: 54, y: 23, scale: 0.34, depth: 1.4, layer: 'background' },
     { type: 'mina_timber', x: 48, y: 23, scale: 0.8, depth: 4.5 },
