@@ -24,3 +24,60 @@ O projeto precisa apresentar, na raiz do repositório, evidências verificáveis
 ## Fora do escopo
 
 Reescrever commits históricos publicados antes da adoção dos trailers, pois isso alteraria todos os hashes e exigiria `force push`. Os trailers passam a ser obrigatórios a partir desta especificação.
+
+## Adendo de manutenção do GitHub Pages *(2026-11-24)*
+
+### Objetivo
+
+A publicação oficial do repositório `gguisandim/dsai-ap1-2Drogue` deve entregar
+a build Vite do Umbra Trail em
+`https://gguisandim.github.io/dsai-ap1-2Drogue/`, sem depender da publicação do
+README ou de uma execução manual. O processo deve continuar compatível com o
+servidor local e com o Umbra World Lab.
+
+### Processo de publicação e manutenção
+
+1. Todo push na branch `main`, independentemente do autor, e toda execução
+   manual por `workflow_dispatch` iniciam o workflow de Pages.
+2. O job instala exatamente o lockfile com `npm ci`, executa gates, testes e a
+   build antes de preparar o artefato `dist`.
+3. Apenas uma build aprovada pode ser enviada e implantada pelo ambiente
+   `github-pages`. Se instalação, gates, testes ou build falharem, o upload e o
+   deploy não são executados, preservando a última publicação bem-sucedida.
+4. Execuções concorrentes usam um grupo exclusivo de Pages; uma execução mais
+   nova cancela a anterior para impedir que um artefato antigo vença a corrida.
+5. O Vite usa `/dsai-ap1-2Drogue/` como base somente na build de produção. Em
+   desenvolvimento, a raiz `/` permanece disponível, inclusive em
+   `/world-lab.html`.
+6. Para manutenção, alterações no nome do repositório exigem atualizar em
+   conjunto o base path do Vite, a URL pública do README e estes critérios. As
+   versões das actions devem permanecer fixadas por versão principal suportada.
+
+### Critérios de aceitação observáveis
+
+- `vite build` gera `dist/index.html` com scripts e estilos sob
+  `/dsai-ap1-2Drogue/assets/`;
+- sprites, mapas, texturas, áudios e demais recursos importados pelo runtime são
+  emitidos no artefato e suas referências não apontam para a raiz do domínio;
+- `vite dev` continua servindo o jogo em `/` e o World Lab em
+  `/world-lab.html`;
+- a prévia Phaser aberta pelo World Lab preserva o pathname base do documento,
+  funcionando tanto localmente quanto sob o subdiretório do Pages;
+- o workflow possui gatilhos `push` para `main` e `workflow_dispatch`, permissões
+  mínimas para Pages, concorrência exclusiva, instalação por `npm ci`, validação,
+  build, upload de `dist` e deploy posterior ao upload;
+- o README aponta para
+  `https://gguisandim.github.io/dsai-ap1-2Drogue/` e documenta o fluxo automático
+  e manual de manutenção;
+- os testes automatizados de infraestrutura inspecionam o contrato de base path,
+  o workflow e a URL de prévia do World Lab;
+- `npm run check:gates`, `npm run build`, `npm test -- --runInBand` e
+  `git diff --check` concluem sem falhas;
+- após o push, o workflow conclui com sucesso e a URL pública responde com o
+  HTML do jogo, não com o README.
+
+### Fora do escopo do adendo
+
+Mecânicas, fases, narrativa, interfaces, assets e funcionalidades do jogo não
+são alterados. O World Lab permanece ferramenta de desenvolvimento e não passa
+a integrar a entrada de produção.
