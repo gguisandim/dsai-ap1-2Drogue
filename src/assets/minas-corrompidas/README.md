@@ -75,9 +75,11 @@ Os `sha256` de cada arquivo ficam em
 ## Integração
 
 `src/presentation/assets/bootMinasAssets.ts` pré-carrega todos os arquivos no
-`BootScene` e cria as animações mínimas `walk`/`attack`/`hurt` dos sprites
-inimigos, todas apontando para o quadro `__BASE` das imagens SVG. Os IDs de
-textura, tilesets, decorações, sprites, áudio e ambientes vivem em
+`BootScene`. Os SVGs de inimigos permanecem catalogados como arte original do
+projeto; as apresentações jogáveis agora reutilizam `puny_warrior_128` e
+`puny_archer_128`, com caminhada, ataque e dano animados, já carregados
+globalmente pelas fases anteriores. Os IDs de textura, tilesets, decorações,
+sprites, áudio e ambientes vivem em
 `src/stages/chapters/minas-corrompidas/visuals.ts`.
 
 ## Uso

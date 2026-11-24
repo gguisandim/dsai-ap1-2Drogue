@@ -59,3 +59,37 @@
   panorama, Flores com canopy, Igapó e Raiz com piso próprio e Palácio com sua
   canopy escura já existente. Fases legadas não possuem panorama próprio;
   usam o tile legado `tile_floor` como prévia reutilizada.
+
+## 2026-11-24 — Etapa 9.18: modernização das Minas Corrompidas
+
+- Confirmada a integração da PR #4 em `origin/main` (`8d99881`) e atualizada
+  `main` por fast-forward; criada `feat/modernizacao-minas-corrompidas` a
+  partir desse commit.
+- Histórico do capítulo e catálogo conferido: a implementação das Minas foi
+  criada por Guilherme Sandim no commit `8089093`; não havia alteração posterior
+  concorrente nos arquivos verificados.
+- Causa da descontinuidade: cinco panoramas de 2172 px eram posicionados com
+  escala `0.34`, cobrindo cerca de 23 tiles frente a intervalos de até 40 tiles;
+  os vazios deixavam expostos o piso pixel art, em contraste com o chão pintado
+  dentro dos PNGs. Os inimigos estavam ligados a SVGs estáticos, cujas
+  animações repetiam somente o quadro base.
+- SPEC registrada antes do commit de implementação em
+  `SPEC/2026-11-24-etapa-9-18-modernizacao-minas-corrompidas.md` (commits
+  `867f4dd`, `f07641a` e `200fc0d`, todos documentais).
+- Os mesmos cinco PNGs foram ampliados e reposicionados em sobreposição,
+  acompanhando a trilha desde o spawn até a saída; o depth foi ajustado para
+  manter obstáculos e atores legíveis.
+- As duas variantes passaram a usar spritesheets Puny 128×114 e animações
+  existentes de caminhada, ataque e dano, com tintas e escalas de Minas.
+  Mapa lógico, waves, HP, objetivos, colisões, save e progressão não foram
+  alterados. Os SVGs originais permanecem preservados e catalogados.
+- Validações: `npm run check:gates`, `npm run build`, teste dirigido de Minas
+  (12 testes), suíte completa (100 suítes/1.224 testes) e `git diff --check`
+  aprovados. A primeira execução completa teve uma falha transitória em
+  `architectureGates.test.ts` ao ler fixture removida; a suíte isolada e a
+  repetição completa passaram. A tentativa de CLI do plano foi incompatível
+  com capítulos de produção (a CLI espera `src/examples/chapters/`); o teste
+  do próprio capítulo valida o plano de produção por `validateStagePlanFile`.
+- A inspeção visual de runtime e capturas antes/depois não foram executadas:
+  a sessão de Computer Use não autorizou uso do Chrome. PNGs de origem e
+  spritesheets foram inspecionados, mas isso não substitui homologação no jogo.

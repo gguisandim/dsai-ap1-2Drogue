@@ -44,6 +44,7 @@ import {
 } from '../stages';
 import { CAMPAIGN_CHAPTER_CATALOG } from '../stages/chapters/CampaignChapterCatalog';
 import { MINAS_ASSETS } from '../presentation/assets/minasAssetCatalog';
+import { PUNY_ANIMATIONS, PUNY_TEXTURE_ASSETS } from '../presentation/assets/punyAssetCatalog';
 import { MINAS_VISUAL_RESOURCES } from '../stages/chapters/minas-corrompidas';
 import { WorldLabDataService } from '../devtools/world-lab';
 import {
@@ -314,6 +315,31 @@ describe('Minas Corrompidas', () => {
     }
   });
 
+  it('covers the entrance-to-exit route with overlapping, trail-aligned panoramas', () => {
+    const panoramas = (MINAS_CORROMPIDAS_STAGE.authoredLevel?.decorations ?? [])
+      .filter(decoration => decoration.type === 'mina_panorama')
+      .sort((left, right) => left.x - right.x);
+    expect(panoramas).toHaveLength(5);
+    expect(panoramas.map(({ x, y, scale, depth }) => ({ x, y, scale, depth })))
+      .toEqual([
+        { x: 12, y: 13, scale: 0.62, depth: -1.5 },
+        { x: 49, y: 21, scale: 0.62, depth: -1.5 },
+        { x: 86, y: 27, scale: 0.62, depth: -1.5 },
+        { x: 123, y: 28, scale: 0.62, depth: -1.5 },
+        { x: 160, y: 21, scale: 0.62, depth: -1.5 },
+      ]);
+
+    const source = MINAS_ASSETS.find(asset => asset.fileName === 'mina-abandoned-panorama.png');
+    expect(source).toBeDefined();
+    const widthInTiles = (source?.width ?? 0) * (panoramas[0]?.scale ?? 0) / 32;
+    expect(widthInTiles).toBeGreaterThanOrEqual(38);
+    expect(panoramas[0].x - widthInTiles / 2).toBeLessThanOrEqual(MINAS_CORROMPIDAS_SPAWN.x);
+    expect(panoramas.at(-1)!.x + widthInTiles / 2).toBeGreaterThanOrEqual(MINAS_CORROMPIDAS_EXIT.x);
+    for (let index = 1; index < panoramas.length; index += 1) {
+      expect(panoramas[index].x - panoramas[index - 1].x).toBeLessThanOrEqual(widthInTiles);
+    }
+  });
+
   it('changes only presentation between Abandonada and Corrompida', () => {
     const abandoned = load(MINAS_ABANDONED_VARIANT_ID);
     const corrupted = load(MINAS_CORRUPTED_VARIANT_ID);
@@ -354,15 +380,25 @@ describe('Minas Corrompidas', () => {
     });
   });
 
-  it('declares real walk/attack/hurt animations for every enemy sprite', () => {
+  it('uses the animated pixel-art spritesheets from earlier stages for every enemy', () => {
+    const punyAnimations = new Set(PUNY_ANIMATIONS.map(animation => animation.key));
+    const punySpritesheets = new Map(PUNY_TEXTURE_ASSETS
+      .filter(asset => asset.kind === 'spritesheet')
+      .map(asset => [asset.textureKey, asset] as const));
     for (const variantId of [MINAS_ABANDONED_VARIANT_ID, MINAS_CORRUPTED_VARIANT_ID]) {
       const loaded = load(variantId);
       for (const sprite of Object.values(loaded.presentation?.enemySprites ?? {})) {
         expect(sprite.animations).toMatchObject({
-          walk: expect.any(String),
-          attack: expect.any(String),
-          hurt: expect.any(String),
+          walk: expect.stringMatching(/^puny_(warrior|archer)_walk$/),
+          attack: expect.stringMatching(/^puny_(warrior|archer)_attack$/),
+          hurt: expect.stringMatching(/^puny_(warrior|archer)_hurt$/),
         });
+        expect(punySpritesheets.has(sprite.textureKey)).toBe(true);
+        expect(sprite.frameWidth).toBe(128);
+        expect(sprite.frameHeight).toBe(114);
+        expect(punyAnimations.has(sprite.animations.walk!)).toBe(true);
+        expect(punyAnimations.has(sprite.animations.attack!)).toBe(true);
+        expect(punyAnimations.has(sprite.animations.hurt!)).toBe(true);
       }
     }
   });
