@@ -52,8 +52,9 @@ contratos compartilhados ou o seletor de fases.
    imagem na escala aplicada; o primeiro cobre o spawn e o último cobre a
    saída.
 2. A escala da imagem corresponde a pelo menos 38 tiles de largura e os
-   centros acompanham verticalmente a trilha principal. A imagem permanece
-   abaixo dos tiles de jogo na camada de fundo.
+   centros acompanham verticalmente a trilha principal. A imagem fica acima
+   do piso decorativo, mas abaixo dos obstáculos e entidades, mantendo leitura
+   do cenário sem encobrir elementos de gameplay.
 3. As apresentações Abandonada e Corrompida continuam usando seus panoramas,
    paletas, ambientes, efeitos e overrides correspondentes.
 4. Cada arquétipo de inimigo resolve para `puny_warrior_128` ou
