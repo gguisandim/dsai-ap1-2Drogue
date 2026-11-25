@@ -13,6 +13,7 @@ import { preloadWorldRootAssets } from '../presentation/assets/bootWorldRootAsse
 import { preloadFloresAssets } from '../presentation/assets/bootFloresAssets';
 import { createPalacioAnimations, preloadPalacioAssets } from '../presentation/assets/bootPalacioAssets';
 import { createMinasAnimations, preloadMinasAssets } from '../presentation/assets/bootMinasAssets';
+import { preloadStageSummaryAssets } from '../presentation/assets/bootStageSummaryAssets';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -33,6 +34,7 @@ export class BootScene extends Phaser.Scene {
     preloadFloresAssets(this);
     preloadPalacioAssets(this);
     preloadMinasAssets(this);
+    if (!this.isStageSummaryCaptureRequested()) preloadStageSummaryAssets(this);
   }
 
   create() {
@@ -65,6 +67,22 @@ export class BootScene extends Phaser.Scene {
     const settings = loadSettings();
     SoundManager.setEnabled(settings.sound);
     SoundManager.setVolumeLevels(settings.masterVolume, settings.musicVolume, settings.effectsVolume);
+    if (this.isStageSummaryCaptureRequested()) {
+      const query = new URLSearchParams(globalThis.location?.search ?? '');
+      const stageId = query.get('stageId') ?? '';
+      const presentationVariantId = query.get('presentationVariant') || undefined;
+      void import('../devtools/stage-summary-capture/StageSummaryCaptureScene')
+        .then(({ StageSummaryCaptureScene }) => {
+          this.scene.add('StageSummaryCaptureScene', StageSummaryCaptureScene, true, {
+            stageId,
+            ...(presentationVariantId ? { presentationVariantId } : {}),
+          });
+        })
+        .catch(error => {
+          console.error('Stage summary capture failed to start.', error);
+        });
+      return;
+    }
     const developmentHost = globalThis.location?.hostname === '127.0.0.1' ||
       globalThis.location?.hostname === 'localhost';
     const search = globalThis.location?.search ?? '';
@@ -114,5 +132,13 @@ export class BootScene extends Phaser.Scene {
       return;
     }
     this.scene.start('MenuScene');
+  }
+
+  private isStageSummaryCaptureRequested(): boolean {
+    const developmentHost = globalThis.location?.hostname === '127.0.0.1' ||
+      globalThis.location?.hostname === 'localhost';
+    const search = globalThis.location?.search ?? '';
+    return import.meta.env.DEV && developmentHost &&
+      new URLSearchParams(search).has('stageSummaryCapture');
   }
 }

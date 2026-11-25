@@ -219,19 +219,14 @@ export class StageSelectScene extends Phaser.Scene {
 
     const loaded = entry.loadability === 'loadable' ? this.loadStage(entry.stageId) : undefined;
     const preview = resolveStagePreview(
-      loaded?.loadedStage.presentation,
+      entry.stageId,
       textureKey => this.textures.exists(textureKey),
+      loaded?.loadedStage.presentationVariantId,
     );
     if (preview) {
-      if (preview.tiled) {
-        this.track(this.add.tileSprite(1000, 365, 460, 250, preview.textureKey, preview.frame)
-          .setTileScale(3)
-          .setAlpha(0.92));
-      } else {
-        const image = this.track(this.add.image(1000, 365, preview.textureKey, preview.frame));
-        const scale = Math.min(460 / image.width, 250 / image.height);
-        image.setScale(scale).setAlpha(0.92);
-      }
+      const image = this.track(this.add.image(1000, 365, preview.textureKey));
+      const scale = Math.min(460 / image.width, 250 / image.height);
+      image.setScale(scale).setAlpha(0.92);
       this.track(this.add.rectangle(1000, 365, 460, 250, 0x07100f, 0.18)
         .setStrokeStyle(1, 0x74816c, 0.44));
     } else {

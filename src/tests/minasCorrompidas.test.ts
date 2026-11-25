@@ -46,6 +46,7 @@ import { CAMPAIGN_CHAPTER_CATALOG } from '../stages/chapters/CampaignChapterCata
 import { MINAS_ASSETS } from '../presentation/assets/minasAssetCatalog';
 import { PUNY_ANIMATIONS, PUNY_TEXTURE_ASSETS } from '../presentation/assets/punyAssetCatalog';
 import { resolveStagePreview } from '../presentation/StageSelectionPresentation';
+import { resolveStageSummaryAsset } from '../presentation/assets/StageSummaryAssetCatalog';
 import { MINAS_VISUAL_RESOURCES } from '../stages/chapters/minas-corrompidas';
 import { WorldLabDataService } from '../devtools/world-lab';
 import {
@@ -323,13 +324,21 @@ describe('Minas Corrompidas', () => {
     expect(decorations).toHaveLength(19);
   });
 
-  it('keeps the panorama summaries only in the stage selector presentation', () => {
-    const abandoned = load(MINAS_ABANDONED_VARIANT_ID);
-    const corrupted = load(MINAS_CORRUPTED_VARIANT_ID);
-    expect(resolveStagePreview(abandoned.presentation, () => true)?.textureKey)
-      .toBe('minas_panorama_abandoned');
-    expect(resolveStagePreview(corrupted.presentation, () => true)?.textureKey)
-      .toBe('minas_panorama_corrupted');
+  it('uses captured scene summaries for both mine presentations', () => {
+    const abandoned = resolveStageSummaryAsset(MINAS_CORROMPIDAS_STAGE_ID, MINAS_ABANDONED_VARIANT_ID);
+    const corrupted = resolveStageSummaryAsset(MINAS_CORROMPIDAS_STAGE_ID, MINAS_CORRUPTED_VARIANT_ID);
+    expect(resolveStagePreview(
+      MINAS_CORROMPIDAS_STAGE_ID,
+      key => key === abandoned?.textureKey,
+      MINAS_ABANDONED_VARIANT_ID,
+    )?.textureKey).toBe(abandoned?.textureKey);
+    expect(resolveStagePreview(
+      MINAS_CORROMPIDAS_STAGE_ID,
+      key => key === corrupted?.textureKey,
+      MINAS_CORRUPTED_VARIANT_ID,
+    )?.textureKey).toBe(corrupted?.textureKey);
+    expect(abandoned?.fileName).not.toContain('panorama');
+    expect(corrupted?.fileName).not.toContain('panorama');
   });
 
   it('resolves pixel-art rock atlases for walls and pillars', () => {

@@ -1,64 +1,87 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { GameSessionService } from '../application/stages';
 import {
   describeStageAvailability,
   formatCatalogLabels,
   resolveStagePreview,
 } from '../presentation/StageSelectionPresentation';
-import type { StageCatalogEntry, ResolvedStagePresentation } from '../stages';
-
-const presentation = {
-  decorations: {
-    later: { layer: 'background', depth: 2, textureKey: 'canopy', frame: 4 },
-    earlier: { layer: 'background', depth: 1, textureKey: 'roots' },
-    foreground: { layer: 'foreground', depth: 0, textureKey: 'leaves' },
-  },
-  tiles: {
-    floor: {
-      textureKey: 'floor',
-      variants: [{ textureKey: 'alternate-floor', frame: 3 }],
-    },
-  },
-} as unknown as ResolvedStagePresentation;
+import {
+  listStageSummaryAssets,
+  resolveStageSummaryAsset,
+  STAGE_SUMMARY_CATALOG,
+} from '../presentation/assets/StageSummaryAssetCatalog';
+import type { StageCatalogEntry } from '../stages';
 
 describe('stage selection presentation', () => {
-  it('prefers the available background, otherwise uses an available floor tile', () => {
-    expect(resolveStagePreview(presentation, key => key === 'canopy'))
-      .toEqual({ textureKey: 'canopy', frame: 4, tiled: false });
-    expect(resolveStagePreview(presentation, key => key === 'alternate-floor'))
-      .toEqual({ textureKey: 'alternate-floor', frame: 3, tiled: true });
-    expect(resolveStagePreview(presentation, () => false)).toBeUndefined();
+  it('resolves only the captured image for the selected stage and variant', () => {
+    const stageId = 'stage.corrupted.minas';
+    const defaultAsset = resolveStageSummaryAsset(stageId);
+    const corruptedAsset = resolveStageSummaryAsset(
+      stageId,
+      'variant.corrupted.minas.corrupted',
+    );
+    expect(defaultAsset).toBeDefined();
+    expect(corruptedAsset).toBeDefined();
+    expect(corruptedAsset?.textureKey).not.toBe(defaultAsset?.textureKey);
+    expect(resolveStagePreview(stageId, key => key === defaultAsset?.textureKey))
+      .toEqual({ textureKey: defaultAsset?.textureKey });
+    expect(resolveStagePreview(
+      stageId,
+      key => key === corruptedAsset?.textureKey,
+      'variant.corrupted.minas.corrupted',
+    )).toEqual({ textureKey: corruptedAsset?.textureKey });
+    expect(resolveStagePreview(
+      stageId,
+      key => key === defaultAsset?.textureKey,
+      'variant.corrupted.minas.corrupted',
+    )).toBeUndefined();
+    expect(resolveStagePreview(stageId, () => false)).toBeUndefined();
+    expect(resolveStagePreview('unknown.stage', () => true)).toBeUndefined();
   });
 
-  it('ignores generic puny-world backgrounds and prefers the stage summary texture', () => {
-    const withGenericBackground = {
-      decorations: {
-        generic: { layer: 'background', depth: 2.1, textureKey: 'puny_world' },
-        summary: { layer: 'background', depth: 2.18, textureKey: 'flores_natural_canopy' },
-      },
-      tiles: {
-        floor: { textureKey: 'flores_forest_floor', variants: [] },
-      },
-    } as unknown as ResolvedStagePresentation;
+  it('maps every loadable catalog stage and declared presentation variant', () => {
+    const service = new GameSessionService();
+    const entries = service.catalog?.list().filter(entry => entry.loadability === 'loadable') ?? [];
+    expect(Object.keys(STAGE_SUMMARY_CATALOG).sort())
+      .toEqual(entries.map(entry => entry.stageId).sort());
 
-    expect(resolveStagePreview(withGenericBackground, () => true))
-      .toEqual({ textureKey: 'flores_natural_canopy', tiled: false });
+    entries.forEach(entry => {
+      const module = service.registry.get(entry.stageId);
+      expect(module).toBeDefined();
+      const declaredVariants = Object.keys(module?.manifest.presentationVariants ?? {}).sort();
+      expect([...STAGE_SUMMARY_CATALOG[entry.stageId]].sort()).toEqual(declaredVariants);
+      expect(resolveStageSummaryAsset(entry.stageId)).toBeDefined();
+      declaredVariants.forEach(variantId => {
+        expect(resolveStageSummaryAsset(entry.stageId, variantId)).toBeDefined();
+      });
+    });
   });
 
-  it('keeps Minas panoramas only as stage summary textures', () => {
-    const abandoned = {
-      themeId: 'theme.corrupted.minas.abandoned',
-      decorations: {},
-      tiles: { floor: { textureKey: 'minas_floor_abandoned', variants: [] } },
-    } as unknown as ResolvedStagePresentation;
-    const corrupted = {
-      themeId: 'theme.corrupted.minas.corrupted',
-      decorations: {},
-      tiles: { floor: { textureKey: 'minas_floor_corrupted', variants: [] } },
-    } as unknown as ResolvedStagePresentation;
-
-    expect(resolveStagePreview(abandoned, () => true))
-      .toEqual({ textureKey: 'minas_panorama_abandoned', tiled: false });
-    expect(resolveStagePreview(corrupted, () => true))
-      .toEqual({ textureKey: 'minas_panorama_corrupted', tiled: false });
+  it('stores a valid 460 by 250 PNG capture for every mapped presentation', () => {
+    const assets = listStageSummaryAssets();
+    const fileNames = assets.map(item => item.asset.fileName);
+    expect(new Set(fileNames).size).toBe(fileNames.length);
+    const defaultHashes = assets
+      .filter(item => item.presentationVariantId === undefined)
+      .map(({ asset }) => createHash('sha256').update(readFileSync(resolve(
+        __dirname,
+        '../assets/stage-summaries',
+        asset.fileName,
+      ))).digest('hex'));
+    expect(new Set(defaultHashes).size).toBe(defaultHashes.length);
+    assets.forEach(({ asset }) => {
+      const image = readFileSync(resolve(
+        __dirname,
+        '../assets/stage-summaries',
+        asset.fileName,
+      ));
+      expect(image.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+      expect(image.readUInt32BE(16)).toBe(460);
+      expect(image.readUInt32BE(20)).toBe(250);
+      expect(image.length).toBeGreaterThan(1_000);
+    });
   });
 
   it('localizes catalog labels and keeps loadability distinct from experimental layout', () => {
