@@ -134,11 +134,26 @@
   já desenha os mapas e decorações resolvidos e pode ser usado sem criar
   personagens ou HUD.
 - O catálogo atual contém 19 fases carregáveis e oito variantes visuais em
-  quatro fases. A interface tem três páginas na paginação atual e não expõe
-  seleção de variante; o cartão deve mostrar a captura da apresentação padrão.
+  quatro fases. A interface tem quatro páginas na paginação atual (seis cartões
+  por página, exceto a última) e não expõe seleção de variante; o cartão deve
+  mostrar a captura da apresentação padrão.
 - SPEC própria e registro v1 criados antes da implementação em
   `SPEC/2026-11-25-etapa-9-19-capturas-resumo-fases.md` e
   `prompts/79-etapa-9-19-capturas-reais-seletor.md`.
-- Implementação, geração e inspeção das capturas: pendentes.
+- Retomada pelo Codex. A SPEC e o prompt do Copilot foram preservados no
+  commit `04c791e`; o código e os PNGs já estavam no diretório de trabalho.
+  O registro da transição está em `prompts/80-etapa-9-19-retomada-codex.md`.
+  A sessão informa a família GPT-6. O identificador exato e o esforço são
+  desconhecidos.
+- As 27 capturas de 460×250 foram reproduzidas em Phaser/WebGL. A primeira
+  execução concluiu 25 alvos antes de um timeout; a segunda gerou as capturas
+  restantes de Galeria e Santuário. As apresentações padrão e suas variantes
+  equivalentes podem mostrar a mesma composição.
+- Chromium verificou a textura exibida para cada uma das 19 fases em quatro
+  páginas (6/6/6/1). No servidor local do
+  Vite, o caminho é **Selecionar Fase** no menu principal.
+- Validações finais aprovadas: 18 testes dirigidos, arquitetura e rastreabilidade,
+  build, 100 suítes com 1.227 testes, diff e auditoria de segredos dos dois
+  registros da etapa.
 - Aprovação visual humana: pendente; capturas automatizadas não substituem a
   homologação do usuário.
