@@ -124,3 +124,21 @@
   1.227 testes); `git diff --check` aprovado.
 - Homologação humana visual continua pendente. Nenhuma aprovação foi declarada
   automaticamente.
+
+## 2026-11-25 — Etapa 9.19: capturas reais do seletor de fases
+
+- Na branch `feat/modernizacao-minas-corrompidas`, confirmados worktree limpo e
+  HEAD igual a `origin/feat/modernizacao-minas-corrompidas` (`e83b441`).
+- Diagnóstico: `resolveStagePreview` escolhe decoração de fundo e, como
+  fallback, tile de piso; não captura o cenário montado. `StageMapRenderer`
+  já desenha os mapas e decorações resolvidos e pode ser usado sem criar
+  personagens ou HUD.
+- O catálogo atual contém 19 fases carregáveis e oito variantes visuais em
+  quatro fases. A interface tem três páginas na paginação atual e não expõe
+  seleção de variante; o cartão deve mostrar a captura da apresentação padrão.
+- SPEC própria e registro v1 criados antes da implementação em
+  `SPEC/2026-11-25-etapa-9-19-capturas-resumo-fases.md` e
+  `prompts/79-etapa-9-19-capturas-reais-seletor.md`.
+- Implementação, geração e inspeção das capturas: pendentes.
+- Aprovação visual humana: pendente; capturas automatizadas não substituem a
+  homologação do usuário.
