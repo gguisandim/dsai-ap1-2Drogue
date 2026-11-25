@@ -1,6 +1,7 @@
 # Padronização das imagens de resumo do seletor de fases — Etapa 9.19
 
-**Data:** 2026-11-25  
+**Data:** 2026-11-25
+
 **Estado:** especificação anterior à implementação.
 
 ## Contexto e diagnóstico
