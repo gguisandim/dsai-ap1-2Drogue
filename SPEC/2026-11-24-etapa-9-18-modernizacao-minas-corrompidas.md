@@ -2,7 +2,8 @@
 
 **Data:** 2026-11-24  
 **Estado:** revisão da direção artística solicitada após homologação humana
-parcial em 2026-11-24.
+parcial em 2026-11-24. Implementação ambiental concluída; aprovação visual
+humana pendente.
 **Continuidade:** complementa `SPEC/2026-11-22-minas-corrompidas.md` apenas na
 apresentação do cenário. A composição de panoramas implementada em `746d829`
 foi parcialmente reprovada; os adversários desse commit foram aprovados e

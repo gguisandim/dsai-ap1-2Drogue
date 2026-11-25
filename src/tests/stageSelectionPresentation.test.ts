@@ -43,6 +43,24 @@ describe('stage selection presentation', () => {
       .toEqual({ textureKey: 'flores_natural_canopy', tiled: false });
   });
 
+  it('keeps Minas panoramas only as stage summary textures', () => {
+    const abandoned = {
+      themeId: 'theme.corrupted.minas.abandoned',
+      decorations: {},
+      tiles: { floor: { textureKey: 'minas_floor_abandoned', variants: [] } },
+    } as unknown as ResolvedStagePresentation;
+    const corrupted = {
+      themeId: 'theme.corrupted.minas.corrupted',
+      decorations: {},
+      tiles: { floor: { textureKey: 'minas_floor_corrupted', variants: [] } },
+    } as unknown as ResolvedStagePresentation;
+
+    expect(resolveStagePreview(abandoned, () => true))
+      .toEqual({ textureKey: 'minas_panorama_abandoned', tiled: false });
+    expect(resolveStagePreview(corrupted, () => true))
+      .toEqual({ textureKey: 'minas_panorama_corrupted', tiled: false });
+  });
+
   it('localizes catalog labels and keeps loadability distinct from experimental layout', () => {
     expect(formatCatalogLabels(['region.aguas.igapo', 'hub.floresta-das-raizes']))
       .toBe('Igapó · Floresta das Raízes');

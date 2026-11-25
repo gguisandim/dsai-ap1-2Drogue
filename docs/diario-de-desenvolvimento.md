@@ -111,3 +111,16 @@
 - Implementação e validações: pendentes.
 - Aprovação visual: pendente de nova avaliação humana; não inferir aprovação
   a partir de testes automatizados.
+- Implementação revisada:
+  - os cinco panoramas jogáveis foram removidos de
+    `createMinasCorrompidasDecorations`;
+  - adicionados atlases locais 32×32 de rocha Abandonada e Corrompida;
+  - paredes e pilares das duas variantes usam os novos atlases;
+  - os PNGs panorâmicos permanecem apenas como recursos de resumo no seletor;
+  - os adversários aprovados no commit `746d829` não foram alterados;
+  - a geometria, colisões, missão, progressão e transições não foram alteradas.
+- Validações: testes dirigidos aprovados (18); `npm run build` aprovado;
+  `npm run check:gates` aprovado; suíte completa aprovada (100 suítes,
+  1.227 testes); `git diff --check` aprovado.
+- Homologação humana visual continua pendente. Nenhuma aprovação foi declarada
+  automaticamente.

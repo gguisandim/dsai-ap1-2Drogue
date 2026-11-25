@@ -45,6 +45,7 @@ import {
 import { CAMPAIGN_CHAPTER_CATALOG } from '../stages/chapters/CampaignChapterCatalog';
 import { MINAS_ASSETS } from '../presentation/assets/minasAssetCatalog';
 import { PUNY_ANIMATIONS, PUNY_TEXTURE_ASSETS } from '../presentation/assets/punyAssetCatalog';
+import { resolveStagePreview } from '../presentation/StageSelectionPresentation';
 import { MINAS_VISUAL_RESOURCES } from '../stages/chapters/minas-corrompidas';
 import { WorldLabDataService } from '../devtools/world-lab';
 import {
@@ -315,29 +316,31 @@ describe('Minas Corrompidas', () => {
     }
   });
 
-  it('covers the entrance-to-exit route with overlapping, trail-aligned panoramas', () => {
-    const panoramas = (MINAS_CORROMPIDAS_STAGE.authoredLevel?.decorations ?? [])
-      .filter(decoration => decoration.type === 'mina_panorama')
-      .sort((left, right) => left.x - right.x);
-    expect(panoramas).toHaveLength(5);
-    expect(panoramas.map(({ x, y, scale, depth }) => ({ x, y, scale, depth })))
-      .toEqual([
-        { x: 12, y: 13, scale: 0.62, depth: -1.5 },
-        { x: 49, y: 21, scale: 0.62, depth: -1.5 },
-        { x: 86, y: 27, scale: 0.62, depth: -1.5 },
-        { x: 123, y: 28, scale: 0.62, depth: -1.5 },
-        { x: 160, y: 21, scale: 0.62, depth: -1.5 },
-      ]);
+  it('uses no illustrative panorama as a runtime map decoration', () => {
+    const decorations = MINAS_CORROMPIDAS_STAGE.authoredLevel?.decorations ?? [];
+    expect(decorations.some(decoration =>
+      decoration.type.includes('panorama'))).toBe(false);
+    expect(decorations).toHaveLength(19);
+  });
 
-    const source = MINAS_ASSETS.find(asset => asset.fileName === 'mina-abandoned-panorama.png');
-    expect(source).toBeDefined();
-    const widthInTiles = (source?.width ?? 0) * (panoramas[0]?.scale ?? 0) / 32;
-    expect(widthInTiles).toBeGreaterThanOrEqual(38);
-    expect(panoramas[0].x - widthInTiles / 2).toBeLessThanOrEqual(MINAS_CORROMPIDAS_SPAWN.x);
-    expect(panoramas.at(-1)!.x + widthInTiles / 2).toBeGreaterThanOrEqual(MINAS_CORROMPIDAS_EXIT.x);
-    for (let index = 1; index < panoramas.length; index += 1) {
-      expect(panoramas[index].x - panoramas[index - 1].x).toBeLessThanOrEqual(widthInTiles);
-    }
+  it('keeps the panorama summaries only in the stage selector presentation', () => {
+    const abandoned = load(MINAS_ABANDONED_VARIANT_ID);
+    const corrupted = load(MINAS_CORRUPTED_VARIANT_ID);
+    expect(resolveStagePreview(abandoned.presentation, () => true)?.textureKey)
+      .toBe('minas_panorama_abandoned');
+    expect(resolveStagePreview(corrupted.presentation, () => true)?.textureKey)
+      .toBe('minas_panorama_corrupted');
+  });
+
+  it('resolves pixel-art rock atlases for walls and pillars', () => {
+    const abandoned = load(MINAS_ABANDONED_VARIANT_ID);
+    const corrupted = load(MINAS_CORRUPTED_VARIANT_ID);
+    expect(abandoned.presentation?.tiles.wall.textureKey).toBe('minas_rock_abandoned');
+    expect(abandoned.presentation?.tiles.pillar.textureKey).toBe('minas_rock_abandoned');
+    expect(corrupted.presentation?.tiles.wall.textureKey).toBe('minas_rock_corrupted');
+    expect(corrupted.presentation?.tiles.pillar.textureKey).toBe('minas_rock_corrupted');
+    expect(abandoned.presentation?.tiles.wall.frameWidth).toBe(32);
+    expect(corrupted.presentation?.tiles.wall.frameHeight).toBe(32);
   });
 
   it('changes only presentation between Abandonada and Corrompida', () => {
@@ -370,7 +373,6 @@ describe('Minas Corrompidas', () => {
     expect(abandoned.presentation?.effects.map(effect => effect.id))
       .toEqual(MINAS_ABANDONED_EFFECTS.map(effect => effect.id));
     expect(corrupted.presentation?.decorationOverrides).toMatchObject({
-      mina_panorama: 'mina_panorama_corrupted',
       mina_timber: 'mina_timber_corrupted',
       mina_roots: 'mina_roots_corrupted',
       mina_crystals: 'mina_crystals_corrupted',
@@ -404,7 +406,7 @@ describe('Minas Corrompidas', () => {
   });
 
   it('documents every authored asset with a matching hash and real dimensions', () => {
-    expect(MINAS_ASSETS).toHaveLength(23);
+    expect(MINAS_ASSETS).toHaveLength(25);
     for (const asset of MINAS_ASSETS) {
       const file = path.join(ASSET_DIR, asset.fileName);
       expect(fs.existsSync(file)).toBe(true);

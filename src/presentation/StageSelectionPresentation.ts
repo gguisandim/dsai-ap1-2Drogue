@@ -11,6 +11,14 @@ export function resolveStagePreview(
   textureExists: (textureKey: string) => boolean,
 ): StagePreview | undefined {
   if (!presentation) return undefined;
+  const minasSummaryByTheme: Readonly<Record<string, string>> = Object.freeze({
+    'theme.corrupted.minas.abandoned': 'minas_panorama_abandoned',
+    'theme.corrupted.minas.corrupted': 'minas_panorama_corrupted',
+  });
+  const minasSummary = minasSummaryByTheme[presentation.themeId];
+  if (minasSummary && textureExists(minasSummary)) {
+    return { textureKey: minasSummary, tiled: false };
+  }
   const genericTextureKeys = new Set(['puny_world']);
   const summaryTexture = (textureKey: string): number =>
     /(?:panorama|canopy|trail|sanctuary|grove|entrance|passage)/i.test(textureKey) ? 0 : 1;

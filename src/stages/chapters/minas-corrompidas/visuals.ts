@@ -20,6 +20,8 @@ const FLOOR_ABANDONED = 'texture.corrupted.minas.floor-abandoned';
 const FLOOR_CORRUPTED = 'texture.corrupted.minas.floor-corrupted';
 const PANORAMA_ABANDONED = 'texture.corrupted.minas.panorama-abandoned';
 const PANORAMA_CORRUPTED = 'texture.corrupted.minas.panorama-corrupted';
+const ROCK_ABANDONED = 'texture.corrupted.minas.rock-abandoned';
+const ROCK_CORRUPTED = 'texture.corrupted.minas.rock-corrupted';
 const TIMBER = 'texture.corrupted.minas.timber';
 const TIMBER_CORRUPTED = 'texture.corrupted.minas.timber-corrupted';
 const RAILS = 'texture.corrupted.minas.rails';
@@ -73,6 +75,8 @@ export const MINAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
     Object.freeze({ id: FLOOR_CORRUPTED, textureKey: 'minas_floor_corrupted', frameWidth: 32, frameHeight: 32, frameCount: 4, sourceWidth: 128, sourceHeight: 32, pixelArt: true, originId: ORIGINAL_ORIGIN }),
     texture(PANORAMA_ABANDONED, 'minas_panorama_abandoned', 2172, 724, IMAGEGEN_ORIGIN),
     texture(PANORAMA_CORRUPTED, 'minas_panorama_corrupted', 2172, 724, IMAGEGEN_ORIGIN),
+    Object.freeze({ id: ROCK_ABANDONED, textureKey: 'minas_rock_abandoned', frameWidth: 32, frameHeight: 32, frameCount: 4, sourceWidth: 128, sourceHeight: 32, pixelArt: true, originId: ORIGINAL_ORIGIN }),
+    Object.freeze({ id: ROCK_CORRUPTED, textureKey: 'minas_rock_corrupted', frameWidth: 32, frameHeight: 32, frameCount: 4, sourceWidth: 128, sourceHeight: 32, pixelArt: true, originId: ORIGINAL_ORIGIN }),
     Object.freeze({ id: WARRIOR, textureKey: 'puny_warrior_128', frameWidth: 128, frameHeight: 114, frameCount: 12 }),
     Object.freeze({ id: ARCHER, textureKey: 'puny_archer_128', frameWidth: 128, frameHeight: 114, frameCount: 12 }),
     texture(TIMBER, 'minas_timber', 224, 176),
@@ -96,8 +100,8 @@ export const MINAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       id: MINAS_ABANDONED_TILESET_ID, revision: 1, tileSize: 32 as const,
       tiles: Object.freeze({
         floor: Object.freeze({ textureId: FLOOR_ABANDONED, frame: 0, variants: Object.freeze([1, 2, 3].map(value => Object.freeze({ textureId: FLOOR_ABANDONED, frame: value }))) }),
-        wall: tile(204, [frame(190, { tint: 0x26373b }), frame(191, { tint: 0x31464a })], { tint: 0x26373b }),
-        pillar: tile(197, [frame(206, { tint: 0x60432c })], { tint: 0x60432c }),
+        wall: Object.freeze({ textureId: ROCK_ABANDONED, frame: 0, variants: Object.freeze([1, 2, 3].map(value => Object.freeze({ textureId: ROCK_ABANDONED, frame: value }))) }),
+        pillar: Object.freeze({ textureId: ROCK_ABANDONED, frame: 2, variants: Object.freeze([Object.freeze({ textureId: ROCK_ABANDONED, frame: 1 }), Object.freeze({ textureId: ROCK_ABANDONED, frame: 3 })]) }),
         water: tile(293, [frame(294, { tint: 0x397c7b }), frame(295, { tint: 0x4a9490 })], { tint: 0x397c7b, alpha: 0.92 }),
         lava: tile(40, [], { tint: 0x8d6a38 }),
         exit: tile(714, [], { tint: 0xd4b06a }),
@@ -111,8 +115,8 @@ export const MINAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       id: MINAS_CORRUPTED_TILESET_ID, revision: 1, tileSize: 32 as const,
       tiles: Object.freeze({
         floor: Object.freeze({ textureId: FLOOR_CORRUPTED, frame: 0, variants: Object.freeze([1, 2, 3].map(value => Object.freeze({ textureId: FLOOR_CORRUPTED, frame: value }))) }),
-        wall: tile(204, [frame(783, { tint: 0x213636 }), frame(190, { tint: 0x281c2b })], { tint: 0x172729 }),
-        pillar: tile(783, [frame(810, { tint: 0x4a2738 })], { tint: 0x294c49 }),
+        wall: Object.freeze({ textureId: ROCK_CORRUPTED, frame: 0, variants: Object.freeze([1, 2, 3].map(value => Object.freeze({ textureId: ROCK_CORRUPTED, frame: value }))) }),
+        pillar: Object.freeze({ textureId: ROCK_CORRUPTED, frame: 2, variants: Object.freeze([Object.freeze({ textureId: ROCK_CORRUPTED, frame: 1 }), Object.freeze({ textureId: ROCK_CORRUPTED, frame: 3 })]) }),
         water: tile(321, [frame(323, { tint: 0x267f79 }), frame(295, { tint: 0x513348 })], { tint: 0x267f79, alpha: 0.86 }),
         lava: tile(40, [], { tint: 0xb55c3d }),
         exit: tile(714, [], { tint: 0x54d4bd }),
@@ -124,8 +128,8 @@ export const MINAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
     }),
   ]),
   decorations: Object.freeze([
-    Object.freeze({ id: 'mina_panorama', textureId: PANORAMA_ABANDONED, layer: 'background' as const, depth: 1.4, defaultScale: 0.34, scaleClass: 'oversized' as const }),
-    Object.freeze({ id: 'mina_panorama_corrupted', textureId: PANORAMA_CORRUPTED, layer: 'background' as const, depth: 1.4, defaultScale: 0.34, scaleClass: 'oversized' as const }),
+    Object.freeze({ id: 'mina_preview_abandoned', textureId: PANORAMA_ABANDONED, layer: 'background' as const, depth: 1.4, defaultScale: 1, scaleClass: 'oversized' as const }),
+    Object.freeze({ id: 'mina_preview_corrupted', textureId: PANORAMA_CORRUPTED, layer: 'background' as const, depth: 1.4, defaultScale: 1, scaleClass: 'oversized' as const }),
     Object.freeze({ id: 'mina_timber', textureId: TIMBER, layer: 'terrain' as const, depth: 4.5, defaultScale: 0.82, scaleClass: 'oversized' as const }),
     Object.freeze({ id: 'mina_timber_corrupted', textureId: TIMBER_CORRUPTED, layer: 'terrain' as const, depth: 4.5, defaultScale: 0.82, scaleClass: 'oversized' as const }),
     Object.freeze({ id: 'mina_rails', textureId: RAILS, layer: 'terrain' as const, depth: 3.7, defaultScale: 0.8, scaleClass: 'oversized' as const }),
@@ -175,14 +179,13 @@ export const MINAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
   themes: Object.freeze([
     Object.freeze({
       id: MINAS_ABANDONED_THEME_ID, revision: 1, tilesetId: MINAS_ABANDONED_TILESET_ID,
-      decorationIds: Object.freeze(['mina_panorama', 'mina_timber', 'mina_rails', 'mina_roots', 'mina_crystals', 'mina_fungi', 'mina_machinery', 'mina_seal']),
+      decorationIds: Object.freeze(['mina_preview_abandoned', 'mina_timber', 'mina_rails', 'mina_roots', 'mina_crystals', 'mina_fungi', 'mina_machinery', 'mina_seal']),
       decorationOverrides: Object.freeze({ mina_core: 'mina_machinery' }),
     }),
     Object.freeze({
       id: MINAS_CORRUPTED_THEME_ID, revision: 1, tilesetId: MINAS_CORRUPTED_TILESET_ID,
-      decorationIds: Object.freeze(['mina_panorama_corrupted', 'mina_timber_corrupted', 'mina_rails_corrupted', 'mina_roots_corrupted', 'mina_crystals_corrupted', 'mina_fungi_corrupted', 'mina_machinery_corrupted', 'mina_core', 'mina_seal_corrupted']),
+      decorationIds: Object.freeze(['mina_preview_corrupted', 'mina_timber_corrupted', 'mina_rails_corrupted', 'mina_roots_corrupted', 'mina_crystals_corrupted', 'mina_fungi_corrupted', 'mina_machinery_corrupted', 'mina_core', 'mina_seal_corrupted']),
       decorationOverrides: Object.freeze({
-        mina_panorama: 'mina_panorama_corrupted',
         mina_timber: 'mina_timber_corrupted',
         mina_rails: 'mina_rails_corrupted',
         mina_roots: 'mina_roots_corrupted',

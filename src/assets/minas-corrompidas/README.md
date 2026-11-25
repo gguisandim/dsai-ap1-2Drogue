@@ -48,6 +48,8 @@ evitar caverna genérica de cristais roxos.
 | `mina-corrupted-panorama.png` | 2172×724 | fundo pictórico do núcleo Corrompido |
 | `mine-floor-abandoned.svg` | 128×32 (4 frames 32×32) | piso da variante Abandonada |
 | `mine-floor-corrupted.svg` | 128×32 (4 frames 32×32) | piso mineralizado da variante Corrompida |
+| `mine-rock-abandoned.svg` | 128×32 (4 frames 32×32) | paredes e pilares de rocha da variante Abandonada |
+| `mine-rock-corrupted.svg` | 128×32 (4 frames 32×32) | paredes e pilares mineralizados da variante Corrompida |
 | `mine-timber.svg` | 224×176 | vigas e suportes |
 | `mine-timber-corrupted.svg` | 224×176 | vigas incorporadas por raízes minerais |
 | `mine-rails.svg` | 256×96 | trilhos e dormentes |
@@ -84,7 +86,9 @@ sprites, áudio e ambientes vivem em
 
 ## Uso
 
-Os PNGs e SVGs são somente apresentação. Colisão e navegação permanecem no mapa
-lógico autoral. As duas variantes reutilizam a mesma geometria e trocam
-tileset, ambiente, efeitos e `decorationOverrides`.
+Os PNGs panorâmicos são referências e recursos de prévia do seletor, não
+colocações do mapa jogável. Os SVGs locais compõem os tiles e elementos
+ambientais da fase. Colisão e navegação permanecem no mapa lógico autoral.
+As duas variantes reutilizam a mesma geometria e trocam tileset, ambiente,
+efeitos e `decorationOverrides`.
 

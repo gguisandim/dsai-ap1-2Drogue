@@ -8,14 +8,23 @@
 - Esforço: `desconhecido`
 - SPEC: `SPEC/2026-11-24-etapa-9-18-modernizacao-minas-corrompidas.md`
 - Commit: `pendente`
-- Execução: `SPEC revisada antes da implementação; alterações e validações pendentes.`
+- Execução: `Reprovação registrada; ambiente reconstruído sem panoramas jogáveis; testes direcionados (18), build e gates aprovados; suíte completa aprovada (100 suítes, 1.227 testes); git diff --check aprovado; homologação humana visual pendente.`
 
 ## Arquivos modificados
 
 - `SPEC/2026-11-24-etapa-9-18-modernizacao-minas-corrompidas.md`
 - `prompts/78-etapa-9-18-revisao-artistica-minas.md`
 - `docs/diario-de-desenvolvimento.md`
-- `pendente`
+- `src/assets/minas-corrompidas/README.md`
+- `src/assets/minas-corrompidas/mine-rock-abandoned.svg`
+- `src/assets/minas-corrompidas/mine-rock-corrupted.svg`
+- `src/presentation/StageSelectionPresentation.ts`
+- `src/presentation/assets/minasAssetCatalog.ts`
+- `src/stages/chapters/minas-corrompidas/minasCorrompidasMap.ts`
+- `src/stages/chapters/minas-corrompidas/stage-plan.json`
+- `src/stages/chapters/minas-corrompidas/visuals.ts`
+- `src/tests/minasCorrompidas.test.ts`
+- `src/tests/stageSelectionPresentation.test.ts`
 
 ## Prompt efetivamente recebido
 
