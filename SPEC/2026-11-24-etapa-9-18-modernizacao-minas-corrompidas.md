@@ -1,84 +1,98 @@
 # Modernização visual das Minas Corrompidas — Etapa 9.18
 
 **Data:** 2026-11-24  
-**Estado:** especificação anterior à implementação.  
+**Estado:** revisão da direção artística solicitada após homologação humana
+parcial em 2026-11-24.
 **Continuidade:** complementa `SPEC/2026-11-22-minas-corrompidas.md` apenas na
-apresentação do cenário e dos adversários. Não altera os contratos narrativos,
-de campanha, de mapa, de persistência ou de combate.
+apresentação do cenário. A composição de panoramas implementada em `746d829`
+foi parcialmente reprovada; os adversários desse commit foram aprovados e
+devem permanecer inalterados. Esta revisão substitui os critérios visuais
+anteriores para o cenário, sem alterar contratos narrativos, de campanha,
+mapa, persistência ou combate.
+
+## Decisão da homologação humana
+
+A avaliação aprovou os sprites e animações de inimigos de `746d829`, mas
+reprovou a composição ambiental: mesmo ampliadas e sobrepostas, as ilustrações
+panorâmicas continuam parecendo imagens de fundo independentes, não um cenário
+construído para exploração. Não se deve tentar corrigir isso ampliando,
+repetindo, recortando ou retocando a transição dessas ilustrações.
+
+As imagens permanecem como referências de paleta e identidade, e como resumos
+visuais de Abandonada e Corrompida no seletor de fases. Não podem ser colocadas
+na fase jogável. A nova direção constrói a mina com tiles pixel art e elementos
+locais integrados ao mapa, preservando a geometria, as colisões e as duas
+identidades de apresentação.
 
 ## Diagnóstico
 
-O mapa coloca cinco cópias do panorama de 2172×724 em `x = 14, 54, 88, 123,
-151`, com escala `0.34`. Cada imagem cobre cerca de 23 tiles (738 px), mas há
-intervalos de até 40 tiles (1280 px); assim, a vista percorre trechos de fundo
-sem panorama antes de alcançar outra composição. O deslocamento da trilha
-também muda de altura entre regiões, mas os panoramas não cobrem continuamente
-a rota. A escala pequena e a imagem pictórica com piso próprio contrastam com
-os tiles pixelados de 32 px.
-
-Os adversários da fase usam SVGs isolados carregados como imagens. As
-animações de Minas atualmente apontam todas para o quadro base de cada SVG.
-As fases anteriores usam `puny_warrior_128` e `puny_archer_128`: spritesheets
-pixel art com quadros 128×114 e animações efetivas de caminhada, ataque e dano.
-Esses recursos e animações já são carregados globalmente pelo `BootScene`.
+O problema visual não era apenas a lacuna entre fundos: os panoramas mostram
+um chão e uma profundidade pintados, independentes da grade jogável. Cobrir
+mais área mantém esse desacoplamento. As Minas já possuem pisos pixelados em
+`mine-floor-abandoned.svg` e `mine-floor-corrupted.svg`, e elementos locais de
+madeira, trilhos, raízes, cristais, fungos e maquinário. A parede e o pilar
+usavam recortes genéricos de `puny_world`, sem identidade de rocha subterrânea.
 
 ## Escopo
 
-1. Reposicionar e ampliar os cinco panoramas já existentes, preservando as
-   ilustrações e garantindo cobertura horizontal sobreposta desde o spawn até
-   a saída. Ajustar a altura dos centros proporcionalmente à escala para que
-   a faixa de piso pintada continue acompanhando a trilha do mapa.
-2. Preservar os pisos, tiles, decorações, variante Abandonada e variante
-   Corrompida. Nenhum panorama será removido ou substituído por imagem genérica
-   ou asset novo.
-3. Mapear os inimigos das duas variantes para as spritesheets já usadas pelas
-   fases anteriores, com escala uniforme baseada no padrão de 1.0 e tintas
-   temáticas próprias de Minas. Guardião e Coração de Lastro podem receber
-   escala maior para manter a hierarquia de leitura.
-4. Usar as animações existentes `walk`, `attack` e `hurt` das spritesheets.
-   Não criar catálogo de inimigos, animações ou assets paralelo.
-5. Atualizar a cobertura de testes e a documentação do diretório de assets para
-   registrar o uso atual dos spritesheets.
+1. Remover as colocações de `mina_panorama` da definição jogável. Os PNGs
+   panorâmicos ficam registrados e carregados apenas para a imagem de resumo do
+   seletor de fases; não se altera o menu, o seletor nem seu resolver.
+2. Criar um atlas original de tiles pixel art de 32×32 para rocha, veios
+   minerais, suportes e água subterrânea, e usá-lo nos tiles lógicos de parede,
+   pilar e água dos tilesets locais. Abandonada e Corrompida devem usar quadros
+   e paletas distintos. O atlas é parte dos assets do capítulo Minas, nunca de
+   assets compartilhados.
+3. Preservar e distribuir os elementos locais de madeira, trilhos, raízes,
+   cristais, fungos e maquinário como detalhes de áreas, sem formar uma camada
+   estática que simule o cenário. Decorações continuam apenas visuais e não
+   participam de colisão.
+4. Preservar sem alteração os sprites, animações, tintas, escalas e mapeamentos
+   de inimigos aprovados em `746d829`, assim como atributos, posições, waves e
+   comportamento.
+5. Testar ausência de panoramas no mapa jogável, presença do atlas na renderização
+   visual, invariância da geometria e preservação do resumo no seletor.
 
-Não fazem parte do escopo: alterar outras fases, imagens de origem, assets
-gerados, mapa lógico, posições ou atributos de inimigos, waves, hitboxes,
-colisões, câmera, efeitos de gameplay, missão, saves, progressão, transições,
-contratos compartilhados ou o seletor de fases.
+Não fazem parte do escopo: alterar outras fases, imagens panorâmicas de origem,
+menu ou seletor, mapa lógico, dimensões, spawn, posições ou atributos de
+inimigos, waves, hitboxes, colisões, câmera, efeitos de gameplay, missão,
+saves, progressão, transições, contratos compartilhados ou a implementação
+aprovada dos adversários.
 
 ## Critérios observáveis
 
-1. Os cinco panoramas existentes cobrem o trecho entre spawn e saída sem lacuna
-   horizontal: a distância entre centros adjacentes não excede a largura da
-   imagem na escala aplicada; o primeiro cobre o spawn e o último cobre a
-   saída.
-2. A escala da imagem corresponde a pelo menos 38 tiles de largura e os
-   centros acompanham verticalmente a trilha principal. A imagem fica acima
-   do piso decorativo, mas abaixo dos obstáculos e entidades, mantendo leitura
-   do cenário sem encobrir elementos de gameplay.
-3. As apresentações Abandonada e Corrompida continuam usando seus panoramas,
-   paletas, ambientes, efeitos e overrides correspondentes.
-4. Cada arquétipo de inimigo resolve para `puny_warrior_128` ou
-   `puny_archer_128`, com os quadros de caminhada, ataque e dano registrados no
-   catálogo Puny. A resolução dos spritesheets usa quadros de 128×114.
-5. Atributos, HP, posições, waves, missão, geometria e tiles de ambas as
-   variantes permanecem idênticos ao estado anterior.
-6. Os testes dirigidos do capítulo, validadores de plano/fase, playtest estático
-   e homologação automatizada passam.
-7. Uma inspeção Phaser em viewport 1280×720 registra antes/depois da entrada,
-   interior e saída nas variantes, e uma execução do começo ao fim verifica
-   visibilidade, animações, colisões, câmera, combate e conclusão.
+1. Nenhuma decoração de panorama está em `authoredLevel.decorations`; portanto,
+   entrada, interior e saída do runtime não renderizam
+   `minas_panorama_abandoned` nem `minas_panorama_corrupted`.
+2. `resolveStagePreview` continua resolvendo a imagem de resumo existente de
+   cada variante: Abandonada usa `minas_panorama_abandoned`; Corrompida usa
+   `minas_panorama_corrupted`.
+3. As paredes, pilares e águas resolvidas nas duas variantes usam o atlas
+   `minas_rock_tiles`, com dimensões declaradas de 32×32 por frame e paletas
+   distintas. O atlas contém detalhes pixel art coerentes de rocha e mina,
+   sem qualquer asset panorâmico no mapa.
+4. Os elementos locais mantêm referências válidas e são visuais apenas. A
+   geometria tileMap e a classificação de colisões são idênticas nas duas
+   variantes e não sofrem alteração nesta revisão.
+5. Os inimigos continuam usando os mesmos sprites, animações e parâmetros
+   aprovados em `746d829`; seus atributos e waves não mudam.
+6. Testes do capítulo validam assets, mapa, referências, variantes, preview
+   e ausência de colocações panorâmicas jogáveis.
+7. Uma nova homologação manual em 1280×720 inspeciona entrada, interior e saída
+   das duas variantes, incluindo transição, personagens, obstáculos e resumo do
+   seletor. Não se declara aprovação visual automatizada.
 8. Após a última alteração passam `npm run check:gates`, `npm run build`,
    `npm test -- --runInBand` e `git diff --check`.
 
 ## Validação prevista
 
-- Testes dirigidos de `src/tests/minasCorrompidas.test.ts` para cobertura e
-  alinhamento dos panoramas, spritesheets e animações reais, integridade dos
-  assets e invariantes do estágio.
-- Testes dirigidos do capítulo validando o plano de produção, manifesto,
-  referências, mapa, rota e spritesheets através dos validadores reais.
-- `npm run homologate -- minas-corrompidas --json`.
-- Homologação visual Phaser a 1280×720 de entrada, interior e saída, com
-  capturas antes/depois e as duas variantes.
+- Testes dirigidos de `src/tests/minasCorrompidas.test.ts` para integridade e
+  dimensões do atlas, tiles resolvidos, ausência de panoramas em colocações,
+  resumo das variantes e invariantes de mapa/inimigos.
+- `npm run homologate -- --stage stage.corrupted.minas --variant
+  variant.corrupted.minas.abandoned --json` e a variante
+  `variant.corrupted.minas.corrupted`.
+- Homologação humana Phaser a 1280×720 nas duas variantes, com entrada,
+  interior e saída, e inspeção separada das imagens de resumo no seletor.
 - Fechamento único com `npm run check:gates`, `npm run build`,
   `npm test -- --runInBand` e `git diff --check`.

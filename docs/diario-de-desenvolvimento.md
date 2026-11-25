@@ -93,3 +93,21 @@
 - A inspeção visual de runtime e capturas antes/depois não foram executadas:
   a sessão de Computer Use não autorizou uso do Chrome. PNGs de origem e
   spritesheets foram inspecionados, mas isso não substitui homologação no jogo.
+
+## 2026-11-24 — Revisão humana da direção artística das Minas
+
+- A homologação humana reprovou parcialmente `746d829`: os adversários e suas
+  animações foram aprovados; o cenário foi reprovado por continuar parecendo
+  uma ilustração de fundo, mesmo ampliada e sobreposta ao piso.
+- Decisão: manter intactos sprites, animações, atributos e comportamento dos
+  inimigos; remover as colocações de panorama do mapa jogável e compor o ambiente
+  com tiles de rocha pixel art e elementos locais da mina.
+- Os PNGs panorâmicos permanecem registrados como referências artísticas e
+  imagens de resumo em "Selecionar Fase". Menu, seletor, geometria, colisões,
+  missões, progressão e transições ficam fora da alteração.
+- SPEC atualizada antes do novo código em
+  `SPEC/2026-11-24-etapa-9-18-modernizacao-minas-corrompidas.md`; novo registro
+  integral do prompt em `prompts/78-etapa-9-18-revisao-artistica-minas.md`.
+- Implementação e validações: pendentes.
+- Aprovação visual: pendente de nova avaliação humana; não inferir aprovação
+  a partir de testes automatizados.
