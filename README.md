@@ -6,7 +6,7 @@ Umbra Trail é um RPG de ação 2D top-down em pixel art, jogável no navegador.
 
 O projeto está em desenvolvimento ativo. As fases autorais atuais cobrem a **Floresta das Raízes**, o **Igapó das Memórias** e o **Coração Corrompido**; o restante da campanha usa o esqueleto macro e as fases legadas preservadas durante a migração.
 
-[**Jogar no navegador (publicação pendente)**](https://gguisandim.github.io/dsai-ap1-2Drogue/) · [**Especificações**](./SPEC/README.md) · [**Autoria de fases**](./docs/stage-authoring.md) · [**World Lab**](#world-lab)
+[**Jogar no navegador**](https://gguisandim.github.io/dsai-ap1-2Drogue/) · [**Especificações**](./SPEC/README.md) · [**Autoria de fases**](./docs/stage-authoring.md) · [**World Lab**](#world-lab)
 
 ![Floresta das Raízes](docs/screenshots/floresta-das-raizes.png)
 
