@@ -4,6 +4,9 @@ import { StageMapRenderer } from '../../presentation/stages/StageMapRenderer';
 
 const CAPTURE_WIDTH = 460;
 const CAPTURE_HEIGHT = 250;
+const CAPTURE_FOCUS: Readonly<Record<string, { x: number; y: number }>> = {
+  level_01_forgotten_passage: { x: 22.5, y: 8.5 },
+};
 
 interface StageSummaryCaptureData {
   readonly stageId: string;
@@ -16,6 +19,7 @@ interface StageSummaryCaptureState {
   readonly presentationVariantId?: string;
   readonly title?: string;
   readonly renderer?: 'webgl' | 'canvas';
+  readonly renderSetupMs?: number;
   readonly error?: string;
 }
 
@@ -66,8 +70,13 @@ export class StageSummaryCaptureScene extends Phaser.Scene {
         Math.max(CAPTURE_WIDTH, mapWidth),
         Math.max(CAPTURE_HEIGHT, mapHeight),
       );
-      camera.centerOn(mapWidth / 2, mapHeight / 2);
+      const focus = CAPTURE_FOCUS[stageId];
+      camera.centerOn(
+        focus ? focus.x * presentation.tileSize : mapWidth / 2,
+        focus ? focus.y * presentation.tileSize : mapHeight / 2,
+      );
 
+      const renderStartedAt = performance.now();
       new StageMapRenderer().render(
         this,
         level,
@@ -75,6 +84,7 @@ export class StageSummaryCaptureScene extends Phaser.Scene {
         this.physics.add.staticGroup(),
         false,
       );
+      const renderSetupMs = performance.now() - renderStartedAt;
 
       this.time.delayedCall(100, () => {
         this.setCaptureState({
@@ -83,6 +93,7 @@ export class StageSummaryCaptureScene extends Phaser.Scene {
           presentationVariantId,
           title: loaded.manifest.title,
           renderer: this.game.renderer.type === Phaser.WEBGL ? 'webgl' : 'canvas',
+          renderSetupMs,
         });
       });
     } catch (error) {

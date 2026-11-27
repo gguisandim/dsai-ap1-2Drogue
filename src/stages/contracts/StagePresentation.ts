@@ -140,6 +140,7 @@ export interface StageSpriteAnimations {
   readonly walk?: string;
   readonly attack?: string;
   readonly hurt?: string;
+  readonly death?: string;
 }
 
 export interface StageSpriteDefinition {

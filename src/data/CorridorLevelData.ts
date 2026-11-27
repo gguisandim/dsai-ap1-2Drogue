@@ -1,4 +1,5 @@
 import { LevelDefinition } from './LevelData';
+import { composeEnvironmentalDecorations } from './composeEnvironmentalDecorations';
 
 function createMap(): number[][] {
   const map = Array.from({ length: 25 }, () => Array<number>(40).fill(1));
@@ -25,7 +26,7 @@ function createMap(): number[][] {
   return map;
 }
 
-export const CORRIDOR_LEVEL: LevelDefinition = {
+const corridor: LevelDefinition = {
   id: 'level_01_forgotten_passage',
   name: 'A Passagem Esquecida',
   description: 'Abra caminho pelas câmaras seladas e alcance o portal.',
@@ -63,4 +64,20 @@ export const CORRIDOR_LEVEL: LevelDefinition = {
   decorations: [],
   parTime: 180,
   difficulty: 2,
+};
+
+const moss = { type: 'passage.moss', layer: 'terrain', depth: 2.1 } as const;
+const brazier = { type: 'passage.brazier', layer: 'foreground', depth: 4.1 } as const;
+const plinth = { type: 'passage.plinth', layer: 'terrain', depth: 3.1 } as const;
+
+export const CORRIDOR_LEVEL: LevelDefinition = {
+  ...corridor,
+  decorations: composeEnvironmentalDecorations(corridor.tileMap, [
+    { id: 'passage.entry', bounds: [2, 3, 10, 10], tiles: [0], props: [moss, plinth] },
+    { id: 'passage.threshold', bounds: [11, 5, 16, 5], tiles: [1], props: [brazier] },
+    { id: 'passage.crypt', bounds: [17, 3, 28, 12], tiles: [0], props: [plinth, moss, { ...moss, flipX: true }] },
+    { id: 'passage.crossing', bounds: [21, 13, 21, 16], tiles: [1], props: [brazier] },
+    { id: 'passage.gallery', bounds: [15, 17, 31, 23], tiles: [0], props: [moss, plinth, { ...plinth, flipX: true }] },
+    { id: 'passage.exit', bounds: [35, 15, 38, 23], tiles: [0], props: [brazier, { ...moss, flipX: true }] },
+  ], [...corridor.enemies, ...corridor.items]),
 };

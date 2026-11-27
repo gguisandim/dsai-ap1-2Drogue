@@ -8,13 +8,27 @@
 - Esforço: `desconhecido`
 - SPEC: `SPEC/2026-11-27-etapa-9-20-passagem-esquecida.md`
 - Commit: `pendente`
-- Execução: `pendente`
+- Execução: `20 testes dirigidos aprovados; suíte completa com 102 suítes e 1.235 testes aprovados; gates, build, validate:pages, git diff --check e auditoria de segredos aprovados; capturas WebGL antes e depois a 460×250; montagem medida em 109,8 e 123,9 ms`
 
 ## Arquivos modificados
 
 - `SPEC/2026-11-27-etapa-9-20-passagem-esquecida.md`
 - `SPEC/README.md`
 - `prompts/83-etapa-9-20-passagem-esquecida.md`
+- `docs/diario-de-desenvolvimento.md`
+- `docs/evidence/etapa-9-20/antes.png`
+- `scripts/capture-stage-summaries.cjs`
+- `src/assets/passage/masonry.svg`
+- `src/assets/stage-summaries/level-01-forgotten-passage--default.png`
+- `src/data/CorridorLevelData.ts`
+- `src/data/composeEnvironmentalDecorations.ts`
+- `src/devtools/stage-summary-capture/StageSummaryCaptureScene.ts`
+- `src/entities/Enemy.ts`
+- `src/scenes/BootScene.ts`
+- `src/stages/compatibility/LegacyStageAdapter.ts`
+- `src/stages/compatibility/PassagePresentation.ts`
+- `src/stages/contracts/StagePresentation.ts`
+- `src/tests/passageEnvironment.test.ts`
 
 ## Prompt efetivamente recebido
 

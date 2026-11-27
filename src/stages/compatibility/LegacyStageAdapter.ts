@@ -3,6 +3,7 @@ import { ALL_LEVELS, LevelDefinition } from '../../data/LevelData';
 import { VERSE_SECTIONS } from '../../data/VerseLevelData';
 import type { ChapterId, ChapterManifest, StageId, StageModule } from '../contracts';
 import { StageRegistry } from '../runtime/StageRegistry';
+import { PASSAGE_PRESENTATION, PASSAGE_VISUAL_RESOURCES } from './PassagePresentation';
 
 interface LegacyChapterRegistration {
   readonly chapter: ChapterManifest;
@@ -48,6 +49,7 @@ export function createLegacyStageModule(
         targetStageId,
       }],
       tags: ['legacy'],
+      ...(level.id === CORRIDOR_LEVEL.id ? { presentation: PASSAGE_PRESENTATION } : {}),
     },
   };
 }
@@ -68,6 +70,7 @@ function createLegacyChapterRegistration(definition: LegacyChapterDefinition): L
       title: definition.title,
       stageIds,
       entryStageId: stageIds[0],
+      ...(definition.id === 'legacy.corridor' ? { visualResources: PASSAGE_VISUAL_RESOURCES } : {}),
       tags: ['legacy'],
     },
     stages,

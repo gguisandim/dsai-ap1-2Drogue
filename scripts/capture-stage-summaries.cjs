@@ -319,7 +319,8 @@ async function run() {
         const validated = checkPng(filePath);
         const hash = require('node:crypto').createHash('sha256').update(validated).digest('hex');
         hashes.set(hash, (hashes.get(hash) ?? 0) + 1);
-        console.log(`${index + 1}/${targets.length} ${target.stageId} [${target.presentationVariantId ?? 'default'}] ${target.fileName} ${state.renderer}`);
+        const setupTime = Number.isFinite(state.renderSetupMs) ? ` setup=${state.renderSetupMs.toFixed(1)}ms` : '';
+        console.log(`${index + 1}/${targets.length} ${target.stageId} [${target.presentationVariantId ?? 'default'}] ${target.fileName} ${state.renderer}${setupTime}`);
       } finally {
         cdp.close();
         cdp = undefined;

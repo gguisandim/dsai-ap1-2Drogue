@@ -33,6 +33,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     walk?: string;
     attack?: string;
     hurt?: string;
+    death?: string;
   }>;
   private animationLocked = false;
   private animationToken = 0;
@@ -68,7 +69,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     x: number,
     y: number,
     textureKey: string = 'enemy_affinity',
-    animationKeys?: Readonly<{ walk?: string; attack?: string; hurt?: string }>,
+    animationKeys?: Readonly<{ walk?: string; attack?: string; hurt?: string; death?: string }>,
   ) {
     super(scene, x, y, textureKey);
     this.animationKeys = animationKeys ?? Object.freeze({
@@ -107,6 +108,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.dying = true;
       this.setVelocity(0, 0);
       if (this.body) this.body.enable = false;
+      if (this.animationKeys.death) {
+        this.play(this.animationKeys.death);
+        this.scene.tweens.add({ targets: this, alpha: 0, duration: 360, ease: 'Sine.easeIn' });
+      }
       this.scene.time.delayedCall(360, () => this.die());
     }
   }

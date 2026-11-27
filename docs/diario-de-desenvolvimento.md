@@ -1,5 +1,26 @@
 # Diário de desenvolvimento
 
+## 2026-11-27 — Etapa 9.20, A Passagem Esquecida
+
+- A cripta recebeu alvenaria em pixel art, variações de piso e parede,
+  musgo, plintos, braseiros, luz localizada e motas animadas. A composição
+  regional ocupa 12 posições e preserva o mapa lógico e os dados de gameplay.
+- Os dois adversários usam as spritesheets Puny já presentes no projeto.
+  Movimento, ataque, dano e a animação visual de morte mantêm o ciclo de
+  combate existente. O World Lab usa a mesma apresentação do runtime.
+- A [captura legada](evidence/etapa-9-20/antes.png) e a
+  [captura atual](../src/assets/stage-summaries/level-01-forgotten-passage--default.png)
+  mostram a mesma área da cripta, em Phaser WebGL, a 460×250. Somente a
+  captura publicada desta fase foi regenerada.
+- A montagem de 1.000 tiles levou 109,8 ms com a apresentação legada e
+  123,9 ms com a atual no Chromium local. São amostras únicas de montagem,
+  sem medição de FPS, latência de combate ou uso de GPU.
+- A especificação e a instrução integral estão registradas na SPEC 9.20 e
+  no registro 83. A homologação visual humana está pendente.
+- As validações passaram com 20 testes dirigidos, 1.235 testes na suíte
+  completa, gates, build, validador do Pages, auditoria de segredos e
+  verificação de whitespace.
+
 ## 2026-11-27 — Integração das Etapas 9.18 e 9.19 à main
 
 - A integração preserva o mapa em pixel art, os adversários aprovados e as

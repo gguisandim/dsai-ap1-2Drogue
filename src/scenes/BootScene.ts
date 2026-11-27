@@ -34,12 +34,23 @@ export class BootScene extends Phaser.Scene {
     preloadFloresAssets(this);
     preloadPalacioAssets(this);
     preloadMinasAssets(this);
+    this.load.spritesheet('passage_masonry', new URL('../assets/passage/masonry.svg', import.meta.url).href, {
+      frameWidth: 32,
+      frameHeight: 32,
+    });
     if (!this.isStageSummaryCaptureRequested()) preloadStageSummaryAssets(this);
   }
 
   create() {
     TextureGenerator.generateAllTextures(this);
     createPunyAnimations(this);
+    for (const model of ['warrior', 'archer']) {
+      this.anims.create({
+        key: `passage_${model}_death`,
+        frames: this.anims.generateFrameNumbers(`puny_${model}_128`, { start: 8, end: 11 }),
+        duration: 360,
+      });
+    }
     createPlayerClassAnimations(this);
     createPalacioAnimations(this);
     createMinasAnimations(this);
