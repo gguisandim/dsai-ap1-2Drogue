@@ -48,6 +48,8 @@ evitar caverna genérica de cristais roxos.
 | `mina-corrupted-panorama.png` | 2172×724 | fundo pictórico do núcleo Corrompido |
 | `mine-floor-abandoned.svg` | 128×32 (4 frames 32×32) | piso da variante Abandonada |
 | `mine-floor-corrupted.svg` | 128×32 (4 frames 32×32) | piso mineralizado da variante Corrompida |
+| `mine-rock-abandoned.svg` | 128×32 (4 frames 32×32) | paredes e pilares de rocha da variante Abandonada |
+| `mine-rock-corrupted.svg` | 128×32 (4 frames 32×32) | paredes e pilares mineralizados da variante Corrompida |
 | `mine-timber.svg` | 224×176 | vigas e suportes |
 | `mine-timber-corrupted.svg` | 224×176 | vigas incorporadas por raízes minerais |
 | `mine-rails.svg` | 256×96 | trilhos e dormentes |
@@ -75,14 +77,18 @@ Os `sha256` de cada arquivo ficam em
 ## Integração
 
 `src/presentation/assets/bootMinasAssets.ts` pré-carrega todos os arquivos no
-`BootScene` e cria as animações mínimas `walk`/`attack`/`hurt` dos sprites
-inimigos, todas apontando para o quadro `__BASE` das imagens SVG. Os IDs de
-textura, tilesets, decorações, sprites, áudio e ambientes vivem em
+`BootScene`. Os SVGs de inimigos permanecem catalogados como arte original do
+projeto; as apresentações jogáveis agora reutilizam `puny_warrior_128` e
+`puny_archer_128`, com caminhada, ataque e dano animados, já carregados
+globalmente pelas fases anteriores. Os IDs de textura, tilesets, decorações,
+sprites, áudio e ambientes vivem em
 `src/stages/chapters/minas-corrompidas/visuals.ts`.
 
 ## Uso
 
-Os PNGs e SVGs são somente apresentação. Colisão e navegação permanecem no mapa
-lógico autoral. As duas variantes reutilizam a mesma geometria e trocam
-tileset, ambiente, efeitos e `decorationOverrides`.
+Os PNGs panorâmicos são referências e recursos de prévia do seletor, não
+colocações do mapa jogável. Os SVGs locais compõem os tiles e elementos
+ambientais da fase. Colisão e navegação permanecem no mapa lógico autoral.
+As duas variantes reutilizam a mesma geometria e trocam tileset, ambiente,
+efeitos e `decorationOverrides`.
 

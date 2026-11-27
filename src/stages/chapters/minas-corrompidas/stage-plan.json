@@ -7,7 +7,7 @@
   "title": "Minas Corrompidas",
   "summary": "Descida panorâmica da floresta à Mina Açu para reconstruir sua história, interromper o Coração de Lastro e recuperar a prova que conduz ao Credor.",
   "progression": "linear",
-  "visualDirection": "Pixel art para terreno e entidades; panoramas PNG autorais preservados nas outras regiões, fora deste piloto; SVGs autorais para suportes, trilhos, raízes, arumã, fungos, maquinário e selo. A entrada usa SVGs em camadas, sem panorama sobre a rota. Abandonada privilegia água, madeira e retomada vegetal; Corrompida muda silhuetas, raízes mineralizadas, fungos, névoa, luz e maquinário incorporado.",
+  "visualDirection": "Cena subterrânea construída em pixel art por pisos, paredes de rocha em atlas 32 px, pilares, trilhos, suportes de madeira, raízes, cristais, fungos e maquinário distribuídos pelo mapa. A entrada usa raízes, trilhos e suportes locais. Os panoramas ilustrativos servem como referência, e o seletor usa capturas da cena Phaser. Abandonada privilegia água, madeira e retomada vegetal; Corrompida muda silhuetas, raízes mineralizadas, fungos, névoa, luz e maquinário incorporado.",
   "startRegionId": "region.corrupted.minas.floresta",
   "exitRegionIds": ["region.corrupted.minas.revelacao"],
   "regions": [

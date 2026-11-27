@@ -16,12 +16,7 @@ export function preloadMinasAssets(scene: Phaser.Scene): void {
   });
 }
 
-/**
- * Enemy sprites are single-frame SVGs loaded with `load.image`, so every
- * animation targets the texture's `__BASE` frame. They exist to satisfy the
- * entity animation contract (walk/attack/hurt) while preserving the authored
- * silhouette; the visual identity comes from the texture itself.
- */
+/** Keeps the original SVG enemy assets available; production Minas enemies use the shared Puny sheets. */
 export function createMinasAnimations(scene: Phaser.Scene): void {
   ['minas_mole', 'minas_rootling', 'minas_guardian', 'minas_heart'].forEach(key => {
     ['walk', 'attack', 'hurt'].forEach(action => {

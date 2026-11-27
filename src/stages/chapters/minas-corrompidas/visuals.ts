@@ -20,6 +20,8 @@ const FLOOR_ABANDONED = 'texture.corrupted.minas.floor-abandoned';
 const FLOOR_CORRUPTED = 'texture.corrupted.minas.floor-corrupted';
 const PANORAMA_ABANDONED = 'texture.corrupted.minas.panorama-abandoned';
 const PANORAMA_CORRUPTED = 'texture.corrupted.minas.panorama-corrupted';
+const ROCK_ABANDONED = 'texture.corrupted.minas.rock-abandoned';
+const ROCK_CORRUPTED = 'texture.corrupted.minas.rock-corrupted';
 const TIMBER = 'texture.corrupted.minas.timber';
 const TIMBER_CORRUPTED = 'texture.corrupted.minas.timber-corrupted';
 const RAILS = 'texture.corrupted.minas.rails';
@@ -35,10 +37,8 @@ const MAIRA = 'texture.corrupted.minas.maira';
 const NILO = 'texture.corrupted.minas.nilo';
 const EVIDENCE = 'texture.corrupted.minas.evidence';
 const LEDGER = 'texture.corrupted.minas.ledger';
-const MOLE = 'texture.corrupted.minas.mole';
-const ROOTLING = 'texture.corrupted.minas.rootling';
-const GUARDIAN = 'texture.corrupted.minas.guardian';
-const HEART = 'texture.corrupted.minas.heart';
+const WARRIOR = 'texture.corrupted.minas.puny-warrior';
+const ARCHER = 'texture.corrupted.minas.puny-archer';
 const ORIGINAL_ORIGIN = 'origin.corrupted.minas.original';
 const IMAGEGEN_ORIGIN = 'origin.corrupted.minas.imagegen';
 
@@ -64,7 +64,7 @@ export const MINAS_CORRUPTED_EFFECTS: readonly StageEffectDefinition[] = Object.
 
 const texture = (id: string, textureKey: string, sourceWidth: number, sourceHeight: number, originId = ORIGINAL_ORIGIN) =>
   Object.freeze({ id, textureKey, sourceWidth, sourceHeight, perspective: 'side-view' as const, originId });
-const staticAnimations = (prefix: string) => Object.freeze({
+const enemyAnimations = (prefix: 'puny_warrior' | 'puny_archer') => Object.freeze({
   walk: `${prefix}_walk`, attack: `${prefix}_attack`, hurt: `${prefix}_hurt`,
 });
 
@@ -75,6 +75,10 @@ export const MINAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
     Object.freeze({ id: FLOOR_CORRUPTED, textureKey: 'minas_floor_corrupted', frameWidth: 32, frameHeight: 32, frameCount: 4, sourceWidth: 128, sourceHeight: 32, pixelArt: true, originId: ORIGINAL_ORIGIN }),
     texture(PANORAMA_ABANDONED, 'minas_panorama_abandoned', 2172, 724, IMAGEGEN_ORIGIN),
     texture(PANORAMA_CORRUPTED, 'minas_panorama_corrupted', 2172, 724, IMAGEGEN_ORIGIN),
+    Object.freeze({ id: ROCK_ABANDONED, textureKey: 'minas_rock_abandoned', frameWidth: 32, frameHeight: 32, frameCount: 4, sourceWidth: 128, sourceHeight: 32, pixelArt: true, originId: ORIGINAL_ORIGIN }),
+    Object.freeze({ id: ROCK_CORRUPTED, textureKey: 'minas_rock_corrupted', frameWidth: 32, frameHeight: 32, frameCount: 4, sourceWidth: 128, sourceHeight: 32, pixelArt: true, originId: ORIGINAL_ORIGIN }),
+    Object.freeze({ id: WARRIOR, textureKey: 'puny_warrior_128', frameWidth: 128, frameHeight: 114, frameCount: 12 }),
+    Object.freeze({ id: ARCHER, textureKey: 'puny_archer_128', frameWidth: 128, frameHeight: 114, frameCount: 12 }),
     texture(TIMBER, 'minas_timber', 224, 176),
     texture(TIMBER_CORRUPTED, 'minas_timber_corrupted', 224, 176),
     texture(RAILS, 'minas_rails', 256, 96),
@@ -90,18 +94,14 @@ export const MINAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
     texture(NILO, 'minas_nilo', 64, 80),
     texture(EVIDENCE, 'minas_evidence', 80, 80),
     texture(LEDGER, 'minas_ledger', 96, 72),
-    texture(MOLE, 'minas_mole', 80, 64),
-    texture(ROOTLING, 'minas_rootling', 80, 80),
-    texture(GUARDIAN, 'minas_guardian', 96, 96),
-    texture(HEART, 'minas_heart', 128, 128),
   ]),
   tilesets: Object.freeze([
     Object.freeze({
       id: MINAS_ABANDONED_TILESET_ID, revision: 1, tileSize: 32 as const,
       tiles: Object.freeze({
         floor: Object.freeze({ textureId: FLOOR_ABANDONED, frame: 0, variants: Object.freeze([1, 2, 3].map(value => Object.freeze({ textureId: FLOOR_ABANDONED, frame: value }))) }),
-        wall: tile(204, [frame(190, { tint: 0x26373b }), frame(191, { tint: 0x31464a })], { tint: 0x26373b }),
-        pillar: tile(197, [frame(206, { tint: 0x60432c })], { tint: 0x60432c }),
+        wall: Object.freeze({ textureId: ROCK_ABANDONED, frame: 0, variants: Object.freeze([1, 2, 3].map(value => Object.freeze({ textureId: ROCK_ABANDONED, frame: value }))) }),
+        pillar: Object.freeze({ textureId: ROCK_ABANDONED, frame: 2, variants: Object.freeze([Object.freeze({ textureId: ROCK_ABANDONED, frame: 1 }), Object.freeze({ textureId: ROCK_ABANDONED, frame: 3 })]) }),
         water: tile(293, [frame(294, { tint: 0x397c7b }), frame(295, { tint: 0x4a9490 })], { tint: 0x397c7b, alpha: 0.92 }),
         lava: tile(40, [], { tint: 0x8d6a38 }),
         exit: tile(714, [], { tint: 0xd4b06a }),
@@ -115,8 +115,8 @@ export const MINAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
       id: MINAS_CORRUPTED_TILESET_ID, revision: 1, tileSize: 32 as const,
       tiles: Object.freeze({
         floor: Object.freeze({ textureId: FLOOR_CORRUPTED, frame: 0, variants: Object.freeze([1, 2, 3].map(value => Object.freeze({ textureId: FLOOR_CORRUPTED, frame: value }))) }),
-        wall: tile(204, [frame(783, { tint: 0x213636 }), frame(190, { tint: 0x281c2b })], { tint: 0x172729 }),
-        pillar: tile(783, [frame(810, { tint: 0x4a2738 })], { tint: 0x294c49 }),
+        wall: Object.freeze({ textureId: ROCK_CORRUPTED, frame: 0, variants: Object.freeze([1, 2, 3].map(value => Object.freeze({ textureId: ROCK_CORRUPTED, frame: value }))) }),
+        pillar: Object.freeze({ textureId: ROCK_CORRUPTED, frame: 2, variants: Object.freeze([Object.freeze({ textureId: ROCK_CORRUPTED, frame: 1 }), Object.freeze({ textureId: ROCK_CORRUPTED, frame: 3 })]) }),
         water: tile(321, [frame(323, { tint: 0x267f79 }), frame(295, { tint: 0x513348 })], { tint: 0x267f79, alpha: 0.86 }),
         lava: tile(40, [], { tint: 0xb55c3d }),
         exit: tile(714, [], { tint: 0x54d4bd }),
@@ -128,8 +128,8 @@ export const MINAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
     }),
   ]),
   decorations: Object.freeze([
-    Object.freeze({ id: 'mina_panorama', textureId: PANORAMA_ABANDONED, layer: 'background' as const, depth: 1.4, defaultScale: 0.34, scaleClass: 'oversized' as const }),
-    Object.freeze({ id: 'mina_panorama_corrupted', textureId: PANORAMA_CORRUPTED, layer: 'background' as const, depth: 1.4, defaultScale: 0.34, scaleClass: 'oversized' as const }),
+    Object.freeze({ id: 'mina_preview_abandoned', textureId: PANORAMA_ABANDONED, layer: 'background' as const, depth: 1.4, defaultScale: 1, scaleClass: 'oversized' as const }),
+    Object.freeze({ id: 'mina_preview_corrupted', textureId: PANORAMA_CORRUPTED, layer: 'background' as const, depth: 1.4, defaultScale: 1, scaleClass: 'oversized' as const }),
     Object.freeze({ id: 'mina_timber', textureId: TIMBER, layer: 'terrain' as const, depth: 4.5, defaultScale: 0.82, scaleClass: 'oversized' as const }),
     Object.freeze({ id: 'mina_timber_corrupted', textureId: TIMBER_CORRUPTED, layer: 'terrain' as const, depth: 4.5, defaultScale: 0.82, scaleClass: 'oversized' as const }),
     Object.freeze({ id: 'mina_rails', textureId: RAILS, layer: 'terrain' as const, depth: 3.7, defaultScale: 0.8, scaleClass: 'oversized' as const }),
@@ -151,12 +151,14 @@ export const MINAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
     Object.freeze({ id: 'sprite.corrupted.minas.nilo', textureId: NILO, scale: 0.9, depth: 6, scaleClass: 'character' as const }),
     Object.freeze({ id: 'sprite.corrupted.minas.aquifer', textureId: EVIDENCE, scale: 0.8, depth: 6, scaleClass: 'prop' as const }),
     Object.freeze({ id: 'sprite.corrupted.minas.ledger', textureId: LEDGER, scale: 0.8, depth: 6, scaleClass: 'prop' as const }),
-    Object.freeze({ id: 'sprite.corrupted.minas.mole', textureId: MOLE, animations: staticAnimations('minas_mole'), scale: 0.78, depth: 5, scaleClass: 'character' as const }),
-    Object.freeze({ id: 'sprite.corrupted.minas.rootling', textureId: ROOTLING, animations: staticAnimations('minas_rootling'), scale: 0.76, depth: 5, scaleClass: 'character' as const }),
-    Object.freeze({ id: 'sprite.corrupted.minas.guardian', textureId: GUARDIAN, animations: staticAnimations('minas_guardian'), scale: 0.82, depth: 5, scaleClass: 'character' as const }),
-    Object.freeze({ id: 'sprite.corrupted.minas.heart', textureId: HEART, animations: staticAnimations('minas_heart'), scale: 0.9, depth: 5, scaleClass: 'character' as const }),
-    Object.freeze({ id: 'sprite.corrupted.minas.corrupted-mole', textureId: MOLE, animations: staticAnimations('minas_mole'), tint: 0x52c7b4, scale: 0.82, depth: 5, scaleClass: 'character' as const }),
-    Object.freeze({ id: 'sprite.corrupted.minas.corrupted-rootling', textureId: ROOTLING, animations: staticAnimations('minas_rootling'), tint: 0xd06d54, scale: 0.82, depth: 5, scaleClass: 'character' as const }),
+    Object.freeze({ id: 'sprite.corrupted.minas.mole', textureId: WARRIOR, animations: enemyAnimations('puny_warrior'), tint: 0x9bc88d, scale: 1, depth: 5, scaleClass: 'character' as const }),
+    Object.freeze({ id: 'sprite.corrupted.minas.rootling', textureId: ARCHER, animations: enemyAnimations('puny_archer'), tint: 0x89d7c8, scale: 1, depth: 5, scaleClass: 'character' as const }),
+    Object.freeze({ id: 'sprite.corrupted.minas.guardian', textureId: WARRIOR, animations: enemyAnimations('puny_warrior'), tint: 0xb88a48, scale: 1.12, depth: 5, scaleClass: 'character' as const }),
+    Object.freeze({ id: 'sprite.corrupted.minas.heart', textureId: WARRIOR, animations: enemyAnimations('puny_warrior'), tint: 0x58a99b, scale: 1.3, depth: 5, scaleClass: 'character' as const }),
+    Object.freeze({ id: 'sprite.corrupted.minas.corrupted-mole', textureId: WARRIOR, animations: enemyAnimations('puny_warrior'), tint: 0x52c7b4, scale: 1, depth: 5, scaleClass: 'character' as const }),
+    Object.freeze({ id: 'sprite.corrupted.minas.corrupted-rootling', textureId: ARCHER, animations: enemyAnimations('puny_archer'), tint: 0xd06d54, scale: 1, depth: 5, scaleClass: 'character' as const }),
+    Object.freeze({ id: 'sprite.corrupted.minas.corrupted-guardian', textureId: WARRIOR, animations: enemyAnimations('puny_warrior'), tint: 0x9c5d76, scale: 1.12, depth: 5, scaleClass: 'character' as const }),
+    Object.freeze({ id: 'sprite.corrupted.minas.corrupted-heart', textureId: WARRIOR, animations: enemyAnimations('puny_warrior'), tint: 0xb04d65, scale: 1.3, depth: 5, scaleClass: 'character' as const }),
   ]),
   sounds: Object.freeze([
     Object.freeze({ id: 'sound.corrupted.minas.drip', kind: 'synth' as const, waveform: 'sine' as const, frequency: 174, volume: 0.018 }),
@@ -177,14 +179,13 @@ export const MINAS_VISUAL_RESOURCES: ChapterVisualResources = Object.freeze({
   themes: Object.freeze([
     Object.freeze({
       id: MINAS_ABANDONED_THEME_ID, revision: 1, tilesetId: MINAS_ABANDONED_TILESET_ID,
-      decorationIds: Object.freeze(['mina_panorama', 'mina_timber', 'mina_rails', 'mina_roots', 'mina_crystals', 'mina_fungi', 'mina_machinery', 'mina_seal']),
+      decorationIds: Object.freeze(['mina_preview_abandoned', 'mina_timber', 'mina_rails', 'mina_roots', 'mina_crystals', 'mina_fungi', 'mina_machinery', 'mina_seal']),
       decorationOverrides: Object.freeze({ mina_core: 'mina_machinery' }),
     }),
     Object.freeze({
       id: MINAS_CORRUPTED_THEME_ID, revision: 1, tilesetId: MINAS_CORRUPTED_TILESET_ID,
-      decorationIds: Object.freeze(['mina_panorama_corrupted', 'mina_timber_corrupted', 'mina_rails_corrupted', 'mina_roots_corrupted', 'mina_crystals_corrupted', 'mina_fungi_corrupted', 'mina_machinery_corrupted', 'mina_core', 'mina_seal_corrupted']),
+      decorationIds: Object.freeze(['mina_preview_corrupted', 'mina_timber_corrupted', 'mina_rails_corrupted', 'mina_roots_corrupted', 'mina_crystals_corrupted', 'mina_fungi_corrupted', 'mina_machinery_corrupted', 'mina_core', 'mina_seal_corrupted']),
       decorationOverrides: Object.freeze({
-        mina_panorama: 'mina_panorama_corrupted',
         mina_timber: 'mina_timber_corrupted',
         mina_rails: 'mina_rails_corrupted',
         mina_roots: 'mina_roots_corrupted',
@@ -209,6 +210,7 @@ export const MINAS_ABANDONED_PRESENTATION: StagePresentationDefinition = Object.
   enemySprites: Object.freeze({
     affinity: 'sprite.corrupted.minas.mole',
     applaud: 'sprite.corrupted.minas.rootling',
+    fortitudo: 'sprite.corrupted.minas.guardian',
     ranged: 'sprite.corrupted.minas.rootling',
     miniboss: 'sprite.corrupted.minas.guardian',
     boss: 'sprite.corrupted.minas.heart',
@@ -225,9 +227,10 @@ export const MINAS_CORRUPTED_PRESENTATION: StagePresentationDefinition = Object.
   enemySprites: Object.freeze({
     affinity: 'sprite.corrupted.minas.corrupted-mole',
     applaud: 'sprite.corrupted.minas.corrupted-rootling',
+    fortitudo: 'sprite.corrupted.minas.corrupted-guardian',
     ranged: 'sprite.corrupted.minas.corrupted-rootling',
-    miniboss: 'sprite.corrupted.minas.guardian',
-    boss: 'sprite.corrupted.minas.heart',
+    miniboss: 'sprite.corrupted.minas.corrupted-guardian',
+    boss: 'sprite.corrupted.minas.corrupted-heart',
   }),
   audioProfileId: MINAS_CORRUPTED_AUDIO_ID,
   environmentId: MINAS_CORRUPTED_ENVIRONMENT_ID,

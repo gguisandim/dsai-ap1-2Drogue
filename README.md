@@ -186,6 +186,11 @@ O Vite abre o jogo em `http://localhost:5173/`. No menu:
 
 5. **CATÁLOGO** consulta mobs, personagens e armas; **AJUSTES** controla som e comandos; **FORJA DE FASES** abre o editor de tiles.
 
+Para atualizar as imagens-resumo, execute `npm run capture:stage-summaries`.
+O comando renderiza as fases e variantes carregáveis pelo Phaser em um navegador
+Chromium/Edge local, sem atores nem HUD, e grava as capturas em
+`src/assets/stage-summaries/`. A avaliação visual humana continua necessária.
+
 Para gerar a build de produção e servi-la localmente:
 
 ```sh

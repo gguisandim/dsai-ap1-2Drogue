@@ -1,39 +1,19 @@
-import type { StageCatalogEntry, ResolvedStagePresentation } from '../stages';
+import type { StageCatalogEntry } from '../stages';
+import { resolveStageSummaryAsset } from './assets/StageSummaryAssetCatalog';
 
 export interface StagePreview {
   readonly textureKey: string;
-  readonly frame?: number;
-  readonly tiled: boolean;
 }
 
 export function resolveStagePreview(
-  presentation: ResolvedStagePresentation | undefined,
+  stageId: string,
   textureExists: (textureKey: string) => boolean,
+  presentationVariantId?: string,
 ): StagePreview | undefined {
-  if (!presentation) return undefined;
-  const genericTextureKeys = new Set(['puny_world']);
-  const summaryTexture = (textureKey: string): number =>
-    /(?:panorama|canopy|trail|sanctuary|grove|entrance|passage)/i.test(textureKey) ? 0 : 1;
-  const background = Object.values(presentation.decorations)
-    .filter(item => item.layer === 'background' &&
-      !genericTextureKeys.has(item.textureKey) &&
-      textureExists(item.textureKey))
-    .sort((left, right) =>
-      summaryTexture(left.textureKey) - summaryTexture(right.textureKey) ||
-      left.depth - right.depth);
-  if (background.length > 0) return {
-    textureKey: background[0].textureKey,
-    ...(background[0].frame !== undefined ? { frame: background[0].frame } : {}),
-    tiled: false,
-  };
-
-  const floor = presentation.tiles.floor;
-  const floorTexture = [floor, ...floor.variants].find(item => textureExists(item.textureKey));
-  return floorTexture ? {
-    textureKey: floorTexture.textureKey,
-    ...(floorTexture.frame !== undefined ? { frame: floorTexture.frame } : {}),
-    tiled: true,
-  } : undefined;
+  const asset = resolveStageSummaryAsset(stageId, presentationVariantId);
+  return asset && textureExists(asset.textureKey)
+    ? Object.freeze({ textureKey: asset.textureKey })
+    : undefined;
 }
 
 const DISPLAY_LABELS: Readonly<Record<string, string>> = Object.freeze({

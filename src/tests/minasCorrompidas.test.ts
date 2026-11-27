@@ -40,11 +40,13 @@ import {
   MINAS_CORRUPTED_ENVIRONMENT_ID,
   MINAS_CORRUPTED_THEME_ID,
   MINAS_CORRUPTED_VARIANT_ID,
-  createMinasCorrompidasDecorations,
   createMinasCorrompidasMap,
 } from '../stages';
 import { CAMPAIGN_CHAPTER_CATALOG } from '../stages/chapters/CampaignChapterCatalog';
 import { MINAS_ASSETS } from '../presentation/assets/minasAssetCatalog';
+import { PUNY_ANIMATIONS, PUNY_TEXTURE_ASSETS } from '../presentation/assets/punyAssetCatalog';
+import { resolveStagePreview } from '../presentation/StageSelectionPresentation';
+import { resolveStageSummaryAsset } from '../presentation/assets/StageSummaryAssetCatalog';
 import { MINAS_VISUAL_RESOURCES } from '../stages/chapters/minas-corrompidas';
 import { WorldLabDataService } from '../devtools/world-lab';
 import {
@@ -315,6 +317,60 @@ describe('Minas Corrompidas', () => {
     }
   });
 
+  it('uses no illustrative panorama as a runtime map decoration', () => {
+    const decorations = MINAS_CORROMPIDAS_STAGE.authoredLevel?.decorations ?? [];
+    expect(decorations.some(decoration =>
+      decoration.type.includes('panorama'))).toBe(false);
+    expect(decorations).toHaveLength(19);
+  });
+
+  it('resolves the local entrance props in both mine presentations', () => {
+    const entrance = (MINAS_CORROMPIDAS_STAGE.authoredLevel?.decorations ?? [])
+      .filter(decoration => decoration.x <= 30);
+    expect(entrance.map(decoration => decoration.type)).toEqual([
+      'mina_roots',
+      'mina_rails',
+      'mina_timber',
+    ]);
+
+    for (const variantId of [MINAS_ABANDONED_VARIANT_ID, MINAS_CORRUPTED_VARIANT_ID]) {
+      const presentation = load(variantId).presentation;
+      if (!presentation) throw new Error('Minas presentation was not resolved.');
+      for (const decoration of entrance) {
+        const id = presentation.decorationOverrides?.[decoration.type] ?? decoration.type;
+        expect(presentation.decorations[id]).toBeDefined();
+      }
+    }
+  });
+
+  it('uses captured scene summaries for both mine presentations', () => {
+    const abandoned = resolveStageSummaryAsset(MINAS_CORROMPIDAS_STAGE_ID, MINAS_ABANDONED_VARIANT_ID);
+    const corrupted = resolveStageSummaryAsset(MINAS_CORROMPIDAS_STAGE_ID, MINAS_CORRUPTED_VARIANT_ID);
+    expect(resolveStagePreview(
+      MINAS_CORROMPIDAS_STAGE_ID,
+      key => key === abandoned?.textureKey,
+      MINAS_ABANDONED_VARIANT_ID,
+    )?.textureKey).toBe(abandoned?.textureKey);
+    expect(resolveStagePreview(
+      MINAS_CORROMPIDAS_STAGE_ID,
+      key => key === corrupted?.textureKey,
+      MINAS_CORRUPTED_VARIANT_ID,
+    )?.textureKey).toBe(corrupted?.textureKey);
+    expect(abandoned?.fileName).not.toContain('panorama');
+    expect(corrupted?.fileName).not.toContain('panorama');
+  });
+
+  it('resolves pixel-art rock atlases for walls and pillars', () => {
+    const abandoned = load(MINAS_ABANDONED_VARIANT_ID);
+    const corrupted = load(MINAS_CORRUPTED_VARIANT_ID);
+    expect(abandoned.presentation?.tiles.wall.textureKey).toBe('minas_rock_abandoned');
+    expect(abandoned.presentation?.tiles.pillar.textureKey).toBe('minas_rock_abandoned');
+    expect(corrupted.presentation?.tiles.wall.textureKey).toBe('minas_rock_corrupted');
+    expect(corrupted.presentation?.tiles.pillar.textureKey).toBe('minas_rock_corrupted');
+    expect(abandoned.presentation?.tiles.wall.frameWidth).toBe(32);
+    expect(corrupted.presentation?.tiles.wall.frameHeight).toBe(32);
+  });
+
   it('changes only presentation between Abandonada and Corrompida', () => {
     const abandoned = load(MINAS_ABANDONED_VARIANT_ID);
     const corrupted = load(MINAS_CORRUPTED_VARIANT_ID);
@@ -345,7 +401,6 @@ describe('Minas Corrompidas', () => {
     expect(abandoned.presentation?.effects.map(effect => effect.id))
       .toEqual(MINAS_ABANDONED_EFFECTS.map(effect => effect.id));
     expect(corrupted.presentation?.decorationOverrides).toMatchObject({
-      mina_panorama: 'mina_panorama_corrupted',
       mina_timber: 'mina_timber_corrupted',
       mina_roots: 'mina_roots_corrupted',
       mina_crystals: 'mina_crystals_corrupted',
@@ -355,49 +410,31 @@ describe('Minas Corrompidas', () => {
     });
   });
 
-  it('composes the entrance with compact layered props instead of a panoramic overlay', () => {
-    const entranceDecorations = createMinasCorrompidasDecorations()
-      .filter(decoration => decoration.x <= 30);
-    expect(entranceDecorations.some(decoration => decoration.type.includes('panorama'))).toBe(false);
-    expect(entranceDecorations.map(decoration => decoration.type)).toEqual([
-      'mina_roots',
-      'mina_timber',
-      'mina_rails',
-      'mina_crystals',
-      'mina_fungi',
-    ]);
-    expect(new Set(entranceDecorations.map(decoration => decoration.layer))).toEqual(
-      new Set(['background', 'terrain', 'foreground']),
-    );
-
-    for (const variantId of [MINAS_ABANDONED_VARIANT_ID, MINAS_CORRUPTED_VARIANT_ID]) {
-      const presentation = load(variantId).presentation;
-      if (!presentation) throw new Error('Minas presentation was not resolved.');
-      for (const placement of entranceDecorations) {
-        const decorationId = presentation.decorationOverrides?.[placement.type] ?? placement.type;
-        const definition = presentation.decorations[decorationId];
-        const scale = placement.scale ?? definition.defaultScale;
-        expect(Math.max(definition.sourceWidth ?? 0, definition.sourceHeight ?? 0) * scale)
-          .toBeLessThanOrEqual(128);
-      }
-    }
-  });
-
-  it('declares real walk/attack/hurt animations for every enemy sprite', () => {
+  it('uses the animated pixel-art spritesheets from earlier stages for every enemy', () => {
+    const punyAnimations = new Set(PUNY_ANIMATIONS.map(animation => animation.key));
+    const punySpritesheets = new Map(PUNY_TEXTURE_ASSETS
+      .filter(asset => asset.kind === 'spritesheet')
+      .map(asset => [asset.textureKey, asset] as const));
     for (const variantId of [MINAS_ABANDONED_VARIANT_ID, MINAS_CORRUPTED_VARIANT_ID]) {
       const loaded = load(variantId);
       for (const sprite of Object.values(loaded.presentation?.enemySprites ?? {})) {
         expect(sprite.animations).toMatchObject({
-          walk: expect.any(String),
-          attack: expect.any(String),
-          hurt: expect.any(String),
+          walk: expect.stringMatching(/^puny_(warrior|archer)_walk$/),
+          attack: expect.stringMatching(/^puny_(warrior|archer)_attack$/),
+          hurt: expect.stringMatching(/^puny_(warrior|archer)_hurt$/),
         });
+        expect(punySpritesheets.has(sprite.textureKey)).toBe(true);
+        expect(sprite.frameWidth).toBe(128);
+        expect(sprite.frameHeight).toBe(114);
+        expect(punyAnimations.has(sprite.animations.walk!)).toBe(true);
+        expect(punyAnimations.has(sprite.animations.attack!)).toBe(true);
+        expect(punyAnimations.has(sprite.animations.hurt!)).toBe(true);
       }
     }
   });
 
   it('documents every authored asset with a matching hash and real dimensions', () => {
-    expect(MINAS_ASSETS).toHaveLength(23);
+    expect(MINAS_ASSETS).toHaveLength(25);
     for (const asset of MINAS_ASSETS) {
       const file = path.join(ASSET_DIR, asset.fileName);
       expect(fs.existsSync(file)).toBe(true);
