@@ -91,3 +91,4 @@ Cada arquivo descreve uma parte do sistema antes do código correspondente entra
 | 2026-11-23 | [Ajustes do menu e pré-visualização das fases — Etapa 9.17](./2026-11-23-etapa-9-17-menu-preview-fases.md) |
 | 2026-11-24 | [Modernização visual das Minas Corrompidas — Etapa 9.18](./2026-11-24-etapa-9-18-modernizacao-minas-corrompidas.md) |
 | 2026-11-25 | [Padronização das imagens de resumo do seletor de fases — Etapa 9.19](./2026-11-25-etapa-9-19-capturas-resumo-fases.md) |
+| 2026-11-27 | [A Passagem Esquecida — Etapa 9.20](./2026-11-27-etapa-9-20-passagem-esquecida.md) |
